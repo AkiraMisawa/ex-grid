@@ -1,7 +1,8 @@
 @page "/scatter"
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
+@using ScriptFunction = global::ExGrid.Data.ScriptFunction
 @using global::ExChart.Engine.Fitting
 @using global::ExGrid.Chrome
 
@@ -14,7 +15,7 @@
    1, 3 and 9 through ten noisy points of sin 2πx. *@
 <DemoChromeAssets>
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
     </Head>
 </DemoChromeAssets>
 
@@ -32,10 +33,8 @@
     <span id="cds-range" role="status">@RangeText</span>
 </p>
 <div class="scatter-side-by-side">
-    <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="Name"
-            Window="CdsNames"
-            RowKey="KeyOf"
-            RowSequenceVersion="0"
+    <ExGrid @ref="_bridge.ScriptGrid" TRow="Name"
+            Rows="CdsNames"
             Columns="CdsColumns"
             ViewportHeight="360"
             ViewportWidth="380" />
@@ -103,11 +102,11 @@
         double[] xs = [.. CdsNames.Select(n => n.Leverage)];
         double[] ys = [.. CdsNames.Select(n => n.Spread)];
         var points = CdsNames.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.Spread)) { Name = n.Ticker, Row = n.Ticker });
-        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00") + "x" },
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { FormatCode = "0.00\"x\"" },
         [
-            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = v => ((double)v).ToString("0") + "bp" },
-            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = v => ((double)v).ToString("0") + "bp" },
-            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = v => ((double)v).ToString("0") + "bp" },
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { FormatCode = "0\"bp\"" },
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { FormatCode = "0\"bp\"" },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { FormatCode = "0\"bp\"" },
         ], ["Synthetic names from a fixed seed; DSTR is distressed."]);
     }
 
@@ -162,7 +161,7 @@
     private static readonly Dictionary<int, ChartDefinition> Curves = Degrees.ToDictionary(m => m, m => new ChartDefinition(ChartAxis.Numbers("x"),
     [
         ChartSeries.Of("points", "Training points", SeriesKind.Observation, CurveX.Select((x, i) => new ChartPoint(x, ChartValue.Of(CurveT[i])))),
-        ChartSeries.Sampled("truth", "sin 2πx", SeriesKind.Level, 0, 1, x => ChartValue.Of(Math.Sin(2 * Math.PI * x))) with { FromZero = false },
+        ChartSeries.Sampled("truth", "sin 2πx", SeriesKind.Level, 0, 1, ScriptFunction.Of("./_content/ExGrid.DemoPages/script-formats.js", "sinTwoPi")) with { FromZero = false },
         Fit.Polynomial(CurveX, CurveT, m).Series("fit", $"M = {m}"),
     ]));
 

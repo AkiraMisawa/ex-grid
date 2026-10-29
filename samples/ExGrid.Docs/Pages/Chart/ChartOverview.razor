@@ -94,15 +94,17 @@
 
     <DocsSection Title="A chart drawn in the browser">
         <p>
-            Blazor's ExChart is moving onto the same TypeScript core as React's, as ExGrid and ExPivot are.
+            Blazor's ExChart is drawn by the same TypeScript core as React's, as ExGrid and ExPivot are.
             <code>ExChart.Script.ExChart</code> and <code>ExChart.Script.ExSurface</code> are that chart and that
-            surface, beside the ones above while the move is under way: the drawing, the tooltip, the legend, Chart
-            Filters, View as table and the turning of a surface run in the browser on both hosting models, so on Blazor
-            Server a pointer moved over the plot no longer crosses the circuit. They take the same
-            <code>ChartDefinition</code> and <code>SurfaceDefinition</code>, the same parameters and the same events,
-            and a click hands back the Row Key the point was handed in with. A <code>Spec</code> is read through its
-            <code>Sources</code> in .NET, where they are, as the Razor component reads it: each series is asked for its
-            pixels, asked again when the range narrows, and what it answers crosses to the browser as a definition.
+            surface, and every Example on this site draws them, through <code>@@using ExChart.Script</code>; the ones
+            drawn in .NET, under <code>ExChart.Components</code>, stay in the package until they are removed in this
+            release. The drawing, the tooltip, the legend, Chart Filters, View as table and the turning of a surface
+            run in the browser on both hosting models, so on Blazor Server a pointer moved over the plot never crosses
+            the circuit. They take the same <code>ChartDefinition</code> and <code>SurfaceDefinition</code>, the same
+            parameters and the same events, and a click hands back the Row Key the point was handed in with. A
+            <code>Spec</code> is read through its <code>Sources</code> in .NET, where they are: each series is asked
+            for its pixels, asked again when the range narrows, and what it answers crosses to the browser as a
+            definition.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreChart)" Mud="typeof(ScriptCoreChartMud)" Files="@(["Examples/Chart/ChartData.cs"])" />
         <p>
@@ -127,7 +129,7 @@
         <p>
             A .NET function cannot run in the browser. A series' or a surface's <code>Format</code> crosses as the
             text it writes each value the definition holds, so a value reads as your Format writes it; a decimal
-            written <code>3.30</code> stays <code>3.30</code> in the tooltip and the table. A
+            written <code>3.30</code> stays <code>3.30</code> in the tooltip and the summary. A
             <code>FormatCode</code> on an axis or a series crosses as itself, and the browser writes every value by
             it with the same reader as .NET's, ticks and a candle's change included. Where the chart would ask a
             function for a value the definition does not hold, it refuses the definition with a
@@ -142,8 +144,8 @@
             Keys, or two values of a surface axis, that would reach the browser as one value, such as
             <code>1</code> and <code>1.0m</code>, are refused too. Charting a grid's selection and the Chart Dock
             carry over too: see <a href="exchart/grid">From the grid</a>. A candle's values are written by its
-            code, or else as numbers, <code>3.3</code>, and so is every value in its CSV, where the Razor component
-            keeps a decimal's <code>3.30</code>.
+            code, or else as numbers, <code>3.3</code>, and so is every value in its CSV and under View as table,
+            which keep each value as data, where the Razor component keeps a decimal's <code>3.30</code>.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreFormatCodes)" Files="@(["Examples/Chart/ChartData.cs"])" />
         <p>

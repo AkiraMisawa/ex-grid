@@ -1,5 +1,5 @@
 @page "/chart-showcase/fx-volatility"
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.MudBlazor
 @using global::ExChart.Showcases
 
@@ -11,7 +11,7 @@
    it with MudBlazor's Chrome. *@
 <DemoChromeAssets Name="@Chrome" Paper="true" Dark="DemoChrome.IsDark(Scheme)">
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
         @if (DemoChrome.IsMud(Chrome))
         {
             <MudExChartStylesheet />

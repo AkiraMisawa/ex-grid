@@ -31,6 +31,10 @@
                 <code>0.3</code>, as sorting and filtering already compared it. The value itself is not rounded: the copy a
                 spreadsheet reads back carries it whole, and the editor opens on it whole, so an edit committed
                 unchanged writes back the same number. A date shows one ISO form by its type.
+                A <code>decimal</code> crosses to the browser as the number that holds it exactly, up to 15 significant
+                digits; one with more and a fraction, such as a division's 28 digits, is refused with a
+                <code>NotSupportedException</code> that names its column, rather than shown and summed as another
+                number. Round it in your row, as the Blotter does its change, <code>Math.Round(last / close - 1, 6)</code>.
             </li>
             <li>
                 <strong><code>align</code> and <code>headerAlign</code></strong> override the type's alignment.

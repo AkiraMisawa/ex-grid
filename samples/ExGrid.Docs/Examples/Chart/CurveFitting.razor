@@ -1,6 +1,7 @@
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExChart.Engine
+@using ExGrid.Data
 @using ExChart.Engine.Fitting
 
 <p>
@@ -19,12 +20,15 @@
     private static readonly double[] X = [.. Enumerable.Range(0, 10).Select(i => i / 9.0)];
     private static readonly double[] T = [0.174, 0.688, 0.584, 1.129, 0.255, -0.341, -0.603, -1.240, -0.826, -0.140];
 
+    // The curve the points came from, asked at every pixel in the browser, by the site's js/chart-formats.js.
+    private static readonly ScriptFunction Truth = ScriptFunction.Of("./js/chart-formats.js", "sinTwoPi");
+
     // One definition per degree, made once: the training points, the curve they came from, and the
     // least-squares polynomial, whose Note gives its degree, R² and n.
-    private static readonly Dictionary<int, ChartDefinition> Curves = Degrees.ToDictionary(m => m, m => new ChartDefinition(ChartAxis.Numbers("x") with { Format = x => x.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) },
+    private static readonly Dictionary<int, ChartDefinition> Curves = Degrees.ToDictionary(m => m, m => new ChartDefinition(ChartAxis.Numbers("x") with { FormatCode = "0.##" },
     [
         ChartSeries.Of("points", "Training points", SeriesKind.Observation, X.Select((x, i) => new ChartPoint(x, ChartValue.Of(T[i])))),
-        ChartSeries.Sampled("truth", "sin 2πx", SeriesKind.Level, 0, 1, x => ChartValue.Of(Math.Sin(2 * Math.PI * x))) with { FromZero = false },
+        ChartSeries.Sampled("truth", "sin 2πx", SeriesKind.Level, 0, 1, Truth) with { FromZero = false },
         Fit.Polynomial(X, T, m).Series("fit", $"M = {m}"),
     ]));
 

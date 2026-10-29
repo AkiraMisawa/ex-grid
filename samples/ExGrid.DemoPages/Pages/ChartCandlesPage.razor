@@ -1,6 +1,6 @@
 @page "/chart-candles"
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
 
 <DemoNav />
@@ -11,7 +11,7 @@
    and writes the last event raised under the chart (ADR-0272). *@
 <DemoChromeAssets>
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
     </Head>
 </DemoChromeAssets>
 
@@ -85,11 +85,10 @@
 
     private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
     [
-        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
-        Average with { Format = Price },
+        ChartSeries.Candles("index", "Index", Bars) with { FormatCode = "#,##0.00" },
+        Average with { FormatCode = "#,##0.00" },
     ]);
 
-    private static string Price(object v) => Convert.ToDecimal(v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture);
 
     // Weekdays from 2016-01-04, a geometric walk from a fixed seed; 2020-03-16 falls 12%.
     private static List<PriceBar> Index()

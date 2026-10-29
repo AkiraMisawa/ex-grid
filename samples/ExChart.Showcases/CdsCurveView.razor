@@ -22,10 +22,10 @@
 </div>
 @if (Mud)
 {
-    <MudChartDock @ref="_dock" TRow="CdsRow" Bridge="_bridge" Placement="ChartDockPlacement.Right" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+    <MudChartDock @ref="_dock" ScriptCore="true" TRow="CdsRow" Bridge="_bridge" Placement="ChartDockPlacement.Right" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
         <MudExGridPaper Elevation="1">
-            <ExGrid @ref="_bridge.Grid" TRow="CdsRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                    HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+            <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                    HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                     ViewportHeight="GridHeight" ViewportWidth="GridWidth" Chrome="MudChartChrome.GridChrome" />
         </MudExGridPaper>
     </MudChartDock>
@@ -33,8 +33,8 @@
 else
 {
     <div class="xs-panel">
-        <ExGrid @ref="_bridge.Grid" TRow="CdsRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+        <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                 ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
     </div>
     <ChartTabs @ref="_tabs" TRow="CdsRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="cds-curve" />
@@ -72,6 +72,8 @@ else
 
     private int _shift = Array.IndexOf(CdsData.Shifts, 0);
     private IReadOnlyList<CdsRow> _rows = CdsData.Curves[Array.IndexOf(CdsData.Shifts, 0)];
+    // A keyed source the shift replaces, so the grid's Sort, Filter and selection outlive it.
+    private readonly InMemoryGridSource<CdsRow> _source = GridSource.From(CdsData.Curves[Array.IndexOf(CdsData.Shifts, 0)], KeyOf);
     private GridChartBridge<CdsRow> _bridge = null!;
     private Func<ContextMenuContext<CdsRow>, IEnumerable<GridCommand>> _commands = null!;
     private MudChartDock<CdsRow>? _dock;
@@ -115,5 +117,6 @@ else
     {
         _shift = Math.Clamp(_shift + step, 0, CdsData.Shifts.Length - 1);
         _rows = CdsData.Curves[_shift];
+        _source.ReplaceAll(_rows);
     }
 }

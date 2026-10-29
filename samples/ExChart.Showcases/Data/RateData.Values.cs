@@ -10,6 +10,8 @@ namespace ExChart.Showcases.Data;
 public static partial class RateData
 {
     /// <summary>The instruments every curve is built from, in maturity order.</summary>
+    // Tenors and Years are written again in wwwroot/showcase-formats.js, which names a pillar on the chart's axis in the
+    // browser: a pillar added here is added there.
     public static readonly string[] Tenors = ["ON", "1W", "1M", "2M", "3M", "6M", "1Y", "2Y", "3Y", "4Y", "5Y", "7Y", "10Y", "12Y", "15Y", "20Y", "25Y", "30Y", "40Y", "50Y"];
 
     /// <summary>Each instrument's tenor in years, the curve's own axis.</summary>

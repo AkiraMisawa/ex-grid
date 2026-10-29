@@ -1,9 +1,9 @@
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExGrid.Chrome
 
-<ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CurveHistory.Row" Window="CurveHistory.Rows" RowKey="CurveHistory.KeyOf"
-        Columns="CurveHistory.Columns" ContextCommands="_commands" CommandLabel="Label"
+<ExGrid @ref="_bridge.ScriptGrid" TRow="CurveHistory.Row" Rows="CurveHistory.Rows"
+        Columns="CurveHistory.Columns" ContextCommands="_commands" ContextCommandLabel="Label"
         PinnedColumnCount="1" ViewportHeight="240" />
 
 <p class="docs-muted">@_refusal</p>

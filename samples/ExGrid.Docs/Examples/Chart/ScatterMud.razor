@@ -1,5 +1,5 @@
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExChart.Engine
 @using ExChart.Engine.Fitting
 @using ExChart.MudBlazor
@@ -7,7 +7,7 @@
 <MudSwitch T="bool" Value="_log" ValueChanged="SetLog" Color="Color.Primary" Label="Spread on a logarithmic axis" />
 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
     <MudExGridPaper Elevation="0" Outlined="true">
-        <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CreditNames.Name" Window="CreditNames.All" RowKey="KeyOf" Columns="Columns"
+        <ExGrid @ref="_bridge.ScriptGrid" TRow="CreditNames.Name" Rows="CreditNames.All" Columns="Columns"
                 ViewportHeight="360" ViewportWidth="300" Chrome="MudGridChrome.Default" />
     </MudExGridPaper>
     <MudExGridPaper Elevation="0" Outlined="true">
@@ -37,12 +37,12 @@
         double[] ys = [.. CreditNames.All.Select(n => n.Spread)];
         // Each point is a row: its name for the tooltip, its Row Key for a click.
         var points = CreditNames.All.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.Spread)) { Name = n.Ticker, Row = n.Ticker });
-        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00") + "x" },
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { FormatCode = "0.00\"x\"" },
         [
-            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = Bp },
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { FormatCode = "0\"bp\"" },
             // The page fits the lines; each says its method and coefficients in the Notes.
-            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = Bp },
-            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = Bp },
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { FormatCode = "0\"bp\"" },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { FormatCode = "0\"bp\"" },
         ]);
     }
 

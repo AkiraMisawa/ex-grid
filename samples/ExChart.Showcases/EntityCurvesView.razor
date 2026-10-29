@@ -23,11 +23,11 @@
 </div>
 @if (Mud)
 {
-    <MudChartDock @ref="_dock" TRow="CdsCurveRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+    <MudChartDock @ref="_dock" ScriptCore="true" TRow="CdsCurveRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
         @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
         <MudExGridPaper Elevation="1" Style="display: flex">
-            <ExGrid @ref="_bridge.Grid" TRow="CdsCurveRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                    PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+            <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsCurveRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                    PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                     ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudChartChrome.GridChrome" />
         </MudExGridPaper>
     </MudChartDock>
@@ -35,8 +35,8 @@
 else
 {
     <div class="xs-panel">
-        <ExGrid @ref="_bridge.Grid" TRow="CdsCurveRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+        <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsCurveRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                 ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
     </div>
     <ChartTabs @ref="_tabs" TRow="CdsCurveRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="cds-curves" />
@@ -82,6 +82,8 @@ else
 
     private int _shift = Array.IndexOf(CdsCurveData.Shifts, 0);
     private IReadOnlyList<CdsCurveRow> _rows = CdsCurveData.Curves[Array.IndexOf(CdsCurveData.Shifts, 0)];
+    // A keyed source the shift replaces, so the grid's Sort, Filter and selection outlive it.
+    private readonly InMemoryGridSource<CdsCurveRow> _source = GridSource.From(CdsCurveData.Curves[Array.IndexOf(CdsCurveData.Shifts, 0)], KeyOf);
     private GridChartBridge<CdsCurveRow> _bridge = null!;
     private Func<ContextMenuContext<CdsCurveRow>, IEnumerable<GridCommand>> _commands = null!;
     private MudChartDock<CdsCurveRow>? _dock;
@@ -132,5 +134,6 @@ else
     {
         _shift = Math.Clamp(_shift + step, 0, CdsCurveData.Shifts.Length - 1);
         _rows = CdsCurveData.Curves[_shift];
+        _source.ReplaceAll(_rows);
     }
 }

@@ -1,5 +1,5 @@
 @page "/chart-showcase/binomial-lattice"
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.MudBlazor
 @using global::ExChart.Showcases
 @inject NavigationManager Navigation
@@ -12,7 +12,7 @@
    with MudBlazor's Chrome; ?scheme=dark in the dark scheme, which the switch in the bar sets. *@
 <DemoChromeAssets Name="@Chrome" Paper="true" Dark="DemoChrome.IsDark(Scheme)">
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
         @if (DemoChrome.IsMud(Chrome))
         {
             <MudExChartStylesheet />

@@ -1,6 +1,6 @@
 @page "/chart-bridge"
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
 @using global::ExGrid.Chrome
 
@@ -13,7 +13,7 @@
    clicked. "Recalculate" moves every rate; "Delete the first row" removes a row the charts were made from. *@
 <DemoChromeAssets>
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
     </Head>
 </DemoChromeAssets>
 
@@ -27,14 +27,12 @@
     to its cell.
 </p>
 
-<ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CurveRow"
-        Window="_rows"
-        RowKey="KeyOf"
-        RowSequenceVersion="_version"
+<ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
+        Source="_source"
         Columns="Columns"
         HeaderGroups="Groups"
         ContextCommands="_commands"
-        CommandLabel="Label"
+        ContextCommandLabel="Label"
         PinnedColumnCount="1"
         ViewportHeight="260"
         ViewportWidth="760" />
@@ -75,11 +73,15 @@
     private static readonly Dictionary<string, double> Tenors = new() { ["y1"] = 1, ["y2"] = 2, ["y5"] = 5, ["y10"] = 10 };
 
     // Held in fields, never rebuilt per render (CLAUDE.md: a new delegate is a changed parameter).
-    private static readonly Func<CurveRow, object> KeyOf = r => r.Date;
+    // A whole number: a Row Key crosses to the browser as text, a whole number or a Guid.
+    private static readonly Func<CurveRow, object> KeyOf = r => r.Date.DayNumber;
     private static readonly Func<string, string?> Label = GridChartCommands.Label;
 
-    private IReadOnlyList<CurveRow> _rows = Enumerable.Range(0, 8).Select(i => Row(i, 0)).ToList();
-    private int _version;
+    private static readonly IReadOnlyList<CurveRow> FirstRows = [.. Enumerable.Range(0, 8).Select(i => Row(i, 0))];
+    private IReadOnlyList<CurveRow> _rows = FirstRows;
+    // Keyed by date: a recalculation replaces each row under its key and keeps the Selection, and a deleted row moves
+    // the Row Sequence Version (ADR-0141).
+    private readonly InMemoryGridSource<CurveRow> _source = GridSource.From(FirstRows, KeyOf);
     private int _recalculations;
     private string _refusal = "";
     private readonly List<(string Name, GridChart Chart)> _charts = [];
@@ -96,7 +98,7 @@
         _bridge = new GridChartBridge<CurveRow>(new GridChartDeclarations<CurveRow>
         {
             RowKey = KeyOf,
-            RowOf = key => _rows.FirstOrDefault(r => r.Date == (DateOnly)key),
+            RowOf = key => _rows.FirstOrDefault(r => r.Date.DayNumber == (int)key),
             KindOf = _ => SeriesKind.Level,
             PositionOf = column => Tenors.TryGetValue(column, out var years) ? years : null,
             PositionTitle = "Tenor (years)",
@@ -152,12 +154,13 @@
     {
         _recalculations++;
         _rows = _rows.Select(r => Row(r.Date.DayNumber - Start.DayNumber, _recalculations)).ToList();
+        _source.ReplaceAll(_rows);
     }
 
     private void DropRow()
     {
         if (_rows.Count == 0) return;
         _rows = _rows.Skip(1).ToList();
-        _version++;
+        _source.ReplaceAll(_rows);
     }
 }

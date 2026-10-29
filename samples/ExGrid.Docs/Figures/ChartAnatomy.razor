@@ -1,7 +1,7 @@
 @page "/figure/chart-anatomy"
 @layout BareLayout
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExChart.Engine
 @using ExGrid.Docs.Examples.Chart
 
@@ -30,7 +30,6 @@
 @code {
     private const double Width = 720, Height = 420;
 
-    private static string Price(object v) => Convert.ToDecimal(v, CultureInfo.InvariantCulture).ToString("N2", CultureInfo.InvariantCulture);
 
     // One Price Range, each session's open, high, low, close and volume, and the page's own 25-day average.
     private static readonly PriceBar[] Bars =
@@ -39,11 +38,11 @@
     private static readonly ChartSeries Average = ChartSeries.Of("average", "25-day average", SeriesKind.Level,
         IndexSessions.All.Select((s, i) => new ChartPoint(s.Date.DayNumber, i < 24 ? null
             : ChartValue.Of(Math.Round(IndexSessions.All.Skip(i - 24).Take(25).Average(x => x.Close), 2)))))
-        with { FromZero = false, Format = Price };
+        with { FromZero = false, FormatCode = "#,##0.00" };
 
     private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"),
     [
-        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
+        ChartSeries.Candles("index", "Index", Bars) with { FormatCode = "#,##0.00" },
         Average,
     ]);
 }

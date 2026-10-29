@@ -49,7 +49,7 @@
         },
     ]);
 
-    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)") with { Format = x => x.ToString("0.0", Invariant) + "%" },
+    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)") with { FormatCode = "0.0\"%\"" },
     [
         ChartSeries.Of("strategies", "Strategies", SeriesKind.Observation,
             IntervalData.Strategies.Select(s => new ChartPoint((double)s.Vol, s.Return) { Name = s.Name })) with

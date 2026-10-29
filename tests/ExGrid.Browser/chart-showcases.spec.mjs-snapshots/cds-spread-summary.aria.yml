@@ -1,5 +1,5 @@
 - 'img "CDS spread vs leverage. Leverage, 1.00x to 7.00x. Left axis, 0 to 2500. Names: 200 points, 1.19x to 6.19x across, 28bp to 2,400bp up. Least squares: maximum 426bp at 6.19x. Theil–Sen: maximum 298bp at 6.19x."':
-  - text: 0 500 1000 1500 2000 2500 1 2 3 4 5 6 7
+  - text: 0 500 1000 1500 2000 2500 1.00x 2.00x 3.00x 4.00x 5.00x 6.00x 7.00x
   - button "Names" [pressed]
   - button "Least squares" [pressed]
   - button "Theil–Sen" [pressed]
