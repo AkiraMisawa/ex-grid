@@ -89,6 +89,9 @@ interface Made {
     readonly root: HTMLElement;
 }
 
+// No claim is made on the Chrome's slots these tests mount.
+const noClaims = { wire: (): (() => void) => () => undefined };
+
 function made(): Made {
     const dotnet = new FakeDotNet();
     const mark = new Mark();
@@ -98,7 +101,7 @@ function made(): Made {
     const slot = document.createElement('div');
     root.append(slot);
     document.body.append(root);
-    return { dotnet, mark, order, slots: new RazorSlots(dotnet, { hold: mark.hold, order: order.order, keyboardBack: () => { root.focus(); } }), slot, root };
+    return { dotnet, mark, order, slots: new RazorSlots(dotnet, { hold: mark.hold, order: order.order, keyboardBack: () => { root.focus(); } }, noClaims), slot, root };
 }
 
 const mountOf = (slots: RazorSlots, name: 'columnMenu' | 'editorCompletion' | 'filterPanel' | 'findPanel' | 'loadingIndicator') => {

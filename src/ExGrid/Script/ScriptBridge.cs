@@ -60,6 +60,21 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     [JSInvokable]
     public void CancelWork(int number) => grid.CancelWork(number);
 
+    /// <summary>The browser numbered an event on a control of the Consumer's that claims it (ADR-0441 section 4): heard as
+    /// it arrives, ahead of the event Blazor dispatches after it, whose handler takes the number.</summary>
+    [JSInvokable]
+    public void ClaimTold(string kind, int number) => grid.ClaimTold(kind, number);
+
+    /// <summary>The dispatch of the event the browser numbered is over: heard as it arrives, as its telling was.</summary>
+    [JSInvokable]
+    public void ClaimPassed(int number) => grid.ClaimPassed(number);
+
+    [JSInvokable]
+    public Task<string> RunClaim(int number) => Calls.InOrder(() => grid.RunClaimAsync(number));
+
+    [JSInvokable]
+    public Task PopoverClosed(int opening) => Calls.InOrder(() => grid.PopoverClosed(opening));
+
     [JSInvokable]
     public Task WorkCancelledTooLate(int number, bool landed) => Calls.InOrder(() => grid.WorkCancelledTooLateAsync(number, landed));
 

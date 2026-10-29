@@ -89,6 +89,33 @@ contents' handler hands its work to the context's `InOrder(kind, work)`, which r
 Razor component set (ADR-0240 section 6), so a key typed after a click on the contents' OK reaches what the OK left,
 at any speed.
 
+How it is carried:
+
+- **The slot is drawn per opening.** Each opening is numbered in .NET, and the slot the browser mounts for it draws
+  the Consumer's fragment for that opening and nothing once another stands. The browser tells .NET when the popover
+  closes, however it closed. The contents are drawn again with each render of the page, whose state they read. The
+  context's `FocusRequest` and `FocusLastRequest` stay zero: the browser hands the keyboard to the first control and
+  wraps Tab itself. `TakeFocus` is `HandKeyboardToAsync`.
+- **A claim is told before Blazor hears its event.** The browser hears a claimed event on the contents in the capture
+  phase, after the grid's own listeners on its root, which hold or take an input first. It numbers the event below
+  zero, apart from .NET's work, tells .NET the number at once, and places a turn that asks .NET to run what the
+  handler hands. Blazor hears the event on the document after that, so the handler that hears it finds the number
+  told. `submit` and `focus`, which Blazor hears on the document in the capture phase, are heard in the window's
+  capture phase, filtered to the contents (ADR-0021's twelfth use). A handler that hears another kind than the one
+  told voids it and takes a place of its own; a telling no handler takes is voided by the next.
+- **Every claim is said passed once its dispatch is over.** Whether a handler hears the event is not the browser's to
+  see: the contents' own script may stop it before it reaches the document, and a component may stop it inside
+  Blazor's own dispatch — MudSelect stops its press there, so the handler on a box around it never runs. Either would
+  hold every input behind it. So in a task after the dispatch, which ends before any task runs, the browser tells .NET
+  the event passed, behind the dispatch on the same channel, and a telling no handler took by then is void: its turn
+  ends. A handler therefore hands its work before its first `await`; work it hands later takes a place of its own.
+  *(Rewritten in the implementing branch: the first version said an event unheard only where the window never heard
+  it bubble, and the first real-browser run held every input behind a MudSelect's press.)*
+- **The same contract on the grid.** A Template cell's content is the Consumer's markup too: its claims are heard the
+  same way, and `InOrderAsync(kind, handling)` on the grid is the context's `InOrder`. `KeyboardIn` and `KeyboardOut`
+  are told only by a product's Input Root around a grid, and this grid has none: their handling does not run, as the
+  Razor component ran none it did not tell.
+
 ### 5. The rest of the handle crosses as it is
 
 `RefreshSummaryAsync()`, `WritePointedTextAsync(text)` and `TakeBackPointedTextAsync()` call the core's

@@ -1,0 +1,67 @@
+@using global::ExGrid.Chrome
+
+<div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="ChooseDeskAsync">Choose a desk</MudButton>
+    <MudText Typo="Typo.body2" role="status">Desk: @(_desk ?? "none chosen")</MudText>
+</div>
+
+<ExGrid @ref="_grid" TRow="Position" Source="_source" Columns="_columns" Chrome="Chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@* Your own contents in the grid's popover frame. MudBlazor draws the select's list outside the grid, and the select
+   reports it through InnerPopupChanged, so Escape closes the list first and the popover after. OK and Cancel claim
+   their click, so a key typed straight after OK waits until OK's work has run, and reaches what it left. *@
+@code {
+    private RenderFragment DeskChoice(GridPopoverContext context) =>
+        @<div class="pa-3" style="min-width: 220px">
+            <MudSelect T="string" @bind-Value="_draft" Label="Desk" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                       OpenChanged="context.InnerPopupChanged">
+                @foreach (var desk in Desks)
+                {
+                    <MudSelectItem Value="@desk">@desk</MudSelectItem>
+                }
+            </MudSelect>
+            <div class="d-flex justify-end mt-2">
+                <MudButton data-ex-claims="click" Size="Size.Small" OnClick="() => InOrder(context, context.Close)">Cancel</MudButton>
+                <MudButton data-ex-claims="click" Size="Size.Small" Color="Color.Primary" OnClick="() => InOrder(context, () => Apply(context))">OK</MudButton>
+            </div>
+        </div>;
+}
+
+@code {
+    private static readonly MudGridChrome Chrome = new();
+    private static readonly string[] Desks = ["Rates", "Credit", "FX", "Equities"];
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private ExGrid<Position>? _grid;
+    private string? _desk;
+    private string _draft = Desks[0];
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity),
+    ];
+
+    private Task ChooseDeskAsync()
+    {
+        _draft = _desk ?? Desks[0];
+        return (_grid ?? throw new InvalidOperationException("The grid is not rendered yet.")).OpenPopoverAsync(DeskChoice, "Choose a desk");
+    }
+
+    private void Apply(GridPopoverContext context)
+    {
+        _desk = _draft;
+        context.Close();
+    }
+
+    // The click's work, handed to the grid in its place in the Input Order before the handler's first await.
+    private static Task InOrder(GridPopoverContext context, Action work)
+        => (context.InOrder ?? throw new InvalidOperationException("A popover context the grid did not make."))(GridInputKind.Click, () =>
+        {
+            work();
+            return Task.CompletedTask;
+        });
+}

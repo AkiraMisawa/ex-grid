@@ -358,7 +358,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private (long Number, IReadOnlyList<GridCommand> Commands)? _menu;
     // The slots the script mounted for the Chrome and for Template cells, by the number it gave each (ADR-0410
     // sections 1 and 6).
-    private readonly RazorSlotHolders _slots = new(static (name, context) => name == TemplateCellSlot.Name ? TemplateCellSlot.Of(context) : RazorSlot.ViewOf(name, context));
+    private readonly RazorSlotHolders _slots = new(static (name, context) => name switch
+    {
+        TemplateCellSlot.Name => TemplateCellSlot.Of(context),
+        PopoverSlot.Name => PopoverSlot.Of(context),
+        _ => RazorSlot.ViewOf(name, context),
+    });
     private IGridChrome? _renderedChrome;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
@@ -453,6 +458,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         ScriptColumns.Check(Columns);
         TakeScripts();
         TakePointedAt();
+        // The Consumer's popover is drawn from the page's state, which this render of the page may have changed.
+        RedrawPopover();
         if (!ReferenceEquals(Chrome, _renderedChrome))
         {
             // Another Chrome draws the slots standing, and the script wires what it drew.
@@ -627,7 +634,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.CloseElement();
         }
         builder.CloseElement();
-        _slots.Render(builder, 11, (name, view) => view is TemplateCellSlot cell ? TemplateFragment(cell) : RazorSlot.Fragment(Chrome, name, view));
+        _slots.Render(builder, 11, (name, view) => view switch
+        {
+            TemplateCellSlot cell => TemplateFragment(cell),
+            PopoverSlot popover => PopoverFragment(popover),
+            _ => RazorSlot.Fragment(Chrome, name, view),
+        });
     }
 
     /// <inheritdoc />
@@ -2122,6 +2134,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         foreach (var answering in _answers.Values.ToArray())
             answering.Cancel();
         CancelWorks();
+        VoidClaims();
         // While it attaches, the grid it makes is stopped once it is made, and the bridge let go after it.
         if (_attaching)
             return;

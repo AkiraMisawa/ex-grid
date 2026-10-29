@@ -1,0 +1,62 @@
+@using global::ExGrid.Chrome
+
+<div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 14px">
+    <button type="button" @onclick="ChooseDeskAsync">Choose a desk</button>
+    <span role="status">Desk: @(_desk ?? "none chosen")</span>
+</div>
+
+<ExGrid @ref="_grid" TRow="Position" Source="_source" Columns="_columns" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@* Your own contents in the grid's popover frame: the select is the draft, and OK and Cancel claim their click, so a key
+   typed straight after OK waits until OK's work has run, and reaches what it left. *@
+@code {
+    private RenderFragment DeskChoice(GridPopoverContext context) =>
+        @<div style="display: flex; gap: 8px; align-items: center; padding: 12px; font-size: 14px">
+            <select @bind="_draft" aria-label="Desk">
+                @foreach (var desk in Desks)
+                {
+                    <option value="@desk">@desk</option>
+                }
+            </select>
+            <button type="button" data-ex-claims="click" @onclick="() => InOrder(context, context.Close)">Cancel</button>
+            <button type="button" data-ex-claims="click" @onclick="() => InOrder(context, () => Apply(context))">OK</button>
+        </div>;
+}
+
+@code {
+    private static readonly string[] Desks = ["Rates", "Credit", "FX", "Equities"];
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private ExGrid<Position>? _grid;
+    private string? _desk;
+    private string _draft = Desks[0];
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity),
+    ];
+
+    private Task ChooseDeskAsync()
+    {
+        _draft = _desk ?? Desks[0];
+        return (_grid ?? throw new InvalidOperationException("The grid is not rendered yet.")).OpenPopoverAsync(DeskChoice, "Choose a desk");
+    }
+
+    private void Apply(GridPopoverContext context)
+    {
+        _desk = _draft;
+        context.Close();
+    }
+
+    // The click's work, handed to the grid in its place in the Input Order before the handler's first await.
+    private static Task InOrder(GridPopoverContext context, Action work)
+        => (context.InOrder ?? throw new InvalidOperationException("A popover context the grid did not make."))(GridInputKind.Click, () =>
+        {
+            work();
+            return Task.CompletedTask;
+        });
+}

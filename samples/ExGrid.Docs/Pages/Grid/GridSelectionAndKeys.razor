@@ -227,8 +227,9 @@
             a letter on a filter's value list, a filter or Find submitted with Enter, and Tab wrapping round a
             popover are numbered like the keys the grid answers, under the built-in Chrome and the MudBlazor Wrapper
             alike, so the keys after them wait for their answer rather than for a clock. Inside a popover of your own
-            (<code>OpenPopoverAsync</code>) the keyboard is your contents' to move: the keys after one of your items
-            wait until it has moved, until DOM focus has left your popover, or until the grid is gone.
+            (<code>OpenPopoverAsync</code>) the keys after a control that names its event in
+            <code>data-ex-claims</code> wait until its handler's work, handed to the context's <code>InOrder</code>, has
+            run (see Appearance, "A popover of your own").
         </p>
         <p>
             The mark covers what the grid's own keyboard and pointer handling takes. Text typed into a field — the Cell
