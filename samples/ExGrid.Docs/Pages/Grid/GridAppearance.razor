@@ -339,28 +339,20 @@
             date picker and no date library.
         </p>
         <p>
-            <strong>Your own control in the grid's order.</strong> A handler that changes what the keys after it act on —
-            a button of your Chrome, a control in your popover, a command beside the grid — can run in its place among
-            the keys and presses through <code>InOrderAsync(kind, handling)</code> on the grid, or the
-            <code>InOrder</code> delegate on a popover's <code>GridPopoverContext</code>, with the
-            <code>GridInputKind</code> of the event it answers. Marked with <code>data-ex-claims</code>, a control inside
-            the grid's markup — your popover's contents in the grid's frame, your Chrome's controls — has its event
-            numbered as it happens, and <code>handling</code> runs after every input made before it and before every one
-            made after it; one with no mark, or outside the grid, runs after every input the grid has received so far.
-            <code>KeyboardIn</code> and <code>KeyboardOut</code> are the exception: they run only when the grid tells
-            the keyboard crossing the edge of a product's Input Root — the element marked
-            <code>data-ex-input-root</code> around the grid, naming <code>focusin</code> and <code>focusout</code> in its
-            own <code>data-ex-claims</code> — and a call anywhere else does nothing, since a focus change inside that
-            element is no input and the grid cannot tell the two apart. ExSheet puts its toolbar, its Sheet Tabs,
-            Format Cells and the keyboard crossing the Sheet's edge in its grid's order this way. A control of yours
-            that a hand-off should reach without scrolling, such as the next tab of a tab list, takes the keyboard
-            through <code>HandKeyboardToAsync(control, preventScroll: true)</code>.
+            <strong>Your own control in the grid's order.</strong> The parts of your Chrome drawn in Razor stand inside
+            the grid the browser draws, and what their controls do is wired there, on your markup, by the part's kind:
+            a press on a menu's command or a filter's OK is taken in its place among the keys and presses as it happens,
+            and nothing a key means waits on the circuit. A control of yours that a hand-off should reach without
+            scrolling, such as the next tab of a tab list, takes the keyboard through
+            <code>HandKeyboardToAsync(control, preventScroll: true)</code>.
         </p>
         <p>
-            <strong>Work of your own in the grid's order.</strong> A command no control numbered — a button outside the
-            grid, a service's call — takes a place of its own through <code>InOrderAsync(handling)</code>: after every
-            input the grid has received, and the inputs made after it wait until it has finished. It never takes a
-            number told for a control's event. Work that may take a while and that the user may cancel, such as reading a
+            <strong>Work of your own in the grid's order.</strong> A command of yours outside the grid — a button, a
+            service's call — takes a place of its own through <code>InOrderAsync(handling)</code>: after every
+            input the grid has received, and the inputs made after it wait until it has finished; work placed from
+            inside it runs at once, inside it. Called from a handler of the grid's own events it runs at once, as part of
+            the event: an edit, a paste, a fill, a declared key, a Replace All, a marking gesture or a Context Menu's
+            command holds the inputs after it until its handler ends. Work that may take a while and that the user may cancel, such as reading a
             file, goes through <code>CancellableInOrderAsync(handling, cancelledTooLate)</code>. From the call until
             the work ends — waiting behind earlier inputs or running — the Settled Stamp names it
             (<code>data-ex-work-placed</code>), no longer says that an Escape leaves, and the Settled Mark is off; once
@@ -374,9 +366,12 @@
             synchronously whatever the token says. An Escape that came too late runs <code>cancelledTooLate(true)</code>
             in its own turn, and one that found the work already over otherwise <code>cancelledTooLate(false)</code>,
             for you to say so. The task answers whether the work ran to its end. Saying what the work did is yours: the
-            grid says nothing of it. Both may be called from any thread; one cancellable work cannot run inside
-            another, and disposing of the grid cancels the work under way. ExSheet opens a file this way
-            (<a href="exsheet/xlsx">Open and save .xlsx</a>).
+            grid says nothing of it. Cancellable work is placed from outside a handler of the grid's events, which no
+            Escape typed after the event could reach, and is refused by name from one, and from inside other cancellable
+            work, where work you place runs at once as it does from a handler; disposing of the grid cancels the work
+            under way. <code>await grid.SelectionAfterInputsAsync()</code> reads the Selection in such a turn. Each
+            crosses to the browser, which holds the order, and asks .NET to run the work in its turn. ExSheet opens a
+            file this way (<a href="exsheet/xlsx">Open and save .xlsx</a>).
         </p>
         <p>
             Under React the two are <code>inOrder(handling)</code> and
@@ -395,45 +390,12 @@
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through
-            <code>HandKeyboardToFrameAsync</code> and gives it back through <code>ReturnKeyboardAsync</code>, with the
-            frame's element and the keys it heard on the way. Await that return before removing your frame or
-            clearing its queue: completion means the grid has collected those keys. A popover of yours in the grid's frame
-            (<code>OpenPopoverAsync</code>) can ask to hear Escape close it, and hand the keyboard on from there. Its
-            contents answer the context's <code>FocusRequest</code> and <code>FocusLastRequest</code> by handing the
-            control to the context's <code>TakeFocus</code>, not with their own <code>FocusAsync</code>: a control the
-            user presses as the popover appears keeps the keyboard, and the opening focus that lands after it is not
-            taken. Over
-            Blazor Server each of these lands a round trip late, and the grid holds the keys typed meanwhile and
-            hands them on, in order, to where the keyboard lands. ExSheet's Sheet Toolbar is built this way. A dialog
-            of yours with a grid inside, closing on the Escape that raises the grid's <code>OnLeave</code>, calls
-            <code>PassKeysOutAsync</code> there: the keys typed after the Escape go out to your dialog, for it to hand
-            on with the keyboard, as ExPivot's Show Details dialog does.
-            A drawn control takes the held keyboard through <code>HandKeyboardToAsync</code>. A design-system
-            control that exposes only its contents' container may pass that container: its first enabled text
-            field takes the keyboard with its value selected, so held typing replaces the initial value.
-            For a change-bound text field, an Enter, held or typed after the text is shown, or leaving the field commits the held text once.
-            A control the user already chose keeps the keyboard. More Colours in ExSheet's MudBlazor Format Cells
-            uses this to start in HEX.
-        </p>
-        <p>
-            <strong>A surface drawn outside the grid joins its order while it is open.</strong> A design system draws a
-            dialog under its provider and a popover at the page's body, outside the element marked
-            <code>data-ex-input-root</code>. <code>JoinSurfaceAsync(element, around, escape)</code> puts such a surface in
-            the grid's order until you dispose of what it returns, or the surface leaves the page: the surface is
-            <code>element</code>, or the nearest element around it that the CSS selector <code>around</code> matches — a
-            <code>MudDialog</code>'s <code>[role="dialog"]</code>, which your content gets no reference to. Joined, its
-            claimed clicks, presses, submissions and keys are numbered and handled in their place, the keyboard standing on
-            it counts as the grid's, so a hand-on from it is granted, and every key typed in it while an earlier input is
-            answered is held and handed on, in order, to where that input left the keyboard. A claim can name one key,
-            <code>data-ex-claims="keydown:Enter keydown:Space"</code>, and on a joined surface it is told after the controls
-            inside have heard the key, so a key a control keeps, Escape closing a dropdown's list, reaches no claim. An
-            Escape no control claims or keeps is the surface's: the grid runs <code>escape</code> in that Escape's turn.
-            Join before the surface takes the keyboard. A dialog that gives the keyboard back, as it closes, to whatever
-            held it as it opened can have it wait first on an empty element of yours, marked
-            <code>data-ex-claims=""</code>: <code>HandKeyboardToFrameAsync(element)</code> tells the hand-off and puts the
-            keyboard there, and the keys typed on it go to the control that next takes the keyboard. ExSheet's Format
-            Cells under the MudBlazor Chrome is built this way (<a href="exsheet/formatting#format-cells">Cell formatting</a>,
-            the MudBlazor switch of its Example).
+            <code>HandKeyboardToAsync(control)</code> and gives it back through <code>ReturnKeyboardAsync(from)</code>,
+            with the frame's element. Each is granted only while the keyboard is still the grid's, or on that frame, so
+            a control the user has moved to meanwhile keeps it, whatever the round trip took. A design-system control
+            that exposes only its contents' container may pass that container: its first enabled text field takes the
+            keyboard with its value selected, or else its first enabled control. Keys typed on your frame before the
+            hand-back lands are your frame's: the grid holds no key typed outside its own root.
         </p>
     </DocsSection>
 

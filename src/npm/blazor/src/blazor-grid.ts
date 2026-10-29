@@ -9,11 +9,11 @@ import {
     type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
     type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
-    type SummaryFigure, type TemporalLike, findMatches, textOf,
+    type SummaryFigure, type TemporalLike, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
-    slotHostOptionsOf, WireMetrics, type DotNetCalls, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
+    slotHostOptionsOf, WireMetrics, type DotNetCalls, type WireHeld, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
 import { InputNumbers, LostCall } from './input-numbers';
 import { DotNetSource, type DotNetHandle, type SummarizeOf, type WireSourceTraits, type WireState } from './dotnet-source';
@@ -144,8 +144,52 @@ export interface BlazorGrid {
     /** .NET found the numbered inputs `first` to `last` never arrived, sent while the Server circuit was down (ADR-0240
      * section 11): what waits on them ends, and the user is told in `words`. */
     inputsLost(first: number, last: number, words: string): void;
+    /** The view as the grid holds it now (ADR-0331, ADR-0441 section 1), what .NET sent before taken in first: a
+     * {@link WireView}, kept under its number for .NET to hand back, or held where too large for a message. `released`
+     * are the numbers of the views .NET no longer holds. */
+    readView(released: readonly number[]): WireView | WireHeld;
+    /** Shows a view .NET hands back, or rows never shown, when the grid takes the version it names: a {@link WireShownView}. */
+    showView(json: string): void;
+    /** The open edit's text, or null, what .NET sent before taken in first (ADR-0441 section 2). */
+    readEditText(): string | null | WireHeld;
+    /** Places .NET's work `work` in the Input Order, inside .NET's work `within` while that runs (ADR-0441 section 3):
+     * in its turn .NET is asked to run it. Settles once it has; fails where it failed. */
+    inOrder(work: number, within: number | null): Promise<boolean>;
+    /** As `inOrder`, and an Escape cancels it (ADR-0240 section 12): true once it landed, false where it was cancelled
+     * or never ran. */
+    cancellableInOrder(work: number, within: number | null): Promise<boolean>;
+    /** The Selection once every input received before the call is answered (ADR-0441 section 3), or null where the
+     * grid went first. */
+    selectionAfterInputs(within: number | null): Promise<unknown>;
+    /** The Selection now, what .NET sent before taken in first: for a turn that holds the inputs after it, an event's
+     * handler or cancellable work (ADR-0441 section 3). */
+    readSelection(): unknown;
+    /** Asks the Selection Summary again (ADR-0130). */
+    refreshSummary(): void;
+    /** Writes text into the open edit as Point writes a Reference (ADR-0058). */
+    writePointedText(text: string): boolean;
+    /** Takes back what `writePointedText` wrote last (ADR-0058). */
+    takeBackPointedText(): boolean;
     /** Stops the grid and empties its element. */
     dispose(): void;
+}
+
+/** A view the grid read, as .NET reads it (ADR-0441 section 1): the number the bridge keeps it under, and what it
+ * holds. */
+export interface WireView {
+    readonly number: number;
+    readonly rowSequenceVersion: number;
+    readonly selection: unknown;
+    readonly scrollTopPx: number;
+    readonly scrollLeftPx: number;
+}
+
+/** A view .NET hands back: one the bridge keeps, by its number, or none for rows never shown, under the version that
+ * brings the rows, with a place to select in place of its Selection. */
+export interface WireShownView {
+    readonly number: number | null;
+    readonly rowSequenceVersion: number;
+    readonly place: ViewPlace | null;
 }
 
 /** What `attach` is handed once: the parameters, what the source is, and its state then. */
@@ -354,6 +398,36 @@ export function attach(
         throw error;
     }
     made.grid = grid;
+    // Once .NET has let go of the bridge, nothing is told to it.
+    let stopped = false;
+    // The views .NET read, by the number each crossed under: the core knows a view by the object it handed out
+    // (ADR-0441 section 1).
+    const views = new Map<number, GridViewRead>();
+    let viewsRead = 0;
+    // The turns of .NET's work while it runs, by its number: work .NET places from inside it runs there.
+    const turns = new Map<number, GridTurn>();
+    const placeOf = (within: number | null): Pick<GridHandle<BlazorRow>, 'inOrder' | 'cancellableInOrder'> => {
+        if (within === null) return grid;
+        const turn = turns.get(within);
+        if (turn === undefined) throw new Error(`Internal: .NET placed work inside its work ${String(within)}, which holds no turn.`);
+        return turn;
+    };
+    // .NET's work in its turn: .NET runs it and says how it ended; a failure's own exception stays in .NET, which throws
+    // it from its call.
+    // A cancel .NET saw after an Escape aborted `signal` is the signal's, as the core reads one; one it saw otherwise,
+    // the grid going, ends the work as cancelled there.
+    const runWork = async (work: number, signal?: AbortSignal): Promise<void> => {
+        const ended = await dotnet.invokeMethodAsync('RunWork', work);
+        if (ended === 'landed') return;
+        if (ended === 'failed') throw new Error(`.NET's work ${String(work)} failed.`);
+        if (ended !== 'cancelled') throw new TypeError(`Internal: .NET ended its work as ${JSON.stringify(ended)}.`);
+        signal?.throwIfAborted();
+        throw new Error(`.NET's work ${String(work)} was cancelled there.`);
+    };
+    // An Escape names cancellable work while the core holds what says it too late: once the core lets that go, no
+    // Escape can, and .NET lets the work go.
+    const workForgotten = new FinalizationRegistry<number>(work => { if (!stopped) void dotnet.invokeMethodAsync('ForgetWork', work); });
+    const answer = <T>(value: T): T | WireHeld => holding.crossing(value) ?? value;
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
     const declared = init.options.pointedAt;
     const leaveScope = declared === undefined ? undefined : awaitPointingScope(declared.scope, scope => {
@@ -375,6 +449,81 @@ export function attach(
         },
         slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
         take: (number: number) => holding.take(number),
+        readView: (released: readonly number[]) => {
+            for (const number of released) views.delete(number);
+            // .NET sent the source's state before it asked: the view is read with it.
+            gate.flush();
+            const view = grid.readView();
+            viewsRead += 1;
+            views.set(viewsRead, view);
+            return answer({
+                number: viewsRead, rowSequenceVersion: view.rowSequenceVersion, selection: wireSelection(view.selection),
+                scrollTopPx: view.scrollTopPx, scrollLeftPx: view.scrollLeftPx,
+            });
+        },
+        showView: (text: string) => {
+            const shown = parsed<WireShownView>(text);
+            const place = shown.place === null ? undefined : shown.place;
+            if (shown.number === null) {
+                grid.showNewView(shown.rowSequenceVersion, place);
+                return;
+            }
+            const view = views.get(shown.number);
+            if (view === undefined) throw new Error(`Internal: .NET handed back the view ${String(shown.number)}, which it had let go.`);
+            grid.showViewWith(view, shown.rowSequenceVersion, place);
+        },
+        readEditText: () => {
+            gate.flush();
+            const text = grid.readEditText();
+            // No edit open crosses as JSON's null, which .NET reads as none.
+            return answer(text === undefined ? null : text);
+        },
+        inOrder: async (work: number, within: number | null) => {
+            await placeOf(within).inOrder(async turn => {
+                turns.set(work, turn);
+                try {
+                    await runWork(work);
+                } finally {
+                    turns.delete(work);
+                }
+            });
+            return true;
+        },
+        cancellableInOrder: (work: number, within: number | null) => {
+            const tooLate = (landed: boolean): void => { if (!stopped) void dotnet.invokeMethodAsync('WorkCancelledTooLate', work, landed); };
+            const cancel = (): void => { if (!stopped) void dotnet.invokeMethodAsync('CancelWork', work); };
+            workForgotten.register(tooLate, work);
+            return placeOf(within).cancellableInOrder(async signal => {
+                signal.addEventListener('abort', cancel, { once: true });
+                try {
+                    await runWork(work, signal);
+                } finally {
+                    signal.removeEventListener('abort', cancel);
+                }
+            }, tooLate);
+        },
+        selectionAfterInputs: async (within: number | null) => {
+            let read: GridSelection | undefined;
+            await placeOf(within).inOrder(() => { read = grid.readView().selection; });
+            // The grid went before the turn came: nothing was read.
+            return answer(read === undefined ? null : wireSelection(read));
+        },
+        readSelection: () => {
+            gate.flush();
+            return answer(wireSelection(grid.readView().selection));
+        },
+        refreshSummary: () => {
+            gate.flush();
+            grid.refreshSummary();
+        },
+        writePointedText: (text: string) => {
+            gate.flush();
+            return grid.writePointedText(text);
+        },
+        takeBackPointedText: () => {
+            gate.flush();
+            return grid.takeBackPointedText();
+        },
         inputsLost: (first: number, last: number, words: string) => {
             if (!Number.isInteger(first) || !Number.isInteger(last) || first > last || typeof words !== 'string') {
                 throw new TypeError(`Internal: .NET named the inputs ${String(first)} to ${String(last)} lost, in ${JSON.stringify(words)}.`);
@@ -384,6 +533,7 @@ export function attach(
             if (numbers.lose(lost, words) && words !== '') grid.announce(words);
         },
         dispose: () => {
+            stopped = true;
             hearSent(false);
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();

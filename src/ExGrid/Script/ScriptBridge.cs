@@ -51,6 +51,21 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     [JSInvokable]
     public void CancelAnswer(long number) => grid.CancelAnswer(number);
 
+    /// <summary>The browser reached the turn of work .NET placed in its Input Order (ADR-0441 section 3). Made in the order
+    /// it arrived, never behind the turns of the grid's events: an event's handler may be awaiting it.</summary>
+    [JSInvokable]
+    public Task<string> RunWork(int number) => Calls.InOrder(() => grid.RunWorkAsync(number));
+
+    /// <summary>An Escape cancelled work .NET placed; heard as it arrives, ahead of the calls before it.</summary>
+    [JSInvokable]
+    public void CancelWork(int number) => grid.CancelWork(number);
+
+    [JSInvokable]
+    public Task WorkCancelledTooLate(int number, bool landed) => Calls.InOrder(() => grid.WorkCancelledTooLateAsync(number, landed));
+
+    [JSInvokable]
+    public Task ForgetWork(int number) => Calls.InOrder(() => grid.ForgetWork(number));
+
     [JSInvokable]
     public Task NeedRange(int generation, int start, int count) => Calls.InOrder(() => grid.NeedRangeAsync(generation, start, count));
 

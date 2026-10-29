@@ -2,7 +2,7 @@ import type { CellPosition } from '../selection/cell';
 import type { SelectionRange } from '../selection/range';
 import { browserReports } from './browser-reports';
 import type { GridPopoverContext } from './consumer-popover';
-import { GridView, type GridOptions, type GridTurn, type GridViewRead } from './grid-view';
+import { GridView, type GridOptions, type GridTurn, type GridViewRead, type ViewPlace } from './grid-view';
 
 /** A grid drawn into an element, handed back by {@link createGrid}. */
 export interface GridHandle<Row> {
@@ -32,13 +32,15 @@ export interface GridHandle<Row> {
      * handed later replaces one not yet taken; a Selection that does not fit the rows then shown is dropped. An edit
      * open as another set's view is taken stays open with the rows it was opened among, away (ADR-0331 §5): its editor
      * holds the keyboard unseen, the Formula Bar shows its text, Point points at the rows shown, and its commit raises
-     * the Edit Intent with the row it was opened on; its own set's view handed back brings it back over its cell.
+     * the Edit Intent with the row it was opened on; its own set's view handed back brings it back over its cell. With
+     * `place`, that range and its Focus are selected in place of the view's Selection, where they fit, and the Focus is
+     * revealed from the view's offsets.
      */
-    showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
+    showViewWith(view: GridViewRead, rowSequenceVersion: number, place?: ViewPlace): void;
     /** Shows rows the grid holds no view of, a Sheet shown for the first time, as `showViewWith` shows a view it read:
-     * scrolled to the start, with `place` selected where it is given and fits, nothing selected otherwise. They are a
-     * set of their own, which an open edit stays away from (ADR-0331 §5). */
-    showNewView(rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }): void;
+     * scrolled to the start, with `place` selected and revealed where it is given and fits, nothing selected otherwise.
+     * They are a set of their own, which an open edit stays away from (ADR-0331 §5). */
+    showNewView(rowSequenceVersion: number, place?: ViewPlace): void;
     /** The open edit's text as the grid holds it, or undefined while no edit is open: what a Consumer's own key is
      * pressed over (ADR-0331 §5). */
     readEditText(): string | undefined;
@@ -170,8 +172,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         readView: () => view.readView(),
         writePointedText: (text: string) => view.writePointedText(text),
         takeBackPointedText: () => view.takeBackPointedText(),
-        showViewWith: (state: GridViewRead, rowSequenceVersion: number) => { view.showViewWith(state, rowSequenceVersion); },
-        showNewView: (rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }) => {
+        showViewWith: (state: GridViewRead, rowSequenceVersion: number, place?: ViewPlace) => { view.showViewWith(state, rowSequenceVersion, place); },
+        showNewView: (rowSequenceVersion: number, place?: ViewPlace) => {
             view.showNewView(rowSequenceVersion, place);
         },
         readEditText: () => view.readEditText(),

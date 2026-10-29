@@ -160,6 +160,26 @@ export interface GridViewRead {
     readonly scrollLeftPx: number;
 }
 
+/** A range and its Focus, selected with rows a view brings (ADR-0331): `showViewWith`'s and `showNewView`'s place. */
+export interface ViewPlace {
+    /** The range selected. */
+    readonly range: SelectionRange;
+    /** The Focus, inside `range`. */
+    readonly focus: CellPosition;
+}
+
+// A place a Consumer hands is refused by name where it holds no cell, or its Focus lies outside it.
+function checkPlace({ range, focus }: ViewPlace): void {
+    if (!Number.isInteger(range.topRow) || !Number.isInteger(range.leftColumn) || range.topRow < 0 || range.leftColumn < 0
+        || !Number.isInteger(range.rowCount) || !Number.isInteger(range.columnCount) || range.rowCount < 1 || range.columnCount < 1) {
+        throw new RangeError('A range starts at row and column 0 or after and holds a cell at least (ADR-0050).');
+    }
+    if (!Number.isInteger(focus.row) || !Number.isInteger(focus.column)
+        || focus.row < range.topRow || focus.row > bottomRow(range) || focus.column < range.leftColumn || focus.column >= range.leftColumn + range.columnCount) {
+        throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
+    }
+}
+
 /**
  * A labelled rectangle over adjacent columns, in a tier above the header row (ADR-0032): colspan and rowspan
  * without a column tree. Its members are named, as a set: the painted order is the columns' own.
@@ -1863,7 +1883,7 @@ export class GridView<Row> {
     // version leaves (ADR-0331). A view of rows never shown (showNewView) brings a set of its own.
     readonly #viewsRead = new WeakMap<GridViewRead, { readonly selection: Selection; readonly set: number }>();
     #viewAhead: {
-        readonly selection: Selection | { readonly range: SelectionRange; readonly focus: CellPosition } | undefined; readonly set: number | undefined;
+        readonly selection: Selection | ViewPlace | undefined; readonly set: number | undefined;
         readonly version: number; readonly topPx: number; readonly leftPx: number;
     } | undefined;
     // The set of rows shown, by a number the grid gives each set a view brings in, and the numbers given so far. Rows
@@ -3439,6 +3459,9 @@ export class GridView<Row> {
                     if (shown.ranges.every(fits)) this.#held = HeldSelection.of(version, shown);
                 } else if (fits(shown.range)) {
                     this.#held = HeldSelection.of(version, Selection.empty.place(shown.range, shown.focus, extent));
+                    // A place handed with the rows is gone to, as a placement among the rows shown reveals its Focus.
+                    this.#revealOwed = { target: shown.focus, extending: undefined, rowStart: false, stepRows: 0 };
+                    this.#revealHeaderOwed = undefined;
                 }
             }
             // The offsets come back either way: the browser keeps them inside the rows shown.
@@ -6900,13 +6923,18 @@ export class GridView<Row> {
      * version it brings them with, as it brings them: the grid takes both in its next pass. A view
      * handed later replaces one not yet taken; one whose version the grid never takes is never shown, and a Selection
      * that does not fit the rows then shown is dropped, as a new version drops any, while the offsets still come back.
+     * With `place`, that range and its Focus are selected in place of the view's Selection, where they fit, and the
+     * Focus is revealed from the view's offsets: a place among the rows the Consumer brings, handed with them.
      */
-    showViewWith(view: GridViewRead, rowSequenceVersion: number): void {
+    showViewWith(view: GridViewRead, rowSequenceVersion: number, place?: ViewPlace): void {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
         const read = this.#viewsRead.get(view);
         if (read === undefined) throw new TypeError('A view handed back is one this grid read with readView (ADR-0331).');
         if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
-        this.#viewAhead = { selection: read.selection, set: read.set, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx };
+        if (place !== undefined) checkPlace(place);
+        this.#viewAhead = {
+            selection: place ?? read.selection, set: read.set, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx,
+        };
         this.#invalidate();
     }
 
@@ -6914,22 +6942,13 @@ export class GridView<Row> {
      * Shows rows this grid holds no view of, a Sheet shown for the first time, once the grid takes rows under
      * `rowSequenceVersion`, as {@link GridView.showViewWith} shows a view it read (ADR-0331): scrolled to the start,
      * with `place` selected where it is given and fits those rows, and nothing selected otherwise. They are rows of
-     * their own: an edit open as they are taken stays open with the rows it was opened among, away (ADR-0331 §5).
+     * their own: an edit open as they are taken stays open with the rows it was opened among, away (ADR-0331 §5). A
+     * place selected is revealed.
      */
-    showNewView(rowSequenceVersion: number, place?: { readonly range: SelectionRange; readonly focus: CellPosition }): void {
+    showNewView(rowSequenceVersion: number, place?: ViewPlace): void {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
         if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
-        if (place !== undefined) {
-            const { range, focus } = place;
-            if (!Number.isInteger(range.topRow) || !Number.isInteger(range.leftColumn) || range.topRow < 0 || range.leftColumn < 0
-                || !Number.isInteger(range.rowCount) || !Number.isInteger(range.columnCount) || range.rowCount < 1 || range.columnCount < 1) {
-                throw new RangeError('A range starts at row and column 0 or after and holds a cell at least (ADR-0050).');
-            }
-            if (!Number.isInteger(focus.row) || !Number.isInteger(focus.column)
-                || focus.row < range.topRow || focus.row > bottomRow(range) || focus.column < range.leftColumn || focus.column >= range.leftColumn + range.columnCount) {
-                throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
-            }
-        }
+        if (place !== undefined) checkPlace(place);
         this.#viewAhead = { selection: place, set: undefined, version: rowSequenceVersion, topPx: 0, leftPx: 0 };
         this.#invalidate();
     }

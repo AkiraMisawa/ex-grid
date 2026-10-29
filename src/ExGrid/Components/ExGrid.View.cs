@@ -2,39 +2,6 @@ using ExGrid.Selection;
 
 namespace ExGrid.Components;
 
-/// <summary>
-/// What a reader of the grid looks at: the Selection, with the Row Sequence Version its positions are
-/// written in, and where the rows and columns are scrolled to. A Consumer that shows several sets of
-/// rows in one grid, one at a time — ExSheet's Sheets behind their tabs (ADR-0331) — keeps each set's
-/// view with <see cref="ExGrid{TRow}.ReadView"/> and hands it back with
-/// <see cref="ExGrid{TRow}.ShowViewWith(GridView)"/> when that set is shown again.
-/// </summary>
-/// <param name="RowSequenceVersion">The Row Sequence Version the Selection's positions are written in.</param>
-/// <param name="Selection">The Selection.</param>
-/// <param name="ScrollTopPx">The scroller's vertical offset, in pixels.</param>
-/// <param name="ScrollLeftPx">The scroller's horizontal offset, in pixels.</param>
-public readonly record struct GridView(int RowSequenceVersion, GridSelection Selection, double ScrollTopPx, double ScrollLeftPx)
-{
-    /// <summary>The grid and the set of rows the view was read of (<see cref="ExGrid{TRow}.ReadView"/>),
-    /// carried through <c>with</c>, so a view handed back to that grid brings the same set again; none for a
-    /// view that grid did not read, which brings a set of its own. Not part of the view's equality: two
-    /// views of the same Selection and offsets are the same view, whoever read them.</summary>
-    internal RowSetStamp? RowSet { get; init; }
-
-    /// <summary>Whether <paramref name="other"/> has the same Row Sequence Version, Selection and offsets.</summary>
-    /// <param name="other">The view to compare with.</param>
-    /// <returns>Whether the two are the same view.</returns>
-    public bool Equals(GridView other)
-        => RowSequenceVersion == other.RowSequenceVersion && Equals(Selection, other.Selection)
-           && ScrollTopPx.Equals(other.ScrollTopPx) && ScrollLeftPx.Equals(other.ScrollLeftPx);
-
-    /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(RowSequenceVersion, Selection, ScrollTopPx, ScrollLeftPx);
-}
-
-/// <summary>Which grid read a view, and of which of its sets of rows (<see cref="GridView.RowSet"/>).</summary>
-internal sealed record RowSetStamp(object Grid, int Set);
-
 // A view handed ahead of the Row Sequence Version it is written in (ADR-0331): the grid takes it in the
 // render that takes that version, in place of the empty Selection a new version leaves (ADR-0011). So the
 // Selection and the version arrive together, and an input the grid takes after the Consumer's switch meets

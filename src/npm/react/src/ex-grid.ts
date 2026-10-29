@@ -71,7 +71,7 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         announce: (sentence) => { mounted(grid.current).announce(sentence); },
         writePointedText: (text) => mounted(grid.current).writePointedText(text),
         takeBackPointedText: () => mounted(grid.current).takeBackPointedText(),
-        showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
+        showViewWith: (view, rowSequenceVersion, place) => { mounted(grid.current).showViewWith(view, rowSequenceVersion, place); },
         showNewView: (rowSequenceVersion, place) => { mounted(grid.current).showNewView(rowSequenceVersion, place); },
         // Before the grid is drawn no edit can be open on it.
         readEditText: () => grid.current?.readEditText(),
