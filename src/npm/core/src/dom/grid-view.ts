@@ -3011,7 +3011,8 @@ export class GridView<Row> {
         // A reveal's repaint is the browser's business: meanwhile the grid stands where the reveal left the
         // scroller, and a scroll the user makes is read when the repaint yields to it (ADR-0012).
         if (this.#repaint !== undefined) return;
-        // The offsets the browser holds, read on the scroll it reports: the one read this grid makes.
+        // The offsets the browser holds, read on the scroll it reports, and at a press before it is reported
+        // (#onRootPress): the one read this grid makes.
         const top = this.#scroller.scrollTop;
         const left = this.#scroller.scrollLeft;
         if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return;
@@ -8842,6 +8843,10 @@ export class GridView<Row> {
     // its default the press would end it after moving the Focus, and the text would open an edit there
     // (ADR-0080).
     readonly #onRootPress = (event: MouseEvent): void => {
+        // A scroll the browser has not reported yet, written by a script just before the press, is read now: the
+        // browser reports it at its next frame, after this press, and the cell under the pointer is where the content
+        // stands, not where the offset last heard put it (ADR-0012, 2026-10-29). With nothing moved, nothing is done.
+        this.#onScroll();
         // A new press, whose own button, if it is one, is noted after this: one before it whose release went
         // unheard is over.
         this.#actionPress = undefined;
