@@ -1007,6 +1007,9 @@ test('a Reject holds the editor with real keys, and Escape is the way out (ED-15
     // The Consumer's own sentence, relayed into the root's live region (A11Y-15).
     await expect(grid(page).locator('.ex-announce')).toContainText("'abc' is not a number");
     await expect(page.locator('#edit-status')).not.toContainText('Notional=abc');
+    // Tab's verdict is in, so the Escape comes after a Reject: an Escape while a verdict is awaited
+    // calls that commit off and keeps the editor (ADR-0380 section 3).
+    await settled(grid(page));
 
     await page.keyboard.press('Escape');
     await expect(grid(page).locator('.ex-editor')).toHaveCount(0);
