@@ -1,6 +1,5 @@
 @page "/board-server"
 @using global::ExBoard
-@using global::ExBoard.Components
 @using global::ExGrid.Data
 @using global::ExPivot.Components
 
@@ -11,8 +10,8 @@
    server is handed the condition and they are asked again. A selection reaching rows not fetched is said
    under the blotter, and narrows nothing. The chart's 50,000 points are thinned on the server (ADR-0344),
    and a desk selected in the pivot narrows it, the server answering the desks under the cells (ADR-0345).
-   `?script=1` draws the Board with ExBoard.Script.ExBoard, Blazor's adapter over ExBoard's Script Core
-   (ADR-0370 section 1), the source staying in .NET and asked through it, the pivot reading the C# Pivot Source
+   The Board is drawn by ExBoard.Script.ExBoard, Blazor's adapter over ExBoard's Script Core (ADR-0370
+   section 1), the source staying in .NET and asked through it, the pivot reading the C# Pivot Source
    it makes through .NET as Leaf Aggregates (ADR-0370 section 3). *@
 <DemoChromeAssets>
     <Head>
@@ -21,21 +20,10 @@
 </DemoChromeAssets>
 
 <h1>A Board over a server</h1>
-@if (Script)
-{
-    <ExBoard.Script.ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
-}
-else
-{
-    <ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
-}
+<ExBoard.Script.ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
 <pre id="raised" role="log">@_raised</pre>
 
 @code {
-    [SupplyParameterFromQuery(Name = "script")] private string? ScriptQuery { get; set; }
-
-    private bool Script => ScriptQuery is not null;
-
     private string? _raised;
     private readonly IReadOnlyDictionary<string, BoardSource> _sources = new Dictionary<string, BoardSource> { ["trades"] = DemoBoardServer.Source(Reading) };
 

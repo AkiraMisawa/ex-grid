@@ -110,7 +110,6 @@ grep -qxF 'staticwebassets/ex-sheet.min.js.map' <<<"$(entries ExSheet)" || fail 
 # ExChart's, bundled as ExChart builds (ADR-0370 section 1).
 grep -qxF 'staticwebassets/ex-chart-core.min.js' <<<"$(entries ExChart)" || fail "ExChart ships no Script Core module"
 grep -qxF 'staticwebassets/ex-chart-core.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its Script Core module"
-grep -qxF 'staticwebassets/ex-chart.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its script"
 
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).
 if grep -q '<dependency id="ExSheet' <<<"$(nuspec ExGrid.MudBlazor)"; then fail "ExGrid.MudBlazor depends on an ExSheet package"; fi
@@ -211,7 +210,7 @@ utf16() { LC_ALL=C tr -d '\000'; }
 for pair in ExGrid:ex-grid.min.css ExGrid:ex-grid.min.js ExGrid.MudBlazor:mud-ex-grid.min.css \
             ExSheet:ex-sheet.min.css ExSheet.MudBlazor:mud-ex-sheet.min.css \
             ExPivot:ex-pivot.min.css ExPivot.MudBlazor:mud-ex-pivot.min.css \
-            ExChart:ex-chart.min.css ExChart:ex-chart.min.js ExChart.MudBlazor:mud-ex-chart.min.css; do
+            ExChart:ex-chart.min.css ExChart.MudBlazor:mud-ex-chart.min.css; do
   id=${pair%%:*}; f=${pair#*:}
   packed=$(unzip -p "$feed/$id.$version.nupkg" "staticwebassets/$f" | sha256sum | cut -c1-64)
   served="$out/wwwroot/_content/$id/$f"

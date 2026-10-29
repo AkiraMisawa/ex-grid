@@ -1,8 +1,8 @@
 # ExChart
 
 Charts of the data an application shows in [ExGrid](https://www.nuget.org/packages/ExGrid), drawn as
-SVG elements Blazor diffs, so a hover renders the tooltip and nothing else. A chart is defined in the
-data's own terms with [ExChart.Engine](https://www.nuget.org/packages/ExChart.Engine): every series
+SVG in the browser by ExChart's Script Core, which the Blazor component hands its definition as data on
+both hosting models. A chart is defined in the data's own terms with [ExChart.Engine](https://www.nuget.org/packages/ExChart.Engine): every series
 declares its Series Kind, and is drawn as what it is.
 
 - A tooltip lists every series of the pointer's panel at the pointer's position.

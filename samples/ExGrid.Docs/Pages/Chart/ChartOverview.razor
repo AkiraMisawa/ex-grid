@@ -96,19 +96,16 @@
         <p>
             Blazor's ExChart is drawn by the same TypeScript core as React's, as ExGrid and ExPivot are.
             <code>ExChart.Script.ExChart</code> and <code>ExChart.Script.ExSurface</code> are that chart and that
-            surface, and every Example on this site draws them, through <code>@@using ExChart.Script</code>; the ones
-            drawn in .NET, under <code>ExChart.Components</code>, stay in the package until they are removed in this
-            release. The drawing, the tooltip, the legend, Chart Filters, View as table and the turning of a surface
+            surface, and every Example on this site draws them, through <code>@@using ExChart.Script</code>. The drawing, the tooltip, the legend, Chart Filters, View as table and the turning of a surface
             run in the browser on both hosting models, so on Blazor Server a pointer moved over the plot never crosses
-            the circuit. They take the same <code>ChartDefinition</code> and <code>SurfaceDefinition</code>, the same
-            parameters and the same events, and a click hands back the Row Key the point was handed in with. A
+            the circuit. They take a <code>ChartDefinition</code> and a <code>SurfaceDefinition</code>, and a click hands back the Row Key the point was handed in with. A
             <code>Spec</code> is read through its <code>Sources</code> in .NET, where they are: each series is asked
             for its pixels, asked again when the range narrows, and what it answers crosses to the browser as a
             definition.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreChart)" Mud="typeof(ScriptCoreChartMud)" Files="@(["Examples/Chart/ChartData.cs"])" />
         <p>
-            Its <code>Chrome</code> draws the toolbar and the context menu in Razor, as the Razor component's does.
+            Its <code>Chrome</code> draws the toolbar and the context menu in Razor.
             <code>MudChartChrome.Default</code> fills both: MudBlazor's components render in your page's tree, under
             your theme, and the chart places them in the toolbar and in its menu's frame. What a control does runs in
             the browser, so a command, a range typed in Chart Filters and applied, and the axis switch never wait on
@@ -116,8 +113,7 @@
             beside the other commands, and Chart Filters' ends are typed in the axis' own writing, a date as
             <code>yyyy-MM-dd</code>, or chosen from a list of the categories on a category axis; what the chart cannot
             read is said under them. A Chrome of your own implements <code>ScriptSlots</code> and the
-            <code>Toolbar(ChartToolbarView)</code> and <code>Menu(ChartMenuView)</code> overloads beside the Razor
-            component's, and marks each control with a <code>ChartScriptSlotAttributes</code> attribute: a command's id,
+            <code>Toolbar(ChartToolbarView)</code> and <code>Menu(ChartMenuView)</code>, and marks each control with a <code>ChartScriptSlotAttributes</code> attribute: a command's id,
             the range's two ends, Apply and the axis switch. It writes no handler for them, and binds no value to the
             ends: the chart writes the range it holds into them, and reads them as Apply is pressed.
         </p>
@@ -145,7 +141,7 @@
             <code>1</code> and <code>1.0m</code>, are refused too. Charting a grid's selection and the Chart Dock
             carry over too: see <a href="exchart/grid">From the grid</a>. A candle's values are written by its
             code, or else as numbers, <code>3.3</code>, and so is every value in its CSV and under View as table,
-            which keep each value as data, where the Razor component keeps a decimal's <code>3.30</code>.
+            which keep each value as data.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreFormatCodes)" Files="@(["Examples/Chart/ChartData.cs"])" />
         <p>

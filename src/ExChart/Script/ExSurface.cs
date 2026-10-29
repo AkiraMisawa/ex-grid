@@ -16,8 +16,7 @@ namespace ExChart.Script;
 /// the Script Core's, in the browser, on both hosting models.
 /// </summary>
 /// <remarks>
-/// It stands beside <see cref="Components.ExSurface"/>, the Razor component, until ExChart's Blazor step holds
-/// (ADR-0370 section 11). Formats cross as the texts they write each value the surface holds, as
+/// Formats cross as the texts they write each value the surface holds, as
 /// <see cref="ExChart"/>'s do: a Format the surface would ask of a tick between its values, on an axis placed by value
 /// or on a mesh, is refused by name, a <see cref="NotSupportedException"/> raised as the parameter is set.
 /// </remarks>

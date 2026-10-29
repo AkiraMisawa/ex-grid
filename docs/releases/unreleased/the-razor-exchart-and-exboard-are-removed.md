@@ -1,0 +1,5 @@
+Product: ExChart
+Kind: Breaking
+ADR: 0370
+
+The Razor components drawn in .NET are removed: `ExChart.Components.ExChart` and `ExChart.Components.ExSurface` are `ExChart.Script.ExChart` and `ExChart.Script.ExSurface`, and `ExBoard.Components.ExBoard` is `ExBoard.Script.ExBoard`, each drawn by its Script Core with the same definition or Board. A .NET `Format` the browser cannot call is refused by name, and a `FormatCode` or a `ScriptFunction` replaces it. `IChartChrome`'s `Toolbar(ChartToolbarContext)` and `Menu(ChartMenuContext)`, with `ChartCommand`, `ChartToolbarContext`, `ChartFiltersContext` and `ChartMenuContext`, are removed, since a Chrome now fills only the Script Core's slots, through `ScriptSlots`, `Toolbar(ChartToolbarView)` and `Menu(ChartMenuView)`. In ExChart.MudBlazor, `MudChartToolbar` and `MudChartMenu` are removed, and so is `MudChartDock.ScriptCore`: the dock always draws its charts with the Script Core, beside `ExGrid.Script.ExGrid`. The pointer script `ex-chart.min.js` no longer ships.

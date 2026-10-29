@@ -5,7 +5,6 @@ using ExGrid;
 using ExGrid.Data;
 using ExGrid.Selection;
 using ExPivot.Engine;
-using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -456,23 +455,4 @@ public sealed class BoardSourceTests : BunitContext
         Assert.Equal("views[0].pivot", refused.Path);
     }
 
-    [Fact] // ADR-0343: the component asks the sources first, then draws the views over them
-    public async Task The_component_draws_a_board_over_a_source()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("WebAssembly", isInteractive: true));
-        var server = new Server();
-        var sources = new Dictionary<string, BoardSource> { ["trades"] = server.Source() };
-
-        var cut = Render<BoardComponent>(p => p.Add(b => b.Board, Board($"{Blotter}, {Pivot}, {Chart}")).Add(b => b.Data, NoData).Add(b => b.Sources, sources));
-
-        await cut.WaitForStateAsync(() => cut.FindAll(".ex-board-view").Count == 3, TimeSpan.FromSeconds(10));
-        // The chart over the server input is drawn from its source's answer (ADR-0344).
-        Assert.Single(cut.FindAll("[data-ex-view=curve] .ex-chart"));
-        Assert.Single(server.Charted);
-        Assert.Empty(cut.FindAll(".ex-board-binding"));
-        Assert.Equal(1, server.ShapeAsked);
-        Assert.NotEmpty(server.Asked);
-        Assert.Single(server.Reports);
-    }
 }

@@ -7,10 +7,6 @@ namespace ExChart.Chrome;
 /// (<c>ExChart.Script.ExChart</c>, ADR-0410): each named here is asked for through its view overload, and the Script
 /// Core draws its own part for every slot not named.
 /// </summary>
-/// <remarks>
-/// It stands beside the Razor component's contexts until that component is removed (ADR-0370 section 11, ADR-0410
-/// section 4's note of 2026-10-28): a Chrome answers both while both draw.
-/// </remarks>
 [Flags]
 public enum ChartScriptSlots
 {

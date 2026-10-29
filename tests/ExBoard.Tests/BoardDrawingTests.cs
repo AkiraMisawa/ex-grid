@@ -1,6 +1,5 @@
 using Bunit;
 using ExGrid.Data;
-using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -50,40 +49,6 @@ public sealed class BoardDrawingTests : BunitContext
         var refused = Assert.Throws<BoardRefusedException>(() => BoundBoard.Bind(BoardSpec.Read(Json), new Dictionary<string, Snapshot>()));
         Assert.Equal("inputs.trades", refused.Path);
         Assert.Equal("Input 'trades' is bound to no data.", refused.Message);
-    }
-
-    [Fact] // ADR-0341: a change upstream is caught on the run that meets it, not drawn
-    public void A_board_whose_data_changed_shape_draws_only_the_refusal()
-    {
-        var builder = new SnapshotColumnsBuilder();
-        builder.Text("desk").Append("Rates");
-        builder.Double("pnl").Append(1.0);
-        builder.Date("day").Append(new DateOnly(2026, 10, 20));
-
-        var cut = Render<BoardComponent>(ps => ps
-            .Add(b => b.Board, BoardSpec.Read(Json))
-            .Add(b => b.Data, new Dictionary<string, Snapshot> { ["trades"] = builder.Build() }));
-
-        Assert.Equal("trades: Input 'trades', column 'pnl': declared decimal, and its source holds double.",
-            cut.Find(".ex-board-refusal").TextContent);
-        Assert.Empty(cut.FindAll(".ex-board-view"));
-    }
-
-    [Fact] // ADR-0340: the layout is rows of views, each its share of the row, written in the Board
-    public void A_board_draws_its_views_in_its_rows()
-    {
-        var cut = Render<BoardComponent>(ps => ps
-            .Add(b => b.Board, BoardSpec.Read(Json))
-            .Add(b => b.Data, new Dictionary<string, Snapshot> { ["trades"] = Data() }));
-
-        var rows = cut.FindAll(".ex-board-row");
-        Assert.Equal(2, rows.Count);
-        Assert.Equal(["blotter", "byDesk"], rows[0].QuerySelectorAll(".ex-board-view").Select(v => v.GetAttribute("data-ex-view")));
-        Assert.Contains("flex: 2 1 0", rows[0].QuerySelectorAll(".ex-board-view")[0].GetAttribute("style"), StringComparison.Ordinal);
-        Assert.Contains("height:300px", cut.Find("[data-ex-view=curve] .ex-chart-stage").GetAttribute("style"), StringComparison.Ordinal);
-        Assert.NotNull(cut.Find("[data-ex-view=blotter] .ex-grid"));
-        Assert.NotNull(cut.Find("[data-ex-view=byDesk] .ex-grid"));
-        Assert.NotNull(cut.Find("[data-ex-view=curve] svg"));
     }
 
     [Fact] // ADR-0341: a chart reads only what its input declares, as a grid and a pivot do

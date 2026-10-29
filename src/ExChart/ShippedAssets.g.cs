@@ -11,15 +11,6 @@ namespace ExChart;
 /// </summary>
 internal static class ShippedAssets
 {
-    /// <summary>Where the package serves <c>ex-chart.js</c>, minified, under the application's base.</summary>
-    internal const string ScriptPath = "_content/ExChart/ex-chart.min.js";
-
-    /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string ScriptVersion = "aaf6eb86e2db";
-
-    /// <summary>The SHA-256 of <c>Assets/ex-chart.js</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string ScriptStamp = "482cd9926c741541c3c5ac0463bfa77d31222af2b819e23ae87309732d6c115c";
-
     /// <summary>Where the package serves <c>ex-chart.css</c>, minified, under the application's base.</summary>
     internal const string StylesheetPath = "_content/ExChart/ex-chart.min.css";
 

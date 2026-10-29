@@ -4,7 +4,6 @@ using ExGrid.Components;
 using ExGrid.Data;
 using ExGrid.Selection;
 using ExPivot.Engine;
-using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -288,51 +287,4 @@ public sealed class BoardLinkTests : BunitContext
         Assert.Equal(5, blotter.Grid!.Source.Window.Count);
     }
 
-    [Fact] // ADR-0340 Q5: the grid's raised selection narrows, and its drop, raised as an empty one, restores
-    public async Task The_board_narrows_on_the_selection_its_grid_raises()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("WebAssembly", isInteractive: true));
-        var reading = BoardSpec.Read(Board("""{"from": "blotter", "to": ["byDesk"], "on": ["desk"]}""", $"{Blotter}, {Pivot}"));
-        var cut = Render<BoardComponent>(ps => ps.Add(b => b.Board, reading).Add(b => b.Data, Data(reading)));
-        var grids = cut.FindComponents<ExGrid<ShapedRow>>();
-        var blotter = grids.Single(g => g.Instance.SelectionChanged.HasDelegate);
-        var pivots = cut.FindComponents<ExPivot.Components.ExPivot>();
-
-        await cut.InvokeAsync(() => blotter.Instance.SelectionChanged.InvokeAsync(Rows(4)));
-        Assert.Equal(1, ((ExPivot.Engine.SnapshotPivotSource)Assert.Single(pivots).Instance.Source!).Snapshot.RowCount);
-
-        await cut.InvokeAsync(() => blotter.Instance.SelectionChanged.InvokeAsync(GridSelection.Empty));
-        Assert.Equal(5, ((ExPivot.Engine.SnapshotPivotSource)Assert.Single(pivots).Instance.Source!).Snapshot.RowCount);
-    }
-
-    [Fact] // ADR-0340 Q5: the pivot's raised selection narrows by its cells; one it cannot read narrows nothing, aloud
-    public async Task The_board_narrows_on_the_cells_its_pivot_raises()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("WebAssembly", isInteractive: true));
-        var reading = BoardSpec.Read(Board("""{"from": "matrix", "to": ["blotter"], "on": ["desk"]}""", $"{Blotter}, {Matrix.Replace("HIDDEN", "", StringComparison.Ordinal)}"));
-        var cut = Render<BoardComponent>(ps => ps.Add(b => b.Board, reading).Add(b => b.Data, Data(reading)));
-        var pivot = cut.FindComponent<ExPivot.Components.ExPivot>();
-        var rows = () => ((InMemoryGridSource<ShapedRow>)cut.FindComponent<ExGrid<ShapedRow>>().Instance.Source!).Window.Count;
-        var extent = new GridExtent(100, 10);
-        GridSelection At(int row, int rows = 1) => GridSelection.Empty.Place(new SelectionRange(row, 2, rows, 1), new CellPosition(row, 2), extent);
-        var status = () => cut.FindAll("[data-ex-view=matrix] .ex-board-link-status").Select(s => s.TextContent).SingleOrDefault();
-
-        // Credit, FX, Rates, Grand Total under Feb, Jan, Grand Total: FX in Jan.
-        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(At(1)));
-        Assert.Equal(1, rows());
-        Assert.Null(status());
-
-        // A new layout is a new report: what its cells narrowed is let go at once.
-        await cut.InvokeAsync(() => pivot.Instance.LayoutChanged.InvokeAsync(pivot.Instance.Layout! with { Columns = [] }));
-        Assert.Equal(5, rows());
-
-        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(At(0, 50)));
-        Assert.Equal(5, rows());
-        Assert.Equal("The selection cannot be read from the report as drawn, so it narrows nothing.", status());
-
-        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(GridSelection.Empty));
-        Assert.Null(status());
-    }
 }

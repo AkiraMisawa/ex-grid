@@ -5,7 +5,6 @@ using ExGrid;
 using ExGrid.Columns;
 using ExGrid.Data;
 using ExPivot.Engine;
-using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -212,72 +211,4 @@ public sealed class BoardDiffTests : BunitContext
         Assert.Equal(["pnl"], grid.Columns.Select(c => c.Name));
     }
 
-    [Fact] // ADR-0340 Q7: the component raises the Diff on a user's change, never on a narrowing
-    public async Task The_component_raises_the_diff_on_a_change_and_not_on_a_narrowing()
-    {
-        var reading = BoardSpec.Read(Board().Replace("\"layout\": [", """
-            "links": [{"from": "blotter", "to": ["byDesk"], "on": ["desk"]}], "layout": [
-            """, StringComparison.Ordinal));
-        var raised = new List<BoardDiff>();
-        var cut = Render<BoardComponent>(p => p.Add(b => b.Board, reading).Add(b => b.Data, Data(reading))
-            .Add(b => b.OnDiff, (BoardDiff diff) => raised.Add(diff)));
-        var grid = cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>();
-
-        var extent = new ExGrid.Selection.GridExtent(3, 3);
-        await cut.InvokeAsync(() => grid.Instance.SelectionChanged.InvokeAsync(ExGrid.Selection.GridSelection.Empty.Click(new ExGrid.Selection.CellPosition(0, 1), extent)));
-        Assert.Empty(raised);
-
-        await cut.InvokeAsync(() => grid.Instance.OnColumnOrderChanged.InvokeAsync(["id", "pnl", "desk"]));
-        Assert.Equal(["id", "pnl", "desk"], Assert.Single(raised).Grids["blotter"].ViewState.Columns.Select(c => c.Column));
-        Assert.Equal(["id", "pnl", "desk"], grid.Instance.Columns.Select(c => c.Name));
-
-        await cut.InvokeAsync(() => grid.Instance.Source!.OnSortChanged([new SortSpec("desk", SortDirection.Ascending)]));
-        Assert.Equal(2, raised.Count);
-        Assert.Equal([new SortSpec("desk", SortDirection.Ascending)], raised[1].Grids["blotter"].ViewState.Sorts);
-    }
-
-    [Fact] // ADR-0340 Q7: a Board bound again for new data keeps what the user has changed since
-    public async Task New_data_keeps_the_users_changes()
-    {
-        var reading = BoardSpec.Read(Board());
-        var raised = new List<BoardDiff>();
-        var cut = Render<BoardComponent>(p => p.Add(b => b.Board, reading).Add(b => b.Data, Data(reading))
-            .Add(b => b.OnDiff, (BoardDiff diff) => raised.Add(diff)));
-        var grid = cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>();
-        await cut.InvokeAsync(() => grid.Instance.OnColumnOrderChanged.InvokeAsync(["id", "pnl", "desk"]));
-
-        cut.Render(p => p.Add(b => b.Data, Data(reading)));
-
-        Assert.Equal(["id", "pnl", "desk"], cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>().Instance.Columns.Select(c => c.Name));
-        Assert.Single(raised);
-    }
-
-    [Fact] // ADR-0340 Q7: what is dropped is said above the views; a Diff handed back binds nothing again
-    public async Task The_component_says_what_it_dropped_and_takes_back_its_own_diff()
-    {
-        var reading = BoardSpec.Read(Board());
-        var diff = new BoardDiff(null, null, new Dictionary<string, BoardChartChange>
-        {
-            ["pnl"] = new(["x"], null, null),
-            ["curve"] = new(["pnl"], null, null),
-        });
-        var raised = new List<BoardDiff>();
-        var cut = Render<BoardComponent>(p => p.Add(b => b.Board, reading).Add(b => b.Data, Data(reading)).Add(b => b.Diff, diff)
-            .Add(b => b.OnDiff, (BoardDiff d) => raised.Add(d)));
-
-        Assert.Equal("views.pnl.chart: the Board no longer has view 'pnl'.", cut.Find(".ex-board-dropped li").TextContent);
-        // The Diff that applied is raised, so a host keeping each one keeps no part that will not.
-        Assert.Equal(["curve"], Assert.Single(raised).Charts.Keys);
-        raised.Clear();
-        var chart = cut.FindComponent<ExChart.Components.ExChart>();
-        Assert.Equal(new[] { "pnl" }, chart.Instance.HiddenSeries!);
-
-        await cut.InvokeAsync(() => chart.Instance.OnRangeChanged.InvokeAsync(new ChartRange(1, 2)));
-        var grid = cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>();
-        var source = grid.Instance.Source;
-        // The host hands back what was raised: the same Diff, so nothing binds again.
-        cut.Render(p => p.Add(b => b.Diff, raised.Single()));
-        Assert.Same(source, cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>().Instance.Source);
-        Assert.Equal(new ChartRange(1, 2), cut.FindComponent<ExChart.Components.ExChart>().Instance.Range);
-    }
 }

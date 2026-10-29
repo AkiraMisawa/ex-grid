@@ -53,21 +53,6 @@ ExChart.ChartTarget.Deconstruct(out string! Name, out ExChart.GridChart! Chart) 
 ExChart.ChartTarget.Equals(ExChart.ChartTarget? other) -> bool
 ExChart.ChartTarget.Name.get -> string!
 ExChart.ChartTarget.Name.init -> void
-ExChart.Chrome.ChartCommand
-ExChart.Chrome.ChartCommand.<Clone>$() -> ExChart.Chrome.ChartCommand!
-ExChart.Chrome.ChartCommand.ChartCommand(string! Id, string! Label, bool Enabled, System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
-ExChart.Chrome.ChartCommand.Deconstruct(out string! Id, out string! Label, out bool Enabled, out System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
-ExChart.Chrome.ChartCommand.Enabled.get -> bool
-ExChart.Chrome.ChartCommand.Enabled.init -> void
-ExChart.Chrome.ChartCommand.Equals(ExChart.Chrome.ChartCommand? other) -> bool
-ExChart.Chrome.ChartCommand.Expanded.get -> bool?
-ExChart.Chrome.ChartCommand.Expanded.init -> void
-ExChart.Chrome.ChartCommand.Id.get -> string!
-ExChart.Chrome.ChartCommand.Id.init -> void
-ExChart.Chrome.ChartCommand.Invoke.get -> System.Func<System.Threading.Tasks.Task!>!
-ExChart.Chrome.ChartCommand.Invoke.init -> void
-ExChart.Chrome.ChartCommand.Label.get -> string!
-ExChart.Chrome.ChartCommand.Label.init -> void
 ExChart.Chrome.ChartCommandIds
 ExChart.Chrome.ChartCommandView
 ExChart.Chrome.ChartCommandView.<Clone>$() -> ExChart.Chrome.ChartCommandView!
@@ -84,29 +69,6 @@ ExChart.Chrome.ChartCommandView.Label.get -> string!
 ExChart.Chrome.ChartCommandView.Label.init -> void
 ExChart.Chrome.ChartCommandView.Title.get -> string?
 ExChart.Chrome.ChartCommandView.Title.init -> void
-ExChart.Chrome.ChartFiltersContext
-ExChart.Chrome.ChartFiltersContext.<Clone>$() -> ExChart.Chrome.ChartFiltersContext!
-ExChart.Chrome.ChartFiltersContext.Apply.get -> System.Func<string?, string?, System.Threading.Tasks.Task!>!
-ExChart.Chrome.ChartFiltersContext.Apply.init -> void
-ExChart.Chrome.ChartFiltersContext.ChartFiltersContext(ExChart.Engine.AxisValues Values, ExChart.Engine.EquatableList<string!>! Labels, string? From, string? To, string! Hint, string? Error, System.Func<string?, string?, System.Threading.Tasks.Task!>! Apply, ExChart.Engine.AxisScale? Scale, System.Func<ExChart.Engine.AxisScale, System.Threading.Tasks.Task!>! SetScale) -> void
-ExChart.Chrome.ChartFiltersContext.Deconstruct(out ExChart.Engine.AxisValues Values, out ExChart.Engine.EquatableList<string!>! Labels, out string? From, out string? To, out string! Hint, out string? Error, out System.Func<string?, string?, System.Threading.Tasks.Task!>! Apply, out ExChart.Engine.AxisScale? Scale, out System.Func<ExChart.Engine.AxisScale, System.Threading.Tasks.Task!>! SetScale) -> void
-ExChart.Chrome.ChartFiltersContext.Equals(ExChart.Chrome.ChartFiltersContext? other) -> bool
-ExChart.Chrome.ChartFiltersContext.Error.get -> string?
-ExChart.Chrome.ChartFiltersContext.Error.init -> void
-ExChart.Chrome.ChartFiltersContext.From.get -> string?
-ExChart.Chrome.ChartFiltersContext.From.init -> void
-ExChart.Chrome.ChartFiltersContext.Hint.get -> string!
-ExChart.Chrome.ChartFiltersContext.Hint.init -> void
-ExChart.Chrome.ChartFiltersContext.Labels.get -> ExChart.Engine.EquatableList<string!>!
-ExChart.Chrome.ChartFiltersContext.Labels.init -> void
-ExChart.Chrome.ChartFiltersContext.Scale.get -> ExChart.Engine.AxisScale?
-ExChart.Chrome.ChartFiltersContext.Scale.init -> void
-ExChart.Chrome.ChartFiltersContext.SetScale.get -> System.Func<ExChart.Engine.AxisScale, System.Threading.Tasks.Task!>!
-ExChart.Chrome.ChartFiltersContext.SetScale.init -> void
-ExChart.Chrome.ChartFiltersContext.To.get -> string?
-ExChart.Chrome.ChartFiltersContext.To.init -> void
-ExChart.Chrome.ChartFiltersContext.Values.get -> ExChart.Engine.AxisValues
-ExChart.Chrome.ChartFiltersContext.Values.init -> void
 ExChart.Chrome.ChartFiltersView
 ExChart.Chrome.ChartFiltersView.<Clone>$() -> ExChart.Chrome.ChartFiltersView!
 ExChart.Chrome.ChartFiltersView.ChartFiltersView(ExChart.Engine.AxisValues Values, ExChart.Engine.EquatableList<string!>! Labels, string! Hint, string? Error, ExChart.Engine.AxisScale? Scale) -> void
@@ -122,15 +84,6 @@ ExChart.Chrome.ChartFiltersView.Scale.get -> ExChart.Engine.AxisScale?
 ExChart.Chrome.ChartFiltersView.Scale.init -> void
 ExChart.Chrome.ChartFiltersView.Values.get -> ExChart.Engine.AxisValues
 ExChart.Chrome.ChartFiltersView.Values.init -> void
-ExChart.Chrome.ChartMenuContext
-ExChart.Chrome.ChartMenuContext.<Clone>$() -> ExChart.Chrome.ChartMenuContext!
-ExChart.Chrome.ChartMenuContext.ChartMenuContext(string! Name, ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>! Commands) -> void
-ExChart.Chrome.ChartMenuContext.Commands.get -> ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>!
-ExChart.Chrome.ChartMenuContext.Commands.init -> void
-ExChart.Chrome.ChartMenuContext.Deconstruct(out string! Name, out ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>! Commands) -> void
-ExChart.Chrome.ChartMenuContext.Equals(ExChart.Chrome.ChartMenuContext? other) -> bool
-ExChart.Chrome.ChartMenuContext.Name.get -> string!
-ExChart.Chrome.ChartMenuContext.Name.init -> void
 ExChart.Chrome.ChartMenuView
 ExChart.Chrome.ChartMenuView.<Clone>$() -> ExChart.Chrome.ChartMenuView!
 ExChart.Chrome.ChartMenuView.ChartMenuView(string! Name, ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommandView!>! Commands) -> void
@@ -145,17 +98,6 @@ ExChart.Chrome.ChartScriptSlots
 ExChart.Chrome.ChartScriptSlots.Menu = 2 -> ExChart.Chrome.ChartScriptSlots
 ExChart.Chrome.ChartScriptSlots.None = 0 -> ExChart.Chrome.ChartScriptSlots
 ExChart.Chrome.ChartScriptSlots.Toolbar = 1 -> ExChart.Chrome.ChartScriptSlots
-ExChart.Chrome.ChartToolbarContext
-ExChart.Chrome.ChartToolbarContext.<Clone>$() -> ExChart.Chrome.ChartToolbarContext!
-ExChart.Chrome.ChartToolbarContext.ChartToolbarContext(string! Name, ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>! Commands, ExChart.Chrome.ChartFiltersContext? Filters) -> void
-ExChart.Chrome.ChartToolbarContext.Commands.get -> ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>!
-ExChart.Chrome.ChartToolbarContext.Commands.init -> void
-ExChart.Chrome.ChartToolbarContext.Deconstruct(out string! Name, out ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommand!>! Commands, out ExChart.Chrome.ChartFiltersContext? Filters) -> void
-ExChart.Chrome.ChartToolbarContext.Equals(ExChart.Chrome.ChartToolbarContext? other) -> bool
-ExChart.Chrome.ChartToolbarContext.Filters.get -> ExChart.Chrome.ChartFiltersContext?
-ExChart.Chrome.ChartToolbarContext.Filters.init -> void
-ExChart.Chrome.ChartToolbarContext.Name.get -> string!
-ExChart.Chrome.ChartToolbarContext.Name.init -> void
 ExChart.Chrome.ChartToolbarView
 ExChart.Chrome.ChartToolbarView.<Clone>$() -> ExChart.Chrome.ChartToolbarView!
 ExChart.Chrome.ChartToolbarView.ChartToolbarView(string! Name, ExChart.Engine.EquatableList<ExChart.Chrome.ChartCommandView!>! Commands, ExChart.Chrome.ChartFiltersView? Filters, ExChart.Chrome.ChartToolbarWords! Words) -> void
@@ -191,10 +133,8 @@ ExChart.Chrome.ChartToolbarWords.Proportional.init -> void
 ExChart.Chrome.ChartToolbarWords.To.get -> string!
 ExChart.Chrome.ChartToolbarWords.To.init -> void
 ExChart.Chrome.IChartChrome
-ExChart.Chrome.IChartChrome.Menu(ExChart.Chrome.ChartMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.Chrome.IChartChrome.Menu(ExChart.Chrome.ChartMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.Chrome.IChartChrome.ScriptSlots.get -> ExChart.Chrome.ChartScriptSlots
-ExChart.Chrome.IChartChrome.Toolbar(ExChart.Chrome.ChartToolbarContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.Chrome.IChartChrome.Toolbar(ExChart.Chrome.ChartToolbarView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExChart.ColumnSeries
 ExChart.ColumnSeries.Column.get -> string!
@@ -204,81 +144,8 @@ ExChart.ColumnSeries.Deconstruct(out string! Id, out string! Panel, out string! 
 ExChart.ColumnSeries.Equals(ExChart.ColumnSeries? other) -> bool
 ExChart.ColumnSeries.Rows.get -> ExChart.Engine.EquatableList<ExChart.KeyedPosition!>!
 ExChart.ColumnSeries.Rows.init -> void
-ExChart.Components.ExChart
-ExChart.Components.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
-ExChart.Components.ExChart.AxisStyle.set -> void
-ExChart.Components.ExChart.Chrome.get -> ExChart.Chrome.IChartChrome?
-ExChart.Components.ExChart.Chrome.set -> void
-ExChart.Components.ExChart.ColourSlots.get -> int
-ExChart.Components.ExChart.ColourSlots.set -> void
-ExChart.Components.ExChart.Definition.get -> ExChart.Engine.ChartDefinition?
-ExChart.Components.ExChart.Definition.set -> void
-ExChart.Components.ExChart.Density.get -> ExGrid.GridDensity
-ExChart.Components.ExChart.Density.set -> void
-ExChart.Components.ExChart.Description.get -> string?
-ExChart.Components.ExChart.Description.set -> void
-ExChart.Components.ExChart.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExChart.Components.ExChart.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
-ExChart.Components.ExChart.ExChart() -> void
-ExChart.Components.ExChart.FileName.get -> string?
-ExChart.Components.ExChart.FileName.set -> void
-ExChart.Components.ExChart.Height.get -> double
-ExChart.Components.ExChart.Height.set -> void
-ExChart.Components.ExChart.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
-ExChart.Components.ExChart.HiddenSeries.set -> void
-ExChart.Components.ExChart.IndependentScales.get -> System.Collections.Generic.IReadOnlySet<string!>?
-ExChart.Components.ExChart.IndependentScales.set -> void
-ExChart.Components.ExChart.Legend.get -> ExChart.Engine.LegendPlacement?
-ExChart.Components.ExChart.Legend.set -> void
-ExChart.Components.ExChart.OnPointClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartPointClick!>
-ExChart.Components.ExChart.OnPointClick.set -> void
-ExChart.Components.ExChart.OnRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartRange?>
-ExChart.Components.ExChart.OnRangeChanged.set -> void
-ExChart.Components.ExChart.OnScaleChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.AxisScale>
-ExChart.Components.ExChart.OnScaleChanged.set -> void
-ExChart.Components.ExChart.OnSeriesVisibilityChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.SeriesVisibility!>
-ExChart.Components.ExChart.OnSeriesVisibilityChanged.set -> void
-ExChart.Components.ExChart.Range.get -> ExChart.ChartRange?
-ExChart.Components.ExChart.Range.set -> void
-ExChart.Components.ExChart.Scale.get -> ExChart.Engine.AxisScale?
-ExChart.Components.ExChart.Scale.set -> void
-ExChart.Components.ExChart.Title.get -> string?
-ExChart.Components.ExChart.Title.set -> void
-ExChart.Components.ExChart.Width.get -> double
-ExChart.Components.ExChart.Width.set -> void
-ExChart.Components.ExChart.YScale.get -> ExChart.Engine.AxisScale?
-ExChart.Components.ExChart.YScale.set -> void
 ExChart.Components.ExChartStylesheet
 ExChart.Components.ExChartStylesheet.ExChartStylesheet() -> void
-ExChart.Components.ExSurface
-ExChart.Components.ExSurface.Definition.get -> ExChart.Engine.SurfaceDefinition!
-ExChart.Components.ExSurface.Definition.set -> void
-ExChart.Components.ExSurface.Density.get -> ExGrid.GridDensity
-ExChart.Components.ExSurface.Density.set -> void
-ExChart.Components.ExSurface.Description.get -> string?
-ExChart.Components.ExSurface.Description.set -> void
-ExChart.Components.ExSurface.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExChart.Components.ExSurface.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
-ExChart.Components.ExSurface.ExSurface() -> void
-ExChart.Components.ExSurface.FileName.get -> string?
-ExChart.Components.ExSurface.FileName.set -> void
-ExChart.Components.ExSurface.Height.get -> double
-ExChart.Components.ExSurface.Height.set -> void
-ExChart.Components.ExSurface.OnSliceChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceSlice!>
-ExChart.Components.ExSurface.OnSliceChanged.set -> void
-ExChart.Components.ExSurface.OnViewChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceView!>
-ExChart.Components.ExSurface.OnViewChanged.set -> void
-ExChart.Components.ExSurface.Slice.get -> ExChart.Engine.SurfaceSlice?
-ExChart.Components.ExSurface.Slice.set -> void
-ExChart.Components.ExSurface.SliceWidth.get -> double
-ExChart.Components.ExSurface.SliceWidth.set -> void
-ExChart.Components.ExSurface.SvgTextAsync() -> System.Threading.Tasks.ValueTask<string?>
-ExChart.Components.ExSurface.Title.get -> string?
-ExChart.Components.ExSurface.Title.set -> void
-ExChart.Components.ExSurface.View.get -> ExChart.Engine.SurfaceView?
-ExChart.Components.ExSurface.View.set -> void
-ExChart.Components.ExSurface.Width.get -> double
-ExChart.Components.ExSurface.Width.set -> void
 ExChart.GridCell
 ExChart.GridCell.<Clone>$() -> ExChart.GridCell!
 ExChart.GridCell.Column.get -> string!
@@ -467,27 +334,15 @@ override ExChart.ChartRange.ToString() -> string!
 override ExChart.ChartTarget.Equals(object? obj) -> bool
 override ExChart.ChartTarget.GetHashCode() -> int
 override ExChart.ChartTarget.ToString() -> string!
-override ExChart.Chrome.ChartCommand.Equals(object? obj) -> bool
-override ExChart.Chrome.ChartCommand.GetHashCode() -> int
-override ExChart.Chrome.ChartCommand.ToString() -> string!
 override ExChart.Chrome.ChartCommandView.Equals(object? obj) -> bool
 override ExChart.Chrome.ChartCommandView.GetHashCode() -> int
 override ExChart.Chrome.ChartCommandView.ToString() -> string!
-override ExChart.Chrome.ChartFiltersContext.Equals(object? obj) -> bool
-override ExChart.Chrome.ChartFiltersContext.GetHashCode() -> int
-override ExChart.Chrome.ChartFiltersContext.ToString() -> string!
 override ExChart.Chrome.ChartFiltersView.Equals(object? obj) -> bool
 override ExChart.Chrome.ChartFiltersView.GetHashCode() -> int
 override ExChart.Chrome.ChartFiltersView.ToString() -> string!
-override ExChart.Chrome.ChartMenuContext.Equals(object? obj) -> bool
-override ExChart.Chrome.ChartMenuContext.GetHashCode() -> int
-override ExChart.Chrome.ChartMenuContext.ToString() -> string!
 override ExChart.Chrome.ChartMenuView.Equals(object? obj) -> bool
 override ExChart.Chrome.ChartMenuView.GetHashCode() -> int
 override ExChart.Chrome.ChartMenuView.ToString() -> string!
-override ExChart.Chrome.ChartToolbarContext.Equals(object? obj) -> bool
-override ExChart.Chrome.ChartToolbarContext.GetHashCode() -> int
-override ExChart.Chrome.ChartToolbarContext.ToString() -> string!
 override ExChart.Chrome.ChartToolbarView.Equals(object? obj) -> bool
 override ExChart.Chrome.ChartToolbarView.GetHashCode() -> int
 override ExChart.Chrome.ChartToolbarView.ToString() -> string!
@@ -498,10 +353,6 @@ override ExChart.ColumnSeries.<Clone>$() -> ExChart.ColumnSeries!
 override ExChart.ColumnSeries.Equals(object? obj) -> bool
 override ExChart.ColumnSeries.GetHashCode() -> int
 override ExChart.ColumnSeries.ToString() -> string!
-override ExChart.Components.ExChart.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExChart.Components.ExChart.OnParametersSet() -> void
-override ExChart.Components.ExSurface.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExChart.Components.ExSurface.OnParametersSet() -> void
 override ExChart.GridCell.Equals(object? obj) -> bool
 override ExChart.GridCell.GetHashCode() -> int
 override ExChart.GridCell.ToString() -> string!
@@ -533,20 +384,12 @@ static ExChart.ChartRange.operator !=(ExChart.ChartRange? left, ExChart.ChartRan
 static ExChart.ChartRange.operator ==(ExChart.ChartRange? left, ExChart.ChartRange? right) -> bool
 static ExChart.ChartTarget.operator !=(ExChart.ChartTarget? left, ExChart.ChartTarget? right) -> bool
 static ExChart.ChartTarget.operator ==(ExChart.ChartTarget? left, ExChart.ChartTarget? right) -> bool
-static ExChart.Chrome.ChartCommand.operator !=(ExChart.Chrome.ChartCommand? left, ExChart.Chrome.ChartCommand? right) -> bool
-static ExChart.Chrome.ChartCommand.operator ==(ExChart.Chrome.ChartCommand? left, ExChart.Chrome.ChartCommand? right) -> bool
 static ExChart.Chrome.ChartCommandView.operator !=(ExChart.Chrome.ChartCommandView? left, ExChart.Chrome.ChartCommandView? right) -> bool
 static ExChart.Chrome.ChartCommandView.operator ==(ExChart.Chrome.ChartCommandView? left, ExChart.Chrome.ChartCommandView? right) -> bool
-static ExChart.Chrome.ChartFiltersContext.operator !=(ExChart.Chrome.ChartFiltersContext? left, ExChart.Chrome.ChartFiltersContext? right) -> bool
-static ExChart.Chrome.ChartFiltersContext.operator ==(ExChart.Chrome.ChartFiltersContext? left, ExChart.Chrome.ChartFiltersContext? right) -> bool
 static ExChart.Chrome.ChartFiltersView.operator !=(ExChart.Chrome.ChartFiltersView? left, ExChart.Chrome.ChartFiltersView? right) -> bool
 static ExChart.Chrome.ChartFiltersView.operator ==(ExChart.Chrome.ChartFiltersView? left, ExChart.Chrome.ChartFiltersView? right) -> bool
-static ExChart.Chrome.ChartMenuContext.operator !=(ExChart.Chrome.ChartMenuContext? left, ExChart.Chrome.ChartMenuContext? right) -> bool
-static ExChart.Chrome.ChartMenuContext.operator ==(ExChart.Chrome.ChartMenuContext? left, ExChart.Chrome.ChartMenuContext? right) -> bool
 static ExChart.Chrome.ChartMenuView.operator !=(ExChart.Chrome.ChartMenuView? left, ExChart.Chrome.ChartMenuView? right) -> bool
 static ExChart.Chrome.ChartMenuView.operator ==(ExChart.Chrome.ChartMenuView? left, ExChart.Chrome.ChartMenuView? right) -> bool
-static ExChart.Chrome.ChartToolbarContext.operator !=(ExChart.Chrome.ChartToolbarContext? left, ExChart.Chrome.ChartToolbarContext? right) -> bool
-static ExChart.Chrome.ChartToolbarContext.operator ==(ExChart.Chrome.ChartToolbarContext? left, ExChart.Chrome.ChartToolbarContext? right) -> bool
 static ExChart.Chrome.ChartToolbarView.operator !=(ExChart.Chrome.ChartToolbarView? left, ExChart.Chrome.ChartToolbarView? right) -> bool
 static ExChart.Chrome.ChartToolbarView.operator ==(ExChart.Chrome.ChartToolbarView? left, ExChart.Chrome.ChartToolbarView? right) -> bool
 static ExChart.Chrome.ChartToolbarWords.operator !=(ExChart.Chrome.ChartToolbarWords? left, ExChart.Chrome.ChartToolbarWords? right) -> bool
@@ -571,19 +414,13 @@ static ExChart.SeriesVisibility.operator ==(ExChart.SeriesVisibility? left, ExCh
 virtual ExChart.GridChartSeries.EqualityContract.get -> System.Type!
 virtual ExChart.GridChartSeries.Equals(ExChart.GridChartSeries? other) -> bool
 virtual ExChart.GridChartSeries.PrintMembers(System.Text.StringBuilder! builder) -> bool
-~override ExChart.Components.ExChart.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ExChart.ChartPointClick.Deconstruct(out string! SeriesId, out double Position, out object? Row) -> void
 ExChart.ChartRange.Deconstruct(out double? From, out double? To, out double? YFrom, out double? YTo) -> void
-~override ExChart.Components.ExSurface.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ExChart.SnapshotChartData
 ExChart.SnapshotChartData.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExChart.SnapshotChartData.RowCount.get -> int
 ExChart.SnapshotChartData.SnapshotChartData(ExGrid.Data.Snapshot! snapshot) -> void
 ExChart.SnapshotChartData.Value(string! column, int row) -> object?
 ExChart.SnapshotChartData.Version.get -> long
-ExChart.Components.ExChart.Spec.get -> string?
-ExChart.Components.ExChart.Spec.set -> void
-ExChart.Components.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
-ExChart.Components.ExChart.Sources.set -> void
 ExChart.GridChartDeclarations<TRow>.FromZeroOf.get -> System.Func<string!, bool?>?
 ExChart.GridChartDeclarations<TRow>.FromZeroOf.init -> void

@@ -22,7 +22,7 @@
 </div>
 @if (Mud)
 {
-    <MudChartDock @ref="_dock" ScriptCore="true" TRow="CdsRow" Bridge="_bridge" Placement="ChartDockPlacement.Right" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+    <MudChartDock @ref="_dock" TRow="CdsRow" Bridge="_bridge" Placement="ChartDockPlacement.Right" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
         <MudExGridPaper Elevation="1">
             <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
                     HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"

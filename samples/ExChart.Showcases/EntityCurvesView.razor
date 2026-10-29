@@ -23,7 +23,7 @@
 </div>
 @if (Mud)
 {
-    <MudChartDock @ref="_dock" ScriptCore="true" TRow="CdsCurveRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+    <MudChartDock @ref="_dock" TRow="CdsCurveRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
         @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
         <MudExGridPaper Elevation="1" Style="display: flex">
             <ExGrid @ref="_bridge.ScriptGrid" TRow="CdsCurveRow" Source="_source" Columns="Columns" HeaderGroups="Groups"

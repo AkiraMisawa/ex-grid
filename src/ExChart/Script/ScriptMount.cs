@@ -38,8 +38,7 @@ internal sealed class ScriptMount(
     IJSRuntime js, Func<Func<Task>, Task> invoke, Func<Exception, Task> fail, Func<string, JsonElement, Func<Task>?> prepare,
     RazorSlotHolders? slots = null, Action? slotsChanged = null)
 {
-    /// <summary>The script's address under the application's base: ExChart's minified Script Core and bridge. Not
-    /// <c>ex-chart.min.js</c>, which is the Razor component's pointer script.</summary>
+    /// <summary>The script's address under the application's base: ExChart's minified Script Core and bridge.</summary>
     private const string ScriptPath = "_content/ExChart/ex-chart-core.min.js";
 
     private readonly Queue<Func<Task>> _heard = new();
