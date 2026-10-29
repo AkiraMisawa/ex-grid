@@ -73,7 +73,9 @@
             <code>cssVarPrefix</code> of its own, is refused by name, because the Chrome would otherwise be drawn in
             colours that are not the theme's. As under Mantine, the cells keep the document's font, Paper and Ink, a part
             you give in <code>chrome</code> beats MUI's, and <code>muiSheetChrome</code> is the Wrapper's parts alone.
-            Switch the Example below to Mantine or MUI to see either.
+            Neither hands the Sheet <code>presentationDefaults</code>; a Wrapper of your own that paints the cells in
+            its font hands them as ExGrid takes them, and the Sheet measures its columns, and decides what fits, in that
+            font's widths. Switch the Example below to Mantine or MUI to see either.
         </p>
     </DocsSection>
 

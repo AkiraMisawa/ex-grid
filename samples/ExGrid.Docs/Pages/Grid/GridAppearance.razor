@@ -387,7 +387,11 @@
             and Sheet Tabs — and an Escape typed there cancels as one typed in the grid does. <code>handling</code> takes an <code>AbortSignal</code>
             in place of the token, and work that sees it aborted rejects with the signal's reason, which the promise
             answers as <code>false</code>. Cancellable work placed while another's <code>handling</code> is being called
-            is refused by name; placed from a later turn, it waits behind the work under way.
+            is refused by name; placed from a later turn, it waits behind the work under way. <code>inOrder</code>'s
+            <code>handling</code> is handed its turn: work placed through that turn's <code>inOrder</code> and
+            <code>cancellableInOrder</code> runs at once, inside it, where the grid's own would wait for the turn to end,
+            and the inputs made meanwhile wait behind both. A press of your own that waits for something before asking
+            for more work places it so; once the turn has ended, its methods are refused by name.
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through

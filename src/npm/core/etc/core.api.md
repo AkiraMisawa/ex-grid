@@ -744,6 +744,9 @@ export interface GridCellMessageSlotContext {
 }
 
 // @public
+export function gridCellMetrics(options?: GridTextOptions): CellTextMetrics;
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];

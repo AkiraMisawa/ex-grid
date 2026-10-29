@@ -8,7 +8,7 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, formulaBarHeight, GridMetrics, GridPresentationDefaults, type CellTextMeasure, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
+    createGrid, formulaBarHeight, gridCellMetrics, GridPresentationDefaults, type CellTextMetrics, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
@@ -761,8 +761,10 @@ class SheetView {
             && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
-        if (next.density !== this.#options.density || next.presentationDefaults !== this.#options.presentationDefaults) {
-            this.#columns = new SheetColumns(SheetView.#metricsOf(next), error => this.#words.formulaUnreadable(error));
+        // Measured again only where the widths are others: defaults made again with the same widths change nothing.
+        const metrics = SheetView.#metricsOf(next);
+        if (!metrics.equals(SheetView.#metricsOf(this.#options))) {
+            this.#columns = new SheetColumns(metrics, error => this.#words.formulaUnreadable(error));
             this.#columns.read(this.#source.sheet);
         }
         const wordsMoved = next.label !== this.#options.label || next.japanese !== this.#options.japanese;
@@ -979,11 +981,12 @@ class SheetView {
     // The Consumer chooses the file and delivers the written one (ADR-0330 §2): the Sheet references no file format, and
     // takes a Workbook Document still being read, or lends the Workbook to a writer, each at its own place in the order.
 
-    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
+    // Async, so a Sheet destroyed is a rejection, as every refusal of an opening is.
+    async open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
         this.#alive();
         const grid = this.#grid;
         if (grid === undefined) throw new Error('This Sheet was destroyed.');
-        return this.#openIn(read, (opening, tooLate) => grid.cancellableInOrder(opening, tooLate));
+        return await this.#openIn(read, (opening, tooLate) => grid.cancellableInOrder(opening, tooLate));
     }
 
     // Opens in the place `place` puts the opening: the Sheet's order, or a turn under way (ADR-0240 section 6).
@@ -1068,11 +1071,12 @@ class SheetView {
         this.#armTheMinute();
     }
 
-    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
+    // Async, so a Sheet destroyed is a rejection, as every refusal of a save is.
+    async save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
         this.#alive();
         const grid = this.#grid;
         if (grid === undefined) throw new Error('This Sheet was destroyed.');
-        return this.#saveIn(write, saving => grid.inOrder(saving));
+        await this.#saveIn(write, saving => grid.inOrder(saving));
     }
 
     // Saves in the place `place` puts the save: the Sheet's order, or a turn under way (ADR-0240 section 6).
@@ -1099,13 +1103,14 @@ class SheetView {
     inOrder(handling: (turn: SheetTurn) => void | PromiseLike<void>): Promise<void> {
         if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240 section 6).');
         return this.#liveGrid().inOrder(turn => handling({
-            open: read => {
+            // Async, so a Sheet destroyed, or a turn ended, is a rejection, as the Sheet's own open and save answer.
+            open: async read => {
                 this.#alive();
-                return this.#openIn(read, (opening, tooLate) => turn.cancellableInOrder(opening, tooLate));
+                return await this.#openIn(read, (opening, tooLate) => turn.cancellableInOrder(opening, tooLate));
             },
-            save: write => {
+            save: async write => {
                 this.#alive();
-                return this.#saveIn(write, saving => turn.inOrder(saving));
+                await this.#saveIn(write, saving => turn.inOrder(saving));
             },
         }));
     }
@@ -1677,16 +1682,17 @@ class SheetView {
         return formulaBarHeight(SheetView.#densityOf(options), options.rowHeight);
     }
 
-    // The grid's Density as it resolves it (ADR-0028, ADR-0030): the Sheet's, a Wrapper's, then compact.
+    // The grid's Density as it resolves it (ADR-0028, ADR-0030): the Sheet's, a Wrapper's, then compact. The band's
+    // height reads it; the widths are the grid's own resolution (#metricsOf).
     static #densityOf(options: SheetOptions): GridDensity {
         // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0028: an untouched grid is compact, as createGrid's is
         return options.density ?? options.presentationDefaults?.density ?? 'compact';
     }
 
-    // The Cell Metrics the grid paints with: its Density's, or a Wrapper's widths at it (ADR-0030).
-    static #metricsOf(options: SheetOptions): CellTextMeasure {
-        const { presentationDefaults: defaults } = options;
-        return GridMetrics.resolve({ density: SheetView.#densityOf(options), ...(defaults === undefined ? {} : { defaults }) }).cellMetrics;
+    // The Cell Metrics the grid paints with, as it resolves them: its Density's, or a Wrapper's widths at it (ADR-0030).
+    static #metricsOf(options: SheetOptions): CellTextMetrics {
+        const { density, presentationDefaults } = options;
+        return gridCellMetrics({ ...(density === undefined ? {} : { density }), ...(presentationDefaults === undefined ? {} : { presentationDefaults }) });
     }
 
     get #tabsHeightPx(): number {

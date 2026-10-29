@@ -79,7 +79,7 @@ export { GlyphWidthTable } from './columns/glyph-width-table';
 export { GridPresentationDefaults, type GridPresentationDefaultsOptions } from './grid-presentation-defaults';
 export { densityText } from './density-text';
 export type { DensityText } from './density-text';
-export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
+export { gridCellMetrics, gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
 export type { GridTextGeometry, GridTextOptions } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, findStep, type GridFindRequest, type GridFindResult } from './finding/find';

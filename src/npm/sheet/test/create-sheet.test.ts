@@ -2226,6 +2226,10 @@ describe('a Framework Adapter\'s hold on the Sheet\'s grid (ADR-0410 section 5)'
         expect(() => { sheet.focus(); }).toThrow('This Sheet was destroyed.');
         expect(() => sheet.holdSettled()).toThrow('This Sheet was destroyed.');
         expect(() => sheet.inOrder(() => undefined)).toThrow('This Sheet was destroyed.');
+        // An opening and a save are refused as every refusal of theirs is: their promise rejects.
+        const opening = sheet.open(() => Promise.reject(new Error('Never read.')));
+        await expect(opening).rejects.toThrow('This Sheet was destroyed.');
+        await expect(sheet.save(() => undefined)).rejects.toThrow('This Sheet was destroyed.');
     });
 });
 

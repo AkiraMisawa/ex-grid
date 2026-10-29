@@ -277,8 +277,12 @@ describe('the Selection Summary across the bridge (ADR-0130)', () => {
     });
 });
 
-/** Column A's width as the grid emitted it. */
-const widthOfA = (element: HTMLElement): string | undefined => element.querySelector<HTMLElement>('.ex-header-cell')?.style.width;
+/** Column A's width as the grid emitted it, in pixels. */
+function widthOfA(element: HTMLElement): number {
+    const width = element.querySelector<HTMLElement>('.ex-header-cell')?.style.width;
+    if (width === undefined) throw new Error('No column header is painted.');
+    return Number.parseFloat(width);
+}
 
 describe('a Wrapper\'s widths across the bridge (ADR-0030)', () => {
     it('measures the Sheet\'s columns in the font the paper .NET cascades paints its cells in, and again when it goes', async () => {
@@ -289,7 +293,7 @@ describe('a Wrapper\'s widths across the bridge (ADR-0030)', () => {
         } as const;
         const { element, sheet } = mount({ options: options({ rowHeight: 28, presentationDefaults: wide }) });
 
-        expect(widthOfA(element)).not.toBe(widthOfA(plain.element));
+        expect(widthOfA(element)).toBeGreaterThan(widthOfA(plain.element) + 20);
         sheet.update(JSON.stringify({ options: options({ rowHeight: 28 }) }));
         await vi.waitFor(() => { expect(widthOfA(element)).toBe(widthOfA(plain.element)); });
     });
