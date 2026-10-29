@@ -36,4 +36,9 @@ public enum CommitRefusalReason
     /// open: the position the editor stands at names another row now (ADR-0011's note of
     /// 2026-10-07). Escape is the way out.</summary>
     OrderMoved,
+
+    /// <summary>Escape was typed while the commit was pending, its verdict or its edit's answer not yet given
+    /// (ADR-0380 section 3): what was asked is called off, nothing is written, and the editor stays open with the
+    /// text. Raised by the grid over the Script Core.</summary>
+    Cancelled,
 }

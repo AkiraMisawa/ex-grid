@@ -21,6 +21,23 @@ describe('createGrid', () => {
         expect(noticeWords(root)).toBe('This page holds another version\'s stylesheet. Reload the page.');
     });
 
+    it('ADR-0123 ERR-11: a Chrome\'s stylesheets each have a notice beside the grid\'s own, drawn again when the list changes', () => {
+        const stamp = 'a'.repeat(64);
+        const chrome = { stylesheets: [{ name: 'mud-ex-grid.css', stamp }] };
+        const { root, view } = mount({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, chrome });
+        const notices = (): (string | null)[][] => [...root.querySelectorAll(':scope > [data-ex-notice="stylesheet"]')]
+            .map(notice => [notice.getAttribute('data-ex-stylesheet'), notice.getAttribute('data-ex-stamp'), notice.textContent]);
+        const words = 'This page holds another version\'s stylesheet. Reload the page.';
+        expect(notices()).toEqual([['ex-grid.css', expect.any(String), words], ['mud-ex-grid.css', stamp, words]]);
+        view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480, chrome });
+        expect(notices()).toHaveLength(2);
+        view.update({ columns, rows: trades(10), rowHeight: 24, viewportHeight: 480 });
+        expect(notices().map(([name]) => name)).toEqual(['ex-grid.css']);
+        const unstamped: unknown = { name: 'x.css' };
+        expect(() => mount({ columns, rows: trades(1), rowHeight: 24, viewportHeight: 480, chrome: { stylesheets: [unstamped as never] } }))
+            .toThrow(/Each of chrome.stylesheets is \{ name, stamp \}/);
+    });
+
     it('ADR-0350: the root, the scroller, the header and the rows are the C# core\'s DOM contract', async () => {
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
         await painted();

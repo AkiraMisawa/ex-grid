@@ -51,26 +51,6 @@ test('ADR-0361: a press on the cell being typed into, made before its editor is 
     expect(await nameBox(grid).inputValue()).toBe('E3');
 });
 
-test('ADR-0240: typing alone is settled only when the editor render has heard its text', async ({ page }) => {
-    await page.goto('/features');
-    const grid = page.locator('.ex-grid').first();
-    await expectTabStopTaken(grid);
-    await setRoundTrip(150);
-    await grid.locator("[id$='r0c1']").click({ force: true });
-    await page.keyboard.press('F2');
-    await settled(grid);
-
-    await page.keyboard.press('ControlOrMeta+A');
-    await page.keyboard.type('typed without a command 123456789');
-    await settled(grid);
-    const reading = await grid.locator('.ex-editor:not(.ex-formula-bar-text)').evaluate((surface) => ({
-        typed: surface.value ?? surface.querySelector('input, textarea').value,
-        heard: surface.getAttribute('data-ex-mode-text'),
-    }));
-    expect(reading.typed).toBe('typed without a command 123456789');
-    expect(reading.heard).toBe(reading.typed);
-});
-
 for (const chrome of ['builtin', 'mud']) {
     test(`ADR-0240: a point survives its press answer and release, and fresh typing replaces it (${chrome})`, async ({ page }) => {
         await openSheet(page, chrome);

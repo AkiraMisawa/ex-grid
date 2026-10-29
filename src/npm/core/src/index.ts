@@ -11,6 +11,7 @@ export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridPopoverContext } from './dom/consumer-popover';
 export type { GridDeclaredKeyPress, GridHeaderGroup, GridOptions, GridTurn, GridViewRead, ViewportSize } from './dom/grid-view';
+export { gridInputRoot } from './dom/grid-view';
 export type { HeaderGroupToggle, HiddenMark } from './columns/header-groups';
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export { formulaBarHeight, type FormulaBarOptions } from './dom/formula-bar';
@@ -29,7 +30,7 @@ export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { builtInCommandLabel, builtInLabelIds } from './chrome/command-labels';
 export type {
-    CellEditorView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome, GridChromeSlot,
+    CellEditorView, FindPanelView, FormulaBarTextView, GridCellEditorSlotContext, GridCellMessageSlotContext, GridChrome, GridChromeSlot, GridChromeStylesheet,
     GridColumnMenuSlotContext, GridContextMenuSlotContext, GridEditorCompletionSlotContext, GridFilterPanelSlotContext, GridFindPanelSlotContext,
     GridFormulaBarTextSlotContext, GridLoadingIndicatorSlotContext, GridMenuSlotContext, GridNameBoxSlotContext, GridSelectionSummarySlotContext,
 } from './dom/grid-chrome';

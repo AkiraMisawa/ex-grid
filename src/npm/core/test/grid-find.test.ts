@@ -479,6 +479,7 @@ describe('Replace (ADR-0332 §2 and §3)', () => {
         key(root, 'h', { ctrlKey: true });
         typeInto(field(root), 'novak');
         replaceWith(root, 'Rossi');
+        (q(root, '.ex-popover-find button.ex-find-replace-all') as HTMLButtonElement).focus();
         press(root, 'button.ex-find-replace-all');
         expect(requests).toEqual([{
             text: 'novak', matchCase: false, wholeCell: false, replacement: 'Rossi', scope: undefined,
@@ -489,6 +490,8 @@ describe('Replace (ADR-0332 §2 and §3)', () => {
         // While the answer is out, neither Replace can be pressed again.
         const buttons = ['button.ex-find-replace', 'button.ex-find-replace-all'].map(selector => q(root, `.ex-popover-find ${selector}`) as HTMLButtonElement);
         expect(buttons.map(button => button.disabled)).toEqual([true, true]);
+        // A disabled button would drop the keyboard to the page: the find field holds it meanwhile.
+        expect(document.activeElement).toBe(field(root));
         defined(later, 'the answer')(replacedCells(100, 0));
         await settle();
         expect(outcome(root)).toBe('Replaced 100 cells.');

@@ -213,6 +213,8 @@ internal static class SheetWords
             $"What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {address} was being edited, so nothing was written. Press Escape to leave it.",
         CommitRefusalReason.RowLeftTheWindow =>
             $"What was typed was not entered: the row of {address} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+        CommitRefusalReason.Cancelled =>
+            $"What was typed was not entered: Escape called off the entry of {address} while it was being checked, so nothing was written. The text is still in the editor.",
         // A reason with no sentence here would be told as something it is not (principle 1).
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "A commit refusal the Sheet does not word."),
     };

@@ -732,3 +732,26 @@ cancellable work placed there as it cancels any other. The browser numbers each 
 opening or a save was called from. A call whose press has ended by the time it reaches the browser takes its own place
 in the order, as a call made after the press would. Nothing new is decided here: the Razor component's rule is carried
 over.
+
+## Sections 11 and 12 over the Script Core, 2026-10-29
+
+Blazor's ExGrid over the Script Core carries out in the browser what the Razor component carried out in .NET: an arrow,
+the typing in an editor, a popover's close. Those cannot be lost on a circuit that is down, and they are not numbered.
+What .NET carries out or answers is numbered as it crosses: a write (an edit, a paste, a fill, a Delete, a Replace All,
+a declared key, a mark), an Action, an undo or redo, a Name Box entry, a sort or filter, a Find or error step, a copy
+answered by .NET, a Context Menu's commands and the command run, and a verdict. Each crosses as `Call(number, method,
+arguments)`, held like any other call when it is large. .NET notes each number as the call is made in its turn, and the
+section's rule finds the numbers lost. The bridge sends `InputsSent` when a key or press is made on the grid, heard on
+the document ahead of the grid's own listeners, while a numbered call is unanswered. .NET answers the lost numbers with
+`inputsLost` and the words of `KeyRefusalLabelIds.LostOnTheWay`. The calls end as lost. A commit or verdict is refused in
+its editor in those words, and the editor keeps its text. A paste or fill is refused, and a question the core waits on is
+given up as an `AbortError`. The words are said once for the rest. What .NET only hears, a Selection or a column's width,
+crosses unnumbered: if it is lost, .NET's copy is stale until the next one, and nothing is refused. This is the rule's
+*Not covered* list again, in another place.
+
+Section 12's busy root and its sentence are drawn by the core while a paste's answer is out (`ex-pasting`, `aria-busy`,
+`GridLabelIds.PasteUnderWay`). The cancel crosses as `CancelAnswer`, heard as it arrives and not in its turn. A cancel
+that reaches .NET before the paste's arguments are taken in calls the paste off before the Consumer is asked. **Still
+open:** a cancel that reaches .NET after a synchronous `OnPaste` or `OnEdit` has already written is said in the browser as
+cancelled. The outcome has to come from .NET for the browser to say it truly, and that change to the wire and the core
+is left for later.

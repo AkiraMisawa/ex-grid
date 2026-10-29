@@ -772,13 +772,20 @@ export interface GridChrome<Row> {
     readonly loadingIndicator?: GridChromeSlot<GridLoadingIndicatorSlotContext>;
     readonly nameBox?: GridChromeSlot<GridNameBoxSlotContext>;
     readonly selectionSummary?: GridChromeSlot<GridSelectionSummarySlotContext>;
+    readonly stylesheets?: readonly GridChromeStylesheet[];
 }
 
 // @public
 export type GridChromeSlot<Context> = (slot: HTMLElement, context: Context) => () => void;
 
 // @public
-export const gridChromeSlotNames: readonly (keyof GridChrome<unknown>)[];
+export const gridChromeSlotNames: readonly Exclude<keyof GridChrome<unknown>, 'stylesheets'>[];
+
+// @public
+export interface GridChromeStylesheet {
+    readonly name: string;
+    readonly stamp: string;
+}
 
 // @public
 export class GridClearIntent {
@@ -1058,6 +1065,7 @@ export interface GridFormulaBarTextSlotContext {
 
 // @public
 export interface GridHandle<Row> {
+    announce(sentence: string): void;
     cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
     readonly canSummarize: boolean;
     closePopover(): void;
@@ -1102,6 +1110,9 @@ export function gridHeaderRequiredPx(label: string, options: GridTextOptions & {
     readonly menuButton: boolean;
     readonly sortable: boolean;
 }): number;
+
+// @public
+export function gridInputRoot(root: HTMLElement): HTMLElement;
 
 // @public
 export const gridLabelIds: Readonly<{

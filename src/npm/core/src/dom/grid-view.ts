@@ -14,7 +14,7 @@ import { assembleCopy, checkedCopyAnswer, fieldCopyFlavours, type CopyFlavours, 
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
 import {
-    columnPlaceholder, commitCancelledId, copyRefusalLabelIds, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalLabelIds, replaceCellChangedId, rowCommandRefusalId,
+    columnPlaceholder, commitCancelledId, copyRefusalLabelIds, errorStepMovedId, errorStepNoneId, heldInputLostId, pasteRefusalLabelIds, pasteUnderWayId, replaceCellChangedId, rowCommandRefusalId,
     shapeMismatchMaySpillLabelId,
 } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
@@ -40,7 +40,7 @@ import { changeHighlightShowingUntil } from '../cells/change-highlight';
 import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import {
-    cancelsPending, elementDefault, eventAgain, heldEventTypes, heldInputOf, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
+    cancelsPending, elementDefault, eventAgain, heldEventTypes, heldInputOf, inputDefault, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
     type HeldInput,
 } from './pending-commit';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
@@ -236,8 +236,9 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * what it copies: ExPivot asks its report source. A copy event then takes the asynchronous write, even when the
      * Window holds every cell. The Consumer captures what the copy reads, such as the report on screen, before it
      * awaits, and the grid never puts the rows in hand in place of an answer. The signal aborts when a newer copy
-     * supersedes this one or the grid is destroyed; the answer is then written nowhere. `copyAnswer` takes
-     * precedence where both are given.
+     * supersedes this one or the grid is destroyed; the answer is then written nowhere. A promise that rejects
+     * with an `AbortError` is given up by whoever answers, who says why itself: nothing is written and nothing
+     * said. `copyAnswer` takes precedence where both are given.
      */
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
@@ -502,7 +503,8 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * the text the Cell Editor opens with. The Consumer writes every match or none, as one step of its undo
      * stack, and answers the count or the cells it could not write, under the version it read its rows in; an
      * answer under another is refused as the order having moved. `GridSource.from`'s `replace` answers it, and
-     * `planReplace` is the reference. Replace, the current match alone, is an ordinary `onEdit`.
+     * `planReplace` is the reference. Replace, the current match alone, is an ordinary `onEdit`. A promise that
+     * rejects with an `AbortError` is given up by whoever answers, who says why itself: the grid says nothing.
      */
     readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     /**
@@ -1236,6 +1238,9 @@ interface PendingCommit<Row> {
     readonly held: HeldInput[];
     /** What a cancel says, and what it takes back. */
     readonly cancelled: () => void;
+    /** A paste's or a fill's intent, which has no editor to say it is pending: the root says it is under way, as a paste
+     * read over a circuit did (ADR-0240 section 12). */
+    readonly underWay?: true;
     /** The text field that held the keyboard, read-only while the answer is out, where it is not the editor. */
     readonly stilled: HTMLInputElement | HTMLTextAreaElement | undefined;
 }
@@ -1403,10 +1408,6 @@ function stretchRootStyle(width: ViewportSize, height: ViewportSize): string {
         : '; display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0';
 }
 
-/**
- * One grid in one element. Made by `createGrid`, which hands back its handle; nothing outside the core
- * holds it.
- */
 /** A press on a mark of the grid's own, held to the order and source it was taken against (MK-9). */
 interface MarkPress {
     readonly sequence: number;
@@ -1419,6 +1420,18 @@ interface HeaderMarkPress extends MarkPress {
     readonly page: RowRange | undefined;
 }
 
+/** The element a grid at `root` hears its input on (ADR-0240): the nearest Input Root around it, never one beyond a grid
+ * it is nested in, as the C# script found it, or `root` itself. A Framework Adapter that hears a grid's input before the
+ * grid does listens there. */
+export function gridInputRoot(root: HTMLElement): HTMLElement {
+    const around = root.parentElement?.closest<HTMLElement>('[data-ex-input-root], .ex-grid');
+    return around?.hasAttribute('data-ex-input-root') === true ? around : root;
+}
+
+/**
+ * One grid in one element. Made by `createGrid`, which hands back its handle; nothing outside the core
+ * holds it.
+ */
 export class GridView<Row> {
     readonly #root: HTMLElement;
     // The Input Root (ADR-0240 ticket 04): the product's box around the grid that marks itself `data-ex-input-root`,
@@ -1434,6 +1447,9 @@ export class GridView<Row> {
     readonly #stamp: HTMLElement;
     // The stylesheet's notice (ADR-0123), worded through `commandLabel`.
     readonly #stylesheetNotice: HTMLElement;
+    // The notices of the stylesheets the Chrome brings, beside the grid's own, and what they were drawn from.
+    #chromeNotices: readonly HTMLElement[] = [];
+    #chromeNoticesDrawn = '';
     readonly #announce: HTMLElement;
     readonly #shadeLayer: HTMLElement;
     readonly #pinnedLayer: HTMLElement;
@@ -1548,6 +1564,9 @@ export class GridView<Row> {
     readonly #selectWholeResult: HTMLElement;
     readonly #markResult: HTMLElement;
     #markResultPress: MarkPress | undefined;
+    // The cell a secondary press on the rows landed on, and where, which the Context Menu its contextmenu raises opens
+    // on: what that menu commits may move the page before the event arrives (ADR-0036, ADR-0240).
+    #secondaryPress: { readonly at: CellPosition | undefined; readonly leftPx: number; readonly topPx: number | undefined } | undefined;
     // How many times the marks have said they changed, and the page's checkbox state with what it was asked over, so a
     // pass that changed none of it asks no row again (ADR-0027).
     #marksStamp = 0;
@@ -1923,9 +1942,7 @@ export class GridView<Row> {
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
         this.#root = root;
-        // Never one beyond a grid this root is nested in, as the C# script finds it.
-        const around = root.parentElement?.closest<HTMLElement>('[data-ex-input-root], .ex-grid');
-        this.#inputRoot = around?.hasAttribute('data-ex-input-root') === true ? around : root;
+        this.#inputRoot = gridInputRoot(root);
         this.#reports = reports;
         instances += 1;
         this.#ids = `ex${instances}-`;
@@ -2167,9 +2184,26 @@ export class GridView<Row> {
 
     // The stylesheet's notice says the Consumer's words where `commandLabel` has some, as the C# core's does. Called
     // after `#commit`, which takes the `commandLabel` it asks.
+    // The Chrome's stylesheets' notices stand beside it, drawn again when the Chrome's list or the words change.
     #wordNotice(): void {
         const words = this.#labelOf(reloadNoticeLabelIds.stylesheet);
         if (this.#stylesheetNotice.textContent !== words) this.#stylesheetNotice.textContent = words;
+        const brought = this.#chrome?.stylesheets;
+        const sheets = brought === undefined ? [] : brought;
+        const drawn = JSON.stringify([words, sheets.map(sheet => [sheet.name, sheet.stamp])]);
+        if (drawn === this.#chromeNoticesDrawn) return;
+        this.#chromeNoticesDrawn = drawn;
+        for (const notice of this.#chromeNotices) notice.remove();
+        this.#chromeNotices = sheets.map(sheet => {
+            const notice = this.#stylesheetNotice.ownerDocument.createElement('div');
+            notice.setAttribute('data-ex-notice', 'stylesheet');
+            notice.setAttribute('data-ex-stylesheet', sheet.name);
+            notice.setAttribute('data-ex-stamp', sheet.stamp);
+            notice.style.display = 'none';
+            notice.textContent = words;
+            return notice;
+        });
+        this.#stylesheetNotice.after(...this.#chromeNotices);
     }
 
     /**
@@ -4196,6 +4230,11 @@ export class GridView<Row> {
             return;
         }
         this.#pressHandedOver = false;
+        // A press that raises the Context Menu, the secondary button's or Control with the primary on macOS, is read
+        // where it was made, before anything that follows it moves the page (ADR-0036, ADR-0240).
+        this.#secondaryPress = event.target === this.#viewport && (event.button === 2 || (event.button === 0 && event.ctrlKey))
+            ? { at: this.#cellUnder(event), leftPx: event.offsetX - this.#scrollLeftPx, topPx: this.#viewportYOf(event) }
+            : undefined;
         // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
         if (event.button !== 0 || event.target !== this.#viewport) return;
@@ -4904,7 +4943,7 @@ export class GridView<Row> {
     // A commit's answer is out. `answered` takes it, against the rows as they stand then, and says whether the
     // commit landed: the gesture that made it is then taken again, where `retake` allows, and the held inputs after
     // it. `failed` takes back what an answer that failed leaves, and the failure is rethrown once they are taken.
-    #pend<T>(answer: PromiseLike<T>, pending: Pick<PendingCommit<Row>, 'controller' | 'edit' | 'phase' | 'cancelled'>, retake: boolean,
+    #pend<T>(answer: PromiseLike<T>, pending: Pick<PendingCommit<Row>, 'controller' | 'edit' | 'phase' | 'cancelled' | 'underWay'>, retake: boolean,
         answered: (value: T) => boolean, failed?: () => void): void {
         const input = this.#input;
         const trigger: HeldInput | undefined = !retake ? undefined
@@ -5034,7 +5073,12 @@ export class GridView<Row> {
             if (field !== undefined && event.data !== '') typeText(field, event.data, 'insertText');
             return true;
         }
-        // What follows a key or a composition is its consequence, which taking them again brings about.
+        // A key held had its default prevented, so no text followed it: text put in a field while input was held came
+        // with no key, a drop, a dictation or an automation's fill, and is put in again (ADR-0380 section 3).
+        if (event.type === 'beforeinput' && event instanceof InputEvent && !event.isComposing && !event.inputType.includes('Composition')) {
+            const target = typedField(event.target instanceof Element && event.target.isConnected ? event.target : holder);
+            return target !== undefined && inputDefault(target, event) !== 'lost';
+        }
         if (event.type === 'compositionstart' || event.type === 'compositionupdate' || event.type === 'beforeinput' || event.type === 'input') {
             return true;
         }
@@ -5204,9 +5248,12 @@ export class GridView<Row> {
     }
 
     // Whether a row command's row is gone from the Window, where the source it was made on is still bound: one a
-    // replaced source painted is refused as that at its turn.
+    // replaced source painted is refused as that at its turn. Without a Row Key, a new instance at the position it was
+    // pressed at, under the order it was pressed under, is that row's new version, and the row has not left (ADR-0140).
     #leftTheWindow(pressed: PressedRow<Row>): boolean {
-        return pressed.source === this.#source && !this.#windowHolds(pressed.row);
+        if (pressed.source !== this.#source) return false;
+        const now = this.#pressedRowNow(pressed);
+        return 'refused' in now && now.refused === 'rowLeftTheWindow';
     }
 
     // A new Window: a held row command whose row it no longer holds has lost it for good (ADR-0240's note of
@@ -5834,7 +5881,7 @@ export class GridView<Row> {
         answer: PromiseLike<unknown>, intent: GridPasteIntent | GridFillIntent, controller: AbortController, written: UserWrite, landed: () => void,
     ): void {
         this.#pend(answer, {
-            controller, edit: undefined, phase: 'intent',
+            controller, edit: undefined, phase: 'intent', underWay: true,
             cancelled: () => {
                 this.#intentAnswered(intent, written, true);
                 this.#refuse({ kind: 'paste', reason: 'cancelled' });
@@ -5844,6 +5891,8 @@ export class GridView<Row> {
             landed();
             return true;
         }, () => { this.#intentAnswered(intent, written, true); });
+        // Said once, as it starts: the root says it for as long as it lasts (ADR-0240 section 12).
+        if (this.#pending?.underWay === true) this.#say(this.#labelOf(pasteUnderWayId));
     }
 
     /**
@@ -6907,6 +6956,13 @@ export class GridView<Row> {
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
+    /** Says `sentence` in the live region as a refusal of the grid's own is said (ADR-0033, ADR-0240 section 11). */
+    announce(sentence: string): void {
+        if (typeof sentence !== 'string') throw new TypeError('announce is handed the sentence to say.');
+        if (this.#destroyed) return;
+        this.#sayRefusal(sentence);
+    }
+
     /**
      * The keyboard back to the grid from something of the Consumer's that held it over the grid and goes away, a
      * dialog, a panel, a tab (DC-61, ADR-0070), or from a Chrome's frame outside it (ADR-0071): to the field an
@@ -7351,10 +7407,15 @@ export class GridView<Row> {
         if (this.#handedOver()) return;
         this.#answered += 1;
         this.#invalidate();
+        // A commit made pending holds this event, which is taken again at its turn, with the press still noted.
         if (!this.#commitEdit()) return;
+        // The press that raised it says the cell, read before the commit or the page's answer to it moved anything;
+        // a contextmenu with no press of its own reads the cell under it now.
+        const pressed = this.#secondaryPress;
+        this.#secondaryPress = undefined;
         this.#reconcileSelection();
-        const at = this.#cellUnder(event);
-        const topPx = this.#viewportYOf(event);
+        const at = pressed === undefined ? this.#cellUnder(event) : pressed.at;
+        const topPx = pressed === undefined ? this.#viewportYOf(event) : pressed.topPx;
         if (at === undefined || topPx === undefined) {
             this.#closePopover(true);
             return;
@@ -7362,7 +7423,7 @@ export class GridView<Row> {
         this.#tabReleased = false;
         const selection = this.#held.selection;
         if (!selection.contains(at)) this.#apply(selection.click(at, this.#extent));
-        this.#openContextMenu(at, event.offsetX - this.#scrollLeftPx, topPx);
+        this.#openContextMenu(at, pressed === undefined ? event.offsetX - this.#scrollLeftPx : pressed.leftPx, topPx);
     };
 
     // The Context Menu from the keyboard, on the Focus, which is inside the Selection by construction, so
@@ -7481,6 +7542,10 @@ export class GridView<Row> {
             this.#closePopover(true);
             throw error;
         }
+        // Contents a Framework Adapter draws later, a round trip away on a circuit, owe the keyboard the opening
+        // asked for: meanwhile the grid holds it, wherever it stood, so a key typed before they are drawn is the
+        // menu's (ADR-0410 section 5) and never lands on the page.
+        if (items.focusOwed && this.#root.ownerDocument.activeElement !== this.#keyField) this.#takeKeyboard();
         this.#invalidate();
     }
 
@@ -8413,12 +8478,25 @@ export class GridView<Row> {
         // still writing, would be performed or not as the answer's timing fell, so the buttons wait for it
         // (the spine's sixth rule).
         this.#replacing += 1;
+        // A button that waits disabled drops the keyboard to the page, where no key reaches the panel, Escape
+        // included: a Replace button pressed hands it to the find field meanwhile, and has it back once it is
+        // pressed again, where nothing has moved it since, so a second Enter presses it again.
+        const doc = this.#root.ownerDocument;
+        const pressed = doc.activeElement;
+        let lentTo: Element | null = null;
+        if (pressed instanceof HTMLButtonElement && popover.element.contains(pressed)) {
+            popover.panel.focusField();
+            lentTo = doc.activeElement;
+        }
         popover.panel.waitForReplace(true);
         this.#invalidate();
         const answered = (): void => {
             this.#replacing -= 1;
             const standing = this.#popover;
             if (standing?.kind === 'find') standing.panel.waitForReplace(false);
+            if (lentTo !== null && doc.activeElement === lentTo && pressed instanceof HTMLButtonElement && pressed.isConnected && !pressed.disabled) {
+                pressed.focus();
+            }
             this.#invalidate();
         };
         // oxlint-disable-next-line ex-grid/no-catch -- the grid stops waiting on a Replace All the Consumer failed, and rethrows the failure
@@ -8427,6 +8505,8 @@ export class GridView<Row> {
             if (!this.#destroyed) this.#replaceAnswered(request, result, source);
         }, (error: unknown) => {
             answered();
+            // Given up by whoever answers, who says why itself (ADR-0240 section 11).
+            if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
         });
     }
@@ -8594,9 +8674,11 @@ export class GridView<Row> {
             let given: unknown;
             try {
                 given = await answerAsync(request, signal);
-            // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort writes nothing; any other failure is said and rethrown
+            // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort, or one given up by whoever answers, writes nothing; any other failure is said and rethrown
             } catch (error) {
                 if (signal.aborted || this.#destroyed) return undefined;
+                // Given up by whoever answers, who says why itself (ADR-0240 section 11): nothing is written.
+                if (error instanceof DOMException && error.name === 'AbortError') return undefined;
                 // Said, and the failure itself left to surface, as a gather's is: the refusal is the user's, the error
                 // the Consumer's.
                 this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
@@ -8947,6 +9029,11 @@ export class GridView<Row> {
         if (event.target !== this.#rowMarks.headerBox) this.#headerMarkPress = undefined;
         if (event.target !== this.#markResult) this.#markResultPress = undefined;
         if (!(event.target instanceof Node && this.#viewport.contains(event.target))) this.#markPress = undefined;
+        // Control with the primary button raises the Context Menu as it is pressed on macOS, and none elsewhere: released,
+        // it is no press a later contextmenu (a long touch, the menu key) was raised by. The secondary button's raises
+        // it after its release on Windows, so that press stays noted, and so does one whose contextmenu a pending
+        // commit holds for its turn.
+        if (event.button === 0 && this.#pending === undefined) this.#secondaryPress = undefined;
     };
 
     // The root's keyup: a key the IME took in the Keyboard Field has been told whole, since everything it owed
@@ -10218,7 +10305,8 @@ export class GridView<Row> {
         const root = this.#root;
         // ex-loading while rows are on their way, and ex-editing while the Cell Editor stands (ADR-0029).
         this.#write(root, 'root', 'class',
-            `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}${this.#pointedAtNow() ? ' ex-pointed-at' : ''}`);
+            `ex-grid${this.#state.loading ? ' ex-loading' : ''}${this.#edit === undefined ? '' : ' ex-editing'}${this.#pointedAtNow() ? ' ex-pointed-at' : ''}`
+            + (this.#pending?.underWay === true ? ' ex-pasting' : ''));
         // The Geometry Tokens, inline on the root from the same resolved metrics the arithmetic reads
         // (ADR-0027, ADR-0028), and the Device Pixel once told (ADR-0090).
         this.#write(root, 'root', 'style', `--ex-row-height: ${metrics.rowHeightPx}px; --ex-header-height: ${metrics.headerHeightPx}px; `
@@ -10260,7 +10348,7 @@ export class GridView<Row> {
         const placedWork = this.#works.findLast(work => work.tooLate !== undefined);
         this.#write(this.#stamp, 'stamp', 'data-ex-work-placed', placedWork === undefined ? undefined : String(placedWork.id));
         this.#write(root, 'root', 'data-ex-work', this.#workUnderWay === undefined ? undefined : String(this.#workUnderWay.id));
-        this.#write(root, 'root', 'aria-busy', this.#workUnderWay === undefined ? undefined : 'true');
+        this.#write(root, 'root', 'aria-busy', this.#workUnderWay === undefined && this.#pending?.underWay !== true ? undefined : 'true');
         this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
             choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined && placedWork === undefined ? '' : undefined);
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing

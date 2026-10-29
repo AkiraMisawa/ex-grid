@@ -54,6 +54,11 @@ Consumer in its turn, what it writes crosses before the browser hears it was han
 made, refused by name as ADR-0431 section 1 has the Formula entry functions refused. `FindMatch` is handed the row's
 values by column name, since the browser holds no row of .NET's.
 
+*Note of 2026-10-29:* without a `FindMatch`, a `GridSource.From` source's painted matches are still marked, by the
+reference rule over the texts that cross with the rows: that source finds by the same rule over the same texts, so
+the marks agree with the step, as ADR-0332 section 4 has the Razor grid mark them. Over any other .NET source,
+nothing is marked without one.
+
 ### 4. The grid's own words cross as a table, asked of every id
 
 `CommandLabel` words the grid's own UI (ADR-0036): its commands, its fields, its refusals, its summary, its find
@@ -80,6 +85,23 @@ nothing, and the commit is refused as `RowLeftTheWindow`, as LV-20 says.
 
 *Added on 2026-10-29, in the same thread, when `write-lands.spec.mjs`'s LV-20 ran against `ExGrid.Script.ExGrid`: the
 editor stayed where it was opened, because the row it followed was in .NET's Window but not among the rows sent.*
+
+### 6. A Sort or Filter asked of .NET's source is the state's until .NET has taken it in
+
+The core reads the Sort and Filter in force from its source's state: a filter panel opened right after OK reads the
+filter it shows, and a second sort is made from the first (ADR-0009, ADR-0044). A `FetchingSource` puts what it is
+asked for in its state at once, loading, and an in-memory source sorts at once. .NET's source answers a round trip
+later on Server, so a panel reopened at machine speed read the filter before the one just applied, and offered no
+"Add current selection" (the spine's sixth rule broken by timing). So the browser's copy of .NET's source holds the
+Sort or Filter it asked for, loading, in place of .NET's, until a state arrives that .NET wrote after telling its
+source: each request is numbered, and each state names the last one .NET has told (`asked`). .NET sends a state after
+each request even where the source took it as no change. A request lost on the way (ADR-0240 section 11) lets go of
+it, and the state is .NET's again. The header shows the Sort as it is asked for, and the rows still stand in the
+order before until .NET's arrive, with the grid loading, as under a `FetchingSource`; a click before then is taken
+against the order before, and the order's change drops it (ADR-0011).
+
+*Added on 2026-10-29, in the same thread, when `popovers.spec.mjs`'s E on a checkbox failed now and then on the
+Server host.*
 
 ## Considered options
 

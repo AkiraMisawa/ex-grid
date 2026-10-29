@@ -38,7 +38,10 @@ async function activeIsInPopover(page) {
 }
 
 async function enabledMenuItems(page) {
-    return grid(page).locator('.ex-popover button[role=menuitem]:not([disabled])').allTextContents();
+    const items = grid(page).locator('.ex-popover button[role=menuitem]:not([disabled])');
+    // A menu whose commands are answered later, or drawn by a Wrapper, stands before its items do.
+    await expect(items.first()).toBeVisible();
+    return items.allTextContents();
 }
 
 async function activeText(page) {
@@ -46,7 +49,7 @@ async function activeText(page) {
 }
 
 // Whether DOM focus is on the condition form's (first) operator: a native select in the
-// built-in panel, a MudSelect's combobox named Operator in the Wrapper's.
+// built-in panel, and in the Wrapper's, where it is named Operator.
 async function activeIsOperator(page) {
     return page.evaluate(() => {
         const active = document.activeElement;
@@ -68,9 +71,8 @@ async function openNotionalPanel(page) {
     return panel;
 }
 
-// Each Chrome's own controls for the same choice. The Wrapper's operator is a MudSelect,
-// whose list MudBlazor draws outside the grid's root — an Inner Popup (ADR-0039) — and
-// whose word for "greater than" is MudBlazor's.
+// Each Chrome's own controls for the same choice. The Wrapper's operator is a native select
+// dressed as MudBlazor's, which draws no Inner Popup (ADR-0410, note of 2026-10-28).
 const CONDITION = {
     builtin: {
         choose: (page, panel) => panel.locator('select').first().selectOption('GreaterThan'),
@@ -78,11 +80,7 @@ const CONDITION = {
         apply: (panel) => panel.locator('button', { hasText: 'OK' }),
     },
     mud: {
-        choose: async (page, panel) => {
-            await panel.getByRole('combobox', { name: 'Operator' }).click();
-            await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
-            await expect(page.locator('.mud-popover-open .mud-list-item')).toHaveCount(0);
-        },
+        choose: (page, panel) => panel.getByRole('combobox', { name: 'Operator' }).selectOption('greaterThan'),
         operand: (panel) => panel.locator('.mud-ex-grid-filter-operand input'),
         apply: (panel) => panel.locator('.mud-ex-grid-filter-apply'),
     },
@@ -324,16 +322,17 @@ for (const chrome of CHROMES) {
         // Decided with the user on 2026-10-12 (ADR-0044's note of that day): the keys typed while the
         // keyboard is in flight back from a closing popover are held, and handed on in order to where it
         // lands, so the outcome is the same at any speed (the spine's sixth principle). On the Server host
-        // at an 80 ms round trip the popover stands a round trip after the key or press that closes it,
-        // and a key typed then was the popover's: ↓ moved in a menu about to go, and was lost.
+        // at an 80 ms round trip the Razor grid's popover stood a round trip after the key or press that
+        // closed it, and a key typed then was the popover's: ↓ moved in a menu about to go, and was lost.
+        // The Script grid closes a popover in the browser (ADR-0440), so the keys after the closing one land
+        // on the grid itself, with the host's answers held across them to show none is waited on.
         test('keys typed while Escape closes a menu are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await page.keyboard.press('Escape');
                 await page.keyboard.press('ArrowDown');
@@ -345,11 +344,8 @@ for (const chrome of CHROMES) {
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c0$/);
                 await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending], .ex-header-cell[aria-sort=descending]')).toHaveCount(0);
-                if (circuit) {
-                    // Typed in the menu, a round trip before it could go: the case the hold is for.
-                    expect(await landed()).toEqual([
-                        { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([
+                    { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'grid' }, { key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -363,9 +359,8 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('e');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'dialog', tag: 'INPUT' });
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await page.keyboard.press('Escape');
                 await page.keyboard.press('ArrowDown');
@@ -376,11 +371,8 @@ for (const chrome of CHROMES) {
                 await circuitQuiet();
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c0$/);
-                if (circuit) {
-                    // Typed in the search box, a round trip before the panel could go: the case the hold is for.
-                    expect(await landed()).toEqual([
-                        { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([
+                    { key: 'Escape', where: 'popover' }, { key: 'ArrowDown', where: 'grid' }, { key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -395,9 +387,8 @@ for (const chrome of CHROMES) {
             // alone can precede its keyboard hand-off, which the hold would otherwise interrupt.
             await settled(grid(page));
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await command.click();
                 await page.keyboard.press('ArrowDown');
@@ -408,9 +399,7 @@ for (const chrome of CHROMES) {
                 await circuitQuiet();
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c1$/);
-                if (circuit) {
-                    expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -444,9 +433,8 @@ for (const chrome of CHROMES) {
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].ok(panel).focus();
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await page.keyboard.press('Enter');
                 await page.keyboard.press('ArrowDown');
@@ -458,11 +446,8 @@ for (const chrome of CHROMES) {
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c2$/);
                 expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
-                if (circuit) {
-                    // Typed on OK, a round trip before the panel could go: the case the hold is for.
-                    expect(await landed()).toEqual([
-                        { key: 'Enter', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([
+                    { key: 'Enter', where: 'popover' }, { key: 'ArrowDown', where: 'grid' }, { key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -476,9 +461,8 @@ for (const chrome of CHROMES) {
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].cancel(panel).focus();
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await page.keyboard.press('Space');
                 await page.keyboard.press('ArrowDown');
@@ -489,10 +473,8 @@ for (const chrome of CHROMES) {
                 await circuitQuiet();
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r3c2$/);
-                if (circuit) {
-                    expect(await landed()).toEqual([
-                        { key: ' ', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }, { key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([
+                    { key: ' ', where: 'popover' }, { key: 'ArrowDown', where: 'grid' }, { key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -505,9 +487,8 @@ for (const chrome of CHROMES) {
         test('a key typed while a press on OK closes a filter panel is the grid\'s: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12)', async ({ page }) => {
             const panel = await notionalAboveZero(page);
             const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the popover stands for every one of them however
-            // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
+            await holdAnswers(true);
             try {
                 await closingButton[chrome].ok(panel).click();
                 await page.keyboard.press('ArrowDown');
@@ -517,9 +498,7 @@ for (const chrome of CHROMES) {
                 await circuitQuiet();
                 await expectKeyboardOn(grid(page));
                 await expectActiveDescendant(grid(page), /r2c2$/);
-                if (circuit) {
-                    expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'popover' }]);
-                }
+                expect(await landed()).toEqual([{ key: 'ArrowDown', where: 'grid' }]);
             } finally {
                 await holdAnswers(false);
             }
@@ -643,6 +622,9 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending]')).toHaveCount(1);
             await expectKeyboardOn(grid(page));
+            // The Sort is the header's as it is asked for; a source that sorts elsewhere, .NET's on the Server
+            // host, is loading until its rows land, and a click before then is taken against the order before.
+            await expect(grid(page)).not.toHaveClass(/\bex-loading\b/);
 
             // E goes to the search box, and a letter typed there is text — "elta" searches, and
             // neither its E nor anything after it is a letter of the commands. The sort
@@ -824,146 +806,6 @@ for (const chrome of CHROMES) {
     });
 }
 
-// Inner Popups (FN-21, ADR-0039), under the Wrapper, whose panel holds them: the operator
-// MudSelect's list and the date MudDatePicker's calendar, both drawn by MudBlazor outside
-// the grid's root. /features has two grids, so "the other grid unaffected" is observed
-// too. MudBlazor keeps DOM focus on the control while its popup is open, so Escape closes
-// the popup first only because the panel reports it (ADR-0039, corrected 2026-09-24).
-test.describe('Inner Popups under the mud Chrome', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/features?chrome=mud');
-        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-    });
-
-    const second = (page) => page.locator('.ex-grid').nth(1);
-    const openPopups = (page) => page.locator('.mud-popover-open');
-
-    // The column's popover, and Tab from its commands into the Mud panel (ADR-0044).
-    async function openPanel(page, column) {
-        await clickCell(page, 1, column);
-        await page.keyboard.press('Alt+ArrowDown');
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
-        await page.keyboard.press('Tab');
-        await expect.poll(() => activeIsOperator(page)).toBe(true);
-    }
-
-    test('an Inner Popup is drawn outside the root, and opening it disturbs neither grid (FN-21)', async ({ page }) => {
-        await second(page).locator("[id$='r2c1']").click({ force: true });
-        // The click's Focus is painted by the render it asked for — a round trip away on
-        // the Server host.
-        await expect(second(page)).toHaveAttribute('aria-activedescendant', /r2c1$/);
-        const other = await second(page).getAttribute('aria-activedescendant');
-        await openPanel(page, 2);
-        const focus = await activeDescendant(grid(page));
-
-        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
-
-        await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
-        expect(await grid(page).locator('.mud-popover-open').count(), 'drawn outside the root').toBe(0);
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        expect(await activeDescendant(grid(page))).toBe(focus);
-        expect(await second(page).getAttribute('aria-activedescendant')).toBe(other);
-        expect(await second(page).locator('.ex-popover').count()).toBe(0);
-    });
-
-    for (const [what, open] of [
-        ['the operator list', async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click()],
-        ['the date calendar', async (page) => {
-            await page.keyboard.press('Tab');
-            await grid(page).locator('.mud-ex-grid-filter-operand button').first().click();
-        }],
-    ]) {
-        test(`a pointer-down elsewhere in the instance closes ${what} and the panel, and keeps its meaning (FN-21, ModalOverlay off)`, async ({ page }) => {
-            await openPanel(page, what === 'the date calendar' ? 4 : 2);
-            await open(page);
-            await expect(openPopups(page)).not.toHaveCount(0);
-
-            // A press on the grid itself: the premise is that nothing drawn over the page —
-            // the calendar is large — stands between the pointer and that cell.
-            const target = grid(page).locator("[id$='r7c0']");
-            const box = await target.boundingBox();
-            const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
-            expect(await page.evaluate(([px, py]) => !!document.elementFromPoint(px, py)?.closest('.ex-viewport'), [x, y]),
-                'the press lands on the grid').toBe(true);
-            await page.mouse.click(x, y);
-
-            await expect(openPopups(page)).toHaveCount(0);
-            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expectActiveDescendant(grid(page), /r7c0$/);
-            await expectKeyboardOn(grid(page));
-        });
-    }
-
-    for (const [what, column, open] of [
-        ['the operator list', 2, async (page) => grid(page).getByRole('combobox', { name: 'Operator' }).click()],
-        ['the date calendar', 4, async (page) => {
-            await page.keyboard.press('Tab');
-            await grid(page).locator('.mud-ex-grid-filter-operand button').first().click();
-        }],
-    ]) {
-        test(`Escape closes ${what} first, and the next Escape the panel (FN-21, KB-32)`, async ({ page }) => {
-            await openPanel(page, column);
-            await open(page);
-            await expect(openPopups(page)).not.toHaveCount(0);
-            // MudBlazor's date picker moves DOM focus from its button to its input once the
-            // calendar is open, and ignores an Escape until then — a round trip on the
-            // Server host. That wait is the design system's, not the grid's (KB-35).
-            await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('BUTTON');
-
-            await page.keyboard.press('Escape');
-
-            await expect(openPopups(page)).toHaveCount(0);
-            await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-            expect((await activeIsInPopover(page))?.role, 'the keyboard stays in the panel').toBe('dialog');
-
-            await page.keyboard.press('Escape');
-
-            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expectKeyboardOn(grid(page));
-        });
-    }
-
-    test('under ModalOverlay the press is the overlay\'s: only the Inner Popup closes, and Escape then closes the panel (FN-21)', async ({ page }) => {
-        // A Consumer's app-wide MudBlazor setting (ADR-0039): /features sets it per load.
-        await page.goto('/features?chrome=mud&modal=1');
-        await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-        await openPanel(page, 2);
-        const focus = await activeDescendant(grid(page));
-        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
-        await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
-
-        const box = await grid(page).locator("[id$='r7c0']").boundingBox();
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-
-        // The design system's overlay took the press: the popup closed, and nothing
-        // reached the grid — the panel stands and the Focus did not move.
-        await expect(openPopups(page)).toHaveCount(0);
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        expect(await activeDescendant(grid(page))).toBe(focus);
-
-        // The popup reported itself closed, so the next Escape is the grid's.
-        await grid(page).getByRole('combobox', { name: 'Operator' }).focus();
-        await page.keyboard.press('Escape');
-        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-        await expectKeyboardOn(grid(page));
-    });
-
-    test('choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080)', async ({ page }) => {
-        await openPanel(page, 2);
-        await grid(page).getByRole('combobox', { name: 'Operator' }).click();
-        await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
-
-        await expect(openPopups(page)).toHaveCount(0);
-        await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        await grid(page).locator('.mud-ex-grid-filter-operand input').fill('3000000');
-        await grid(page).locator('.mud-ex-grid-filter-apply').click();
-
-        await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-        await expectKeyboardOn(grid(page));
-    });
-});
-
 // Alt+↓ is the grid's where the Focus's column has a menu: the keydown's default is prevented, so the
 // browser does nothing of its own with it, and the page does not move. On a grid with no column menu
 // it opens nothing, and the Focus stays (KB-28, ADR-0039).
@@ -998,7 +840,7 @@ test('KB-28: Alt+↓ is taken from the browser where the column has a menu, the 
     expect(await page.evaluate(() => window.__altDown?.defaultPrevented)).toBe(true);
     expect(await scrolled()).toEqual(before);
 
-    // /wide asks for no sort, filter, hiding, pinning or widths: its columns have no menu.
+    // /wide hides its column menus (HideColumnMenu): its columns have no menu.
     await page.goto('/wide?rows=1000');
     const wide = grid(page);
     await expect(wide.locator('.ex-row').first()).toBeVisible();

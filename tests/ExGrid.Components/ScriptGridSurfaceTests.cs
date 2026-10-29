@@ -314,4 +314,46 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.Equal((byte?)2, sum?.Exact?.Scale);
         Assert.Equal("93.50", heard?.Result?.TextOf(SummaryFigures.Sum));
     }
+
+    [Fact] // ADR-0332 section 4 / ADR-0440 section 3: GridSource.From finds by the reference rule, so the browser marks by it
+    public void ADR0332_the_reference_rule_marks_matches_only_over_GridSource_From()
+    {
+        Grid();
+        Assert.True(Attached().GetProperty("options").GetProperty("referenceMarks").GetBoolean());
+    }
+
+    [Fact] // ADR-0332 section 4 / ADR-0440 section 3: a source that finds by a rule of its own is marked only through FindMatch
+    public void ADR0332_another_source_marks_nothing_without_FindMatch()
+    {
+        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
+            .Add(g => g.Columns, TestRows.Columns()));
+        Assert.False(Attached().GetProperty("options").TryGetProperty("referenceMarks", out _));
+    }
+
+    [Fact] // ADR-0123 / ERR-11: the stylesheets the Chrome brings cross with the options, for the browser's root to render their notices
+    public void ERR11_the_stylesheets_the_chrome_brings_cross_with_the_options()
+    {
+        Grid(ps => ps.Add(g => g.Chrome, new BringsOne()));
+
+        var stylesheets = Attached().GetProperty("options").GetProperty("stylesheets");
+        Assert.Equal("acme-grid.css", Assert.Single(stylesheets.EnumerateArray()).GetProperty("name").GetString());
+        Assert.Equal(BringsOne.Stamp, stylesheets[0].GetProperty("stamp").GetString());
+    }
+
+    /// <summary>A Wrapper's Chrome that draws nothing of its own and brings a stylesheet.</summary>
+    private sealed class BringsOne : IGridChrome
+    {
+        internal const string Stamp = "5e1f0c7a2b9d4e6f8a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f";
+
+        public IReadOnlyList<ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", Stamp)];
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+    }
 }

@@ -90,6 +90,19 @@ describe('opening the Context Menu', () => {
         expect(root.querySelectorAll('.ex-popover')).toHaveLength(1);
     });
 
+    it('CTX-1 / ADR-0036: a Control-click that raised no menu, as on Windows, is not the press a later contextmenu was raised by', async () => {
+        const { root, selection } = heard();
+        await painted();
+        press(root, 10, rowY(1), { ctrlKey: true });
+        pointer(root, 'mouseup', 10, rowY(1), { button: 0, ctrlKey: true });
+        await painted();
+        // A long touch raises the menu with no press of its own: it opens on the cell under it.
+        pointer(root, 'contextmenu', 10, rowY(6), { button: 0 });
+        await painted();
+        expect(selection().focus).toEqual({ row: 6, column: 0 });
+        expect(menu(root)).not.toBeNull();
+    });
+
     it('CTX-2 / CTX-3: the core\'s commands, then the Consumer\'s, which are handed the row, the column and the Selection as rectangles in their version', async () => {
         const { root, contexts } = heard();
         await painted();

@@ -127,6 +127,10 @@ export const replaceCellChangedId = 'replace-cell-changed';
  * Said once for the inputs of one answer. */
 export const heldInputLostId = 'pending-input-lost';
 
+/** The id of what the grid says once as a paste, or a fill, waits for the Consumer's answer (ADR-0240 section 12,
+ * ADR-0380 section 3): it is under way, and an Escape cancels it. The C# core's `GridLabelIds.PasteUnderWay`. */
+export const pasteUnderWayId = 'paste-under-way';
+
 /** The error step found no cell with an error anywhere the Consumer looked (ADR-0381 section 3). */
 export const errorStepNoneId = 'error-step-none';
 
@@ -145,4 +149,5 @@ export const pendingCommitWords: readonly (readonly [string, string])[] = Object
     [commitCancelledId, 'Nothing was changed: the edit was cancelled while it was being checked.'],
     [replaceCellChangedId, 'Nothing was replaced: the cell changed while the replacement was being checked.'],
     [heldInputLostId, 'An input made while an edit was being checked could not be taken. Make it again.'],
+    [pasteUnderWayId, 'Pasting. Press Escape to cancel.'],
 ]);

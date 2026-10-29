@@ -408,11 +408,24 @@ export interface GridEditorCompletionSlotContext {
     readonly accept: (index: number) => void;
 }
 
+/** A stylesheet a Chrome brings (ADR-0123), as its notice names it: a Wrapper has no root of its own (ADR-0062), so
+ * its Chrome declares the stylesheets it brings, and the grid's root renders a notice for each beside its own. */
+export interface GridChromeStylesheet {
+    /** The stylesheet's source file name, as the rules at the end of the shipped stylesheet name it: `mud-ex-grid.css`. */
+    readonly name: string;
+    /** The SHA-256 of that source, as lower-case hex: the stamp the stylesheet the Chrome was built with hides its
+     * notice for. */
+    readonly stamp: string;
+}
+
 /**
  * The Chrome slots a grid takes (ADR-0390 section 4): the parts a Wrapper draws, each in place of the built-in
  * Chrome's. A slot not given is the built-in Chrome's.
  */
 export interface GridChrome<Row> {
+    /** The stylesheets this Chrome brings (ADR-0123): the grid's root renders a notice for each beside its own, which
+     * only another version's stylesheet shows. None where not given. */
+    readonly stylesheets?: readonly GridChromeStylesheet[];
     /** The column menu's commands (ADR-0010, ADR-0044). */
     readonly columnMenu?: GridChromeSlot<GridColumnMenuSlotContext>;
     /** The Context Menu (ADR-0036). */
@@ -439,7 +452,7 @@ export interface GridChrome<Row> {
 
 /** The slots a grid's `chrome` names (ADR-0390), in the order `GridChrome` declares them: what a product drawn by
  * ExGrid, a Sheet or a pivot, hands on to its grid out of a `chrome` of its own. */
-export const gridChromeSlotNames: readonly (keyof GridChrome<unknown>)[] = Object.freeze([
+export const gridChromeSlotNames: readonly Exclude<keyof GridChrome<unknown>, 'stylesheets'>[] = Object.freeze([
     'columnMenu', 'contextMenu', 'filterPanel', 'findPanel', 'cellEditor', 'cellMessage', 'loadingIndicator', 'selectionSummary',
     'formulaBarText', 'nameBox', 'editorCompletion',
 ] as const);
@@ -451,6 +464,10 @@ export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined
         throw new TypeError('chrome is an object of Chrome slots, each a mount function (ADR-0390).');
     }
     for (const [name, slot] of Object.entries(chrome)) {
+        if (name === 'stylesheets') {
+            checkedStylesheets(slot);
+            continue;
+        }
         if (!(gridChromeSlotNames as readonly string[]).includes(name)) {
             throw new TypeError(`chrome has no slot '${name}': its slots are ${gridChromeSlotNames.join(', ')} (ADR-0390).`);
         }
@@ -459,6 +476,21 @@ export function checkedChrome<Row>(chrome: unknown): GridChrome<Row> | undefined
         }
     }
     return chrome;
+}
+
+/** A Chrome's `stylesheets`, checked as a script may hand them: each a name and a stamp the notice carries. */
+function checkedStylesheets(stylesheets: unknown): void {
+    if (stylesheets === undefined) return;
+    if (!Array.isArray(stylesheets)) throw new TypeError('chrome.stylesheets is an array of { name, stamp } (ADR-0123).');
+    for (const stylesheet of stylesheets as readonly unknown[]) {
+        const name: unknown = typeof stylesheet === 'object' && stylesheet !== null ? Reflect.get(stylesheet, 'name') : undefined;
+        const stamp: unknown = typeof stylesheet === 'object' && stylesheet !== null ? Reflect.get(stylesheet, 'stamp') : undefined;
+        // Any stamp is taken, as C#'s ChromeStylesheet takes it: one no shipped stylesheet carries leaves the notice
+        // showing, which says so, not quietly.
+        if (typeof name !== 'string' || name === '' || typeof stamp !== 'string' || stamp === '') {
+            throw new TypeError('Each of chrome.stylesheets is { name, stamp }: the stylesheet\'s file name, and the stamp its own rule hides the notice for (ADR-0123).');
+        }
+    }
 }
 
 /** Mounts `context` into `slot` by `mount`, and answers the cleanup it returned, checked. */
@@ -677,6 +709,10 @@ export class SlottedMenu<Extra extends object> implements MenuPlace {
 
     get innerPopupOpen(): boolean {
         return this.#slot.innerPopupOpen;
+    }
+
+    get focusOwed(): boolean {
+        return this.#slot.live && this.#slot.owed;
     }
 
     /** Mounts the contents, whose first mount asks them to take the keyboard. */

@@ -12,14 +12,17 @@
             <li>
                 <strong>Click a header to sort.</strong> One click sorts ascending, a second descending, a third
                 returns to your own order. A click replaces the whole sort with that one column; a multi-column
-                sort is expressed in code, as a list of <code>SortSpec</code>.
+                sort is expressed in code, as a list of <code>SortSpec</code>. Where the source sorts away from
+                the browser, a fetching source or a Blazor component's own over Blazor Server, the header shows the
+                sort at once and the grid is loading until the sorted rows arrive; a filter applied is the same.
             </li>
             <li>
                 <strong>Open the ▾ in a header</strong> (or press <kbd>Alt</kbd>+<kbd>↓</kbd>) for the column menu
                 and the filter panel. A column declares which panel it offers with <code>filterUi</code>: a
                 <code>ValueList</code> of distinct values to tick, a <code>Condition</code> (the default), or
                 <code>Both</code>. The value list is asked for when the panel opens; past 1,000 distinct values it
-                gives way to the condition form.
+                gives way to the condition form. While the list is on its way the condition form stands, and a
+                condition chosen or typed there in that time stays when the list arrives.
             </li>
             <li>
                 <strong>Press <kbd>Ctrl</kbd>+<kbd>F</kbd></strong> in the grid for the find panel. It searches

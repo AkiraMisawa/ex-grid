@@ -104,6 +104,26 @@ export function typeText(field: HTMLInputElement | HTMLTextAreaElement, text: st
     field.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType }));
 }
 
+/**
+ * What the browser does with text put in a field with no key of its own, a paste from a menu or an automation's fill,
+ * done again for its `beforeinput` taken at its turn: the text is typed over the selection, or a deletion takes the
+ * selection away. Any other, a drop or a spelling fix whose place only the browser knew, or a deletion with nothing
+ * selected, whose extent only the browser knew, cannot be done again, and is said.
+ */
+export function inputDefault(field: HTMLInputElement | HTMLTextAreaElement, input: InputEvent): KeyDefault {
+    const { inputType, data } = input;
+    if ((inputType === 'insertText' || inputType === 'insertFromPaste') && data !== null) {
+        typeText(field, data, inputType);
+        return 'done';
+    }
+    if ((inputType === 'deleteContentBackward' || inputType === 'deleteContentForward' || inputType === 'deleteByCut')
+        && selectionOf(field, 'start') !== selectionOf(field, 'end')) {
+        typeText(field, '', inputType);
+        return 'done';
+    }
+    return 'lost';
+}
+
 /** What the browser's own meaning of a key taken again came to: done, none to do, or one that cannot be done again
  * now, which is said. */
 export type KeyDefault = 'done' | 'none' | 'lost';
@@ -196,10 +216,15 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
 export function elementDefault(target: HTMLElement, key: KeyboardEvent): KeyDefault {
     if (key.ctrlKey || key.metaKey || key.altKey) return 'none';
     if (key.key === 'Tab') return tabFrom(target, key.shiftKey);
-    if (key.shiftKey) return 'none';
     const presses = target instanceof HTMLButtonElement || (target instanceof HTMLAnchorElement && target.href !== '')
         || (target instanceof HTMLInputElement && ['button', 'submit', 'reset'].includes(target.type));
     const ticks = target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio');
+    // Shift+Enter in a field submits its form as Enter does, and the form reads the Shift: a find step runs backward.
+    if (key.key === 'Enter' && key.shiftKey && target instanceof HTMLInputElement && target.form !== null && !ticks && !presses) {
+        target.form.requestSubmit();
+        return 'done';
+    }
+    if (key.shiftKey) return 'none';
     if (key.key === 'Enter') {
         if (presses) {
             target.click();

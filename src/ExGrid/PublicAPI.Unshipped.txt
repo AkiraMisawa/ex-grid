@@ -38,6 +38,7 @@ const ExGrid.Chrome.ScriptSlotAttributes.FindStep = "data-ex-find-step" -> strin
 const ExGrid.Chrome.ScriptSlotAttributes.FormulaBarField = "data-ex-formula-bar-field" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.MenuItem = "data-ex-menu-item" -> string!
 const ExGrid.Chrome.ScriptSlotAttributes.NameBoxField = "data-ex-name-box-field" -> string!
+ExGrid.Cells.CommitRefusalReason.Cancelled = 2 -> ExGrid.Cells.CommitRefusalReason
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
 ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>?

@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect } from './fixtures.mjs';
 
 // The Wrapper verified against a Consumer (Definition of Done §23): /mud-app is an ordinary
 // MudBlazor application — MudLayout with an AppBar and a Drawer, MudTabs, a MudDialog, a
@@ -7,8 +7,9 @@ import { test, expect, circuitQuiet } from './fixtures.mjs';
 // Wrapper has yet to fill, and it runs on the shared fixture, so every test here also
 // holds the console rules (WR-9: CON-1/2/3/6, enforced in fixtures.mjs for every page a
 // test drives). The Inner Popup halves of WR-7 — a grid panel's MudSelect against the
-// toolbar's, and a dialog grid's Inner Popups above its popovers — wait for the Wrapper's
-// own filter panel (WR-1/2), whose operator is the MudSelect they are about.
+// toolbar's, and a dialog grid's Inner Popups above its popovers — have no subject while the
+// Wrapper's filter panel draws its operator as a native select (ADR-0410, note of 2026-10-28):
+// they return with a Consumer popover that holds a MudSelect (FN-21).
 
 const positions = (page) => page.locator('#positions-paper .ex-grid');
 const orders = (page) => page.locator('#orders-paper .ex-grid');
@@ -352,7 +353,7 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(before.orders.active);
 });
 
-test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and its Inner Popups above the dialog (ADR-0040/0039)', async ({ page }) => {
+test('WR-7: a grid in a MudDialog opens its popovers whole inside its box (ADR-0040)', async ({ page }) => {
     await open(page);
     await page.locator('#open-dialog').click();
     const dialogGrid = page.locator('#dialog-paper .ex-grid');
@@ -396,34 +397,6 @@ test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and i
     await page.keyboard.press('Escape');
     await expect(popover).toHaveCount(0);
 
-    // The filter panel's Inner Popup — the operator's list — stands above the dialog: its
-    // first entry is what the pointer would press.
-    // Notional: a condition, so an operator, below the commands in the one popover (ADR-0044).
-    await dialogGrid.locator('.ex-menu-button').nth(3).click();
-    const operator = popover.getByRole('combobox', { name: 'Operator' });
-    await expect(operator).toBeVisible();
-    await operator.click();
-    const item = page.locator('.mud-popover-open .mud-list-item').first();
-    await expect(item).toBeVisible();
-    // MudBlazor places an open popover from its own script, in a frame after the render that
-    // opened it: it writes where the list stands and how high it stacks. Until then the list has
-    // only MudBlazor's stylesheet, which stacks it under the dialog, and a reading taken as soon
-    // as it showed found its centre not on it (CI, Server host, msedge, 2026-10-02). So the
-    // reading waits for the host to have said all it will (ADR-0056), then for the placement.
-    await circuitQuiet();
-    await expect.poll(() => item.evaluate((el) => {
-        const list = el.closest('.mud-popover');
-        return list.style.top !== '' && list.style.zIndex !== '';
-    }), 'MudBlazor has placed the list').toBe(true);
-    const onTop = await item.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
-    });
-    expect(onTop, 'the Inner Popup is above the dialog').toBe(true);
-
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Escape');
-    await expect(popover).toHaveCount(0);
     await page.locator('#close-dialog').click();
     await expect(page.locator('#dialog-paper')).toHaveCount(0);
 });

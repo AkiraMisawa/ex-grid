@@ -4,7 +4,7 @@
 import {
     drawnVersionAttribute, gridRazorSlotKinds, RazorSlotHost, type GridRazorSlotName, type HostedSlotKind, type RazorSlotHostOptions, type RazorSlotKind,
 } from '@ex-grid/blazor-shared';
-import type { GridChrome, GridTemplateCell } from '@ex-grid/core';
+import type { GridChrome, GridChromeStylesheet, GridTemplateCell } from '@ex-grid/core';
 import type { DotNetHandle } from './dotnet-source';
 import type { BlazorRow } from './wire-rows';
 
@@ -46,16 +46,24 @@ const gridKinds: ReadonlyMap<string, HostedSlotKind> = new Map([...gridRazorSlot
  */
 export class RazorSlots {
     readonly #host: RazorSlotHost;
+    // The Chrome last handed out, the same object while neither its slots nor its stylesheets change (ADR-0390).
+    #dressed: { readonly mounts: GridChrome<BlazorRow>; readonly key: string; readonly chrome: GridChrome<BlazorRow> } | undefined;
 
     /** `options` hold the grid's Settled Mark and its inputs, and hand it the keyboard (ADR-0240, ADR-0410 section 5). */
     constructor(dotnet: DotNetHandle, options: RazorSlotHostOptions) {
         this.#host = new RazorSlotHost(dotnet, gridKinds, options);
     }
 
-    /** The core's Chrome for the slots .NET fills: each a mount function that asks .NET for the slot's contents. The
-     * same object while the slots are the same, so that a standing part is not drawn again for an update. */
-    chrome(names: readonly GridRazorSlotName[]): GridChrome<BlazorRow> {
-        return this.#host.mounts(names);
+    /** The core's Chrome for the slots .NET fills, each a mount function that asks .NET for the slot's contents, and
+     * the stylesheets the Consumer's Chrome brings, whose notices the grid's root renders (ADR-0123). The same object
+     * while neither changes, so that a standing part is not drawn again for an update. */
+    chrome(names: readonly GridRazorSlotName[], stylesheets: readonly GridChromeStylesheet[] | undefined): GridChrome<BlazorRow> {
+        const mounts = this.#host.mounts(names);
+        const key = stylesheets === undefined ? '' : JSON.stringify(stylesheets);
+        if (this.#dressed?.mounts === mounts && this.#dressed.key === key) return this.#dressed.chrome;
+        const chrome: GridChrome<BlazorRow> = stylesheets === undefined ? mounts : { ...mounts, stylesheets };
+        this.#dressed = { mounts, key, chrome };
+        return chrome;
     }
 
     /** Mounts a Template cell's content, which .NET draws from the column's fragment and the row (ADR-0020), answering

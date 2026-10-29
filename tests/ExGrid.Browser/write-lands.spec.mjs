@@ -120,11 +120,14 @@ test('LV-11: Escape over a cell that changed under the editor writes nothing, an
     const notional = cell(page, 0, NOTIONAL);
     await clickCell(page, 0, NOTIONAL);
     await expectActiveDescendant(grid(page), /r0c2$/);
+    const before = (await notional.textContent()).trim();
     await setRoundTrip(150);
 
     await page.keyboard.type('42');
     await page.keyboard.press('F9');
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
+    // The status is the page's render and the moved row the grid's state, which cross apart: read the row once it is here.
+    await expect(notional).not.toHaveText(before);
     const moved = (await notional.textContent()).trim();
 
     await page.keyboard.press('Escape');

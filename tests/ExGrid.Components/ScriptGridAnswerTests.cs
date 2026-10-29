@@ -181,6 +181,44 @@ public class ScriptGridAnswerTests : BunitContext
         Assert.Equal(["Delta"], heard);
     }
 
+    [Fact] // ADR-0240 s12 / ADR-0380 s3: a cancel heard before its call was taken in, a paste still crossing, is never handed on
+    public async Task ADR0240_a_paste_cancelled_while_it_crosses_is_never_handed_to_the_consumer()
+    {
+        var heard = 0;
+        var cut = Grid(Columns(new("Book", ColumnType.Text, r => r.Book, editable: true)), ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent _) => { heard += 1; }));
+
+        // The cancel reaches .NET while the paste's arguments are still being read: before its call is made.
+        await cut.InvokeAsync(() => Bridge().CancelAnswer(1));
+        var cancelled = await cut.InvokeAsync(() => Bridge().Heard("paste", Paste(1)));
+        var next = await cut.InvokeAsync(() => Bridge().Heard("paste", Paste(2)));
+
+        Assert.Null(cancelled);
+        Assert.Null(next);
+        Assert.Equal(1, heard);
+    }
+
+    [Fact] // ADR-0240 s11: a number missing when a later one arrives, or when the browser says how far it sent, is told lost once
+    public async Task ADR0240_inputs_that_never_arrived_are_told_lost_once_in_the_grids_words()
+    {
+        _grid.SetupVoid("inputsLost", _ => true).SetVoidResult();
+        var heard = new List<string>();
+        var cut = Grid(Columns(new("Book", ColumnType.Text, r => r.Book, editable: true)), ps => ps
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> intent) => { heard.Add(Assert.IsType<string>(intent.Value)); }));
+
+        await cut.InvokeAsync(() => Bridge().Call(1, "Heard", Payload($$"""["edit",{{Edit(1, IdOf(0), "Delta").GetRawText()}}]""")));
+        await cut.InvokeAsync(() => Bridge().Call(3, "Heard", Payload($$"""["edit",{{Edit(2, IdOf(1), "Epsilon").GetRawText()}}]""")));
+        await cut.InvokeAsync(() => Bridge().InputsSent(3));
+        await cut.InvokeAsync(() => Bridge().InputsSent(5));
+
+        var words = global::ExGrid.Chrome.BuiltInCommandLabels.For(global::ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay);
+        Assert.Equal([(2L, 2L, words), (4L, 5L, words)],
+            _grid.Invocations["inputsLost"].Select(call => ((long)call.Arguments[0]!, (long)call.Arguments[1]!, (string)call.Arguments[2]!)));
+        Assert.Equal(["Delta", "Epsilon"], heard);
+        // A number that came again, or out of its order, is a defect of the bridge's, never taken.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cut.InvokeAsync(() => Bridge().Call(5, "Heard", Payload("""["undo",null]"""))));
+    }
+
     [Fact] // ED-35: a Flag's Error crosses with the row, a new judgement sends the rows again, and the message is asked once
     public async Task ED35_ADR0006_cell_states_cross_with_their_rows_and_a_message_is_asked_as_it_opens()
     {

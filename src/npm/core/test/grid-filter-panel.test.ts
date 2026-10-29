@@ -214,6 +214,31 @@ describe('the value list', () => {
         await settle();
         expect([entries(root), root.hasAttribute('data-ex-settled')]).toEqual([['Novak'], true]);
     });
+
+    it('ADR-0009 / spine rule 6: a condition form written in while the list is on its way stands when the list arrives, with what was typed', async () => {
+        let answer: ((values: { kind: 'values'; values: readonly unknown[] }) => void) | undefined;
+        const source = GridSource.from(rows);
+        const asked = (): Promise<unknown> => new Promise(resolve => { answer = resolve; });
+        const slow = new Proxy(source, {
+            get: (target, member): unknown => {
+                if (member === 'distinctValues') return asked;
+                const held: unknown = Reflect.get(target, member);
+                return typeof held === 'function' ? held.bind(target) : held;
+            },
+        });
+        const { root } = mount<Trade>({ columns, source: slow, rowHeight: 24, viewportHeight: 480, viewportWidth: 720, temporal: Temporal });
+        await settle();
+        click(defined(root.querySelectorAll('.ex-header-cell > .ex-menu-button')[0], 'the ▾'));
+        await settle();
+        const operand = field(root, 'input:not([type]):not(.ex-popover-second)');
+        operand.focus();
+        typeInto(operand, 'Osei');
+        defined(answer, 'the request')({ kind: 'values', values: ['Novak', 'Osei'] });
+        await settle();
+        expect([panel(root).querySelector('.ex-popover-list'), field(root, 'input:not([type]):not(.ex-popover-second)'), operand.value, active()])
+            .toEqual([null, operand, 'Osei', operand]);
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+    });
 });
 
 describe('the condition form', () => {

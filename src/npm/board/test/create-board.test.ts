@@ -93,6 +93,7 @@ class StandIns implements BoardMounts {
             handKeyboardTo: unused('hand a grid\'s keyboard on'),
             inOrder: unused('place work in a grid\'s order'),
             cancellableInOrder: unused('place cancellable work in a grid\'s order'),
+            announce: unused('announce through a grid'),
         };
     };
 

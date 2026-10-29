@@ -371,6 +371,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private readonly Dictionary<long, CancellationTokenSource> _asked = [];
     private readonly Queue<Heard> _heard = new();
     private readonly Dictionary<long, CancellationTokenSource> _answers = [];
+    // The highest answer registered yet, and the answers cancelled before their call was taken in: a held call's
+    // arguments are still crossing, and the cancel that followed it is heard on arrival (ADR-0240 section 12).
+    private long _answersRegistered;
+    private readonly HashSet<long> _cancelledAhead = [];
+    // The last numbered input that reached the grid, or that the browser said it had sent (ADR-0240 section 11).
+    private long _inputsReached;
     private CellStateOf<TRow>? _sentCellState;
     private Func<TRow, GridColumn<TRow>, string?>? _sentCellMessage;
     // Moves when the Consumer hands another judgement, so the browser asks a message it shows again (ADR-0034).
@@ -384,6 +390,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private InMemoryGridSource<TRow>? _ownSource;
     private IReadOnlyList<TRow>? _ownRows;
     private int _generation;
+    // The last Sort or Filter the browser asked of the source numbered _generation, by the browser's count.
+    private long _queryAsked;
     private IReadOnlyList<GridColumn<TRow>>? _toldColumns;
 
     /// <summary>The rows sent before the grid has asked for any: about five screens at the Compact density.</summary>
@@ -496,6 +504,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             _source = source;
             _generation += 1;
+            _queryAsked = 0;
             _toldColumns = null;
             source.StateChanged += OnSourceChanged;
         }
@@ -1007,6 +1016,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("loading", source.IsLoading);
             json.WriteNumber("rowSequenceVersion", source.RowSequenceVersion);
             json.WriteString("query", GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), source.Sorts, source.Filter)));
+            json.WriteNumber("asked", _queryAsked);
             WriteSurfaceState(json);
             json.WriteEndObject();
         }));
@@ -1132,6 +1142,19 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteStartArray("razorSlots");
             foreach (var name in RazorSlot.NamesOf(slots))
                 json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
+        // The stylesheets the Chrome brings, whose notices the grid's root renders beside its own (ADR-0123, ERR-11).
+        if (Chrome?.Stylesheets is { Count: > 0 } stylesheets)
+        {
+            json.WriteStartArray("stylesheets");
+            foreach (var stylesheet in stylesheets)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", stylesheet.Name);
+                json.WriteString("stamp", stylesheet.Stamp);
+                json.WriteEndObject();
+            }
             json.WriteEndArray();
         }
         json.WriteStartArray("hears");
@@ -1298,11 +1321,36 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     // What the grid tells its source is the Consumer's code running: what it throws fails the component as a
     // handler of Blazor's own does, so the error UI or an error boundary says so, rather than a promise the
     // browser was left with.
-    internal Task SetSortsAsync(int generation, string query)
-        => Telling(() => SourceOf(generation)?.OnSortChanged(GridViewStateJson.ReadQuery(query).Sorts));
+    internal Task SetSortsAsync(int generation, string query, long asked)
+        => TellingQueryAsync(generation, asked, source => source.OnSortChanged(GridViewStateJson.ReadQuery(query).Sorts));
 
-    internal Task SetFilterAsync(int generation, string query)
-        => Telling(() => SourceOf(generation)?.OnFilterChanged(GridViewStateJson.ReadQuery(query).Filter));
+    internal Task SetFilterAsync(int generation, string query, long asked)
+        => TellingQueryAsync(generation, asked, source => source.OnFilterChanged(GridViewStateJson.ReadQuery(query).Filter));
+
+    // The browser holds the Sort or Filter it asked for until a state taken after .NET told the source arrives, so a
+    // panel opened at once reads what was asked, never the query before it (the spine's sixth rule). The state goes
+    // even where the source took the query as no change: the request it answers is in it.
+    private async Task TellingQueryAsync(int generation, long asked, Action<IGridSource<TRow>> tell)
+    {
+        if (SourceOf(generation) is not { } source)
+            return;
+        await Telling(() => tell(source));
+        // A source the Consumer replaced meanwhile was asked nothing by the browser yet.
+        if (generation != _generation)
+            return;
+        // Requests are told in their turn, but one whose Consumer threw may resume after the next: the count never goes back.
+        _queryAsked = Math.Max(_queryAsked, asked);
+        _stateOwed = true;
+        try
+        {
+            if (_attached)
+                await SendStateAsync();
+        }
+        catch (Exception ex) when (ex is not JSDisconnectedException)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    }
 
     internal async Task NeedRangeAsync(int generation, int start, int count)
     {
@@ -1698,12 +1746,66 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         });
     }
 
-    /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).
-    /// One already answered is not held any more, and nothing is left to call off.</summary>
+    /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3), heard
+    /// as it arrives and not in its turn, so a call whose arguments are still crossing is never asked of the Consumer
+    /// (ADR-0240 section 12). One already answered is not held any more, and nothing is left to call off.</summary>
     internal void CancelAnswer(long number)
     {
         if (_answers.TryGetValue(number, out var answering))
             answering.Cancel();
+        else if (number > _answersRegistered)
+            _cancelledAhead.Add(number);
+    }
+
+    /// <summary>The browser's input numbered <paramref name="input"/> reached the grid, in its turn (ADR-0240 section
+    /// 11). Every number the browser sent before it arrives first, over the one connection, so a number between the last
+    /// that arrived and this one was sent while the Server circuit was down, and never will.</summary>
+    internal void Reached(long input)
+    {
+        if (input <= _inputsReached)
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser's input {input} arrived after its input {_inputsReached}."));
+        var first = _inputsReached + 1;
+        _inputsReached = input;
+        if (first < input)
+            InputsLost(first, input - 1);
+    }
+
+    /// <summary>The browser had sent every numbered input up to <paramref name="input"/> as the user made another behind
+    /// one still unanswered (ADR-0240 section 11): a number that has not arrived by now never will.</summary>
+    internal void InputsSent(long input)
+    {
+        if (input <= _inputsReached)
+            return;
+        var first = _inputsReached + 1;
+        _inputsReached = input;
+        InputsLost(first, input);
+    }
+
+    // The inputs numbered first to last never reached the grid: void, never replayed against whatever stands now. The
+    // browser ends what waits on them and tells the user, in the grid's words (KeyRefusalLabelIds.LostOnTheWay).
+    private void InputsLost(long first, long last)
+    {
+        var words = CommandLabel?.Invoke(KeyRefusalLabelIds.LostOnTheWay) ?? BuiltInCommandLabels.For(KeyRefusalLabelIds.LostOnTheWay);
+        _ = TellInputsLostAsync(first, last, words);
+    }
+
+    private async Task TellInputsLostAsync(long first, long last, string words)
+    {
+        if (_grid is not { } grid || _disposed)
+            return;
+        try
+        {
+            await grid.InvokeVoidAsync("inputsLost", first, last, words);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The grid or the circuit is gone: nothing waits on the lost inputs any more.
+        }
+        catch (Exception ex)
+        {
+            // The browser refused the numbers: the two sides disagree on what crossed, which the error UI says.
+            await DispatchExceptionAsync(ex);
+        }
     }
 
     private static Func<Task<string?>> Unanswered(Func<Task> hand) => async () =>
@@ -1724,6 +1826,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             answering.Dispose();
             throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser numbered two answers {number}."));
         }
+        _answersRegistered = Math.Max(_answersRegistered, number);
+        if (_cancelledAhead.Remove(number))
+            answering.Cancel();
+        // Answers register in the order the browser numbered them: a cancel ahead of a number below this one names a
+        // call that never registered, lost on the way or answered without an answer, and none will.
+        _cancelledAhead.RemoveWhere(ahead => ahead < number);
         return async () =>
         {
             try

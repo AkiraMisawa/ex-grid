@@ -145,6 +145,7 @@ class GridStandIn {
             handKeyboardTo: () => { throw new Error('The pivot hands no grid\'s keyboard on.'); },
             inOrder: () => { throw new Error('The pivot places no work in a grid\'s order.'); },
             cancellableInOrder: () => { throw new Error('The pivot places no cancellable work in a grid\'s order.'); },
+            announce: () => { throw new Error('The pivot announces nothing through a grid.'); },
         });
         // A details grid stands in a details panel or the dialog; the report's in the report's sheet.
         if (element.closest('.ex-pivot-details-panel, .ex-pivot-dialog') !== null) {

@@ -97,10 +97,11 @@ export class FilterPanel implements FilterPlace {
         this.#built = false;
         this.model = model;
         // The source's answer is drawn as it arrives: the form is built again, and a keyboard that was in it lands
-        // on its new first control, not on nothing.
+        // on its new first control, not on nothing. A condition form written in meanwhile stands as it is.
         this.model.subscribe(() => {
             if (this.#built === this.model.arrived) return;
             this.#built = this.model.arrived;
+            if (this.model.keptConditions) return;
             const held = this.#form.contains(this.#form.ownerDocument.activeElement);
             this.#build();
             if (held) this.focusFirst();

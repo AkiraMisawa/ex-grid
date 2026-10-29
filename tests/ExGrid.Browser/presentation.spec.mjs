@@ -657,6 +657,9 @@ const INTERNAL_CLASSES = [
     // on, the header band's pinned layer and the Row Headings' layer.
     'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
     'ex-heading-marked', 'ex-heading-whole', 'ex-heading-state', 'ex-headings-corner-marked',
+    // A Blazor Chrome's Razor fragment, moved into its slot (ADR-0410), and a paste waiting for its answer (ADR-0240
+    // section 12), both entered in ADR-0029.
+    'ex-razor-slot', 'ex-pasting',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */

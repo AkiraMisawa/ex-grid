@@ -1,12 +1,15 @@
 // The Grid Source a Blazor ExGrid hands its Script Core (ADR-0350 sections 7 and 16): .NET's own source, the
 // Consumer's IGridSource, seen from the browser. Its state is what .NET last sent, the same object until it
-// sends another, and what the grid tells a source crosses to .NET in the order the grid tells it. The source
-// stays the Consumer's: it sorts, filters and answers in .NET, and the grid neither holds nor executes.
+// sends another, and what the grid tells a source crosses to .NET in the order the grid tells it. A Sort or Filter
+// the grid asks for is its state's at once, loading, until .NET sends a state taken after it, as a FetchingSource's
+// is: what reads the query next never reads the one before it (the spine's sixth rule). The source stays the
+// Consumer's: it sorts, filters and answers in .NET, and the grid neither holds nor executes.
 
 import {
     engineFilterOf, readGridQueryJson, RowMarkCounts, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
     type GridSourceState, type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowKey, type RowKeyOf, type RowRange, type SortSpec,
 } from '@ex-grid/core';
+import { LostCall } from './input-numbers';
 import { filterText, sortsText } from './wire-query';
 import type { BlazorRow, ColumnSet, RowSet, WireRow } from './wire-rows';
 import { valueOf } from './wire-values';
@@ -28,6 +31,8 @@ export interface WireState {
     readonly loading: boolean;
     readonly rowSequenceVersion: number;
     readonly query: string;
+    /** The last Sort or Filter this source asked .NET for that `query` has taken in, by the source's own count. */
+    readonly asked: number;
     /** .NET's clock as it wrote the message, in milliseconds since the epoch, where its rows carry change times
      * (ADR-0068): the browser reads them on its own clock by the difference. */
     readonly now?: number;
@@ -69,6 +74,9 @@ export type SummarizeOf = (generation: number | undefined, request: GridSummaryR
 
 let requests = 0;
 
+/** The Sort or Filter of a request, as it stands in the state. */
+type Query = Partial<Pick<GridSourceState<BlazorRow>, 'sorts' | 'filter'>>;
+
 /** .NET's Grid Source, read in the browser. */
 export class DotNetSource implements GridSource<BlazorRow> {
     readonly #dotnet: DotNetHandle;
@@ -78,6 +86,11 @@ export class DotNetSource implements GridSource<BlazorRow> {
     /** Which of the component's sources this is, as .NET counts them. */
     readonly generation: number;
     #state: GridSourceState<BlazorRow>;
+    // The state as .NET last sent it, and the Sorts and Filters asked for since, numbered by #queries, that it has not
+    // yet taken in, in the order asked.
+    #sent: GridSourceState<BlazorRow>;
+    #queries = 0;
+    #requests: { readonly asked: number; readonly query: Query }[] = [];
     readonly rowKey?: RowKeyOf<BlazorRow>;
     readonly vouchesDistinctRows: boolean;
     /** A Find step, answered by .NET's source where it searches: the core refuses Ctrl+F where this is absent. */
@@ -98,9 +111,10 @@ export class DotNetSource implements GridSource<BlazorRow> {
             if (summarize === undefined) throw new TypeError('Internal: .NET said its source summarises, and nothing here asks it.');
             this.summarize = (request, signal) => summarize(this.generation, request, signal);
         }
-        this.#state = Object.freeze({
+        this.#sent = Object.freeze({
             window: Object.freeze([]), windowStart: 0, totalCount: undefined, loading: true, rowSequenceVersion: 0, sorts: Object.freeze([]), filter: undefined,
         });
+        this.#state = this.#sent;
     }
 
     /** Takes the state .NET sent, and tells everyone who listens. */
@@ -116,7 +130,9 @@ export class DotNetSource implements GridSource<BlazorRow> {
         // The rows past the slice are read in the same message as the slice, so each row is one object whichever it is in.
         const beyond = state.beyond ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- .NET sends none while no edit holds a key past the rows sent
         const read = this.#rows.read([...state.window, ...beyond.map(held => held.row)], state.seq, this.#columns, clockOffset);
-        this.#state = Object.freeze({
+        if (!Number.isInteger(state.asked) || state.asked > this.#queries) throw new Error(`Internal: .NET took in query ${String(state.asked)}, and the grid asked for ${this.#queries}.`);
+        this.#requests = this.#requests.filter(request => request.asked > state.asked);
+        this.#sent = Object.freeze({
             window: Object.freeze(read.slice(0, state.window.length)),
             ...(beyond.length === 0 ? {} : {
                 beyond: Object.freeze(beyond.map((held, i) => {
@@ -132,8 +148,51 @@ export class DotNetSource implements GridSource<BlazorRow> {
             sorts: query.sorts,
             filter,
         });
+        this.#publish();
+    }
+
+    // The state as .NET sent it, with the Sorts and Filters asked for since laid over its own, and told to everyone who
+    // listens.
+    #publish(): void {
+        this.#state = this.#requests.length === 0 ? this.#sent : Object.freeze({
+            ...this.#sent,
+            ...this.#requests.reduce<Query>((held, request) => ({ ...held, ...request.query }), {}),
+            loading: true,
+        });
         // A listener that stops listening while it is told does not stop the others hearing.
         for (const listener of Array.from(this.#listeners)) listener();
+    }
+
+    // Asks .NET for a Sort or Filter, and holds it as the state's until a state .NET took after it arrives. One that
+    // never crossed, refused as it was made, holds nothing; one lost on the way (ADR-0240 section 11), or that .NET
+    // failed, lets go, and those asked around it stand.
+    #ask(query: Query, method: string, text: string): void {
+        // Held before it is asked: on WebAssembly .NET takes the call, and may send the state that answers it, before
+        // the call returns.
+        const asked = this.#queries + 1;
+        this.#queries = asked;
+        const request = Object.freeze({ asked, query: Object.freeze(query) });
+        this.#requests.push(request);
+        this.#publish();
+        const letGo = (): void => {
+            if (!this.#requests.includes(request)) return;
+            this.#requests = this.#requests.filter(each => each !== request);
+            this.#publish();
+        };
+        let answer: Promise<unknown>;
+        // oxlint-disable-next-line ex-grid/no-catch -- a request refused as it is made never crossed: it is taken back, and the refusal rethrown
+        try {
+            answer = this.#dotnet.invokeMethodAsync(method, this.generation, text, asked);
+        } catch (error) {
+            this.#queries = asked - 1;
+            letGo();
+            throw error;
+        }
+        // oxlint-disable-next-line ex-grid/no-catch -- a request .NET failed is let go, and the failure rethrown, where the host hears it
+        void answer.then(answered => { if (answered instanceof LostCall) letGo(); }, (error: unknown) => {
+            letGo();
+            throw error;
+        });
     }
 
     /** The Row Marks' counts .NET sent with the state it last sent, or `undefined` where they are not known. */
@@ -173,11 +232,11 @@ export class DotNetSource implements GridSource<BlazorRow> {
     }
 
     setSorts(sorts: readonly SortSpec[]): void {
-        void this.#dotnet.invokeMethodAsync('SetSorts', this.generation, sortsText(sorts));
+        this.#ask({ sorts: Object.freeze(sorts.map(sort => Object.freeze({ ...sort }))) }, 'SetSorts', sortsText(sorts));
     }
 
     setFilter(filter: GridFilter | undefined): void {
-        void this.#dotnet.invokeMethodAsync('SetFilter', this.generation, filterText(filter));
+        this.#ask({ filter }, 'SetFilter', filterText(filter));
     }
 
     async needRange(range: RowRange): Promise<void> {

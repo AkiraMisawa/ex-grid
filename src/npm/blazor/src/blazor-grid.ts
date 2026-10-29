@@ -5,16 +5,17 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, EditorCompletion, EditorHint, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
-    type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
+    createGrid, EditorCompletion, EditorHint, gridInputRoot, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
+    type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
     type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
-    type SummaryFigure, type TemporalLike,
+    type SummaryFigure, type TemporalLike, findMatches, textOf,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
-    slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
+    slotHostOptionsOf, WireMetrics, type DotNetCalls, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
+import { InputNumbers, LostCall } from './input-numbers';
 import { DotNetSource, type DotNetHandle, type SummarizeOf, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
@@ -45,6 +46,9 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     /** Where the Consumer answers a cell's message, which .NET is asked for as the popover opens (ADR-0034): the
      * number of its judgement, which moves when it hands another, so a message shown is asked again. */
     readonly cellMessages?: number;
+    /** Whether the source is `GridSource.From`'s, which finds by the reference rule over the text .NET formats, so the
+     * painted matches are marked by that rule over the texts the browser holds (ADR-0332 §4). */
+    readonly referenceMarks?: true;
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
     /** Whether the Consumer answers completion, which .NET is asked as the editor's text or caret moves (ADR-0051). */
@@ -56,6 +60,8 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly commandLabels?: Readonly<Record<string, string>>;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
     readonly razorSlots?: readonly GridRazorSlotName[];
+    /** The stylesheets the Consumer's Chrome brings (ADR-0123), whose notices the grid's root renders: none where absent. */
+    readonly stylesheets?: readonly GridChromeStylesheet[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
     readonly pointedAt?: WirePointedAt;
     /** The Consumer's functions of Formula entry, its own script, loaded before the grid was made (ADR-0431), and the
@@ -135,6 +141,9 @@ export interface BlazorGrid {
     slotRendered(id: number, version: number, contents: HTMLElement | null): void;
     /** The call held as `held`, too large for a message of its own, as the stream .NET reads it from. Taken once. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
+    /** .NET found the numbered inputs `first` to `last` never arrived, sent while the Server circuit was down (ADR-0240
+     * section 11): what waits on them ends, and the user is told in `words`. */
+    inputsLost(first: number, last: number, words: string): void;
     /** Stops the grid and empties its element. */
     dispose(): void;
 }
@@ -194,9 +203,18 @@ function pageFunctionOf(script: WireScript): LoadedScriptFunction {
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
 const heldGridCalls: ReadonlySet<string> = new Set([
-    'Heard', 'Validate', 'Find', 'FindError', 'Complete', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands', 'Copy',
-    'Summarize',
+    'Call', 'Heard', 'Complete', 'Release', 'MountSlot', 'UpdateSlot', 'Summarize',
 ]);
+
+/** The calls that carry an input of the user's that .NET carries out or answers, numbered as they cross (ADR-0240
+ * section 11). A write crosses as a numbered `Heard`, and a Validate on its own, since each tells the user itself. */
+const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
+
+/** What a call lost on the way to .NET is to a step that would otherwise wait on it: given up, as the core reads an
+ * `AbortError`, and said by {@link InputNumbers}' owner instead (ADR-0240 section 11). */
+function givenUp(answer: unknown): void {
+    if (answer instanceof LostCall) throw new DOMException('The call never reached .NET: the connection was lost.', 'AbortError');
+}
 
 /**
  * Mounts the Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
@@ -210,6 +228,10 @@ export function attach(
     // panel's list, is held, and .NET takes it in its turn: the hub would otherwise close the circuit.
     const holding = new HeldMessages(init.circuit);
     const dotnet = crossingCalls(bridge, holding, heldGridCalls);
+    // An input made while the Server circuit is down never reaches .NET, and Blazor never ends its call: numbered, its
+    // loss is found by the next number .NET receives, and the user is told (ADR-0240 section 11).
+    const numbers = new InputNumbers(dotnet);
+    const numbered = numbers.calls(numberedGridCalls, dotnet);
     // Each answer .NET is asked to give later is numbered, so the user's cancel calls that one off there (ADR-0380).
     let answers = 0;
     const asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>): Promise<T> => {
@@ -223,9 +245,11 @@ export function attach(
     };
     // Judged by the columns as the grid holds them now, which .NET keeps by their number (ADR-0380 section 3).
     const verdict: VerdictOf = (row, column, text, signal) => asking(signal, async number => {
-        const answer = await dotnet.invokeMethodAsync('Validate', number, columns.version, row.id, column, text);
+        const answer = await numbers.call('Validate', [number, columns.version, row.id, column, text], true);
         // Cancelled meanwhile: .NET gave no verdict, and the grid reads none.
         signal.throwIfAborted();
+        // Never asked: the commit is refused in the editor, which keeps the text, in the words of a lost input.
+        if (answer instanceof LostCall) return { kind: 'reject', message: answer.words };
         return verdictOf(answer, column);
     });
     // A slot the grid mounts as it is made holds its Settled Mark once there is a grid to hold, before the task ends.
@@ -241,7 +265,7 @@ export function attach(
         return summaryResultOf(answer);
     });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const taken = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize);
+        const taken = new DotNetSource(numbered, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize);
         taken.take(state);
         return taken;
     };
@@ -277,8 +301,8 @@ export function attach(
             marks.changed();
         }
     });
-    const write = (kind: HeardKind, payload: unknown): Promise<unknown> => gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload));
-    const heard = handlers(dotnet, write, asking);
+    const write: Write = (kind, payload, speaks = false) => gate.handling(numbers.call('Heard', [kind, payload], speaks));
+    const heard = handlers(dotnet, numbers, write, asking);
     const paint = cellPaint(dotnet, columns);
     // Asked of the source the grid holds now, by its number. .NET sends what its source owes before it answers, and
     // answers a step asked of a source or an order it no longer holds as moved: once what a write of the user's holds
@@ -287,8 +311,9 @@ export function attach(
     const askedFind = (method: 'Find' | 'FindError', generation: number, request: { readonly rowSequenceVersion: number }, signal: AbortSignal): Promise<GridFindResult> =>
         asking(signal, async number => {
             const askedOf = source;
-            const answer = await dotnet.invokeMethodAsync(method, number, generation, request);
+            const answer = await numbered.invokeMethodAsync(method, number, generation, request);
             signal.throwIfAborted();
+            givenUp(answer);
             const found = findResultOf(answer);
             if (found !== 'moved') return found;
             await gate.released();
@@ -301,11 +326,33 @@ export function attach(
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
     // Asked of .NET for the text and caret the core hands; the core drops an answer for text it no longer holds.
     const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
-    const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
+    const menus = contextMenus(numbered, () => ({ generation: source.generation, columnsVersion: columns.version }));
     const metrics = new WireMetrics();
     const marks = new WireMarks(() => source, write);
-    const asked = askedThrough(dotnet, asking, marks, summarize, write);
-    const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
+    const asked = askedThrough(numbered, asking, marks, summarize, write);
+    // A key or press made while a numbered call is unanswered may wait on one lost, which nothing numbered follows
+    // while it waits: .NET is told how far the numbers have gone, and finds any that never arrived (ADR-0240 section 11).
+    // Heard on the grid's Input Root, as the core finds it, in the capture phase and before the grid's own listeners
+    // there, which may hold the input and stop it; only an input made on this grid counts.
+    const inputRoot = gridInputRoot(root);
+    const tellSent = (event: Event): void => {
+        if (!(event.target instanceof Node) || !root.contains(event.target)) return;
+        numbers.tell();
+    };
+    const hearSent = (hear: boolean): void => {
+        for (const type of ['keydown', 'mousedown']) {
+            if (hear) inputRoot.addEventListener(type, tellSent, true);
+            else inputRoot.removeEventListener(type, tellSent, true);
+        }
+    };
+    hearSent(true);
+    let grid: GridHandle<BlazorRow>;
+    try {
+        grid = createGrid(root, optionsNow());
+    } catch (error) {
+        hearSent(false);
+        throw error;
+    }
     made.grid = grid;
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
     const declared = init.options.pointedAt;
@@ -328,7 +375,16 @@ export function attach(
         },
         slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
         take: (number: number) => holding.take(number),
+        inputsLost: (first: number, last: number, words: string) => {
+            if (!Number.isInteger(first) || !Number.isInteger(last) || first > last || typeof words !== 'string') {
+                throw new TypeError(`Internal: .NET named the inputs ${String(first)} to ${String(last)} lost, in ${JSON.stringify(words)}.`);
+            }
+            const lost = Array.from({ length: last - first + 1 }, (_, index) => first + index);
+            // Said once for them all, unless each lost call tells the user itself; an empty sentence says nothing.
+            if (numbers.lose(lost, words) && words !== '') grid.announce(words);
+        },
         dispose: () => {
+            hearSent(false);
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();
             rows.stop();
@@ -360,18 +416,30 @@ type Handlers = Required<Pick<GridOptions<BlazorRow>,
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
+/** A write of the user's own, numbered as it crosses (ADR-0240 section 11): `speaks` where its own refusal tells the user
+ * that it was lost, as an edit's does in its editor. */
+type Write = (kind: HeardKind, payload: unknown, speaks?: boolean) => Promise<unknown>;
+
 // One function per event, made once, so the core sees the same handler on every update (ADR-0003). A write of the
 // user's own goes by `write`, which holds what .NET sends until .NET has handled it. An edit, a paste and a fill are
 // answered by .NET, which may refuse them: each is pending until it has (ADR-0380 sections 2 and 5).
-function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknown) => Promise<unknown>, asking: Asking): Handlers {
+// What the browser has already done, a Selection or a column's width, is only heard by .NET, and crosses as it is; what
+// .NET carries out, an Action, an undo or a Name Box entry, is numbered (ADR-0240 section 11).
+function handlers(dotnet: DotNetHandle, numbers: InputNumbers, write: Write, asking: Asking): Handlers {
     const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
+    const carry = (kind: HeardKind, payload: unknown): void => { void numbers.call('Heard', [kind, payload]); };
     return Object.freeze({
         onSelectionChanged: (selection: GridSelection) => { send('selectionChanged', wireSelection(selection)); },
         onEdit: intent => asking(intent.signal, async answer => {
             const answered = await write('edit', {
                 answer, row: intent.row.id, column: intent.column, value: intent.value, seenText: intent.seenText, replacedText: intent.replacedText,
-            });
+            }, true);
             intent.signal.throwIfAborted();
+            // Never reached .NET: refused in the editor, which keeps the text, never sent again.
+            if (answered instanceof LostCall) {
+                intent.refuse(answered.words);
+                return;
+            }
             const refusal = refusalOf(answered);
             if (refusal !== undefined) intent.refuse(refusal);
         }),
@@ -381,6 +449,10 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
                 origins: intent.origins, rowSequenceVersion: intent.rowSequenceVersion, enteredAt: intent.enteredAt, fillSource: intent.fillSource,
             });
             intent.signal.throwIfAborted();
+            if (answered instanceof LostCall) {
+                intent.refuse();
+                return;
+            }
             const refusal = refusalOf(answered);
             // A paste is refused without a sentence of the grid's: telling the user why is the Consumer's (ADR-0050 item 3).
             if (refusal !== undefined) intent.refuse();
@@ -391,11 +463,11 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
             });
             intent.signal.throwIfAborted();
             // A fill, as a paste, is refused without a sentence of the grid's (ADR-0050 item 5).
-            if (refusalOf(answered) !== undefined) intent.refuse();
+            if (answered instanceof LostCall || refusalOf(answered) !== undefined) intent.refuse();
         }),
         onClear: intent => { void write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
-        onUndo: () => { send('undo', null); },
-        onRedo: () => { send('redo', null); },
+        onUndo: () => { carry('undo', null); },
+        onRedo: () => { carry('redo', null); },
         onRefused: (refusal: GridRefusal<BlazorRow>) => { send('refused', wireRefusal(refusal)); },
         onColumnWidthChanged: change => { send('columnWidthChanged', change); },
         onColumnOrderChanged: order => { send('columnOrderChanged', order); },
@@ -408,8 +480,8 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
         onLeave: () => { send('leave', null); },
         onParentWithoutHeight: () => { send('parentWithoutHeight', null); },
         onOverwriteNotice: notice => { send('overwriteNotice', notice); },
-        onAction: event => { send('action', { row: event.row.id, column: event.column, action: event.action }); },
-        onNameBoxEntered: typed => { send('nameBoxEntered', typed); },
+        onAction: event => { carry('action', { row: event.row.id, column: event.column, action: event.action }); },
+        onNameBoxEntered: typed => { carry('nameBoxEntered', typed); },
         onReferenceKeyColoursChanged: keys => { send('referenceKeyColoursChanged', keys); },
     });
 }
@@ -503,7 +575,7 @@ interface ContextMenus {
 // the last menu asked, the only one standing. A command runs in .NET, and the core holds the input after it until
 // .NET has run it. A menu asked under columns or a source .NET no longer holds, or of a component gone, is given up,
 // and no menu stands. Made once, so the core sees the same functions on every update (ADR-0003).
-function contextMenus(dotnet: DotNetHandle, held: () => { readonly generation: number; readonly columnsVersion: number }): ContextMenus {
+function contextMenus(dotnet: DotNetCalls, held: () => { readonly generation: number; readonly columnsVersion: number }): ContextMenus {
     let asked = 0;
     let words: ReadonlyMap<string, string> = new Map();
     let labels: { readonly text: string; readonly label: (id: string) => string | undefined } | undefined;
@@ -514,10 +586,11 @@ function contextMenus(dotnet: DotNetHandle, held: () => { readonly generation: n
             const { generation, columnsVersion } = held();
             const answer = await dotnet.invokeMethodAsync('ContextCommands', number, generation, columnsVersion, context.row.id, context.column,
                 context.selection, context.rowSequenceVersion);
+            givenUp(answer);
             const commands = commandsOf(answer);
             words = new Map(commands.flatMap(command => (command.label === undefined ? [] : [[command.id, command.label] as const])));
             return Object.freeze(commands.map(({ id, enabled }, index) => Object.freeze({
-                id, enabled, invoke: async () => { await dotnet.invokeMethodAsync('RunContextCommand', number, index); },
+                id, enabled, invoke: async () => { givenUp(await dotnet.invokeMethodAsync('RunContextCommand', number, index)); },
             })));
         },
         labelFor: (table: Readonly<Record<string, string>> | undefined) => {
@@ -600,6 +673,10 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
     });
 }
 
+// The reference rule over the text .NET formats (ADR-0332 §4), for a source in .NET that finds by it, so a mark agrees
+// with the step. One function for every grid: its identity never asks the painted rows to judge again (ADR-0003).
+const referenceMark = (row: BlazorRow, column: GridColumn<BlazorRow>, pattern: GridFindPattern): boolean => findMatches(textOf(column, row), pattern);
+
 /** No Font, Fill or Border of the Consumer's: the column's own paint. */
 const noAppearance: CellAppearance = Object.freeze({});
 
@@ -641,10 +718,13 @@ function gridOptions(
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
         ...(wire.completesText === true ? { completeEditorText } : {}),
+        ...(wire.referenceMarks === true ? { findMatch: referenceMark } : {}),
         ...scripts.options(wire.scripts),
         ...(wire.contextCommands === true ? { contextCommands: menus.commands } : {}),
         ...(wire.contextCommands === true || wire.commandLabels !== undefined ? { commandLabel: menus.labelFor(wire.commandLabels) } : {}),
-        ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
+        ...((razorSlots === undefined || razorSlots.length === 0) && wire.stylesheets === undefined
+            ? {}
+            : { chrome: slots.chrome(razorSlots === undefined ? [] : razorSlots, wire.stylesheets) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),
@@ -819,7 +899,7 @@ interface Asked {
 // .NET sends until .NET has handled it, and the core holds the input after it until it has (ADR-0240's note of
 // 2026-10-19, ADR-0142). A copy's answer and a summary are questions, numbered so a newer one calls off the older.
 function askedThrough(
-    dotnet: DotNetHandle, asking: Asking, marks: WireMarks, summarize: SummarizeOf, write: (kind: HeardKind, payload: unknown) => Promise<unknown>,
+    dotnet: DotNetCalls, asking: Asking, marks: WireMarks, summarize: SummarizeOf, write: Write,
 ): Asked {
     const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
     return Object.freeze({
@@ -827,9 +907,14 @@ function askedThrough(
         copyAnswerAsync: (request: GridCopyRequest, signal: AbortSignal) => asking(signal, async number => {
             const answer = await dotnet.invokeMethodAsync('Copy', number, request);
             signal.throwIfAborted();
+            givenUp(answer);
             return copyAnswerOf(answer);
         }),
-        onReplace: async (request: GridReplaceRequest) => replaceResultOf(await write('replace', request)),
+        onReplace: async (request: GridReplaceRequest) => {
+            const answer = await write('replace', request);
+            givenUp(answer);
+            return replaceResultOf(answer);
+        },
         onSummarize: (request: GridSummaryRequest, signal: AbortSignal) => summarize(undefined, request, signal),
         onDeclaredKey: async (press: GridDeclaredKeyPress) => {
             await write('declaredKey', { key: press.key, editOpen: press.editOpen, selection: wireSelection(press.selection), rowSequenceVersion: press.rowSequenceVersion });

@@ -122,8 +122,9 @@ public sealed partial class ExGrid<TRow>
     /// <summary>
     /// Whether a painted cell matches the Find panel's pattern (ADR-0055), for a source that finds by a rule of its own:
     /// the Consumer's own script (ADR-0440), called with the row's values by column name, the column's name and the
-    /// pattern <c>{ text, matchCase, wholeCell }</c>, answering true or false. Set as the grid is made. None: the marks
-    /// are drawn only over a source the grid can read cells of in the browser, which a .NET source is not, so none.
+    /// pattern <c>{ text, matchCase, wholeCell }</c>, answering true or false. Set as the grid is made. None: over
+    /// <see cref="GridSource.From{TRow}(IReadOnlyList{TRow})"/>'s source, which finds by the reference rule, the marks are
+    /// drawn by that rule over the texts the browser holds; over any other source, none.
     /// </summary>
     [Parameter] public ScriptFunction? FindMatch { get; set; }
 
@@ -289,6 +290,9 @@ public sealed partial class ExGrid<TRow>
             json.WriteBoolean("copies", true);
         if (OnReplace is not null)
             json.WriteBoolean("replaces", true);
+        // GridSource.From finds by the reference rule over the texts that cross with the rows (ADR-0332 section 4).
+        if (FindMatch is null && _source is InMemoryGridSource<TRow>)
+            json.WriteBoolean("referenceMarks", true);
         if (OnSummarize is not null)
             json.WriteBoolean("summarizes", true);
         // Only what the Consumer set: a default is the core's, written once there.

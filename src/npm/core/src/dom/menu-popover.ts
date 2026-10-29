@@ -121,6 +121,8 @@ export interface MenuPlace {
      * as a key on an item is. Answers whether the key was the menu's.
      */
     keyOnGrid(key: string, shift: boolean, controlAltOrMeta: boolean): boolean;
+    /** Whether the contents still owe the keyboard the opening asked for: a Chrome slot's not yet drawn. */
+    readonly focusOwed: boolean;
 }
 
 /**
@@ -184,6 +186,11 @@ export class MenuItems implements MenuPlace {
     focusFirst(): void {
         this.#state.toFirst();
         this.focus();
+    }
+
+    /** The items are drawn as the menu opens, and take the keyboard then. */
+    get focusOwed(): boolean {
+        return false;
     }
 
     /** Nothing to take away: the items go with the popover's element. */
