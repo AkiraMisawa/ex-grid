@@ -218,6 +218,21 @@ describe('rows let go', () => {
         expect(columns.columns[1]?.format?.(1500)).toBe('1,500');
     });
 
+    it('ADR-0440 section 5: the key an edit holds is told to .NET by its row, and the row sent past the slice stands at its place', () => {
+        const dotnet = new FakeDotNet();
+        const columns = new ColumnSet();
+        columns.take([book, notional], 1);
+        const source = new DotNetSource(dotnet, new RowSet(new FakeCollector().make, () => { /* collected rows are not this test's */ }), columns,
+            { generation: 1, rowKey: true, vouchesDistinctRows: false, finds: false }, noFind);
+        source.take(state(1, [{ ...rates, k: 'R' }], { totalCount: 50, beyond: [{ at: 40, row: { ...credit, k: 'C' } }] }));
+
+        const beyond = source.snapshot().beyond;
+        expect(beyond?.map(held => [held.position, held.row.cells])).toEqual([[40, ['Credit', 2500]]]);
+        source.holdKey('C');
+        source.holdKey(undefined);
+        expect(dotnet.calls.filter(call => call.method === 'HoldRow').map(call => call.args)).toEqual([[1, 2], [1, null]]);
+    });
+
     it('the spine\'s sixth rule: rows read by columns .NET has since replaced are asked for again', async () => {
         const dotnet = new FakeDotNet();
         const columns = new ColumnSet();

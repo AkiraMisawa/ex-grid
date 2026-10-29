@@ -53,6 +53,12 @@ export interface AutoColumnWidth {
 }
 
 // @public
+export interface BeyondRow<Row> {
+    readonly position: number;
+    readonly row: Row;
+}
+
+// @public
 export type BorderStyle = 'none' | 'hair' | 'thin' | 'medium' | 'thick' | 'double' | 'dotted' | 'dashed' | 'dashDot' | 'dashDotDot' | 'mediumDashed' | 'mediumDashDot' | 'mediumDashDotDot' | 'slantedDashDot';
 
 // @public
@@ -1544,6 +1550,7 @@ export interface GridSelectionSummarySlotContext {
 export interface GridSource<Row> {
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    holdKey?(key: RowKey | undefined): void;
     readonly marks?: RowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
     publishGathered?(): void;
@@ -1566,6 +1573,7 @@ export const GridSource: Readonly<{
 
 // @public
 export interface GridSourceState<Row> {
+    readonly beyond?: readonly BeyondRow<Row>[];
     readonly filter: GridFilter | undefined;
     readonly loading: boolean;
     readonly rowSequenceVersion: number;

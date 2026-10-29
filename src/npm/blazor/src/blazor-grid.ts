@@ -26,7 +26,7 @@ export type HeardKind =
     | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'headerGroupToggled' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice'
     | 'action' | 'nameBoxEntered' | 'referenceKeyColoursChanged' | 'declaredKey' | 'selectionSummaryChanged' | 'summaryFiguresChanged'
-    | 'replace' | 'mark';
+    | 'replace' | 'mark' | 'parentWithoutHeight';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
  * core's own default stands for the rest, so a default is written once, in the core. */

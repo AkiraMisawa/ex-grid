@@ -182,6 +182,32 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.False(attached.GetProperty("source").GetProperty("summarizes").GetBoolean());
     }
 
+    [Fact] // ADR-0440 section 5 / LV-20: the row an open edit follows crosses past the rows sent, at its place in the Window
+    public async Task ADR0440_the_row_an_edit_holds_crosses_beyond_the_rows_sent_wherever_the_window_holds_it()
+    {
+        var source = GridSource.From(TestRows.Many(1000), r => r.Book);
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, TestRows.Columns()));
+        var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
+        var first = Window()[0].GetProperty("i").GetInt64();
+
+        await cut.InvokeAsync(() => Bridge().HoldRow(generation, first));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)]));
+        await cut.InvokeAsync(() => Bridge().NeedRange(generation, 0, 20));
+
+        var sent = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
+        var beyond = Assert.Single(sent.GetProperty("beyond").EnumerateArray());
+        Assert.Equal(999, beyond.GetProperty("at").GetInt32());
+        Assert.Equal("Row 000000", beyond.GetProperty("row").GetProperty("k").GetString());
+        Assert.True(sent.GetProperty("window").GetArrayLength() < 1000);
+
+        await cut.InvokeAsync(() => Bridge().HoldRow(generation, null));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Ascending)]));
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Amount", SortDirection.Descending)]));
+        await cut.InvokeAsync(() => Bridge().NeedRange(generation, 0, 20));
+
+        Assert.False(Parsed(_grid.Invocations["state"][^1].Arguments[0]).TryGetProperty("beyond", out _));
+    }
+
     [Fact] // ADR-0130 / ADR-0440: a figure takes the Focus column's .NET format before it crosses, which the browser cannot run
     public async Task ADR0440_a_figure_crosses_in_the_focus_columns_format()
     {

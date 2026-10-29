@@ -15,6 +15,7 @@ import type { CellPosition } from '../src/selection/cell';
 import type { GridSelection } from '../src/selection/selection';
 import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
+import type { RowKey } from '../src/source/row-key';
 import { mount, painted, q, scrollTo, trades, type Trade } from './grid-harness';
 
 // Book and Notional edit; the Desk does not. Notional's verdict rejects what is not a number and flags a
@@ -690,6 +691,50 @@ describe('an edit under rows and columns that move', () => {
         key('Enter');
         await painted();
         expect(defined(listener.edits[0], 'the intent').row.book).toBe('Book-2');
+    });
+
+    it('ADR-0440 section 5 / LV-20: over a source that hands over a slice, the key an edit follows is told, and its row beyond the slice is followed and lands', async () => {
+        const listener = heard();
+        const inner = GridSource.from(trades(20), { rowKey: trade => trade.book });
+        const told: (RowKey | undefined)[] = [];
+        let heldKey: RowKey | undefined;
+        // Hands over the first ten rows of its Window, and names the held key's row wherever the Window holds it past them.
+        const source: GridSource<Trade> = {
+            subscribe: hear => inner.subscribe(hear),
+            snapshot: () => {
+                const state = inner.snapshot();
+                const at = state.window.findIndex(row => row.book === heldKey);
+                return {
+                    ...state, window: state.window.slice(0, 10),
+                    ...(at >= 10 ? { beyond: [{ position: state.windowStart + at, row: defined(state.window[at], 'the held row') }] } : {}),
+                };
+            },
+            setColumns: declared => { inner.setColumns(declared); },
+            setSorts: sorts => { inner.setSorts(sorts); },
+            setFilter: filter => { inner.setFilter(filter); },
+            needRange: range => inner.needRange(range),
+            rows: (range, signal) => inner.rows(range, signal),
+            distinctValues: (column, signal) => inner.distinctValues(column, signal),
+            rowKey: inner.rowKey,
+            holdKey: held => {
+                told.push(held);
+                heldKey = held;
+            },
+        };
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, book, rowY(2));
+        await painted();
+        key('W');
+        expect(told).toEqual(['Book-2']);
+        inner.setSorts([{ column: 'Notional', direction: 'descending' }]);
+        await painted();
+        expect(editor(root).getAttribute('data-ex-cell')).toBe('17 0');
+        expect(focusOf(listener.selections)).toEqual({ row: 17, column: 0 });
+        key('Enter');
+        await painted();
+        expect(defined(listener.edits[0], 'the intent').row.book).toBe('Book-2');
+        expect(told).toEqual(['Book-2', undefined]);
     });
 
     it('ADR-0011: other columns or another source discard the edit, said by its reason, and the keyboard comes back', async () => {

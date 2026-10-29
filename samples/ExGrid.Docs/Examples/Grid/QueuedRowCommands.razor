@@ -11,7 +11,7 @@
 <button id="restore-row-order" @onclick="Restore">Restore rows</button>
 <p role="status" id="row-order-trace">@string.Join(" | ", _trace)</p>
 <ExGrid TRow="CommandRow" Source="_source" Columns="Columns" RowHeight="24" ViewportWidth="ViewportSize.Stretch" ViewportHeight="220"
-        Chrome="Chrome" Marks="_marks"
+        Chrome="Chrome"
         DeclaredKeys="Keys" OnDeclaredKey="HoldAsync" OnAction="Act" OnRefused="Refused" />
 
 @code {
@@ -30,8 +30,16 @@
     private static CommandRow[] Rows() => Enumerable.Range(0, 80).Select(id => new CommandRow(id)).ToArray();
     private readonly List<string> _trace = [];
     private TaskCompletionSource? _release;
-    private MarkAdapter _marks = default!;
-    protected override void OnInitialized() => _marks = new MarkAdapter(id => Record($"mark:{id}"));
+    private string _marked = "";
+    // The source keeps the Row Marks, and the trace says which rows are marked whenever that changes.
+    protected override void OnInitialized() => _source.Marks.Changed += OnMarksChanged;
+    private void OnMarksChanged()
+    {
+        var marked = string.Join(",", _source.Window.Where(_source.Marks.IsMarked).Select(row => row.Id));
+        if (marked == _marked) return;
+        _marked = marked;
+        Record($"mark:{(marked.Length == 0 ? "none" : marked)}");
+    }
     private void Record(string value) { _trace.Add(value); StateHasChanged(); }
     private async Task HoldAsync(GridDeclaredKeyPress _)
     {
@@ -51,17 +59,9 @@
         GridRefusal<CommandRow>.Mark mark => $"mark:{mark.Reason}",
         _ => throw new ArgumentOutOfRangeException(nameof(refusal), refusal, "A refusal this Example does not record."),
     });
-    public void Dispose() => Release();
-    private sealed class MarkAdapter(Action<int> mark) : IRowMarks<CommandRow>
+    public void Dispose()
     {
-        public RowMarkCounts? Counts => null;
-        public bool IsMarked(CommandRow row) => false;
-        public event Action? Changed { add { } remove { } }
-        public void OnRowKindChanged(Func<CommandRow, RowKind>? rowKind) { }
-        public Task OnMarkIntentAsync(RowMarkIntent<CommandRow> intent)
-        {
-            if (intent is RowMarkIntent<CommandRow>.OneRow one) mark(one.Row.Id);
-            return Task.CompletedTask;
-        }
+        _source.Marks.Changed -= OnMarksChanged;
+        Release();
     }
 }

@@ -6,8 +6,9 @@ public sealed record Quote(string Symbol, string Name, decimal Bid, decimal Ask,
     /// <summary>The middle of the bid and the ask.</summary>
     public decimal Last => Math.Round((Bid + Ask) / 2, 2);
 
-    /// <summary>The move since the open, as a fraction.</summary>
-    public decimal Change => Last / Open - 1;
+    /// <summary>The move since the open, as a fraction, to six places: a division's 28 digits are more than a number in
+    /// the browser holds exactly, and the grid refuses them rather than show and sum another number.</summary>
+    public decimal Change => Math.Round(Last / Open - 1, 6);
 
     private static readonly (string Symbol, string Name, decimal Price)[] Instruments =
     [

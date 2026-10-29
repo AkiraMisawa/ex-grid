@@ -1754,6 +1754,8 @@ export class GridView<Row> {
     #groupToggles = new Map<Element, string>();
     #toggleFocus: ToggleFocus | undefined;
     #onPinnedCountChanged: ((count: number) => void) | undefined;
+    // The key an open edit follows, and the source it was told to (ADR-0440 section 5).
+    #heldEditKey: { readonly source: GridSource<Row>; readonly key: RowKey } | undefined;
     // Who hears a stretched height with no parent height, and whether it has heard this one (ADR-0028).
     #onParentWithoutHeight: (() => void) | undefined;
     #namedParentWithoutHeight = false;
@@ -4471,9 +4473,13 @@ export class GridView<Row> {
     }
 
     // The row the Window holds at a position, or none.
+    // The row at a position of the result: in the Window, or among the rows the source holds beyond the slice it handed
+    // over, the one an open edit follows (ADR-0440 section 5).
     #rowAt(row: number): { readonly row: Row } | undefined {
         const slice = row - this.#state.windowStart;
-        return slice < 0 || slice >= this.#state.window.length ? undefined : { row: itemAt(this.#state.window, slice) };
+        if (slice >= 0 && slice < this.#state.window.length) return { row: itemAt(this.#state.window, slice) };
+        const beyond = this.#state.beyond?.find(held => held.position === row);
+        return beyond === undefined ? undefined : { row: beyond.row };
     }
 
     // The text an edit opens on: the Consumer's where it declares one, as a Sheet's Entry (ADR-0051), and the
@@ -5626,6 +5632,12 @@ export class GridView<Row> {
             if (found !== undefined) return undefined;
             found = windowStart + i;
         }
+        // Beyond the slice handed over, where the source's Window holds the row an open edit follows (ADR-0440 section 5).
+        for (const held of this.#state.beyond ?? []) { // oxlint-disable-line ex-grid/no-stand-in-default -- a source that hands over its whole Window holds no row beyond it
+            if (keyOf(rowKey, held.row, 'A row beyond the Window') !== key) continue;
+            if (found !== undefined) return undefined;
+            found = held.position;
+        }
         return found;
     }
 
@@ -5672,7 +5684,8 @@ export class GridView<Row> {
         const rowKey = this.#source.rowKey;
         if (edit.key !== undefined) {
             if (rowKey === undefined) return undefined;
-            const found = window.filter(row => keyOf(rowKey, row, 'A row of the Window') === edit.key);
+            const found = [...window, ...(state.beyond ?? []).map(held => held.row)] // oxlint-disable-line ex-grid/no-stand-in-default -- a source that hands over its whole Window holds no row beyond it
+                .filter(row => keyOf(rowKey, row, 'A row of the Window') === edit.key);
             return found.length === 1 ? found[0] : undefined;
         }
         const slice = edit.cell.row - windowStart;
@@ -7159,10 +7172,25 @@ export class GridView<Row> {
 
     // The Consumer hears whether an edit is open when that is not what it last heard (ADR-0050 section 6).
     #tellEditing(): void {
+        this.#holdEditKey();
         const open = this.#edit !== undefined;
         if (open === this.#heardOpen) return;
         this.#heardOpen = open;
         this.#onEditingChanged?.(open);
+    }
+
+    // The key an open edit follows, told to the source it was opened over, and taken back as the edit ends: a source
+    // that hands over a slice of its Window then names that row wherever its Window holds it (ADR-0440 section 5).
+    #holdEditKey(): void {
+        const edit = this.#edit;
+        const held = this.#heldEditKey;
+        if (held !== undefined && (edit === undefined || held.source !== edit.source || held.key !== edit.key)) {
+            this.#heldEditKey = undefined;
+            held.source.holdKey?.(undefined);
+        }
+        if (edit?.key === undefined || this.#heldEditKey !== undefined) return;
+        this.#heldEditKey = { source: edit.source, key: edit.key };
+        edit.source.holdKey?.(edit.key);
     }
 
     // ---- Delete and the fill keys (ADR-0054, ADR-0035) -------------------------------------------------------

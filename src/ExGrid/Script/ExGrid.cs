@@ -996,6 +996,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             for (var at = from; at < to; at++)
                 _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
             json.WriteEndArray();
+            WriteBeyond(json, source, window, from, to);
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
             if (source.TotalCount is { } total)
                 json.WriteNumber("totalCount", total);
@@ -1219,6 +1220,53 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>The source a question from the browser is for, or null where the Consumer has since replaced it:
     /// what the browser asked of a source it no longer reads is not acted on.</summary>
     private IGridSource<TRow>? SourceOf(int generation) => generation == _generation && !_disposed ? _source : null;
+
+    // The Row Key of the row an open edit follows, of the source numbered _heldGeneration, or null while none is held
+    // (ADR-0440 section 5).
+    private object? _heldKey;
+    private int _heldGeneration;
+
+    /// <summary>The browser names the row an open edit follows by its Row Key, or none (ADR-0440 section 5): while one
+    /// is held, the state names that row past the rows sent wherever the source's Window holds it.</summary>
+    internal Task HoldRowAsync(int generation, long? row)
+    {
+        if (SourceOf(generation) is not { } source)
+            return Task.CompletedTask;
+        var rowKey = source.RowKey ?? throw new InvalidOperationException("Internal: the browser held a row of a source with no Row Key.");
+        _heldKey = row is { } id ? rowKey(_rows.RowOf(id)) : null;
+        _heldGeneration = generation;
+        return Task.CompletedTask;
+    }
+
+    // The held row, where the source's Window holds it once and outside the rows sent: the browser follows the edit's
+    // row there, and the commit lands on it (ADR-0440 section 5, LV-20). A key the Window holds twice, or not at all,
+    // sends nothing, and the browser refuses the commit as RowLeftTheWindow.
+    private void WriteBeyond(Utf8JsonWriter json, IGridSource<TRow> source, IReadOnlyList<TRow> window, int from, int to)
+    {
+        if (_heldKey is not { } held || _heldGeneration != _generation || source.RowKey is not { } rowKey)
+            return;
+        int? found = null;
+        for (var i = 0; i < window.Count; i++)
+        {
+            if (!Equals(rowKey(window[i]), held))
+                continue;
+            if (found is not null)
+                return;
+            found = i;
+        }
+        if (found is not { } slice)
+            return;
+        var at = source.WindowStart + slice;
+        if (at >= from && at < to)
+            return;
+        json.WriteStartArray("beyond");
+        json.WriteStartObject();
+        json.WriteNumber("at", at);
+        json.WritePropertyName("row");
+        _rows.Write(json, window[slice], Columns, rowKey, Paint, _pointedAt?.TableRow);
+        json.WriteEndObject();
+        json.WriteEndArray();
+    }
 
     // What the grid tells its source is the Consumer's code running: what it throws fails the component as a
     // handler of Blazor's own does, so the error UI or an error boundary says so, rather than a promise the

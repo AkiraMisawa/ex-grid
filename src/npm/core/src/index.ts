@@ -81,7 +81,7 @@ export { densityText } from './density-text';
 export type { DensityText } from './density-text';
 export { gridCellMetrics, gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
 export type { GridTextGeometry, GridTextOptions } from './text-geometry';
-export type { DistinctValues, GridSourceState } from './source/grid-source';
+export type { BeyondRow, DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, findStep, type GridFindRequest, type GridFindResult } from './finding/find';
 export { displayText, textOf } from './cells/display-text';
 export { applyQuery } from './query/query-engine';

@@ -66,10 +66,27 @@ their own words, `ContextCommandLabel`'s, which come with the menu (ADR-0421).
 *Added on 2026-10-29, in the same thread, when the DemoHost pages and the Docs Examples moved onto
 `ExGrid.Script.ExGrid` and an Example that replaced two refusals' words had no parameter to take them.*
 
+### 5. The row an open edit follows crosses beyond the rows shown
+
+.NET sends the browser only the rows of the source's Window the grid shows, with a margin, so that a million rows held
+in .NET never cross. The source's Window is still the Window the grid judges by (ADR-0142, LV-20): with a Row Key, an
+editor whose row an order move takes beyond the rows that crossed follows it, and its commit lands there, wherever the
+source's Window holds it. So the core tells its source the key an open edit follows (`GridSource.holdKey`, optional;
+none once the edit ends), and a source that hands over a slice of a Window it holds names that one row in its state,
+at its place in the Window (`GridSourceState.beyond`). The core reads such a row only to find a key and the row at a
+position; it never paints it. A source that hands over its whole Window, as every source of the Script Core's own does,
+leaves both out, and the key is found in the Window as before. A key the source's Window no longer holds crosses
+nothing, and the commit is refused as `RowLeftTheWindow`, as LV-20 says.
+
+*Added on 2026-10-29, in the same thread, when `write-lands.spec.mjs`'s LV-20 ran against `ExGrid.Script.ExGrid`: the
+editor stayed where it was opened, because the row it followed was in .NET's Window but not among the rows sent.*
+
 ## Considered options
 
 - **Asking .NET as the core paints.** A round trip per row or per cell on Server, and no answer at all where the core
   paints synchronously. Rejected for painting as ADR-0420 rejected it for a chart's format.
+- **Sending the rows between the slice and the edited row**, so the Window that crosses stays one run. Rejected: a row
+  a re-sort moves to the end of a million would send the million.
 - **Asking the synchronous four of .NET later, the keys held.** Rejected as ADR-0431 rejected it for Formula entry:
   it reworks the core React shares, for a round trip per key on Server.
 

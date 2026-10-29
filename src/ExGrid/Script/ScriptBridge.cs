@@ -59,6 +59,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task NeedRange(int generation, int start, int count) => Calls.InOrder(() => grid.NeedRangeAsync(generation, start, count));
 
     [JSInvokable]
+    public Task HoldRow(int generation, long? row) => Calls.InOrder(() => grid.HoldRowAsync(generation, row));
+
+    [JSInvokable]
     public Task<string> Rows(int generation, long id, int start, int count) => Calls.InOrder(() => grid.RowsAsync(generation, id, start, count));
 
     [JSInvokable]

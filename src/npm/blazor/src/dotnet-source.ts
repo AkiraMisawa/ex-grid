@@ -5,7 +5,7 @@
 
 import {
     engineFilterOf, readGridQueryJson, RowMarkCounts, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
-    type GridSourceState, type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowKeyOf, type RowRange, type SortSpec,
+    type GridSourceState, type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowKey, type RowKeyOf, type RowRange, type SortSpec,
 } from '@ex-grid/core';
 import { filterText, sortsText } from './wire-query';
 import type { BlazorRow, ColumnSet, RowSet, WireRow } from './wire-rows';
@@ -34,6 +34,9 @@ export interface WireState {
     /** The Row Marks' counts as .NET's marks answer them, where the grid has Row Marks (ADR-0043): `null` while they
      * are not known, and the grid claims nothing then. */
     readonly markCounts?: WireMarkCounts | null;
+    /** The row of the key the grid holds, where .NET's Window holds it past the rows sent, at its place in the result
+     * (ADR-0440 section 5). */
+    readonly beyond?: readonly { readonly at: number; readonly row: WireRow }[];
 }
 
 /** Row Marks' counts, as .NET's `RowMarkCounts` holds them. */
@@ -110,8 +113,18 @@ export class DotNetSource implements GridSource<BlazorRow> {
         const clockOffset = state.now === undefined ? 0 : performance.timeOrigin + performance.now() - state.now;
         const counts = state.markCounts;
         this.#markCounts = counts === undefined || counts === null ? undefined : new RowMarkCounts(counts);
+        // The rows past the slice are read in the same message as the slice, so each row is one object whichever it is in.
+        const beyond = state.beyond ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- .NET sends none while no edit holds a key past the rows sent
+        const read = this.#rows.read([...state.window, ...beyond.map(held => held.row)], state.seq, this.#columns, clockOffset);
         this.#state = Object.freeze({
-            window: this.#rows.read(state.window, state.seq, this.#columns, clockOffset),
+            window: Object.freeze(read.slice(0, state.window.length)),
+            ...(beyond.length === 0 ? {} : {
+                beyond: Object.freeze(beyond.map((held, i) => {
+                    const row = read[state.window.length + i];
+                    if (row === undefined) throw new Error('Internal: a row sent past the slice was not read.');
+                    return Object.freeze({ position: held.at, row });
+                })),
+            }),
             windowStart: state.windowStart,
             totalCount: state.totalCount === null ? undefined : state.totalCount,
             loading: state.loading,
@@ -144,6 +157,19 @@ export class DotNetSource implements GridSource<BlazorRow> {
         if (columns.length !== declared.length || columns.some((column, i) => column.name !== declared[i]?.name)) {
             throw new Error('Internal: the grid told its source other columns than the Blazor ExGrid declared.');
         }
+    }
+
+    /** Tells .NET the row the key an open edit follows names, by the id it sent it under, or none: .NET then sends that
+     * row past the slice wherever its Window holds it (ADR-0440 section 5). */
+    holdKey(key: RowKey | undefined): void {
+        if (key === undefined) {
+            void this.#dotnet.invokeMethodAsync('HoldRow', this.generation, null);
+            return;
+        }
+        const { window, beyond } = this.#state;
+        const row = [...window, ...(beyond ?? []).map(held => held.row)].find(held => keyOf(held) === key); // oxlint-disable-line ex-grid/no-stand-in-default -- none past the slice is none to look among
+        if (row === undefined) throw new Error('Internal: the grid holds a key no row .NET sent names.');
+        void this.#dotnet.invokeMethodAsync('HoldRow', this.generation, row.id);
     }
 
     setSorts(sorts: readonly SortSpec[]): void {
