@@ -609,3 +609,19 @@ its layer-3 half still gates.)*
 releases Tab at its keydown, read from the Settled Stamp's `data-ex-escape-leaves`, so a Tab typed at once
 leaves the grid as one typed slowly does. Where the gate cannot know yet, the Tab held behind the Escape is
 refused aloud, and the next Tab leaves.
+
+## Added later: a press reads a scroll the browser has not reported yet *(2026-10-29)*
+
+The grid reads the scroll offsets when the browser reports a scroll, and at no other time. The browser
+reports a scroll at its next frame, though, and input that arrives earlier is handled first. A script can
+write an offset and press at once. RT-1 did this on CI: Playwright set the offset to 0 and clicked the
+first column. The grid still mapped the pointer against the offset it had last heard. That offset sat
+under the Row Heading band, which clamps to the first column clear of it (ADR-0050), so the press went
+to a column off to the right. The outcome then depended on whether the frame came before the press,
+which the spine's sixth principle rules out.
+
+**A press now reads the offsets first.** With the grid's own capture-phase press on its root, the grid
+does what a scroll's report would have done, and then the press maps the pointer. Nothing is done when
+nothing has moved. This is the same read, made earlier. It is a read of the scroll offsets, which
+ADR-0021 allows, and not a measurement. A key needs no such read, because a key moves the Focus through
+the model rather than through the pointer.

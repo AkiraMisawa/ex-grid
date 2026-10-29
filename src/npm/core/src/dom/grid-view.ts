@@ -1234,6 +1234,22 @@ interface PendingCommit<Row> {
 
 // Work of the Consumer's in the Input Order (ADR-0240 sections 6 and 12, ADR-0330 section 10), from the place it took
 // until it ends.
+/**
+ * The turn of work placed in the Input Order, handed to that work (ADR-0240 section 6). Work placed through it runs at
+ * once, inside that turn, rather than after the inputs held behind it: the inputs made meanwhile wait behind both. It
+ * is how work whose turn is held while it asks something else — an adapter's handler running in another runtime —
+ * places what that handler asks for as part of it, where placing it in the order would wait for the turn it belongs
+ * to.
+ */
+export interface GridTurn {
+    /** Runs `handling` at once, inside this turn, as the grid's `inOrder` runs work in its own turn.
+     * @throws Error This turn's work has ended. */
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void>;
+    /** Runs `handling` at once, inside this turn, cancellable by Escape as the grid's `cancellableInOrder` makes it.
+     * @throws Error This turn's work has ended, or cancellable work's handling is being called. */
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
+}
+
 interface PlacedWork {
     /** The number the stamp names cancellable work by (`data-ex-work-placed`, `data-ex-work`). */
     readonly id: number;
@@ -1787,6 +1803,8 @@ export class GridView<Row> {
     // Work of the Consumer's placed and not ended, in the order it was placed; the cancellable one whose turn is under
     // way; the count that numbers each; and whether cancellable work's handling is being called (ADR-0240 section 12).
     #works: PlacedWork[] = [];
+    // How many pendings of work started inside a turn stand at the head of that turn's held inputs.
+    readonly #heldInsideTurn = new WeakMap<PendingCommit<Row>, number>();
     #workUnderWay: PlacedWork | undefined;
     #worksPlaced = 0;
     #workStarting = false;
@@ -2993,7 +3011,8 @@ export class GridView<Row> {
         // A reveal's repaint is the browser's business: meanwhile the grid stands where the reveal left the
         // scroller, and a scroll the user makes is read when the repaint yields to it (ADR-0012).
         if (this.#repaint !== undefined) return;
-        // The offsets the browser holds, read on the scroll it reports: the one read this grid makes.
+        // The offsets the browser holds, read on the scroll it reports, and at a press before it is reported
+        // (#onRootPress): the one read this grid makes.
         const top = this.#scroller.scrollTop;
         const left = this.#scroller.scrollLeft;
         if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return;
@@ -4595,7 +4614,7 @@ export class GridView<Row> {
         // settles, as behind Blazor's awaited OnDeclaredKey (ADR-0240's note of 2026-10-19). A failure the handler throws
         // is thrown here, and one its promise rejects with reaches the page as that rejection, unheard.
         const answer = heard(pressed);
-        if (isThenable(answer)) void this.#placeWork(() => answer, undefined);
+        if (isThenable(answer)) void this.#placeWork(() => answer, undefined, undefined);
         return true;
     }
 
@@ -5205,9 +5224,8 @@ export class GridView<Row> {
      * answers is out, every input made in the grid is held, in its order, and taken once it settles; an Escape is held
      * too, and does what it was typed to do. Once the grid is destroyed it runs nothing.
      */
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
-        if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240).');
-        return this.#placeWork(() => handling(), undefined).then(() => undefined);
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void> {
+        return this.#inOrderWithin(handling, undefined);
     }
 
     /**
@@ -5227,16 +5245,45 @@ export class GridView<Row> {
      * @throws Error Called while cancellable work's handling is being called: one Escape could not say which it cancels.
      */
     cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean> {
+        return this.#cancellableWithin(handling, cancelledTooLate, () => undefined);
+    }
+
+    // The grid's inOrder and a turn's, the turn's placed `within` the work it was handed to.
+    #inOrderWithin(handling: (turn: GridTurn) => void | PromiseLike<void>, within: (() => PlacedWork) | undefined): Promise<void> {
+        if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240).');
+        return this.#placeWork((_signal, work) => handling(this.#turnOf(work)), undefined, within?.()).then(() => undefined);
+    }
+
+    #cancellableWithin(
+        handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void, within: () => PlacedWork | undefined,
+    ): Promise<boolean> {
         if (typeof handling !== 'function' || typeof cancelledTooLate !== 'function') {
             throw new TypeError('cancellableInOrder takes the work and what says a cancel came too late, as functions (ADR-0240).');
         }
+        const outer = within();
         if (this.#workStarting) {
             throw new Error('Cancellable work cannot be placed while cancellable work starts: one Escape could not say which it cancels. Place it once the work under way has ended (ADR-0240).');
         }
-        return this.#placeWork(handling, cancelledTooLate);
+        return this.#placeWork(handling, cancelledTooLate, outer);
     }
 
-    #placeWork(handling: (signal: AbortSignal) => void | PromiseLike<void>, tooLate: ((landed: boolean) => void) | undefined): Promise<boolean> {
+    // The turn handed to `work`: what is placed through it starts at once, inside the work's turn, while that work has
+    // not ended (ADR-0240 section 6).
+    #turnOf(work: PlacedWork): GridTurn {
+        const within = (): PlacedWork => {
+            if (work.ended !== undefined) throw new Error('This turn has ended: place the work with the grid\'s own inOrder (ADR-0240 section 6).');
+            return work;
+        };
+        return {
+            inOrder: handling => this.#inOrderWithin(handling, within),
+            cancellableInOrder: (handling, cancelledTooLate) => this.#cancellableWithin(handling, cancelledTooLate, within),
+        };
+    }
+
+    // Work in its place in the order: at once when nothing is pending or when it is placed inside a turn under way
+    // (`within`), else after the inputs held so far. Placed inside a turn, it is pending, if at all, once that turn's
+    // own work has ended: the inputs held meanwhile wait behind both.
+    #placeWork(handling: (signal: AbortSignal, work: PlacedWork) => void | PromiseLike<void>, tooLate: ((landed: boolean) => void) | undefined, within: PlacedWork | undefined): Promise<boolean> {
         if (this.#destroyed) return Promise.resolve(false);
         return new Promise<boolean>((resolve, reject) => {
             const work: PlacedWork = {
@@ -5245,15 +5292,18 @@ export class GridView<Row> {
             this.#works.push(work);
             // The stamp names it, and stops saying an Escape leaves, from here on.
             if (tooLate !== undefined) this.#invalidate();
-            const start = (): void => { this.#startWork(work, handling, resolve, reject); };
+            const start = (): void => { this.#startWork(work, handling, resolve, reject, within !== undefined); };
             const pending = this.#pending;
-            if (pending === undefined) start();
+            if (pending === undefined || within !== undefined) start();
             else pending.held.push({ kind: 'turn', take: start });
         });
     }
 
     // The work's turn: called with its signal, and pending while what it answers is out.
-    #startWork(work: PlacedWork, handling: (signal: AbortSignal) => void | PromiseLike<void>, resolve: (ran: boolean) => void, reject: (error: unknown) => void): void {
+    #startWork(
+        work: PlacedWork, handling: (signal: AbortSignal, work: PlacedWork) => void | PromiseLike<void>, resolve: (ran: boolean) => void, reject: (error: unknown) => void,
+        inside: boolean,
+    ): void {
         if (this.#destroyed) {
             resolve(false);
             return;
@@ -5272,7 +5322,7 @@ export class GridView<Row> {
         const starting = this.#workStarting;
         this.#workStarting = starting || cancellable;
         try {
-            answer = handling(work.controller.signal);
+            answer = handling(work.controller.signal, work);
         // oxlint-disable-next-line ex-grid/no-catch -- the work's own failure is its caller's, answered through the promise
         } catch (error) {
             end(error, true);
@@ -5303,7 +5353,13 @@ export class GridView<Row> {
         };
         const before = this.#pending;
         if (before === undefined) pend();
-        else before.held.push({ kind: 'turn', take: pend });
+        else if (inside) {
+            // Inside a turn, it is pending as the turn ends, ahead of the inputs held while the turn was out, which wait
+            // behind both (ADR-0240 section 6), and behind the work started inside it before it.
+            const ahead = this.#heldInsideTurn.get(before) ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- none started inside this turn yet
+            before.held.splice(ahead, 0, { kind: 'turn', take: pend });
+            this.#heldInsideTurn.set(before, ahead + 1);
+        } else before.held.push({ kind: 'turn', take: pend });
         const settled = (error: unknown, failed: boolean): void => {
             const pending = out;
             const unpended = pending !== undefined && this.#unpend(pending);
@@ -5322,8 +5378,9 @@ export class GridView<Row> {
         if (!this.#destroyed) this.#invalidate();
     }
 
-    // A plain Escape whose keydown saw cancellable work placed (ADR-0240 section 12): the first such work not cancelled
-    // yet is cancelled; where every one is, the Escape is answered as the first ends. Either way it is answered in its
+    // A plain Escape whose keydown saw cancellable work placed (ADR-0240 section 12): the work under way, else the first
+    // such work not cancelled yet, is cancelled; where every one is, the Escape is answered as the first ends. Work placed
+    // inside a turn starts ahead of work placed before it and still held, so the one under way is not always the first. Either way it is answered in its
     // own turn, after the work: too late where the work landed, nothing to cancel where it ended otherwise than by this
     // cancel. It does nothing else, and its repeats nothing at all.
     #cancelWork(pending: PendingCommit<Row>, repeat: boolean): void {
@@ -5332,7 +5389,8 @@ export class GridView<Row> {
         this.#escapeCancelled = true;
         this.#answered += 1;
         const placed = this.#works.filter(work => work.tooLate !== undefined);
-        const target = placed.find(work => !work.controller.signal.aborted);
+        const underWay = this.#workUnderWay;
+        const target = underWay !== undefined && !underWay.controller.signal.aborted ? underWay : placed.find(work => !work.controller.signal.aborted);
         const named = target ?? itemAt(placed, 0);
         target?.controller.abort();
         const tooLate = named.tooLate;
@@ -7311,7 +7369,7 @@ export class GridView<Row> {
             // said (ADR-0055). Any other failure reaches the page.
             if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
-        }), undefined);
+        }), undefined, undefined);
     }
 
     // Stands the Context Menu of `context` with `commands`, the core's and the Consumer's.
@@ -7412,7 +7470,7 @@ export class GridView<Row> {
         // it settles (ADR-0421), as behind a declared key's answer. A failure its promise rejects with reaches the page
         // as that rejection, unheard.
         const ran = command.invoke();
-        if (isThenable(ran)) void this.#placeWork(() => ran, undefined);
+        if (isThenable(ran)) void this.#placeWork(() => ran, undefined, undefined);
         this.#invalidate();
     }
 
@@ -8785,6 +8843,10 @@ export class GridView<Row> {
     // its default the press would end it after moving the Focus, and the text would open an edit there
     // (ADR-0080).
     readonly #onRootPress = (event: MouseEvent): void => {
+        // A scroll the browser has not reported yet, written by a script just before the press, is read now: the
+        // browser reports it at its next frame, after this press, and the cell under the pointer is where the content
+        // stands, not where the offset last heard put it (ADR-0012, 2026-10-29). With nothing moved, nothing is done.
+        this.#onScroll();
         // A new press, whose own button, if it is one, is noted after this: one before it whose release went
         // unheard is over.
         this.#actionPress = undefined;

@@ -719,3 +719,16 @@ refused as `rowLeftTheWindow` where the row left meanwhile. Its press and releas
 target is looked for again in the DOM. The asynchronous Consumer key the rule speaks of is an `onDeclaredKey` that
 answers with a promise: it takes its place in the order as `inOrder` work does, and every input made after the key is
 held until it settles, as Blazor's awaited `OnDeclaredKey` holds them. Nothing new is decided here.
+
+## Work asked for from inside a turn, over the Script Core, 2026-10-28
+
+On the Razor component, a `ToolbarButton`'s `OnClick` runs as part of its press, so an `OpenAsync` or `SaveAsync` it
+awaits is part of that press too. Blazor's ExSheet over the Script Core holds the press's turn in the browser while
+`OnClick` runs in .NET, a round trip away. An opening it asked for, placed in the order like any other, waited for the
+very press it belonged to, so the adapter refused both by name. It now runs them as the Razor component does. The work
+a turn runs is handed that turn (`GridTurn`, and `SheetTurn` over it). What is placed through the turn while its work
+has not ended starts at once, inside it. The inputs made meanwhile wait behind both, and an Escape cancels a
+cancellable work placed there as it cancels any other. The browser numbers each press, and .NET names the press an
+opening or a save was called from. A call whose press has ended by the time it reaches the browser takes its own place
+in the order, as a call made after the press would. Nothing new is decided here: the Razor component's rule is carried
+over.

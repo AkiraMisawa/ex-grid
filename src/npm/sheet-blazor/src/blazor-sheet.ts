@@ -8,12 +8,12 @@ import {
     type ViewportSize,
 } from '@ex-grid/core';
 import {
-    crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, type GridRazorSlotName, type PagePointingScope,
-    type WireHeld,
+    crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type PagePointingScope,
+    type WireHeld, type WirePresentationDefaults,
 } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
 import {
-    createSheet, PointingScope, sheetWords, type FocusFormatReading, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions,
+    createSheet, PointingScope, sheetWords, type FocusFormatReading, type GridPointedAt, type PointingRefusal, type SheetChrome, type SheetHandle, type SheetLabel, type SheetOptions, type SheetTurn,
     type SheetToolbarCommand, type SheetToolbarContent, type SheetWordId, type TableRow,
 } from '@ex-grid/sheet';
 import {
@@ -74,6 +74,8 @@ export interface WireOptions {
     readonly rowHeight?: number;
     readonly viewportWidth?: ViewportSize;
     readonly viewportHeight?: ViewportSize;
+    /** The Wrapper's widths and Density its paper cascades (ADR-0030), which the cells are painted and measured in. */
+    readonly presentationDefaults?: WirePresentationDefaults;
     readonly today?: SheetDay;
     readonly timeZone?: string;
     /** The Sheet Seed, an unsigned 64-bit integer written in decimal: JSON's numbers cannot hold one. */
@@ -233,12 +235,14 @@ export interface BlazorSheet {
     pushLinkedTable(name: string, rows: string): Crossing<WireAnswer<null>>;
     /**
      * Opens a file at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet asks .NET to read the
-     * opening numbered `id`, and an Escape that cancels it tells .NET so.
+     * opening numbered `id`, and an Escape that cancels it tells .NET so. Called from the OnClick of the press numbered
+     * `press`, while that press holds the order, it opens inside the press's turn, as part of it (ADR-0240 section 6);
+     * a press that has ended since leaves it its own place.
      */
-    open(id: number): Promise<Crossing<WireAnswer>>;
+    open(id: number, press: number | null): Promise<Crossing<WireAnswer>>;
     /** Saves at this call's place in the Input Order (ADR-0330 §10): in its turn the Sheet hands .NET the Workbook as a
-     * {@link WireSaved}, for the write of the save numbered `id`. */
-    save(id: number): Promise<Crossing<WireAnswer<null>>>;
+     * {@link WireSaved}, for the write of the save numbered `id`. Inside the press numbered `press`, as `open` is. */
+    save(id: number, press: number | null): Promise<Crossing<WireAnswer<null>>>;
     /** The Workbook as it stands, as documents. */
     documents(): Crossing<WireDocuments>;
     /** A message held for .NET (`WireHeld`), as the stream .NET reads it from: gzip-compressed where the browser can
@@ -331,14 +335,30 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     };
     // A press on a Consumer's button runs its OnClick in .NET in the press's place in the Sheet's Input Order: the inputs
     // made after it wait until it has run, as on the Razor component (ADR-0240 section 6), so no edit opens in between.
+    // Each press is numbered, and its turn held by that number while the OnClick runs: a file the OnClick opens or saves
+    // is opened or saved inside it, as part of the press, as on the Razor component.
+    let presses = 0;
+    const pressTurns = new Map<number, SheetTurn>();
     const pressed = (button: number): void => {
         const sheet = making.sheet;
         if (sheet === undefined) throw new Error('Internal: a toolbar button was pressed while the Sheet was being made.');
-        void sheet.inOrder(async () => {
-            await dotnet.invokeMethodAsync('ToolbarPressed', button).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of the button
-                if (!stopped) throw failure;
-            });
+        const press = ++presses;
+        void sheet.inOrder(async turn => {
+            pressTurns.set(press, turn);
+            try {
+                await dotnet.invokeMethodAsync('ToolbarPressed', button, press).catch((failure: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown while the Sheet stands; once stopped .NET has let go of the button
+                    if (!stopped) throw failure;
+                });
+            } finally {
+                pressTurns.delete(press);
+            }
         });
+    };
+    // Where a file .NET opens or saves takes its place: inside the press it was called from while that press holds the
+    // order, else the Sheet's own place for it.
+    const placeOf = (press: number | null): Pick<SheetHandle, 'open' | 'save'> => {
+        const turn = press === null ? undefined : pressTurns.get(press);
+        return turn === undefined ? made : turn;
     };
     const toolbarOf = (wire: WireOptions, wording: Words): SheetOptions['toolbar'] => {
         // A button gone takes its content's function with it: .NET numbers a button made again anew.
@@ -359,8 +379,10 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
         })),
     }));
     // The Sheet raises nothing while it is made, so `made` stands before a handler reads it.
+    // The same defaults written again are the same object, so the Sheet measures its columns anew only when they move.
+    const metrics = new WireMetrics();
     const made = createSheet(root, sheetOptions(
-        init.options, document, words, heard, scopeNamed(init.options.pointingScope), chromeOf(init.options), toolbarOf(init.options, words),
+        init.options, document, words, heard, scopeNamed(init.options.pointingScope), chromeOf(init.options), toolbarOf(init.options, words), metrics,
     ));
     making.sheet = made;
     return Object.freeze({
@@ -375,6 +397,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             hears = new Set(next.options.hears);
             made.update(sheetOptions(
                 next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope), chromeOf(next.options), toolbarOf(next.options, nextWords),
+                metrics,
             ));
             document = nextDocument;
             words = nextWords;
@@ -418,9 +441,9 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             made.pushLinkedTable(name, readLinkedRows(rows));
             return null;
         })),
-        open: async (id: number) => answer(await answeredLater(() => made.open(signal => readInDotNet(dotnet, id, signal, () => stopped)))),
-        save: async (id: number) => answer(await answeredLater(async () => {
-            await made.save(workbook => writeInDotNet(dotnet, id, workbook));
+        open: async (id: number, press: number | null) => answer(await answeredLater(() => placeOf(press).open(signal => readInDotNet(dotnet, id, signal, () => stopped)))),
+        save: async (id: number, press: number | null) => answer(await answeredLater(async () => {
+            await placeOf(press).save(workbook => writeInDotNet(dotnet, id, workbook));
             return null;
         })),
         documents: () => answer({ workbook: made.workbook.toDocument().toJson(), sheet: sheetDocumentOf(made) }),
@@ -698,15 +721,17 @@ export function wordsOf(words: WireWords): Words {
 
 function sheetOptions(
     wire: WireOptions, document: WorkbookDocument | undefined, words: Words, heard: Handlers, pointingScope: PointingScope | undefined,
-    chrome: SheetChrome | undefined, toolbar: SheetOptions['toolbar'],
+    chrome: SheetChrome | undefined, toolbar: SheetOptions['toolbar'], metrics: WireMetrics,
 ): SheetOptions {
     const hears = new Set(wire.hears);
+    const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
     return {
         ...(passed as Partial<Pick<SheetOptions, PassedOption>>),
         locale: wire.locale,
         document,
         ...(wire.seed === undefined ? {} : { seed: BigInt(wire.seed) }),
+        ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
         ...(words.label === undefined ? {} : { label: words.label }),
         ...(words.commandLabel === undefined ? {} : { commandLabel: words.commandLabel }),
         // A document is raised only to a listener: the Sheet writes none otherwise.

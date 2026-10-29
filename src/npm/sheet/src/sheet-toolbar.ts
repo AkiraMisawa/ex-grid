@@ -150,6 +150,7 @@ export class SheetToolbar {
     // The item the keyboard is on while the band holds it: its key, so a repaint keeps it.
     #active: string | undefined;
     #painted: SheetToolbarPaint | undefined;
+    #disposed = false;
     // The KeyTips while they stand.
     #keyTips: KeyTips | undefined;
     // What a Chrome's slot threw in this pass, thrown once the pass is done: the item is the built-in Chrome's.
@@ -217,6 +218,8 @@ export class SheetToolbar {
     }
 
     paint(paint: SheetToolbarPaint): void {
+        // A band gone with its Sheet is drawn no more: a Chrome's slots, gone before it, would be mounted again.
+        if (this.#disposed) return;
         this.#painted = paint;
         setAttr(this.band, 'aria-label', paint.name);
         setAttr(this.band, 'style', `height: ${String(SheetToolbar.heightPx(paint.rows.length, paint.rowHeightPx))}px; --ex-sheet-toolbar-row-height: ${String(paint.rowHeightPx)}px`);
@@ -271,6 +274,9 @@ export class SheetToolbar {
 
     /** Takes every Chrome-drawn item's contents away, as the Sheet goes. */
     dispose(): void {
+        this.#disposed = true;
+        // The KeyTips go with the band: its blur, as the Sheet empties its element, has none to take away.
+        this.#keyTips = undefined;
         for (const drawn of this.#drawn.values()) this.#takeAway(drawn);
         this.#drawn.clear();
         this.#requested = undefined;

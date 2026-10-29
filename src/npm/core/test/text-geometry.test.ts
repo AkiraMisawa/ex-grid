@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { CellTextMetrics } from '../src/columns/cell-text-metrics';
 import { GridMetrics } from '../src/grid-metrics';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
-import { gridHeaderRequiredPx, gridTextGeometry } from '../src/text-geometry';
+import { gridCellMetrics, gridHeaderRequiredPx, gridTextGeometry } from '../src/text-geometry';
 
 describe('gridTextGeometry', () => {
     it.each(['compact', 'comfortable', 'standard', 'excel'] as const)('ADR-0016: charges %s text as the grid does', density => {
@@ -53,5 +53,16 @@ describe('gridHeaderRequiredPx', () => {
         expect(bare).toBe(metrics.headerRequiredPx({ label: 'Region', menuButton: false, sortable: false }));
         expect(gridHeaderRequiredPx('Region', { density: 'standard', menuButton: true, sortable: true }))
             .toBe(bare + metrics.menuButtonBandPx + metrics.sortMarkWidthPx);
+    });
+});
+
+describe('gridCellMetrics', () => {
+    it('ADR-0028/ADR-0030: resolves as the grid does, a Wrapper\'s Density and widths under the grid\'s own, the same options the same object', () => {
+        const defaults = new GridPresentationDefaults({ wideWidthPx: 11, digitWidthPx: 8, narrowWidthPx: 5, fontSizePx: 14, density: 'standard' });
+
+        expect(gridCellMetrics().equals(GridMetrics.resolve({ density: 'compact' }).cellMetrics)).toBe(true);
+        expect(gridCellMetrics({ presentationDefaults: defaults }).equals(GridMetrics.resolve({ density: 'standard', defaults }).cellMetrics)).toBe(true);
+        expect(gridCellMetrics({ density: 'excel', presentationDefaults: defaults }).equals(GridMetrics.resolve({ density: 'excel', defaults }).cellMetrics)).toBe(true);
+        expect(gridCellMetrics({ presentationDefaults: defaults })).toBe(gridCellMetrics({ presentationDefaults: defaults }));
     });
 });

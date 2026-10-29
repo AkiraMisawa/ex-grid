@@ -7,8 +7,8 @@
 @using global::ExGrid.MudBlazor
 
 @* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /sheet does. The
-   Workbook is drawn by ExSheet.Script.ExSheet, and by the Razor component under ?chrome=mud or ?component=razor,
-   for the reasons /sheet gives (ADR-0370 step 2). *@
+   Workbook is drawn by ExSheet.Script.ExSheet, and by the Razor component under ?component=razor, for the
+   reasons /sheet gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -41,7 +41,7 @@
     [SupplyParameterFromQuery(Name = "component")]
     public string? Component { get; set; }
 
-    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+    private bool Razor => DemoChrome.DrawsRazor(Component);
 
     /// <summary>Which Chrome the Workbook runs with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]

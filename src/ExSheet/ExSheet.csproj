@@ -78,6 +78,7 @@
     <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
     <Compile Include="..\ExGrid\Script\RazorSlot.cs" Link="Script\RazorSlot.cs" />
     <Compile Include="..\ExGrid\Script\ScriptJson.cs" Link="Script\ScriptJson.cs" />
+    <Compile Include="..\Shared\Script\ScriptMetricsJson.cs" Link="Script\ScriptMetricsJson.cs" />
   </ItemGroup>
 
 </Project>

@@ -64,7 +64,8 @@ for (const product of ['grid', 'sheet', 'pivot']) {
             });
             const widths = await grid.locator('.ex-row').first().locator('.ex-cell[id]').evaluateAll(cells =>
                 Object.fromEntries(cells.map(c => [c.id.match(/c(\d+)$/)[1], c.getBoundingClientRect().width])));
-            const amount = product === 'sheet' ? '1234567890123.45' : '9007199254740993.25';
+            // Fifteen significant digits in every product, the most the Script Core reads exactly (ADR-0350 section 16).
+            const amount = '1234567890123.45';
             await expect(cell(lastColumn - 1)).toHaveText(amount);
             // The final column may be outside the initial painted slice (the Sheet's
             // character-based widths vary with the platform font). Reveal its leading

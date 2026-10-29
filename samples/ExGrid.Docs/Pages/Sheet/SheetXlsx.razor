@@ -74,7 +74,9 @@
             answers a promise of whether the file opened, and a cancelled read rejects with the signal's reason. The grid
             underneath gains the seam it is built on, <code>cancellableInOrder(handling, cancelledTooLate)</code>, beside
             <code>inOrder(handling)</code> for work no Escape cancels, for a command of your own that should take its
-            place among the user's inputs. The Sheet's own ref carries <code>inOrder(handling)</code> too, and
+            place among the user's inputs. The Sheet's own ref carries <code>inOrder(handling)</code> too, whose
+            <code>handling</code> is handed a turn with <code>open</code> and <code>save</code> that run inside it, so a
+            command of yours that opens or saves as part of its own work does not wait behind itself, and
             <code>focus()</code>, which hands the keyboard back to the Sheet from a control of yours beside it. As in Blazor, the Sheet's toolbar and tabs wait behind the opening as its cells
             do, so a format chosen from the toolbar while the file is read is made on the Workbook the file opens, and an
             Escape typed on any of them cancels the read.

@@ -20,16 +20,14 @@ public static class DemoChrome
 
     /// <summary>
     /// Whether a sheet page draws the Razor components, as <c>?component=</c> asks, in place of Blazor's components
-    /// over the Script Core (ADR-0370 step 2): <c>razor</c> asks for them, <c>script</c> for the Script ones, and absent,
-    /// the Wrapper's Chrome takes the Razor ones, since the Script grid does not yet fill its Formula Bar, Name Box and
-    /// Cell Editor with the Wrapper's Razor (ADR-0410's next slices), and the core's Chrome the Script ones.
+    /// over the Script Core (ADR-0370 step 2): <c>razor</c> asks for them, and <c>script</c> or nothing for the Script
+    /// ones, under either Chrome.
     /// </summary>
     /// <exception cref="ArgumentException">The component is none of these.</exception>
-    public static bool DrawsRazor(string? component, string? chrome) => component switch
+    public static bool DrawsRazor(string? component) => component switch
     {
         "razor" => true,
-        "script" => false,
-        null => IsMud(chrome),
+        "script" or null => false,
         _ => throw new ArgumentException(
             $"Unknown component '{component}': this page runs with ?component=razor or ?component=script, or without it.",
             nameof(component)),

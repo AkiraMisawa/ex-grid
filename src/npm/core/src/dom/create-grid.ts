@@ -2,7 +2,7 @@ import type { CellPosition } from '../selection/cell';
 import type { SelectionRange } from '../selection/range';
 import { browserReports } from './browser-reports';
 import type { GridPopoverContext } from './consumer-popover';
-import { GridView, type GridOptions, type GridViewRead } from './grid-view';
+import { GridView, type GridOptions, type GridTurn, type GridViewRead } from './grid-view';
 
 /** A grid drawn into an element, handed back by {@link createGrid}. */
 export interface GridHandle<Row> {
@@ -113,9 +113,14 @@ export interface GridHandle<Row> {
      * promise it answers is out, every input made in the grid waits, in its order, and is taken once it settles, an
      * Escape included. Once the grid is destroyed it runs nothing.
      *
+     * `handling` is handed the work's turn. What is placed through it while the work has not ended runs at once,
+     * inside the turn, where the grid's own `inOrder` would wait for the turn to end: an adapter whose handler runs in
+     * another runtime while the turn is held places what that handler asks for there, and the inputs made meanwhile
+     * wait behind both.
+     *
      * @returns A promise that settles once `handling` has, with its failure where it failed.
      */
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void>;
     /**
      * Runs `handling`, work of the Consumer's that may take a while — a file still being read — in its place in the
      * Input Order as `inOrder` does, and lets the user cancel it with Escape (ADR-0240 section 12, ADR-0330 section 10).
@@ -175,7 +180,7 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
             return view.canSummarize;
         },
         refreshSummary: () => { view.refreshSummary(); },
-        inOrder: (handling: () => void | PromiseLike<void>) => view.inOrder(handling),
+        inOrder: (handling: (turn: GridTurn) => void | PromiseLike<void>) => view.inOrder(handling),
         cancellableInOrder: (handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void) =>
             view.cancellableInOrder(handling, cancelledTooLate),
         destroy: () => { view.destroy(); },

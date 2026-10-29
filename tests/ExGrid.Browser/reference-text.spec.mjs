@@ -22,12 +22,13 @@ test.beforeEach(async ({ page }) => {
     await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
 });
 
-// Reopens /sheet under ExGrid.MudBlazor's Chrome; the built-in one is what beforeEach opened.
-async function underChrome(page, chrome) {
+// Reopens /sheet under ExGrid.MudBlazor's Chrome, drawn by `component` where one is named; the built-in one is what
+// beforeEach opened.
+async function underChrome(page, chrome, component = undefined) {
     if (chrome === 'builtin') {
         return;
     }
-    await page.goto(`/sheet?chrome=${chrome}`);
+    await page.goto(component === undefined ? `/sheet?chrome=${chrome}` : `/sheet?chrome=${chrome}&component=${component}`);
     await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     await expect(page.locator('.mud-ex-formula-bar-text, .mud-ex-name-box').first()).toBeAttached();
@@ -298,9 +299,10 @@ for (const chrome of ['builtin', 'mud']) {
 // a ground of their own and not the core's box's width. The core makes a shown field see-through,
 // so the layer's text shows, in colour, over the ground the core's box paints, rather than nothing
 // at all (ADR-0057, "The Wrapper's shape is required…"). /sheet?chrome=mud has the shape; taking
-// the paper's class away takes every rule of mud-ex-grid.css with it.
+// the paper's class away takes every rule of mud-ex-grid.css with it. The Razor component's: over the Script Core the
+// Wrapper leaves the Sheet the core's Cell Editor, which colours its References itself (ADR-0410).
 test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell Editor's text still shows, in the layer's colours", async ({ page }) => {
-    await underChrome(page, 'mud');
+    await underChrome(page, 'mud', 'razor');
     await alterPage(page, () => {
         const paper = document.querySelector('.mud-ex-grid:has(.ex-formula-bar)');
         paper.classList.remove('mud-ex-grid');

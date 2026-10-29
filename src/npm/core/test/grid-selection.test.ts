@@ -456,6 +456,20 @@ describe('the Selection in the grid', () => {
         expect(scroller.scrollLeft).toBe(left);
     });
 
+    it('ADR-0012: a press made before the grid heard a scroll lands on the cell under the pointer, not on the one the old offset put there', async () => {
+        const wide = Array.from({ length: 12 }, (_, i) => ({ name: `C${i}`, type: 'number' as const, value: (trade: Trade) => trade.notional + i, width: 100 }));
+        const listener = heard();
+        const { root } = mount({ columns: wide, rows: trades(1000), rowHeight: 24, viewportHeight: 480, viewportWidth: 400, ...listener });
+        await painted();
+        await scrollTo(root, 0, 500);
+        // A script writes the offset and presses at once: the browser reports the scroll at its next frame, after
+        // the press.
+        q(root, '.ex-scroller').scrollLeft = 0;
+        press(root, 10, rowY(0));
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
+    });
+
     it('ADR-0012: a drag extends to the cell under the pointer while the button is down, and ends when it is up', async () => {
         const listener = heard();
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });

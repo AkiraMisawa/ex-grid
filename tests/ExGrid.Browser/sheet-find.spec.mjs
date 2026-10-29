@@ -17,7 +17,7 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 const CURRENT = /(^|\s)ex-match-mark-current(\s|$)/;
 
 for (const chrome of ['builtin', 'mud']) {
-    test.describe(`ADR-0332 Find and Replace on a Sheet (${chrome})`, () => {
+    test.describe(`ADR-0332 Find and Replace on a Sheet (${chrome === 'mud' ? 'mud, the Razor component' : chrome})`, () => {
         const parts = chrome === 'mud'
             ? {
                 withinSheet: 'button.mud-ex-sheet-find-within-sheet',
@@ -39,7 +39,9 @@ for (const chrome of ['builtin', 'mud']) {
         const findField = (page) => panel(page).locator('input').first();
 
         async function openWorkbook(page) {
-            await page.goto(chrome === 'builtin' ? '/workbook' : `/workbook?chrome=${chrome}`);
+            // The Wrapper's find panel is the Razor component's: over the Script Core the Sheet keeps its own, with
+            // Within, under either Chrome (ADR-0410), which the built-in case judges.
+            await page.goto(chrome === 'builtin' ? '/workbook' : `/workbook?chrome=${chrome}&component=razor`);
             await expect(cell(sheet(page), 'A1')).toHaveText('Item');
             await clickCell(sheet(page), 'A1');
             await expectFocusAt(sheet(page), 'A1');

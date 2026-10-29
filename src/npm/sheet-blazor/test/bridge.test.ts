@@ -277,6 +277,28 @@ describe('the Selection Summary across the bridge (ADR-0130)', () => {
     });
 });
 
+/** Column A's width as the grid emitted it, in pixels. */
+function widthOfA(element: HTMLElement): number {
+    const width = element.querySelector<HTMLElement>('.ex-header-cell')?.style.width;
+    if (width === undefined) throw new Error('No column header is painted.');
+    return Number.parseFloat(width);
+}
+
+describe('a Wrapper\'s widths across the bridge (ADR-0030)', () => {
+    it('measures the Sheet\'s columns in the font the paper .NET cascades paints its cells in, and again when it goes', async () => {
+        const plain = mount({ options: options({ rowHeight: 28 }) });
+        const wide = {
+            wideWidthPx: 20, digitWidthPx: 20, narrowWidthPx: 20, fontSizePx: 20, boldWideWidthPx: 20, boldDigitWidthPx: 20, boldNarrowWidthPx: 20,
+            otherWidthPx: 20, boldOtherWidthPx: 20, density: 'standard',
+        } as const;
+        const { element, sheet } = mount({ options: options({ rowHeight: 28, presentationDefaults: wide }) });
+
+        expect(widthOfA(element)).toBeGreaterThan(widthOfA(plain.element) + 20);
+        sheet.update(JSON.stringify({ options: options({ rowHeight: 28 }) }));
+        await vi.waitFor(() => { expect(widthOfA(element)).toBe(widthOfA(plain.element)); });
+    });
+});
+
 describe('commands across the bridge (ADR-0048)', () => {
     it('answers a command as the Sheet did, and a refusal as data .NET throws again', async () => {
         const { element, sheet, dotnet } = mount();
@@ -382,13 +404,13 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('before'); });
 
         dotnet.answers.set('Read', () => Promise.resolve(JSON.stringify({ document: workbookJson(['Opened', { A1: 'after' }]) })));
-        await expect(sheet.open(7)).resolves.toEqual({ done: true });
+        await expect(sheet.open(7, null)).resolves.toEqual({ done: true });
         expect(dotnet.called).toEqual([{ method: 'Read', args: [7] }]);
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('after'); });
         expect(WorkbookDocument.fromJson(must((dotnet.of('workbookChanged').at(-1) as Raised).workbook)).sheets.map(s => s.name)).toEqual(['Opened']);
 
         dotnet.answers.set('Read', () => Promise.resolve(JSON.stringify({ failed: 'The file is not an .xlsx workbook.' })));
-        await expect(sheet.open(8)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The file is not an .xlsx workbook.' } });
+        await expect(sheet.open(8, null)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The file is not an .xlsx workbook.' } });
         expect(cellText(element, 0, 0)).toBe('after');
     });
 
@@ -404,7 +426,7 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
             read.resolve(JSON.stringify({ cancelled: true }));
             return Promise.resolve(null);
         });
-        const opening = sheet.open(3);
+        const opening = sheet.open(3, null);
         await vi.waitFor(() => { expect(dotnet.called.map(call => call.method)).toEqual(['Read']); });
         key('Escape');
 
@@ -424,7 +446,7 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
         expect(sheet.declareLinkedTable('Later', ['Id'], [])).toEqual({ done: null });
 
         dotnet.answers.set('Write', () => Promise.resolve(JSON.stringify({ done: true })));
-        await expect(sheet.save(5)).resolves.toEqual({ done: null });
+        await expect(sheet.save(5, null)).resolves.toEqual({ done: null });
         const [write] = dotnet.called;
         expect(write?.args[0]).toBe(5);
         const saved = write?.args[1] as WireSaved;
@@ -439,7 +461,7 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
         expect(saved.now).toMatchObject({ year: expect.any(Number) as number, millisecond: expect.any(Number) as number });
         await new Promise(resolve => { setTimeout(resolve, 20); });
         dotnet.answers.set('Write', () => Promise.resolve(JSON.stringify({ failed: 'The disk is full.' })));
-        await expect(sheet.save(6)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The disk is full.' } });
+        await expect(sheet.save(6, null)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The disk is full.' } });
         expect(dotnet.called[1]?.args[1]).toMatchObject({ now: saved.now });
     });
 });
@@ -483,7 +505,7 @@ describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005
         expect((await taken(sheet, answer) as WireDocuments).workbook).toBe(raised.workbook);
 
         // A save's Workbook, held for .NET's write.
-        await expect(sheet.save(1)).resolves.toEqual({ done: null });
+        await expect(sheet.save(1, null)).resolves.toEqual({ done: null });
         expect(dotnet.called.map(call => call.args[0])).toEqual(['Heard', 'Write']);
         const [id, saved] = takenArgs[1] as [number, WireSaved];
         expect(id).toBe(1);
@@ -891,16 +913,31 @@ describe('the Consumer\'s ToolbarContent across the bridge (ADR-0100)', () => {
         dotnet.answers.set('ToolbarPressed', () => onClick.promise);
         press(element, 0, 0);
         band?.querySelector<HTMLElement>('[aria-label="Mark reviewed"]')?.click();
-        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'ToolbarPressed').map(call => call.args)).toEqual([[1]]); });
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'ToolbarPressed').map(call => call.args)).toEqual([[1, 1]]); });
         // An opening asked for after the press, which reads in its turn, reads only once OnClick has run.
-        dotnet.answers.set('Read', () => new Deferred().promise);
+        const first = new Deferred();
+        dotnet.answers.set('Read', () => first.promise);
         dotnet.answers.set('CancelRead', () => Promise.resolve(null));
-        void sheet.open(7);
+        void sheet.open(7, null);
         await Promise.resolve();
         expect(dotnet.called.some(call => call.method === 'Read')).toBe(false);
         onClick.resolve(null);
         await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'Read').map(call => call.args)).toEqual([[7]]); });
         key('Escape');
+        first.resolve({ cancelled: true });
+
+        // An opening OnClick asks for, named by its press, reads inside the press at once, as part of it (ADR-0240
+        // section 6); one whose press has ended since takes its own place.
+        const reading = new Deferred();
+        dotnet.answers.set('Read', () => reading.promise);
+        const second = new Deferred();
+        dotnet.answers.set('ToolbarPressed', () => second.promise);
+        band?.querySelector<HTMLElement>('[aria-label="Mark reviewed"]')?.click();
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'ToolbarPressed').map(call => call.args)).toEqual([[1, 1], [1, 2]]); });
+        void sheet.open(8, 2);
+        await vi.waitFor(() => { expect(dotnet.called.filter(call => call.method === 'Read').map(call => call.args)).toEqual([[7], [8]]); });
+        reading.resolve({ cancelled: true });
+        second.resolve(null);
 
         // A refusal .NET met running it is said where the Sheet says its own.
         sheet.tell('An edit is open.');

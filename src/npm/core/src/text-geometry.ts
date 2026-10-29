@@ -73,6 +73,13 @@ function metricsAt(options: GridTextOptions): GridMetrics {
     return metrics;
 }
 
+/** The Cell Metrics a grid drawn with `options` charges its text by, as `createGrid` resolves them (ADR-0028,
+ * ADR-0030): what a Consumer that sizes or judges the grid's cells beside it, as a Sheet sizes its columns in
+ * characters, measures with, so that it reads the grid's own rule. The same options give the same object. */
+export function gridCellMetrics(options: GridTextOptions = {}): CellTextMetrics {
+    return metricsAt(options).cellMetrics;
+}
+
 /** The text geometry of a grid drawn with `options`, as `createGrid` resolves it: plain data, which crosses to a
  * Worker as it is. A row height does not move it. */
 export function gridTextGeometry(options: GridTextOptions = {}): GridTextGeometry {

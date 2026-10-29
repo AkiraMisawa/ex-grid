@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 export {
-    createSheet, type FocusFormatReading, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions,
+    createSheet, type FocusFormatReading, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetToolbarButton, type SheetToolbarEntry, type SheetToolbarRowOptions, type SheetTurn,
 } from './create-sheet';
 export type {
     SheetFormatCellsSlot, SheetFormatCellsSlotContext, SheetTabAddSlot, SheetTabSlot, SheetTabSlotContext,

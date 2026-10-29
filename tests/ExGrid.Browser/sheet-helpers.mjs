@@ -29,9 +29,9 @@ export function positions(page) {
  * (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it: B12 shows
  * its value once the push has landed.
  *
- * Under the built-in Chrome the page draws ExSheet over the Script Core; `component` 'razor' asks for
- * the Razor component, which still ships, for a test of a mechanism only it has (ADR-0370 section 6,
- * step 2). Under the Wrapper's Chrome the page draws the Razor component either way.
+ * Under either Chrome the page draws ExSheet over the Script Core; `component` 'razor' asks for the
+ * Razor component, which still ships, for a test of a mechanism only it has (ADR-0370 section 6,
+ * step 2), such as the Wrapper's MudDialog Format Cells or its find panel.
  */
 export async function openSheet(page, chrome = 'builtin', component = undefined) {
     const query = [chrome === 'builtin' ? undefined : `chrome=${chrome}`, component === undefined ? undefined : `component=${component}`]
