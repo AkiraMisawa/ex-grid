@@ -40,6 +40,33 @@ async function expectPreservedFocus(grid) {
     })).toBe('covers the visible cell');
 }
 
+// The press on the first cell put the Focus there. Once on CI's Edge (the MudBlazor Sheet, WebAssembly, PR #497) it
+// left the active descendant empty for good, and over a hundred local runs did not repeat it, so a failure says what
+// the grid held then: the Focus it names whether or not that cell is painted (data-ex-follow-focus), the offset, and
+// what stands at the point pressed.
+async function expectPressedFirstCell(grid) {
+    try {
+        await expectActiveDescendant(grid, /-r0c0$/);
+    } catch (error) {
+        const held = await grid.evaluate(root => {
+            const cell = root.querySelector('[id$="-r0c0"]');
+            const box = cell?.getBoundingClientRect();
+            const at = box === undefined ? null : document.elementFromPoint(box.left + 8, box.top + 8);
+            const name = element => (element === null ? null : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`);
+            return {
+                focus: root.getAttribute('data-ex-follow-focus'),
+                scrollLeft: root.querySelector('.ex-scroller').scrollLeft,
+                settled: root.hasAttribute('data-ex-settled'),
+                busy: root.getAttribute('aria-busy'),
+                pinned: root.querySelector('.ex-row').querySelectorAll('.ex-pinned').length,
+                atPress: name(at),
+                active: name(document.activeElement),
+            };
+        }).catch(reading => ({ unread: String(reading) }));
+        throw new Error(`${error.message}\nThe grid then held: ${JSON.stringify(held)}`, { cause: error });
+    }
+}
+
 // Public consumer fixture: no breakpoint changes product parameters. Only the enclosing box
 // changes. Each case keeps its document through all layouts, widths and supported pin choices.
 for (const product of ['grid', 'sheet', 'pivot']) {
@@ -99,7 +126,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
                         await circuitQuiet();
                         await settled(grid);
                         await cell(0).click({ position: { x: 8, y: 8 }, force: true });
-                        await expectActiveDescendant(grid, /-r0c0$/);
+                        await expectPressedFirstCell(grid);
                         await settled(grid);
                         await page.locator(`#family-${name}`).click();
                         const available = width - (layout === 'split' ? 0 : 40);

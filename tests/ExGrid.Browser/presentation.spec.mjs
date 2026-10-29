@@ -492,11 +492,15 @@ test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and
 
 test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032)', async ({ page }) => {
     await open(page);
-    const group = grid(page).locator('.ex-header-group').first();
-    await expect(group).toBeVisible();
+    await expect(grid(page).locator('.ex-header-group').first()).toBeVisible();
+    await circuitQuiet();
+    await settled(grid(page));
 
-    const painted = await group.evaluate((el) => {
-        const style = getComputedStyle(el);
+    // The band is built again whenever the header is painted, so a rectangle a locator resolved may be
+    // out of the document by the time it is read, where every computed property reads "" (seen on
+    // CI's Edge, Server host). The rectangle standing is found and read in one operation.
+    const painted = await grid(page).evaluate((root) => {
+        const style = getComputedStyle(root.querySelector('.ex-header-group'));
         return { textAlign: style.textAlign, verticalAlign: style.verticalAlign };
     });
 
