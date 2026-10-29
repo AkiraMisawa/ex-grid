@@ -3,10 +3,10 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 93.9% | 87.7% |
-| ExSheet | 90.8% | 86.5% |
+| ExSheet | 90.6% | 86.4% |
 | ExPivot | 88.5% | 82.7% |
 | ExChart | 90% | 84.9% |
-| ExBoard | 68.2% | 61% |
+| ExBoard | 68.3% | 61% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/28/2026 - 21:40:31 |
+| Generated on: | 10/29/2026 - 01:58:10 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1386 |
+| Classes: | 1388 |
 | Files: | 677 |
-| **Line coverage:** | 90.3% (92751 of 102681) |
-| Covered lines: | 92751 |
-| Uncovered lines: | 9930 |
-| Coverable lines: | 102681 |
-| Total lines: | 156759 |
-| **Branch coverage:** | 85.1% (54129 of 63589) |
-| Covered branches: | 54129 |
-| Total branches: | 63589 |
+| **Line coverage:** | 90.2% (92790 of 102780) |
+| Covered lines: | 92790 |
+| Uncovered lines: | 9990 |
+| Coverable lines: | 102780 |
+| Total lines: | 156767 |
+| **Branch coverage:** | 85% (54149 of 63631) |
+| Covered branches: | 54149 |
+| Total branches: | 63631 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 68.2%</summary>
+<details><summary>ExBoard - 68.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**68.2%**|**61%**|
+|**ExBoard**|**68.3%**|**61%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -94,7 +94,7 @@
 |ExGrid.Script.PivotSourceCrossing|27.4%|11.4%|
 |ExGrid.Script.PivotSourceCrossing<T>|27.4%|11.4%|
 |ExGrid.Script.RazorSlot|29.5%|24.1%|
-|ExGrid.Script.RazorSlotHolders|77.3%|81.2%|
+|ExGrid.Script.RazorSlotHolders|80%|83.3%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.ScriptJson|22.4%|25%|
 |ExGrid.Script.SnapshotCrossing|94.8%|81.2%|
@@ -165,7 +165,7 @@
 |ExGrid.Script.CrossedText|80%|44.4%|
 |ExGrid.Script.HeldCalls|79.3%|62.5%|
 |ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
-|ExGrid.Script.RazorSlotHolders|92.4%|93.7%|
+|ExGrid.Script.RazorSlotHolders|92.7%|94.4%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 
 </details>
@@ -570,7 +570,7 @@
 |ExGrid.Script.HeldCalls|79.3%|62.5%|
 |ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
 |ExGrid.Script.RazorSlot|90.1%|74.1%|
-|ExGrid.Script.RazorSlotHolders|90.5%|87.5%|
+|ExGrid.Script.RazorSlotHolders|90.9%|88.8%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.ScriptBridge<TRow>|47.5%|25%|
 |ExGrid.Script.ScriptBridge<TRow>|83.7%||
@@ -890,7 +890,7 @@
 |ExGrid.Script.PivotSourceCrossing|81.3%|73.1%|
 |ExGrid.Script.PivotSourceCrossing<T>|81.3%|73.1%|
 |ExGrid.Script.RazorSlot|0%|0%|
-|ExGrid.Script.RazorSlotHolders|26.4%|37.5%|
+|ExGrid.Script.RazorSlotHolders|25.4%|33.3%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|0%||
 |ExGrid.Script.ScriptJson|0%|0%|
 |ExGrid.Script.ScriptMetricsJson|61.9%|40%|
@@ -1132,8 +1132,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1185,18 +1185,20 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 89.7%</summary>
+<details><summary>ExSheet - 89.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**89.7%**|**81.7%**|
+|**ExSheet**|**89.3%**|**81.4%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
 |ExGrid.Script.RazorSlot|29.5%|24.1%|
-|ExGrid.Script.RazorSlotHolders|77.3%|81.2%|
+|ExGrid.Script.RazorSlotHolders|80%|83.3%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.ScriptJson|24.1%|29.1%|
+|ExGrid.Script.ScriptMetricsJson|35.7%|33.3%|
+|ExGrid.Script.ScriptMetricsJson.Written|0%||
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -1243,7 +1245,7 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|85.3%|77%|
+|ExSheet.Script.ExSheet|84.8%|77.1%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Press|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
