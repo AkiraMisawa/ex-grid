@@ -1500,8 +1500,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     internal void Release(long[] ids, long seen) => _rows.Release(ids, seen);
 
-    /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to.</summary>
-    private sealed record Heard(Func<Task<string?>> Hand, bool Answers, bool SendsState)
+    /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to. A
+    /// question <paramref name="Aside"/> is asked in its turn and answered out of it: nothing after it waits on it.</summary>
+    private sealed record Heard(Func<Task<string?>> Hand, bool Answers, bool SendsState, bool Aside = false)
     {
         public TaskCompletionSource<string?> Done { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
@@ -1864,6 +1865,11 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             {
                 while (_heard.TryDequeue(out var next))
                 {
+                    if (next.Aside && !_disposed)
+                    {
+                        _ = AnswerAsideAsync(next);
+                        continue;
+                    }
                     try
                     {
                         if (_disposed)
@@ -1895,6 +1901,31 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
         });
         return await heard.Done.Task;
+    }
+
+    // A question asked in its turn, whose answer the turns after it do not wait for: a Consumer slow to answer, or one
+    // that keeps answering a question the user replaced, holds no event and no later question behind it (ADR-0130).
+    // Asked before this returns, so the questions and events after it are asked after it.
+    private async Task AnswerAsideAsync(Heard heard)
+    {
+        try
+        {
+            heard.Done.TrySetResult(await heard.Hand());
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the browser that asked with it: nobody is left to answer.
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+            if (heard.Answers)
+                heard.Done.TrySetException(ex);
+        }
+        finally
+        {
+            heard.Done.TrySetResult(null);
+        }
     }
 
     // Each intent carries the token the user's cancel cancels (ADR-0380 section 3): a handler that has not written

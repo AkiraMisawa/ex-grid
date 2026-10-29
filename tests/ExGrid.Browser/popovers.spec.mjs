@@ -330,6 +330,10 @@ for (const chrome of CHROMES) {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
+            // The menu opened and answered: nothing the opening waits on still holds the keys, so where
+            // they land says what the close itself does. A key typed while an answer is awaited is held
+            // in its place, and lands where DOM focus stood (ADR-0220).
+            await settled(grid(page));
             const landed = await watchWhereKeysLand(page);
             // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
             await holdAnswers(true);
@@ -721,6 +725,9 @@ for (const chrome of CHROMES) {
             await page.keyboard.type('Alpha');
             await page.keyboard.press('Enter');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
+            // The filtered rows have come: a click before them is taken against the rows before, and
+            // their change drops it (ADR-0440 section 6, ADR-0011).
+            await expect(grid(page)).not.toHaveClass(/\bex-loading\b/);
 
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');

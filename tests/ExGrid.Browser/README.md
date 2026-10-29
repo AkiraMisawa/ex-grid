@@ -624,7 +624,7 @@ nobody had asked for. What that means when writing a test:
   count of frames, and once it settles (FN-6).
 - `memory.spec.mjs` — on `/lifecycle`, a grid mounted and disposed fifty times leaves the
   browser's node and listener counts where they were (MEM-2), and a dispose takes the
-  module's eight listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
+  Script grid's and its Blazor adapter's listeners off the root (MEM-4). The ten-minute soak (MEM-5, with the
   managed heap for MEM-6) runs only with `EXGRID_SOAK=1`:
   ```sh
   EXGRID_SOAK=1 npx playwright test memory.spec.mjs

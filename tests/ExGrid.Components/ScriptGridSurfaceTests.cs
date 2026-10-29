@@ -244,6 +244,31 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.Equal("Infinity", answered.GetProperty("figures").GetProperty("sum").GetProperty("number").GetString());
     }
 
+    [Fact] // ADR-0130 / SM-11: a question the user replaced, which the Consumer keeps answering, holds the next one nowhere
+    public async Task ADR0130_a_summary_the_consumer_holds_does_not_hold_the_next_one()
+    {
+        var held = new TaskCompletionSource<GridSummaryResult>();
+        var asked = 0;
+        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.OnSummarize, (GridSummaryRequest _, CancellationToken _) => ++asked == 1 ? held.Task : Task.FromResult(GridSummaryResult.Answered(
+                new Dictionary<SummaryFigures, AggregateResult> { [SummaryFigures.Sum] = AggregateResult.Of(3d) }))));
+        var request = Payload("""{"ranges":[{"topRow":0,"leftColumn":1,"rowCount":2,"columnCount":1}],"columns":["Book","Amount","AsOf","Active"],"rowSequenceVersion":0,"figures":["sum"]}""");
+
+        Task<string?> first = null!;
+        await cut.InvokeAsync(() => { first = Bridge().Summarize(1, null, request); });
+        await cut.InvokeAsync(() => Bridge().CancelAnswer(1));
+        var second = Parsed(await cut.InvokeAsync(() => Bridge().Summarize(2, null, request)));
+
+        Assert.Equal(2, asked);
+        Assert.True(second.GetProperty("figures").TryGetProperty("sum", out _));
+        Assert.False(first.IsCompleted);
+        held.SetResult(GridSummaryResult.Answered(new Dictionary<SummaryFigures, AggregateResult> { [SummaryFigures.Sum] = AggregateResult.Of(2d) }));
+        // Answered once the Consumer answers it: the browser, which cancelled it, reads none of it.
+        Assert.NotNull(await cut.InvokeAsync(() => first));
+    }
+
     [Fact] // ADR-0050 item 9 / ADR-0440: a copy is answered by the browser's number, in the Consumer's flavours or its sentence
     public async Task ADR0440_a_copy_is_answered_by_the_consumer_by_the_browsers_number()
     {

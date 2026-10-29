@@ -530,7 +530,9 @@ public sealed partial class ExGrid<TRow>
 
     /// <summary>The Selection Summary the browser numbered <paramref name="number"/> (ADR-0130), asked of the source
     /// numbered <paramref name="generation"/>, or of <see cref="OnSummarize"/> where it is null, in its turn among the
-    /// events. One asked of a source since replaced is answered with nothing, and the browser shows no figure for it.</summary>
+    /// events, and answered aside: the events and the next question after it do not wait for its answer, so one the user
+    /// replaced, which a Consumer may go on answering, holds nothing up. One asked of a source since replaced is
+    /// answered with nothing, and the browser shows no figure for it.</summary>
     internal Task<string?> SummarizeAsync(long number, int? generation, JsonElement request)
     {
         var asked = new GridSummaryRequest
@@ -556,7 +558,7 @@ public sealed partial class ExGrid<TRow>
                 result = await summarize(asked, cancelled);
             }
             return SummaryJson(result, FocusFormat(asked));
-        }), Answers: true, SendsState: false));
+        }), Answers: true, SendsState: false, Aside: true));
     }
 
     private static SummaryFigures FiguresOf(JsonElement json)

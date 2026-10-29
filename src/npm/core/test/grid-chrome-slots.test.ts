@@ -84,6 +84,7 @@ function plainMenu<Context extends GridMenuSlotContext>(drawn: Drawn<Context>): 
     };
 }
 
+const oneCommand = (): readonly GridCommand[] => [{ id: 'open-trade', enabled: true, invoke: () => undefined }];
 const plainItems = (root: HTMLElement): HTMLButtonElement[] => [...root.querySelectorAll<HTMLButtonElement>('.ex-popover .plain-item')];
 const builtInItems = (root: HTMLElement): Element[] => [...root.querySelectorAll('.ex-popover button[role=menuitem]:not(.plain-item)')];
 
@@ -198,6 +199,29 @@ describe('the Context Menu\'s slot', () => {
         defined(drawn.contexts[0], 'the context').takeFocus(defined(plainItems(root)[1], 'an item'));
         expect(active()).toBe(field);
         field.remove();
+    });
+
+    it('ADR-0204 / SRV-5: the opening focus a slot gives later, as a Razor slot does a round trip on, is not taken once another grid holds the keyboard', async () => {
+        const contexts: GridContextMenuSlotContext<Trade>[] = [];
+        const later: GridChromeSlot<GridContextMenuSlotContext<Trade>> = (slot, context) => {
+            contexts.push(context);
+            const item = document.createElement('button');
+            item.className = 'later-item';
+            slot.append(item);
+            return () => { item.remove(); };
+        };
+        const { root } = mount<Trade>({ ...base, contextCommands: oneCommand, chrome: { contextMenu: later } });
+        const { root: other } = mount<Trade>({ ...base });
+        await painted();
+        secondary(root, 10, rowY(1));
+        other.focus();
+        const item = q(root, '.later-item');
+        defined(contexts[0], 'the context').takeFocus(item);
+        expect(active()).toBe(other);
+        // Brought back to the grid, the keyboard is the grid's again, and the item takes it.
+        root.focus();
+        defined(contexts[0], 'the context').takeFocus(item);
+        expect(active()).toBe(item);
     });
 
     it('ADR-0220: one key that runs a command is one input answered, as under the built-in Chrome', async () => {

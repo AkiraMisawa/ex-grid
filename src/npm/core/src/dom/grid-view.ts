@@ -10124,8 +10124,17 @@ export class GridView<Row> {
     // the keyboard itself (ADR-0039). Any other only while the keyboard is still this grid's, so a grid or a field
     // of the page's the user has moved to keeps it.
     #takeChromeFocus(control: HTMLElement, preventScroll: boolean, owed: boolean): void {
-        if (!control.isConnected || (!owed && !this.#keyboardHere())) return;
+        if (!control.isConnected) return;
+        // A focus the grid asked for is the grid's to give wherever its contents stand, a Wrapper's popover outside the
+        // root included; but not once the user took the keyboard to another grid meanwhile (ADR-0204, SRV-5).
+        if (owed ? this.#keyboardInAnotherGrid() : !this.#keyboardHere()) return;
         keyboardTargetIn(control, 'takeFocus').target.focus({ preventScroll });
+    }
+
+    // DOM focus in a grid that is not this one: another on the page, or one nested in this root.
+    #keyboardInAnotherGrid(): boolean {
+        const grid = this.#root.ownerDocument.activeElement?.closest('.ex-grid');
+        return grid !== null && grid !== undefined && grid !== this.#root;
     }
 
     // DOM focus inside this root and not in a grid nested in it, or on nothing; or, while the keyboard is
