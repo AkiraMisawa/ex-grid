@@ -3,7 +3,7 @@
 
 import { stampAgainst } from '@ex-grid/blazor-shared';
 
-export { attach } from './blazor-grid';
+export { attach, loadScripts } from './blazor-grid';
 
 /** The SHA-256 of what this module was built from, the Shared Script's stamp among it, which the component compares
  * with the one it was built with before it attaches anything (ADR-0123). The build writes it in. */

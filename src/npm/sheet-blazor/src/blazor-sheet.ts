@@ -27,7 +27,7 @@ import { isSheetRazorSlotName, sheetRazorSlotKinds, toolbarContentSlotName, type
  * always heard, since the component answers `IsEditing`. */
 export type HeardKind =
     | 'workbookChanged' | 'documentChanged' | 'sheetsChanged' | 'showToolbarChanged' | 'summaryFiguresChanged' | 'selectionChanged'
-    | 'selectionSummaryChanged' | 'formatKeyRefused' | 'pointingRefused';
+    | 'selectionSummaryChanged' | 'formatKeyRefused' | 'pointingRefused' | 'linkedColumnColoursChanged';
 
 /** ExSheet's command ids as the Razor component names them (`SheetCommandIds`), each with the id the Script Core
  * words it by, so a Consumer's `CommandLabel` words both components alike. */
@@ -573,7 +573,7 @@ function sheetDocumentOf(sheet: SheetHandle): string | null {
 
 type Handlers = Required<Pick<SheetOptions,
     'onWorkbookChanged' | 'onSheetsChanged' | 'onShowToolbarChanged' | 'onSummaryFiguresChanged' | 'onSelectionChanged' | 'onEditingChanged'
-    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused' | 'onPointingRefused'>>;
+    | 'onSelectionSummaryChanged' | 'onFormatKeyRefused' | 'onPointingRefused' | 'onLinkedColumnColoursChanged'>>;
 
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
@@ -598,6 +598,10 @@ function handlers(
         onEditingChanged: open => { send('editingChanged', open); },
         onFormatKeyRefused: refusal => { send('formatKeyRefused', wireRefusal(refusal)); },
         onPointingRefused: (refusal: PointingRefusal) => { send('pointingRefused', { reason: refusal.reason, message: refusal.message }); },
+        // Each column under the names the Consumer declared, and its colour by its place in the palette (ADR-0431).
+        onLinkedColumnColoursChanged: columns => {
+            send('linkedColumnColoursChanged', columns.map(({ column, colour }) => ({ table: column.table, column: column.column, colour })));
+        },
     });
 }
 
@@ -747,6 +751,7 @@ function sheetOptions(
         ...(chrome === undefined ? {} : { chrome }),
         ...(toolbar === undefined ? {} : { toolbar }),
         ...(hears.has('pointingRefused') ? { onPointingRefused: heard.onPointingRefused } : {}),
+        ...(hears.has('linkedColumnColoursChanged') ? { onLinkedColumnColoursChanged: heard.onLinkedColumnColoursChanged } : {}),
         onEditingChanged: heard.onEditingChanged,
     };
 }

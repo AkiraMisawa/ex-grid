@@ -1,3 +1,5 @@
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
+
 namespace ExChart.Engine;
 
 /// <summary>A chart that cannot be drawn as it was asked for, said by name (spine rule 1).</summary>

@@ -134,8 +134,7 @@
             The Selection Summary is not offered yet either, and no summary is drawn. <code>PointedAt</code> takes
             the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid
             (<a href="exsheet/linked-tables">Linked Tables</a>); a declaration of your own, whose
-            <code>OnPress</code> is a .NET function, is refused by name, and <code>OutlinedColumns</code> is not offered yet. Use the grid above for those
-            until they arrive. The browser is sent the rows around the ones in view, a few
+            <code>OnPress</code> is a .NET function, is refused by name. Use the grid above for that. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
             few hundred. The script it runs is bundled into the package, at an address that changes with its
             content, as ExGrid's own script is, and the core under it is the Shared Script beside it,
@@ -143,6 +142,21 @@
             shares, so a page with a grid and a pivot loads it once. A Content Security Policy that lists the
             package's files names it too.
         </p>
+        <p>
+            A Formula editor of your own takes the same aids as on the grid above, with one difference: the four
+            functions the browser asks as it decides a key, <code>PointAt</code>, <code>ReferenceText</code>,
+            <code>CycleReference</code> and <code>ReferencesIn</code>, are your own script. Each is a
+            <code>ScriptFunction</code> (in <code>ExGrid.Data</code>), naming a function exported from a JavaScript
+            module your application serves, <code>ScriptFunction.Of("./js/formula-entry.js", "pointAt")</code>, called
+            with the arguments and answering what the grid above's .NET function answers: an arrow decides at once
+            whether it points, on Blazor Server as on WebAssembly, with no round trip. The modules load before the
+            grid is drawn, so give the functions as the grid is made: one given later is refused. A module that does not
+            load, or an export that is not a function, is said in the grid's place; a function that throws, or answers
+            what it does not take, throws an error naming it. <code>CompleteEditorText</code> stays a .NET function,
+            asked as you type. <code>OnReferenceKeyColoursChanged</code> tells the colour each key was given, and
+            <code>OutlinedColumns</code> outlines the columns you pass it in the colours you were told.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreFormulaEntry)" Files="@(["wwwroot/js/formula-entry.js"])" />
         <p>
             A dialog or panel of yours that took the keyboard over the grid gives it back with
             <code>ReturnKeyboardAsync</code>, and hands it on to one of your controls with

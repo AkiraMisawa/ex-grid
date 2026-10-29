@@ -34,6 +34,9 @@
   <ItemGroup>
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)core/src/**/*.ts;$(ScriptCoreWorkspace)data/src/**/*.ts;$(ScriptCoreWorkspace)pivot-engine/src/**/*.ts;$(ScriptCoreWorkspace)pivot/src/**/*.ts;$(ScriptCoreWorkspace)pivot-blazor/src/**/*.ts;$(ScriptCoreWorkspace)blazor/src/shared.ts;$(ScriptCoreWorkspace)blazor/src/snapshots.ts;$(ScriptCoreWorkspace)blazor/src/held-messages.ts;$(ScriptCoreWorkspace)blazor/src/razor-slot-host.ts;$(ScriptCoreWorkspace)blazor/src/grid-razor-slot-kinds.ts;$(ScriptCoreWorkspace)blazor/src/pointing-scopes.ts;$(ScriptCoreWorkspace)blazor/src/wire-metrics.ts" />
     <ScriptCoreSource Include="$(ScriptCoreWorkspace)scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <!-- The Shared Script it imports, whose stamp it carries: built from more of blazor/src than this module reads, so a
+         change there that reaches the Shared Script alone builds this module again. -->
+    <ScriptCoreSource Include="$(MSBuildThisFileDirectory)../ExGrid/wwwroot/ex-grid-script.min.js" />
     <Content Remove="wwwroot/ex-pivot.min.js;wwwroot/ex-pivot.min.js.map" />
   </ItemGroup>
 

@@ -65,6 +65,8 @@ ExSheet.Script.ExSheet.IsEditing.get -> bool
 ExSheet.Script.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
 ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
 ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
+ExSheet.Script.ExSheet.OnLinkedColumnColoursChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.LinkedColumnColours!>
+ExSheet.Script.ExSheet.OnLinkedColumnColoursChanged.set -> void
 ExSheet.Script.ExSheet.OnPointingRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.PointingRefusal!>
 ExSheet.Script.ExSheet.OnPointingRefused.set -> void
 ExSheet.Script.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>

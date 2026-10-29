@@ -1,4 +1,5 @@
 using System.Globalization;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Engine;
 
