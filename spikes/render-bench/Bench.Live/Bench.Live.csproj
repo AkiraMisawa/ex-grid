@@ -30,9 +30,4 @@
     <ProjectReference Include="..\..\..\src\ExPivot\ExPivot.csproj" />
   </ItemGroup>
 
-  <!-- ExChart's measurement (ADR-0283): the real chart, driven by chart-bench.js. -->
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExChart\ExChart.csproj" />
-  </ItemGroup>
-
 </Project>

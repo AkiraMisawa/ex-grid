@@ -230,41 +230,13 @@ The results of 2026-10-18 are in `results/20261018-input-order/` (`summary.txt`)
 
 ## ExChart (`/chart`, ADR-0283)
 
-ExChart's measurement (M4): `Bench.Live/ChartBench.razor` is the real chart, 1,566 business dates ×
-six series in two panels, the size of the proof of concept's exposure profile, on WebAssembly
-(`Bench.Host`, `/chart`) and on the circuit (`Bench.Server`, `/chart`). The page keeps the hidden
-series and the range as a Consumer does (ADR-0272). `Bench.Live/wwwroot/chart-bench.js` dispatches
-each input on the element the chart listens on and times it to what the user sees, twice: when a
-MutationObserver sees the change land, and at the animation frame after it. A pointer move until the
-tooltip names the new date, then one move per frame for 120 frames; a legend entry clicked until it
-reads hidden or shown; a drag across the plot until the range is narrowed, and a double-click until
-it is whole again; and "Next run" until the first series is redrawn, the redraw the proof of concept
-timed at 644 ms (Server) and 1.8 s (WebAssembly). On the Server host it also reads each phase's
-bytes on the wire. Never a gate (ADR-0252).
-
-Measure a published build, not `dotnet run`: one trial on the build output read the redraw at 845 ms
-and a hidden series at 333 ms on WebAssembly, against 125 and 102 published. AOT needs
-the `wasm-tools` workload, which the nix SDK cannot take, so it is published from a writable copy of
-that SDK; the client is published standalone, whose `index.html` gets its import map, and served by
-`Bench.Host` from there:
-
-```sh
-cp -rL "$(dirname "$(readlink -f "$(nix develop -c which dotnet)")")" /tmp/dotnet && chmod -R u+w /tmp/dotnet
-DOTNET_ROOT=/tmp/dotnet /tmp/dotnet/dotnet workload install wasm-tools --skip-manifest-update
-DOTNET_ROOT=/tmp/dotnet /tmp/dotnet/dotnet publish Bench.Client -c Release -p:RunAOTCompilation=true -o /tmp/aotc
-nix develop -c dotnet publish Bench.Client -c Release -o /tmp/wasmc
-nix develop -c dotnet publish Bench.Host -c Release -o /tmp/host
-nix develop -c dotnet publish Bench.Server -c Release -o /tmp/server
-(cd /tmp/host && dotnet Bench.Host.dll --contentRoot /tmp/wasmc --urls http://127.0.0.1:5201) &
-(cd /tmp/host && dotnet Bench.Host.dll --contentRoot /tmp/aotc --urls http://127.0.0.1:5202) &
-(cd /tmp/server && BENCH_PORT=5203 dotnet Bench.Server.dll) &
-node tools/cdp-chart.mjs http://127.0.0.1:5203/chart server 5     # then wasm on 5201, wasm-aot on 5202
-```
-
-Publish the non-AOT client from the nix SDK, as above: one published from the workload's SDK, after
-an AOT publish of the same tree, started a runtime that failed Mono's assertion at `interp.c:4135`
-on every page, `/settled` included. Why was not run down. The results of 2026-10-19 are in `results/20261019-chart/`, with
-`summary.txt`.
+ExChart's measurement (M4) drove the Razor chart, `ExChart.Components.ExChart`, with 1,566 business dates ×
+six series in two panels, on WebAssembly and on the circuit: a pointer move until the tooltip named the new
+date, a legend entry clicked, a drag across the plot and back, and a redraw of the first series. The Razor
+chart was removed with ADR-0370 section 6's step 3, and its page, `chart-bench.js` and `tools/cdp-chart.mjs`
+with it; the chart now draws in the browser, through ExChart's Script Core. The results of 2026-10-19 are in
+`results/20261019-chart/`, with `summary.txt`. To run the measurement again, check out `2360631` (main before
+the removal) and follow this section there.
 
 ## The core comparison (`/core`, ADR-0350 section 15)
 

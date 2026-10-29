@@ -6,9 +6,9 @@
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudChartChrome draws this part, and no Consumer places it. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* The chart's context menu under MudBlazor when the Script Core draws the chart (ADR-0281,
-   ADR-0410): MudChartMenu's items, drawn from the view, each run in the browser by the command its
-   attribute names, which closes the menu. The chart's frame around them is the menu. *@
+@* The chart's context menu under MudBlazor (ADR-0281, ADR-0410): text MudButtons as its items, drawn from the view,
+   each run in the browser by the command its attribute names, which closes the menu. The chart's frame
+   around them is the menu. *@
 <div class="mud-ex-chart-menu" role="none">
     @foreach (var command in View.Commands)
     {
