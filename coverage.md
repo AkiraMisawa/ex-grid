@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 92.6% | 87.1% |
+| ExGrid | 92.6% | 87% |
 | ExSheet | 90.6% | 86.4% |
 | ExPivot | 88.5% | 82.7% |
 | ExChart | 90% | 84.9% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/29/2026 - 19:42:52 |
+| Generated on: | 10/29/2026 - 20:40:49 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1396 |
-| Files: | 682 |
-| **Line coverage:** | 89.9% (94403 of 104928) |
-| Covered lines: | 94403 |
-| Uncovered lines: | 10525 |
-| Coverable lines: | 104928 |
-| Total lines: | 158706 |
-| **Branch coverage:** | 84.9% (54855 of 64565) |
-| Covered branches: | 54855 |
-| Total branches: | 64565 |
+| Classes: | 1399 |
+| Files: | 683 |
+| **Line coverage:** | 89.9% (94647 of 105205) |
+| Covered lines: | 94647 |
+| Uncovered lines: | 10558 |
+| Coverable lines: | 105205 |
+| Total lines: | 159086 |
+| **Branch coverage:** | 84.9% (54965 of 64717) |
+| Covered branches: | 54965 |
+| Total branches: | 64717 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -152,7 +152,7 @@
 |ExChart.Script.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Script.ChartWire|80.8%|74.6%|
 |ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|87.8%|87.6%|
+|ExChart.Script.ExChart|87.8%|86.9%|
 |ExChart.Script.ExSurface|78.3%|61.1%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
 |ExChart.Script.ScriptBridge|86.3%|50%|
@@ -290,7 +290,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**92.4%**|**87.2%**|
+|**ExGrid**|**92.4%**|**87.1%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -556,12 +556,13 @@
 |ExGrid.Rows.RowMarkStep.AllOf|100%||
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.CrossedText|92%|88.8%|
+|ExGrid.Script.ExGrid.ConsumerPopover<TRow>|100%||
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
 |ExGrid.Script.ExGrid.Turn<TRow>|100%||
 |ExGrid.Script.ExGrid.Work<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow, T>|69.9%|70%|
-|ExGrid.Script.ExGrid<TRow>|69.9%|70%|
-|ExGrid.Script.ExGrid<TRow>|82.7%|75.3%|
+|ExGrid.Script.ExGrid<TRow, T>|71%|69.7%|
+|ExGrid.Script.ExGrid<TRow>|71%|69.7%|
+|ExGrid.Script.ExGrid<TRow>|83.5%|75.6%|
 |ExGrid.Script.FormatNames|100%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
 |ExGrid.Script.GridRefusal.Commit<TRow>|0%||
@@ -573,12 +574,14 @@
 |ExGrid.Script.GridRefusal<TRow>|0%||
 |ExGrid.Script.HeldCalls|83.5%|75%|
 |ExGrid.Script.HeldCalls<T>|83.5%|75%|
+|ExGrid.Script.PopoverContents|100%|50%|
+|ExGrid.Script.PopoverSlot|100%||
 |ExGrid.Script.RazorSlot|90.1%|74.1%|
 |ExGrid.Script.RazorSlotHolders|90.9%|88.8%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.RowPaint<TRow>|88.3%|84.7%|
-|ExGrid.Script.ScriptBridge<TRow>|58.9%|12.5%|
-|ExGrid.Script.ScriptBridge<TRow>|87%|50%|
+|ExGrid.Script.ScriptBridge<TRow>|60.3%|12.5%|
+|ExGrid.Script.ScriptBridge<TRow>|88.5%|50%|
 |ExGrid.Script.ScriptColumns|77.6%|75%|
 |ExGrid.Script.ScriptFunctionJson|100%||
 |ExGrid.Script.ScriptJson|100%|91.6%|
@@ -1140,8 +1143,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1197,7 +1200,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**89.3%**|**81.4%**|
+|**ExSheet**|**89.3%**|**81.5%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
