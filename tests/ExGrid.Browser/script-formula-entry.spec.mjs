@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures.mjs';
-import { cell, pressCell, editor, expectCovers } from './sheet-helpers.mjs';
+import { cell, clickCell, pressCell, editor, expectCovers } from './sheet-helpers.mjs';
+import { expectActiveDescendant } from './keyboard.mjs';
 
 // Blazor's ExGrid over the Script Core given the Consumer's own script for Formula entry, and Blazor's ExSheet over it
 // telling its linked columns' colours, on /script-formula-entry, on both Blazor hosts (ADR-0431). That the four
@@ -12,7 +13,9 @@ import { cell, pressCell, editor, expectCovers } from './sheet-helpers.mjs';
 test('ADR-0431: a grid given the page\'s script points, cycles with F4 and outlines each Reference, with the keys typed at once', async ({ page }) => {
     await page.goto('/script-formula-entry');
     const grid = page.locator('#script-formula-entry-lines .ex-grid');
-    await pressCell(grid, 'D2');
+    // The grid has no names of its own for cells, so its Name Box stays empty: the Focus is read where it is carried.
+    await clickCell(grid, 'D2');
+    await expectActiveDescendant(grid, /-r1c3$/);
 
     // At machine speed: every answer is the script's in the browser, so no key waits for the one before it to cross.
     await page.keyboard.type('=');
