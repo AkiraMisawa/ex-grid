@@ -741,10 +741,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         // The version is judged against the source's state the browser holds: a change the Consumer made just
         // before crosses first, whatever is still waiting to send it (the spine's sixth rule).
         await SendStateAsync();
-        return await grid.InvokeAsync<bool>("placeSelection",
-            new Dictionary<string, int> { ["topRow"] = range.TopRow, ["leftColumn"] = range.LeftColumn, ["rowCount"] = range.RowCount, ["columnCount"] = range.ColumnCount },
-            new Dictionary<string, int> { ["row"] = focus.Row, ["column"] = focus.Column },
-            rowSequenceVersion);
+        return await grid.InvokeAsync<bool>("placeSelection", ScriptJson.Range(range), ScriptJson.Cell(focus), rowSequenceVersion);
     }
 
     /// <summary>Hands the keyboard to the grid (ADR-0080).</summary>
@@ -1874,7 +1871,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                     {
                         if (_disposed)
                             continue;
-                        var answer = await next.Hand();
+                        var answer = await HandledAsEvent(next.Hand);
                         if (next.SendsState && _attached)
                             await SendStateAsync();
                         next.Done.TrySetResult(answer);
@@ -2124,6 +2121,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             asked.Cancel();
         foreach (var answering in _answers.Values.ToArray())
             answering.Cancel();
+        CancelWorks();
         // While it attaches, the grid it makes is stopped once it is made, and the bridge let go after it.
         if (_attaching)
             return;

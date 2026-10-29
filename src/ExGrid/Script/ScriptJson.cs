@@ -33,6 +33,13 @@ internal static class ScriptJson
         return member;
     }
 
+    /// <summary>A range as the Script Core's <c>SelectionRange</c>.</summary>
+    internal static Dictionary<string, int> Range(SelectionRange range)
+        => new() { ["topRow"] = range.TopRow, ["leftColumn"] = range.LeftColumn, ["rowCount"] = range.RowCount, ["columnCount"] = range.ColumnCount };
+
+    /// <summary>A cell as the Script Core's <c>CellPosition</c>.</summary>
+    internal static Dictionary<string, int> Cell(CellPosition cell) => new() { ["row"] = cell.Row, ["column"] = cell.Column };
+
     /// <summary>A Consumer's completion as the Script Core builds its <c>EditorCompletion</c> from it (ADR-0051).</summary>
     internal static string Completion(Cells.EditorCompletion completion)
     {

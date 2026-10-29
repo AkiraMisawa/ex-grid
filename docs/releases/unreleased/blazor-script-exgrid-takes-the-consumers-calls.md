@@ -1,0 +1,5 @@
+Product: ExGrid
+Kind: Added
+ADR: 0441
+
+`ExGrid.Script.ExGrid` now carries the Razor component's calls a Consumer makes on a grid, each crossing to the browser, which holds the view, the open edit and the Input Order: `ReadViewAsync` and `ShowViewWith` (with or without a place) keep each set of rows' view when a grid shows several in turn, `ReadEditTextAsync` reads the open edit's text, `InOrderAsync`, `CancellableInOrderAsync` and `SelectionAfterInputsAsync` take a place in the grid's order, and `RefreshSummaryAsync`, `WritePointedTextAsync`, `TakeBackPointedTextAsync` and `CanSummarize` are as before. A read is awaited where the Razor component answered at once; `ShowViewWith` stays synchronous and crosses ahead of the state that brings its rows, so hand it before the source says the rows changed. Called from a handler of the grid's own events, `InOrderAsync` runs at once as part of the event, and `CancellableInOrderAsync` is refused by name. In TypeScript, `GridHandle.showViewWith` takes the place `showNewView` takes, and either reveals the Focus it places.

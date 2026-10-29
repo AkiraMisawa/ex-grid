@@ -1084,11 +1084,8 @@ export interface GridHandle<Row> {
     readView(): GridViewRead;
     refreshSummary(): void;
     returnKeyboard(from?: Element): void;
-    showNewView(rowSequenceVersion: number, place?: {
-        readonly range: SelectionRange;
-        readonly focus: CellPosition;
-    }): void;
-    showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
+    showNewView(rowSequenceVersion: number, place?: ViewPlace): void;
+    showViewWith(view: GridViewRead, rowSequenceVersion: number, place?: ViewPlace): void;
     takeBackPointedText(): boolean;
     update(options: GridOptions<Row>): void;
     writePointedText(text: string): boolean;
@@ -2160,6 +2157,12 @@ export function textOf<Row>(column: Pick<QueryColumn<Row>, 'name' | 'value' | 'f
 // @public
 export interface ValueListKeyEvent extends MenuItemKeyEvent {
     readonly isComposing: boolean;
+}
+
+// @public
+export interface ViewPlace {
+    readonly focus: CellPosition;
+    readonly range: SelectionRange;
 }
 
 // @public

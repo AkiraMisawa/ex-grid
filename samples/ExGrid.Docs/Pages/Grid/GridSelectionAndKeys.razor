@@ -198,8 +198,7 @@
         </p>
         <p>
             <strong>Nothing waits on a clock.</strong> Keys held while the grid answers wait for what they were
-            typed for — the editor or a popover to take the keyboard, a frame of yours to take it after
-            <code>HandKeyboardToFrameAsync</code> — however long the round trip, and no longer: a key typed the moment
+            typed for — the editor or a popover to take the keyboard — however long the round trip, and no longer: a key typed the moment
             the keyboard has arrived goes straight to what took it, a Tab included. Once every input before them has
             been answered and the grid owes the keyboard to nothing, a keyboard that has not arrived will not: an edit
             whose focus went elsewhere still takes the keys, and otherwise they are not replayed against whatever

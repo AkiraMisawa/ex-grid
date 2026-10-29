@@ -96,32 +96,27 @@
         </p>
         <p>
             <strong>Showing one set of rows after another in one grid</strong> — the Sheets of a workbook behind their
-            tabs, the books of a blotter behind a picker — keep each set's view. <code>ReadView()</code> gives the
-            Selection, with the version it is written in, and the scroll offsets; when you show that set again, hand
-            the view back with <code>ShowViewWith(view with { RowSequenceVersion = next })</code> from the same
-            handler that bumps the version to <code>next</code>. The grid takes the two in one render, so a key or a
-            press that follows the switch meets the set's own Selection, never an empty one a round trip before it.
+            tabs, the books of a blotter behind a picker — keep each set's view. <code>await grid.ReadViewAsync()</code>
+            gives the Selection, with the version it is written in, and the scroll offsets, read from the browser, which
+            holds them; when you show that set again, hand the view back with
+            <code>ShowViewWith(view with { RowSequenceVersion = next })</code> from the handler that bumps the version
+            to <code>next</code>, before your source says the rows changed or in the same run of the handler, with nothing
+            awaited between. The view crosses at once, ahead of the rows, and the grid takes the two in one pass, so a key
+            or a press that follows the switch meets the set's own Selection, never an empty one a round trip before it.
             A view whose version the grid never takes, or whose Selection lies outside the rows it now holds, is not
-            shown. Handed from the handler of one of the grid's inputs — a declared key, say — the switch is that
-            input's answer, and the keys and pastes after it in the grid's order are taken under the new version
-            even on Blazor Server, where they left the browser before the new rows reached it, as they would be
-            typed slowly. ExSheet keeps each Sheet's view this way. To go to a place among the rows you show,
-            hand it with them: <code>ShowViewWith(view, range, focus)</code> places <code>range</code> with the
-            Focus on <code>focus</code> under the same version, and scrolls the Focus into view from the view's
-            offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. ExSheet's Name Box takes
-            <code>Sheet2!B5</code> this way. A find step your source's <code>FindAsync</code> answers by showing other rows —
-            ExSheet's Find within the Workbook, finding the next match on another Sheet — hands the match with them:
-            <code>ShowViewWithMatch(view, match)</code> places the one cell as <code>ShowViewWith</code> places a
-            range, and if the find panel is open when the version is taken, that cell is the current match, marked
-            apart, and the cell Replace writes. Your answer cannot name a cell among rows the step was not asked
-            about, so it then gives the step up by throwing <code>OperationCanceledException</code>, and the step
-            moves nothing itself. When you write cells behind the grid's back — a Replace All over rows it does not
-            show — call <code>ForgetCurrentMatch()</code> first, so the next Replace finds before it writes. An edit open as you show other rows stays open with the rows it was
-            opened among: its editor keeps the keyboard unseen, the Formula Bar shows its text, Point points at the
-            rows shown, and its commit raises <code>OnEdit</code> with the row it was opened on. A view you read of its
-            rows, handed back, brings the editor back over its cell. <code>ReadEditText()</code> reads the open
-            edit's text from a handler, to decide what a declared key means while an edit is open. Under React the grid's
-            ref has the same: <code>readView()</code>, <code>showViewWith(view, rowSequenceVersion)</code>,
+            shown. Handed from the handler of a declared key, the switch is that key's answer: the keys after it wait
+            until the handler ends, and are taken under the new version. A view the grid did not read is rows shown for
+            the first time: <code>new GridView(next, GridSelection.Empty, 0, 0)</code> opens them at the start. To go to
+            a place among the rows you show, hand it with them: <code>ShowViewWith(view, range, focus)</code> places
+            <code>range</code> with the Focus on <code>focus</code> under the same version, and scrolls the Focus into
+            view from the view's offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. An edit
+            open as you show other rows stays open with the rows it was opened among: its editor keeps the keyboard
+            unseen, the Formula Bar shows its text, Point points at the rows shown, and its commit raises
+            <code>OnEdit</code> with the row it was opened on. A view you read of its rows, handed back, brings the
+            editor back over its cell. A view you read comes back as it was read, its version aside: one handed back with
+            another Selection or other offsets is refused by name, so hand a place of your own as above. <code>await grid.ReadEditTextAsync()</code> reads the open edit's text, to decide
+            what a declared key means while an edit is open. Under React the grid's ref has the same:
+            <code>readView()</code>, <code>showViewWith(view, rowSequenceVersion, place)</code>,
             <code>showNewView(rowSequenceVersion, place)</code> for rows the grid has never shown, scrolled to the
             start with <code>place</code> selected, and <code>readEditText()</code>; an edit open as either is taken
             stays away in the same way.

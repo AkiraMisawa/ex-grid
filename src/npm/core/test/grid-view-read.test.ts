@@ -64,4 +64,35 @@ describe('a view read and handed back (ADR-0331)', () => {
         expect([view.readView().scrollTopPx, q(root, '.ex-scroller').scrollTop]).toEqual([72, 72]);
         expect(() => { view.showViewWith({ ...read }, read.rowSequenceVersion); }).toThrow(TypeError);
     });
+
+    it('ADR-0331 / ADR-0441: a place handed with the view is selected in place of its Selection, its Focus revealed from the view\'s offsets', async () => {
+        const { root, view, show, selections } = await grid();
+        press(root, 10, (3 * 24) + 5);
+        await painted();
+        const read = view.readView();
+        show(trades(200).toReversed());
+        await painted();
+
+        show(trades(200));
+        view.showViewWith(read, read.rowSequenceVersion, { range: { topRow: 150, leftColumn: 0, rowCount: 2, columnCount: 1 }, focus: { row: 151, column: 0 } });
+        await painted();
+        const placed = defined(selections.at(-1), 'a Selection');
+        expect([placed.focus, placed.ranges]).toEqual([{ row: 151, column: 0 }, [{ topRow: 150, leftColumn: 0, rowCount: 2, columnCount: 1 }]]);
+        // Row 151 stands inside the Viewport: 240px less the 24px header band shows nine rows.
+        const top = q(root, '.ex-scroller').scrollTop;
+        expect(151 * 24 >= top && (152 * 24) <= top + 216).toBe(true);
+        expect(() => { view.showViewWith(read, read.rowSequenceVersion, { range: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, focus: { row: 1, column: 0 } }); }).toThrow(RangeError);
+    });
+
+    it('ADR-0331 / ADR-0441: rows never shown with a place come in with it selected and revealed', async () => {
+        const { root, view, show, selections } = await grid();
+        // Rows handed as `rows` are a source made anew, whose first version is the one every such source starts at.
+        const before = view.readView().rowSequenceVersion;
+        show(trades(200).toReversed());
+        view.showNewView(before, { range: { topRow: 120, leftColumn: 0, rowCount: 1, columnCount: 1 }, focus: { row: 120, column: 0 } });
+        await painted();
+        expect(defined(selections.at(-1), 'a Selection').focus).toEqual({ row: 120, column: 0 });
+        const top = q(root, '.ex-scroller').scrollTop;
+        expect(120 * 24 >= top && (121 * 24) <= top + 216).toBe(true);
+    });
 });

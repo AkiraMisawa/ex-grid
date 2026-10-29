@@ -1197,3 +1197,126 @@ describe('what .NET answers of each row, and asks of the user\'s gestures (ADR-0
         expect(matched[0]?.slice(0, 2)).toEqual([{ Book: 'Rates', Notional: 1500 }, 'Book']);
     });
 });
+
+const selected = (json: unknown): unknown => Reflect.get(json as object, 'selection');
+
+describe('what the Consumer calls on the grid (ADR-0441)', () => {
+    it('ADR-0441 section 1: a view read is kept under its number, handed back by it with the rows, and let go once .NET has', async () => {
+        const dotnet = new FakeDotNet();
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['selectionChanged'] }) }, dotnet);
+        await turns();
+        press(root, 10, 24 + 5);
+        await turns();
+        const read = grid.readView([]) as { readonly number: number; readonly rowSequenceVersion: number };
+        expect([read.number, Reflect.get(selected(read) as object, 'focus')]).toEqual([1, { row: 1, column: 0 }]);
+
+        // Other rows, then the first set again with its view, the view crossing ahead of the state.
+        grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
+        await turns();
+        expect(lastRanges(dotnet)).toEqual([]);
+        grid.showView(JSON.stringify({ number: read.number, rowSequenceVersion: 2, place: null }));
+        grid.state(JSON.stringify(state(3, [rates, credit], { rowSequenceVersion: 2 })));
+        await turns();
+        expect(Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus')).toEqual({ row: 1, column: 0 });
+
+        // .NET let it go with the next read: handed back now, it is a defect of the bridge's caller, named.
+        grid.readView([read.number]);
+        expect(() => { grid.showView(JSON.stringify({ number: read.number, rowSequenceVersion: 3, place: null })); }).toThrow(/let go/u);
+    });
+
+    it('ADR-0441 section 1: rows never shown come in with the place .NET hands, and a read view takes a place in its Selection\'s', async () => {
+        const dotnet = new FakeDotNet();
+        const { grid } = mount({ options: options({ rowHeight: 24, hears: ['selectionChanged'] }) }, dotnet);
+        await turns();
+        const place = { range: { topRow: 1, leftColumn: 1, rowCount: 1, columnCount: 1 }, focus: { row: 1, column: 1 } };
+        grid.showView(JSON.stringify({ number: null, rowSequenceVersion: 1, place }));
+        grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
+        await turns();
+        expect(lastRanges(dotnet)).toEqual([place.range]);
+
+        const read = grid.readView([]) as { readonly number: number };
+        grid.showView(JSON.stringify({ number: read.number, rowSequenceVersion: 2, place: { range: { topRow: 0, leftColumn: 0, rowCount: 2, columnCount: 1 }, focus: { row: 0, column: 0 } } }));
+        grid.state(JSON.stringify(state(3, [rates, credit], { rowSequenceVersion: 2 })));
+        await turns();
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 2, columnCount: 1 }]);
+    });
+
+    it('ADR-0441 section 2: the open edit\'s text is read as typed, and none is null', async () => {
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) });
+        await turns();
+        expect(grid.readEditText()).toBeNull();
+        press(root, 10, 5);
+        type('Del');
+        expect(grid.readEditText()).toBe('Del');
+    });
+
+    it('ADR-0441 section 3: .NET\'s work runs in its turn, the keys after it wait, and work placed from inside it runs at once', async () => {
+        const dotnet = new FakeDotNet();
+        const ends: (() => void)[] = [];
+        const nested: Promise<boolean>[] = [];
+        const mounted: { grid?: BlazorGrid } = {};
+        dotnet.answer = (method, args) => {
+            if (method !== 'RunWork') return null;
+            // Work 1 places work 2 from inside it, and waits for .NET's own end.
+            if (args[0] === 1) {
+                if (mounted.grid === undefined) throw new Error('The work ran before the grid was mounted.');
+                nested.push(mounted.grid.inOrder(2, 1));
+            }
+            return args[0] === 1 ? new Promise(resolve => { ends.push(() => { resolve('landed'); }); }) : 'landed';
+        };
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['selectionChanged'] }) }, dotnet);
+        mounted.grid = grid;
+        await turns();
+        press(root, 10, 5);
+        const placed = grid.inOrder(1, null);
+        key('ArrowDown');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'RunWork').map(call => call.args)).toEqual([[1], [2]]);
+        await expect(nested[0]).resolves.toBe(true);
+        // The arrow waits behind the work.
+        expect(Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus')).toEqual({ row: 0, column: 0 });
+
+        ends[0]?.();
+        await expect(placed).resolves.toBe(true);
+        await turns();
+        expect(Reflect.get(dotnet.heard('selectionChanged').at(-1) as object, 'focus')).toEqual({ row: 1, column: 0 });
+        // The Selection after the inputs is read in a turn of its own.
+        expect(Reflect.get(await grid.selectionAfterInputs(null) as object, 'focus')).toEqual({ row: 1, column: 0 });
+        // A turn holding the inputs after it reads the Selection at once.
+        expect(Reflect.get(grid.readSelection() as object, 'focus')).toEqual({ row: 1, column: 0 });
+    });
+
+    it('ADR-0441 section 3: an Escape against .NET\'s cancellable work cancels it there, and its cancel is the Escape\'s', async () => {
+        const dotnet = new FakeDotNet();
+        let end: ((ended: string) => void) | undefined;
+        dotnet.answer = method => (method === 'RunWork' ? new Promise(resolve => { end = resolve; }) : null);
+        const { root, grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        const placed = grid.cancellableInOrder(1, null);
+        await turns();
+        key('Escape');
+        expect(dotnet.calls.filter(call => call.method === 'CancelWork').map(call => call.args)).toEqual([[1]]);
+        end?.('cancelled');
+        await expect(placed).resolves.toBe(false);
+        await turns();
+        // Cancelled by this Escape: nothing is said too late.
+        expect(dotnet.calls.filter(call => call.method === 'WorkCancelledTooLate')).toEqual([]);
+    });
+
+    it('ADR-0441 section 3: work .NET failed ends its turn failed, and an Escape against it finds nothing to cancel', async () => {
+        const dotnet = new FakeDotNet();
+        let end: ((ended: string) => void) | undefined;
+        dotnet.answer = method => (method === 'RunWork' ? new Promise(resolve => { end = resolve; }) : null);
+        const { root, grid } = mount({ options: options({ rowHeight: 24 }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        const placed = grid.cancellableInOrder(1, null);
+        await turns();
+        key('Escape');
+        end?.('failed');
+        await expect(placed).rejects.toThrow(/failed/u);
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'WorkCancelledTooLate').map(call => call.args)).toEqual([[1, false]]);
+    });
+});
