@@ -293,6 +293,9 @@ for (const chrome of CHROMES) {
             await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Sort ascending' }).click();
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expectKeyboardOn(grid(page));
+            // The sorted rows have come: a click before them is taken against the order before, and the
+            // order's change drops it, Focus and all (ADR-0440 section 6, ADR-0011).
+            await expect(grid(page)).not.toHaveClass(/\bex-loading\b/);
             await clickCell(page, 1, 0);
             await focusAfterDown();
 
