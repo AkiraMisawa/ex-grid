@@ -315,11 +315,19 @@ public sealed record GridColumn<TRow>
     /// Action or Mark Column, which has no value to order by (ADR-0020/0043), and for a column
     /// the Consumer declares so with <c>IsQueryable = false</c>, because its source cannot
     /// order or filter by it: a header click then sorts nothing and its menu offers commands
-    /// only.</summary>
+    /// only. An Action or Mark Column declared queryable is refused: it has no value to order
+    /// or filter by.</summary>
     public bool IsQueryable
     {
         get => Info.IsQueryable;
-        init => Info = Info with { IsQueryable = value };
+        init
+        {
+            if (value && (IsMarkColumn || Actions.Count > 0))
+                throw new ArgumentException(
+                    $"Column '{Info.Name}' is an Action or Mark Column, which has no value to sort or filter by; it cannot be declared queryable (ADR-0020/0043).",
+                    nameof(IsQueryable));
+            Info = Info with { IsQueryable = value };
+        }
     }
 
     /// <summary>The cells' alignment (ADR-0016): Auto derives from the type — the

@@ -676,9 +676,14 @@ test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrive
 // CON-8 (ADR-0005): a copy that fails in .NET is never silent. A Consumer's CopyAnswer that throws
 // (/features?copythrows=1) fails the build of the payload: .NET answers that it failed, naming the
 // exception, and the grid refuses the copy and raises the failure on the page, by a Ctrl+C or the
-// menu's Copy alike. The clipboard keeps what it held either way.
+// menu's Copy alike. The clipboard keeps what it held either way, and the host logs the Consumer's exception: in the
+// browser's console on WebAssembly, in the host's log on Server.
 test.describe(() => {
-    test.use({ expectedPageErrors: [/\[ex-grid\] the grid failed to build a copy/] });
+    const logged = /the Consumer's copy answer threw, and the copy wrote nothing/;
+    test.use({
+        expectedPageErrors: [/\[ex-grid\] the grid failed to build a copy/],
+        ...(SERVER ? { expectedHostLog: [logged] } : { expectedErrors: [logged] }),
+    });
 
     test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the page by either gesture, and writes nothing', async ({ page }) => {
         await page.goto('/features?copythrows=1');

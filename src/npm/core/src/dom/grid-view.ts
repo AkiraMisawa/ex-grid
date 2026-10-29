@@ -4473,12 +4473,18 @@ export class GridView<Row> {
     }
 
     // The row the Window holds at a position, or none.
-    // The row at a position of the result: in the Window, or among the rows the source holds beyond the slice it handed
-    // over, the one an open edit follows (ADR-0440 section 5).
     #rowAt(row: number): { readonly row: Row } | undefined {
         const slice = row - this.#state.windowStart;
-        if (slice >= 0 && slice < this.#state.window.length) return { row: itemAt(this.#state.window, slice) };
-        const beyond = this.#state.beyond?.find(held => held.position === row);
+        return slice >= 0 && slice < this.#state.window.length ? { row: itemAt(this.#state.window, slice) } : undefined;
+    }
+
+    // The row at a position of the result an open edit's key was found at: in the Window, or among the rows the source
+    // holds beyond the slice it handed over, the one an open edit follows (ADR-0440 section 5). Only a commit lands
+    // there; nothing else of the grid reads a row it does not show.
+    #heldRowAt(row: number): { readonly row: Row } | undefined {
+        const held = this.#rowAt(row);
+        if (held !== undefined) return held;
+        const beyond = this.#state.beyond?.find(other => other.position === row);
         return beyond === undefined ? undefined : { row: beyond.row };
     }
 
@@ -5611,7 +5617,7 @@ export class GridView<Row> {
             const at = this.#positionOfKey(edit.key, edit.cell.row);
             if (at === undefined) return { kind: 'refused', reason: 'rowLeftTheWindow' };
             const cell = cellPosition(at, edit.cell.column);
-            return { kind: 'row', row: defined(this.#rowAt(at), 'the row a key was found at').row, cell };
+            return { kind: 'row', row: defined(this.#heldRowAt(at), 'the row a key was found at').row, cell };
         }
         if (this.#sequence() !== edit.sequence) return { kind: 'refused', reason: 'orderMoved' };
         const held = this.#rowAt(edit.cell.row);

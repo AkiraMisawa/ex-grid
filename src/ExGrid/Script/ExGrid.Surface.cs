@@ -11,6 +11,7 @@ using ExGrid.Rows;
 using ExGrid.Selection;
 using ExGrid.Summarizing;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExGrid.Script;
@@ -479,12 +480,13 @@ public sealed partial class ExGrid<TRow>
             request.GetProperty("withHeaders").GetBoolean(), request.GetProperty("rowSequenceVersion").GetInt32());
         return InTurnAsync(new Heard(Answered(number, async cancelled =>
         {
+            Func<GridCopyRequest, CancellationToken, Task<GridCopyAnswer>> ask = CopyAnswer is { } now
+                ? (request, _) => Task.FromResult(now(request))
+                : CopyAnswerAsync ?? throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
             GridCopyAnswer answer;
             try
             {
-                answer = CopyAnswer is { } now ? now(asked)
-                    : CopyAnswerAsync is { } later ? await later(asked, cancelled)
-                    : throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
+                answer = await ask(asked, cancelled);
                 ArgumentNullException.ThrowIfNull(answer);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException && cancelled.IsCancellationRequested))
@@ -492,7 +494,9 @@ public sealed partial class ExGrid<TRow>
                 // A copy whose answer failed is said where the copy was made, and writes nothing (CON-8, ADR-0005): the
                 // browser refuses it aloud and surfaces the failure, as the core does for a script's failed answer. The
                 // grid goes on, where handing it to the renderer would end the circuit over one copy. Only the type
-                // crosses: an exception's message is the server's, which Blazor keeps from the browser.
+                // crosses: an exception's message is the server's, which Blazor keeps from the browser, so the whole
+                // exception is logged here, where the server keeps it.
+                Logger.LogError(ex, "ExGrid: the Consumer's copy answer threw, and the copy wrote nothing (ADR-0005).");
                 return Json(json =>
                 {
                     json.WriteStartObject();
@@ -547,7 +551,7 @@ public sealed partial class ExGrid<TRow>
                 var summarize = OnSummarize ?? throw new InvalidOperationException("Internal: the browser asked OnSummarize, which the Consumer took away.");
                 result = await summarize(asked, cancelled);
             }
-            return SummaryJson(result, FocusFormat(asked.Focus));
+            return SummaryJson(result, FocusFormat(asked));
         }), Answers: true, SendsState: false));
     }
 
@@ -561,8 +565,11 @@ public sealed partial class ExGrid<TRow>
 
     // The format of the Focus's column where it is a Number column with one (ADR-0130): the figures take it, a grid's
     // formats being its columns', as Excel's status bar takes the active cell's.
-    private Func<object, string>? FocusFormat(CellPosition? focus)
-        => focus is { } cell && cell.Column < Columns.Count && Columns[cell.Column] is { Type: ColumnType.Number, Format: { } format }
+    // The Focus's column is named by its place among the request's columns, the grid's order, which a reorder the Consumer
+    // has yet to hand back may still differ from Columns'.
+    private Func<object, string>? FocusFormat(GridSummaryRequest asked)
+        => asked.Focus is { } cell && cell.Column < asked.Columns.Count
+            && Columns.FirstOrDefault(column => column.Name == asked.Columns[cell.Column]) is { Type: ColumnType.Number, Format: { } format }
             ? format
             : null;
 

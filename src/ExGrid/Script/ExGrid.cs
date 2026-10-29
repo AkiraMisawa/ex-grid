@@ -41,7 +41,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private const string ScriptPath = "_content/ExGrid/ex-grid-core.min.js";
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
-    [Inject] private IServiceProvider Services { get; set; } = default!;
+    [Inject] private ILoggerFactory LoggerFactory { get; set; } = default!;
+    private ILogger Logger => _logger ??= LoggerFactory.CreateLogger("ExGrid.Script.ExGrid");
+    private ILogger? _logger;
 
     /// <summary>Where the rows come from (ADR-0001): the grid neither holds nor executes, and tells the source the
     /// columns, the Sort and the Filter. Exactly one of this and <see cref="Rows"/>.</summary>
@@ -1235,7 +1237,46 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         var rowKey = source.RowKey ?? throw new InvalidOperationException("Internal: the browser held a row of a source with no Row Key.");
         _heldKey = row is { } id ? rowKey(_rows.RowOf(id)) : null;
         _heldGeneration = generation;
-        return Task.CompletedTask;
+        // A state sent before the browser named the row may already have moved it past the rows sent, without it: the
+        // state goes again, so the edit follows its row whichever of the two crossed first (the spine's sixth rule).
+        if (!_attached || _heldKey is null || HeldPosition(source) is not { } at || InSlice(source, at))
+            return Task.CompletedTask;
+        _stateOwed = true;
+        return SendStateAsync();
+    }
+
+    // Where the source's Window holds the held key, once, or null: a key held twice names no one row (ADR-0140). The rows
+    // sent are looked at first, where the held row stands until an order move takes it.
+    private int? HeldPosition(IGridSource<TRow> source)
+    {
+        if (_heldKey is not { } held || _heldGeneration != _generation || source.RowKey is not { } rowKey)
+            return null;
+        var window = source.Window;
+        var (from, to) = SentSlice(source);
+        int? found = null;
+        foreach (var i in Enumerable.Range(from - source.WindowStart, to - from).Concat(Enumerable.Range(0, from - source.WindowStart))
+                     .Concat(Enumerable.Range(to - source.WindowStart, source.WindowStart + window.Count - to)))
+        {
+            if (!Equals(rowKey(window[i]), held))
+                continue;
+            if (found is not null)
+                return null;
+            found = source.WindowStart + i;
+        }
+        return found;
+    }
+
+    private (int From, int To) SentSlice(IGridSource<TRow> source)
+    {
+        var from = Math.Max(source.WindowStart, _shown.Start);
+        var to = Math.Min(source.WindowStart + source.Window.Count, _shown.Start + _shown.Count);
+        return to > from ? (from, to) : (source.WindowStart, source.WindowStart);
+    }
+
+    private bool InSlice(IGridSource<TRow> source, int at)
+    {
+        var (from, to) = SentSlice(source);
+        return at >= from && at < to;
     }
 
     // The held row, where the source's Window holds it once and outside the rows sent: the browser follows the edit's
@@ -1243,27 +1284,13 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     // sends nothing, and the browser refuses the commit as RowLeftTheWindow.
     private void WriteBeyond(Utf8JsonWriter json, IGridSource<TRow> source, IReadOnlyList<TRow> window, int from, int to)
     {
-        if (_heldKey is not { } held || _heldGeneration != _generation || source.RowKey is not { } rowKey)
-            return;
-        int? found = null;
-        for (var i = 0; i < window.Count; i++)
-        {
-            if (!Equals(rowKey(window[i]), held))
-                continue;
-            if (found is not null)
-                return;
-            found = i;
-        }
-        if (found is not { } slice)
-            return;
-        var at = source.WindowStart + slice;
-        if (at >= from && at < to)
+        if (HeldPosition(source) is not { } at || (at >= from && at < to))
             return;
         json.WriteStartArray("beyond");
         json.WriteStartObject();
         json.WriteNumber("at", at);
         json.WritePropertyName("row");
-        _rows.Write(json, window[slice], Columns, rowKey, Paint, _pointedAt?.TableRow);
+        _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
         json.WriteEndObject();
         json.WriteEndArray();
     }
@@ -1817,8 +1844,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     // can pass through this state.
     private Task NameAParentWithoutHeight()
     {
-        var logger = (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("ExGrid.Script.ExGrid");
-        logger?.LogWarning(
+        Logger.LogWarning(
             "ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header " +
             "and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, " +
             "a grid track, or a flex item with min-height: 0 (ADR-0028).");
