@@ -39,13 +39,13 @@
                 {
                     @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
                     <MudExGridPaper Elevation="1" Style="display: flex">
-                        <ExGrid @ref="_bridge.Grid" TRow="CreditName" Window="CreditData.Names" RowKey="KeyOf" Columns="Columns"
+                        <ExGrid @ref="_bridge.ScriptGrid" TRow="CreditName" Rows="CreditData.Names" Columns="Columns"
                                 ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
                     </MudExGridPaper>
                 }
                 else
                 {
-                    <ExGrid @ref="_bridge.Grid" TRow="CreditName" Window="CreditData.Names" RowKey="KeyOf" Columns="Columns"
+                    <ExGrid @ref="_bridge.ScriptGrid" TRow="CreditName" Rows="CreditData.Names" Columns="Columns"
                             ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
                 }
             </div>
@@ -87,6 +87,10 @@
     ];
 
     // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
+    // The showcases' own module: the position under the pointer is written in the browser, as React's showcase writes it,
+    // and the ticks are left as numbers.
+    private const string Formats = "./_content/ExChart.Showcases/showcase-formats.js";
+
     private static readonly Func<CreditName, object> KeyOf = n => n.Ticker;
 
     // The page fits both lines once, over every name: the chart draws them and names their method (ADR-0291).
@@ -97,11 +101,11 @@
         double[] xs = [.. CreditData.Names.Select(n => n.Leverage)];
         double[] ys = [.. CreditData.Names.Select(n => n.SpreadBp)];
         var points = CreditData.Names.Select(n => new ChartPoint(n.Leverage, ChartValue.Of(n.SpreadBp)) { Name = n.Ticker, Row = n.Ticker });
-        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { Format = x => x.ToString("0.00", Invariant) + "x" },
+        return new ChartDefinition(ChartAxis.Numbers("Leverage") with { FormatScript = ScriptFunction.Of(Formats, "times") },
         [
-            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { Format = Bp },
-            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { Format = Bp },
-            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { Format = Bp },
+            ChartSeries.Of("names", "Names", SeriesKind.Observation, points) with { FormatCode = "#,##0\"bp\"" },
+            Fit.LeastSquares(xs, ys).Series("ols", "Least squares") with { FormatCode = "#,##0\"bp\"" },
+            Fit.TheilSen(xs, ys).Series("theil-sen", "Theil–Sen") with { FormatCode = "#,##0\"bp\"" },
         ], ["Synthetic names; DSTR is distressed."]);
     }
 

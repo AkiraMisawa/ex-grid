@@ -124,7 +124,7 @@ public sealed class ExSurface : ComponentBase, IAsyncDisposable
     /// its colours, for a file (ADR-0282). Null while the surface is not attached.
     /// </summary>
     public async ValueTask<string?> SvgTextAsync() =>
-        _mount is { } mount ? await mount.AskAsync<string?>("svgText", null) : null;
+        _mount is { } mount ? await mount.AskTextAsync("svgText") : null;
 
     /// <summary>
     /// Saves the drawing as it stands, as SVG or painted to PNG at the screen's Device Pixel (ADR-0282). One call is one

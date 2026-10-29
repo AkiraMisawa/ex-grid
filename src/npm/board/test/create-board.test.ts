@@ -109,7 +109,7 @@ class StandIns implements BoardMounts {
     readonly chart = (element: HTMLElement, options: ChartOptions): ChartHandle => {
         const made = new Mounted(element, options);
         this.charts.push(made);
-        return { ...made.handle(), download: () => Promise.resolve(false) };
+        return { ...made.handle(), download: () => Promise.resolve(false), dropRange: () => { throw new Error('A Board drops no range of its charts.'); } };
     };
 }
 

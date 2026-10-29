@@ -66,11 +66,10 @@ test('ADR-0281, ADR-0282: Download CSV from the context menu saves the file and 
     await expect(paperChart(page).locator('.ex-chart-menu')).toHaveCount(0);
 });
 
-test('ADR-0281, ADR-0282: the toolbar\'s download menu saves the PNG', async ({ page }) => {
-    await paperChart(page).locator('.mud-ex-chart-download-menu button').first().click();
+test('ADR-0281, ADR-0282: the toolbar\'s downloads save the PNG', async ({ page }) => {
     const [download] = await Promise.all([
         page.waitForEvent('download'),
-        page.locator('.mud-popover-open [data-ex-command="exchart.download.png"]').click(),
+        paperChart(page).locator('.mud-ex-chart-downloads [data-ex-command="exchart.download.png"]').click(),
     ]);
     expect(download.suggestedFilename()).toBe('curves.png');
 });
@@ -101,10 +100,9 @@ test('ADR-0281: the theme\'s Primary, Secondary and Tertiary lead the series, an
 });
 
 test('ADR-0281, ADR-0282: a saved SVG carries the theme\'s Primary on the first slot', async ({ page }) => {
-    await paperChart(page).locator('.mud-ex-chart-download-menu button').first().click();
     const [download] = await Promise.all([
         page.waitForEvent('download'),
-        page.locator('.mud-popover-open [data-ex-command="exchart.download.svg"]').click(),
+        paperChart(page).locator('.mud-ex-chart-downloads [data-ex-command="exchart.download.svg"]').click(),
     ]);
     const svg = (await readFile(await download.path())).toString('utf8');
     const primary = await page.evaluate(() => getComputedStyle(document.querySelector('.mud-ex-grid')).getPropertyValue('--mud-palette-primary').trim());

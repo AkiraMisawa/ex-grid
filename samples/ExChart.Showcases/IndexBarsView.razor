@@ -44,13 +44,13 @@
         {
             @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
             <MudExGridPaper Elevation="1" Style="display: flex">
-                <ExGrid @ref="_bridge.Grid" TRow="IndexRow" Window="Rows" RowKey="KeyOf" Columns="Columns" PinnedColumnCount="1"
+                <ExGrid @ref="_bridge.ScriptGrid" TRow="IndexRow" Rows="Rows" Columns="Columns" PinnedColumnCount="1"
                         ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
             </MudExGridPaper>
         }
         else
         {
-            <ExGrid @ref="_bridge.Grid" TRow="IndexRow" Window="Rows" RowKey="KeyOf" Columns="Columns" PinnedColumnCount="1"
+            <ExGrid @ref="_bridge.ScriptGrid" TRow="IndexRow" Rows="Rows" Columns="Columns" PinnedColumnCount="1"
                     ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
         }
     </div>
@@ -132,7 +132,7 @@
 
     private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
     [
-        ChartSeries.Candles("index", IndexData.Name, Bars) with { Format = Price },
+        ChartSeries.Candles("index", IndexData.Name, Bars) with { FormatCode = "#,##0.00" },
         Average,
     ]);
 

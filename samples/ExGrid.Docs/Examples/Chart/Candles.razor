@@ -1,5 +1,5 @@
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExChart.Engine
 
 <p>
@@ -25,8 +25,6 @@
 </style>
 
 @code {
-    private static string Price(object v) => Convert.ToDecimal(v).ToString("N2");
-
     // One Price Range: each session's open, high, low and close, and its volume, drawn in a panel below.
     private static readonly PriceBar[] Bars =
         [.. IndexSessions.All.Select(s => new PriceBar(s.Date.DayNumber, s.Open, s.High, s.Low, s.Close, s.Volume))];
@@ -35,11 +33,11 @@
     private static readonly ChartSeries Average = ChartSeries.Of("average", "25-day average", SeriesKind.Level,
         IndexSessions.All.Select((s, i) => new ChartPoint(s.Date.DayNumber, i < 24 ? null
             : ChartValue.Of(Math.Round(IndexSessions.All.Skip(i - 24).Take(25).Average(x => x.Close), 2)))))
-        with { FromZero = false, Format = Price };
+        with { FromZero = false, FormatCode = "#,##0.00" };
 
     private static ChartDefinition Make(bool packed) => new(ChartAxis.Dates("Date") with { Packed = packed },
     [
-        ChartSeries.Candles("index", "Index", Bars) with { Format = Price },
+        ChartSeries.Candles("index", "Index", Bars) with { FormatCode = "#,##0.00" },
         Average,
     ]);
 

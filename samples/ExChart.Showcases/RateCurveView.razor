@@ -53,13 +53,13 @@
     {
         @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
         <MudExGridPaper Elevation="1" Style="display: flex">
-            <ExGrid TRow="PillarRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+            <ExGrid TRow="PillarRow" Source="_source" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
                     ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
         </MudExGridPaper>
     }
     else
     {
-        <ExGrid TRow="PillarRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
+        <ExGrid TRow="PillarRow" Source="_source" Columns="Columns" HeaderGroups="Groups" PinnedColumnCount="1"
                 ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
     }
 </div>
@@ -148,9 +148,9 @@
     private static readonly ChartAxis TenorAxis = ChartAxis.Numbers("Tenor") with
     {
         Named = [.. Ticked.Select(t => (RateData.Years[Array.IndexOf(RateData.Tenors, t)], t))],
-        Format = position => Array.IndexOf(RateData.Years, position) is var i and >= 0
-            ? RateData.Tenors[i]
-            : position.ToString("0.####", Invariant) + "Y",
+        // A pillar is written as quoted, and a position between pillars in years, in the browser, by the showcases'
+        // own script.
+        FormatScript = ScriptFunction.Of("./_content/ExChart.Showcases/showcase-formats.js", "rateTenor"),
     };
 
     private static readonly Func<PillarRow, object> KeyOf = r => r.Term;
@@ -161,6 +161,8 @@
     private bool _compare;
     private ChartView _chart = ChartView.Zero;
     private IReadOnlyList<PillarRow> _rows = [];
+    // A keyed source each rebuild replaces, so the grid's Sort, Filter and selection outlive it.
+    private readonly InMemoryGridSource<PillarRow> _source = GridSource.From<PillarRow>([], KeyOf);
     private ChartDefinition _definition = null!;
 
     private string CompoundingText => _annual ? Annual : Continuous;
@@ -184,6 +186,7 @@
         _rows = [.. RateData.Tenors.Select((t, i) => new PillarRow(t, i < RateData.Deposits ? "Deposit" : "Swap", quotes.Maturities[i],
             quotes.Bid[i], quotes.Ask[i], quotes.Mid(i), (_annual ? built.ZeroAnnual : built.ZeroContinuous)[i],
             built.Discount[i], built.Forward1Y[i], built.Implied[i]))];
+        _source.ReplaceAll(_rows);
         var series = new List<ChartSeries>();
         Add(series, RateData.Today);
         if (_compare) Add(series, RateData.Earlier);

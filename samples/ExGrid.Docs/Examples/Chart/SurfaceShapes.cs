@@ -1,5 +1,6 @@
 using System.Globalization;
 using ExChart.Engine;
+using ExGrid.Data;
 
 namespace ExGrid.Docs.Examples.Chart;
 
@@ -35,7 +36,8 @@ public static class SurfaceShapes
                 var inner = i is > 0 and < 6 && j is > 0 and < 6;
                 var x = Math.Round(i / 6.0 + (inner ? 0.03 * ((i + 2 * j) % 3 - 1) : 0), 4);
                 var y = Math.Round(j / 6.0 + (inner ? 0.03 * ((2 * i + j) % 3 - 1) : 0), 4);
-                nodes.Add(new SurfaceNode(x, y, ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4))));
+                // + 0.0 writes a rounded -0 as 0: one value, written one way.
+                nodes.Add(new SurfaceNode(x, y, ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4) + 0.0)));
             }
         var triangles = new List<SurfaceTriangle>();
         for (var j = 0; j < 6; j++)
@@ -52,9 +54,13 @@ public static class SurfaceShapes
 
     private static readonly double[] Years = [7 / 365.0, 1 / 12.0, 0.25, 0.5, 1, 2, 5, 10];
 
+    // Asked in the browser for each expiry and each tick, by the site's js/chart-formats.js.
+    private static readonly ScriptFunction QuotedTenor = ScriptFunction.Of("./js/chart-formats.js", "quotedTenor");
+
     /// <summary>
     /// Total implied variance, σ²T, over deltas and expiries: the expiries placed by the logarithm of their
-    /// years and written as quoted, and the variance, which spans three decades, on a logarithmic scale.
+    /// years and written as quoted by the site's script, which writes the ticks between them too, and the variance,
+    /// which spans three decades, on a logarithmic scale.
     /// </summary>
     public static SurfaceDefinition Variance()
     {
@@ -63,7 +69,7 @@ public static class SurfaceShapes
             .Select(i => vol.At(i, j) is { } q ? (ChartValue?)ChartValue.Of(Math.Round(q.ToDouble() * q.ToDouble() / 10_000 * t, 6)) : null).ToArray()).ToArray();
         return new SurfaceDefinition(
             SurfaceAxis.Of("Delta", VolSurface.Deltas),
-            SurfaceAxis.Of("Expiry", Years, y => VolSurface.Tenors[Array.IndexOf(Years, y)]) with { Scale = AxisScale.Logarithmic },
+            SurfaceAxis.Of("Expiry", Years) with { Scale = AxisScale.Logarithmic, FormatScript = QuotedTenor },
             z, "Total variance", v => ((double)v).ToString("0.#####", CultureInfo.InvariantCulture))
         {
             ZScale = AxisScale.Logarithmic,

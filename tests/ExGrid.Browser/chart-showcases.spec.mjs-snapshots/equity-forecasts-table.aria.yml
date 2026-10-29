@@ -12,9 +12,9 @@
       - cell "4.25"
       - cell "4.25"
       - cell "4.25"
-    - row "Q1 4.00 3.75 4.25":
+    - row "Q1 4 3.75 4.25":
       - rowheader "Q1"
-      - cell "4.00"
+      - cell "4"
       - cell "3.75"
       - cell "4.25"
     - row "Q2 3.75 3.25 4.25":
@@ -22,18 +22,18 @@
       - cell "3.75"
       - cell "3.25"
       - cell "4.25"
-    - row "Q3 3.50 2.90 4.10":
+    - row "Q3 3.5 2.9 4.1":
       - rowheader "Q3"
-      - cell "3.50"
-      - cell "2.90"
-      - cell "4.10"
-    - row "Q4 3.50 2.60 4.20":
+      - cell "3.5"
+      - cell "2.9"
+      - cell "4.1"
+    - row "Q4 3.5 2.6 4.2":
       - rowheader "Q4"
-      - cell "3.50"
-      - cell "2.60"
-      - cell "4.20"
-    - row "Q5 3.25 2.30 4.20":
+      - cell "3.5"
+      - cell "2.6"
+      - cell "4.2"
+    - row "Q5 3.25 2.3 4.2":
       - rowheader "Q5"
       - cell "3.25"
-      - cell "2.30"
-      - cell "4.20"
+      - cell "2.3"
+      - cell "4.2"

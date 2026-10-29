@@ -15,6 +15,14 @@ async function open(page, path = '/features') {
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
+// The Trader header cell's box, read once it is visible: on the Server host a box read as the first rows showed
+// was once null (CI, 2026-10-29).
+async function traderHeaderBox(page) {
+    const cell = grid(page).locator('.ex-header-cell').nth(1);
+    await expect(cell).toBeVisible();
+    return cell.boundingBox();
+}
+
 async function headerBox(page) {
     return grid(page).locator('.ex-header').boundingBox();
 }
@@ -97,7 +105,7 @@ test('HG-14/HG-15 / ADR-0032: grabbing a group moves the whole group, and Header
 
 test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ page }) => {
     await open(page);
-    const cell = await grid(page).locator('.ex-header-cell').nth(1).boundingBox();
+    const cell = await traderHeaderBox(page);
 
     // The grip is the cell's right-hand 5px, in the leaf tier.
     await page.mouse.move(cell.x + cell.width - 2, cell.y + cell.height - 10);
@@ -113,7 +121,7 @@ test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ p
 
 test('a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12)', async ({ page }) => {
     await open(page);
-    const cell = await grid(page).locator('.ex-header-cell').nth(1).boundingBox();
+    const cell = await traderHeaderBox(page);
 
     // Trader is 120px under the default bounds [40, 400]; 380px more takes it to 500.
     await page.mouse.move(cell.x + cell.width - 2, cell.y + cell.height - 10);

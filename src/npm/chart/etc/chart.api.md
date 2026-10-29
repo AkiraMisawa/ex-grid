@@ -168,6 +168,7 @@ export interface ChartFiltersSlotContext {
 export interface ChartHandle {
     destroy(): void;
     download(format: ChartFileFormat): Promise<boolean>;
+    dropRange(): void;
     update(options: ChartOptions): void;
 }
 

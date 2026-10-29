@@ -1,7 +1,7 @@
 @page "/script-chart-mud"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
 @using global::ExChart.MudBlazor
 @using global::ExGrid.MudBlazor
@@ -12,7 +12,7 @@
     <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <MudExGridStylesheet />
-    <ExChartStylesheet />
+    <ExChart.Components.ExChartStylesheet />
     <MudExChartStylesheet />
 </HeadContent>
 

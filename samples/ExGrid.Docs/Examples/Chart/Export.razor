@@ -1,5 +1,5 @@
 @using ExChart
-@using ExChart.Components
+@using ExChart.Script
 @using ExChart.Engine
 
 <ExChart @ref="_chart" Definition="Definition" Title="Exposure profile" FileName="exposure-2026-10-30"
@@ -10,7 +10,7 @@
 @code {
     private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
 
-    private global::ExChart.Components.ExChart? _chart;
+    private global::ExChart.Script.ExChart? _chart;
 
     // The toolbar's buttons save CSV, SVG and PNG on one click; a page may call the same method.
     private async Task SavePng()

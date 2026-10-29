@@ -24,11 +24,11 @@
         </p>
         @if (Mud)
         {
-            <MudChartDock @ref="_dock" TRow="ExposureRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
+            <MudChartDock @ref="_dock" ScriptCore="true" TRow="ExposureRow" Bridge="_bridge" Placement="ChartDockPlacement.Bottom" ChartWidth="ChartWidth" ChartHeight="ChartHeight">
                 @* A block-level paper: the Wrapper's own is inline, as wide as its grids, which leaves a stretched grid no width. *@
                 <MudExGridPaper Elevation="1" Style="display: flex">
-                    <ExGrid @ref="_bridge.Grid" TRow="ExposureRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                            PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                    <ExGrid @ref="_bridge.ScriptGrid" TRow="ExposureRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                            PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                             ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" Chrome="MudChartChrome.GridChrome" />
                 </MudExGridPaper>
             </MudChartDock>
@@ -36,8 +36,8 @@
         else
         {
             <div class="xs-panel">
-                <ExGrid @ref="_bridge.Grid" TRow="ExposureRow" Window="_rows" RowKey="KeyOf" Columns="Columns" HeaderGroups="Groups"
-                        PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" CommandLabel="Label"
+                <ExGrid @ref="_bridge.ScriptGrid" TRow="ExposureRow" Source="_source" Columns="Columns" HeaderGroups="Groups"
+                        PinnedColumnCount="1" HeaderClickSelects="true" ContextCommands="_commands" ContextCommandLabel="Label"
                         ViewportHeight="GridHeight" ViewportWidth="ViewportSize.Stretch" />
             </div>
             <ChartTabs @ref="_tabs" TRow="ExposureRow" Bridge="_bridge" ChartWidth="ChartWidth" ChartHeight="ChartHeight" FileName="exposure-profile" />
@@ -82,10 +82,14 @@
 
     // Held in fields, never rebuilt per render (AGENTS.md: a new delegate is a changed parameter).
     private static readonly Func<ExposureRow, object> KeyOf = r => r.Date;
+    // The grid's own Row Key: a date crosses to the browser as its day number.
+    private static readonly Func<ExposureRow, object> GridKeyOf = r => r.Date.DayNumber;
     private static readonly Func<string, string?> Label = GridChartCommands.Label;
 
     private int _hedge;
     private IReadOnlyList<ExposureRow> _rows = ExposureData.Profiles[0];
+    // A keyed source the hedge replaces, so the grid's Sort, Filter and selection outlive it.
+    private readonly InMemoryGridSource<ExposureRow> _source = GridSource.From(ExposureData.Profiles[0], GridKeyOf);
     private GridChartBridge<ExposureRow> _bridge = null!;
     private Func<ContextMenuContext<ExposureRow>, IEnumerable<GridCommand>> _commands = null!;
     private MudChartDock<ExposureRow>? _dock;
@@ -129,5 +133,6 @@
     {
         _hedge = (_hedge + 1) % ExposureData.Hedges.Length;
         _rows = ExposureData.Profiles[_hedge];
+        _source.ReplaceAll(_rows);
     }
 }

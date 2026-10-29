@@ -21,10 +21,10 @@
     </style>
     <div class="anatomy-page">
         <div class="anatomy-dock">
-            <MudChartDock TRow="CurveHistory.Row" Bridge="_bridge" ChartWidth="560" ChartHeight="300">
+            <MudChartDock TRow="CurveHistory.Row" Bridge="_bridge" ChartWidth="560" ChartHeight="300" ScriptCore="true">
                 <MudExGridPaper Elevation="0" Outlined="true">
-                    <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CurveHistory.Row" Window="CurveHistory.Rows" RowKey="CurveHistory.KeyOf"
-                            Columns="CurveHistory.Columns" ContextCommands="_commands" CommandLabel="Label"
+                    <ExGrid @ref="_bridge.ScriptGrid" TRow="CurveHistory.Row" Rows="CurveHistory.Rows"
+                            Columns="CurveHistory.Columns" ContextCommands="_commands" ContextCommandLabel="Label"
                             PinnedColumnCount="1" ViewportHeight="GridHeight" ViewportWidth="GridWidth" Chrome="MudChartChrome.GridChrome" />
                 </MudExGridPaper>
             </MudChartDock>

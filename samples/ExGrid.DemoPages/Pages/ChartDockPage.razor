@@ -1,6 +1,6 @@
 @page "/chart-dock"
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
 @using global::ExChart.MudBlazor
 @using global::ExGrid.Chrome
@@ -14,7 +14,7 @@
     <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <MudExGridStylesheet />
-    <ExChartStylesheet />
+    <ExChart.Components.ExChartStylesheet />
     <MudExChartStylesheet />
 </HeadContent>
 
@@ -31,15 +31,14 @@
 </p>
 <p><button type="button" id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button></p>
 
-<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280">
+<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280" ScriptCore="true">
     <MudExGridPaper>
-        <ExGrid.Components.ExGrid @ref="_bridge.Grid" TRow="CurveRow"
-                Window="_rows"
-                RowKey="KeyOf"
+        <ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
+                Rows="_rows"
                 Columns="Columns"
                 HeaderGroups="Groups"
                 ContextCommands="_commands"
-                CommandLabel="Label"
+                ContextCommandLabel="Label"
                 PinnedColumnCount="1"
                 ViewportHeight="260"
                 ViewportWidth="520"

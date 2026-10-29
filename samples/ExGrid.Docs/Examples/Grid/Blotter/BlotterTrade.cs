@@ -28,8 +28,9 @@ public sealed record BlotterTrade(
     /// <summary>What the trade is worth at its trade price.</summary>
     public decimal Notional => Math.Round(TradePrice * Quantity * Multiplier, 0);
 
-    /// <summary>The move since yesterday's close, as a fraction.</summary>
-    public decimal Change => PreviousClose == 0 ? 0 : Last / PreviousClose - 1;
+    /// <summary>The move since yesterday's close, as a fraction, to six places: a division's 28 digits are more than a
+    /// number in the browser holds exactly, and the grid refuses them rather than show and sum another number.</summary>
+    public decimal Change => PreviousClose == 0 ? 0 : Math.Round(Last / PreviousClose - 1, 6);
 
     /// <summary>Today's profit or loss: the move since yesterday's close.</summary>
     public decimal DayPnl => Math.Round((Last - PreviousClose) * Signed * Multiplier, 2);

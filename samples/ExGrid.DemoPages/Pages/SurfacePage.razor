@@ -1,6 +1,7 @@
 @page "/surface"
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
+@using ScriptFunction = global::ExGrid.Data.ScriptFunction
 
 <DemoNav />
 
@@ -11,7 +12,7 @@
    surface for its drawing as SVG text and writes its length (ADR-0282). *@
 <DemoChromeAssets>
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
     </Head>
 </DemoChromeAssets>
 
@@ -128,7 +129,7 @@
                 var inner = i is > 0 and < 4 && j is > 0 and < 4;
                 var x = i / 4.0 + (inner ? 0.04 * ((i + 2 * j) % 3 - 1) : 0);
                 var y = j / 4.0 + (inner ? 0.04 * ((2 * i + j) % 3 - 1) : 0);
-                nodes.Add(new SurfaceNode(Math.Round(x, 4), Math.Round(y, 4), ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4))));
+                nodes.Add(new SurfaceNode(Math.Round(x, 4), Math.Round(y, 4), ChartValue.Of(Math.Round(Math.Sin(Math.PI * x) * Math.Cos(Math.PI * y), 4) + 0.0)));
             }
         var triangles = new List<SurfaceTriangle>();
         for (var j = 0; j < 4; j++)
@@ -144,7 +145,7 @@
 
     private static readonly SurfaceDefinition LogVol = new SurfaceDefinition(
         SurfaceAxis.Of("Delta", Deltas),
-        SurfaceAxis.Of("Years", TenorYears, y => TickLayout.Tenor(y)) with { Scale = AxisScale.Logarithmic },
+        SurfaceAxis.Of("Years", TenorYears) with { Scale = AxisScale.Logarithmic, FormatScript = ScriptFunction.Of("./_content/ExGrid.DemoPages/script-formats.js", "tenor") },
         Vol(0).Z.Select((r, t) => (IReadOnlyList<ChartValue?>)r.Select(v => v is { } q ? (ChartValue?)ChartValue.Of(Math.Round(q.ToDouble() * q.ToDouble() * TenorYears[t] / 100, 4)) : null).ToArray()).ToArray(),
         "Total variance") { ZScale = AxisScale.Logarithmic };
 

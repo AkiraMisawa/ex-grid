@@ -157,6 +157,8 @@ for (const [chrome, query] of CHROMES) {
     test(`ADR-0280, ADR-0274, ADR-0257, CH-9: FX volatility shows its quotes beside the surface, the filled quotes marked and the hole kept, as recorded (${chrome})`, async ({ page }) => {
         await openFx(page, query);
         const grid = page.locator('.ex-grid').first();
+        // The grid draws a column once it is in view, and beside the surface the last quotes lie past its right edge.
+        await grid.locator('.ex-scroller').evaluate((scroller) => { scroller.scrollLeft = scroller.scrollWidth; });
         await expect(grid.locator('[role=row]').filter({ hasText: '1Y' })).toContainText('9.19%');
 
         await expect(fxBox(page).locator('circle.ex-chart-surface-point')).toHaveCount(5 * 8 - 4);
@@ -314,7 +316,8 @@ for (const [chrome, query] of CHROMES) {
     test(`ADR-0280, ADR-0300, ADR-0302, CH-9: Equity index merges ten years into months beside its rows, as recorded (${chrome})`, async ({ page }) => {
         await open(page, `/chart-showcase/equity-index${query}`);
         const chart = shownChart(page);
-        await expect(page.locator('.ex-grid').first().locator('[role=row]').filter({ hasText: '20,203.78' }).first()).toBeVisible();
+        // The first session's High: the grid draws a column once it is in view, and beside the chart its Close lies past the edge.
+        await expect(page.locator('.ex-grid').first().locator('[role=row]').filter({ hasText: '20,288.48' }).first()).toBeVisible();
         await expect(chart.locator('.ex-chart-notes')).toContainText('Northgate 225: monthly candles, merged from rows to fit.');
         await expect(chart.locator('path.ex-chart-rising')).toHaveCount(2);
         await expect(chart.locator('path.ex-chart-falling')).toHaveCount(2);
@@ -418,6 +421,8 @@ for (const [chrome, query] of CHROMES) {
         const ring = page.locator('.xs-bin-lattice g.ex-chart-series[data-series="early"] .ex-chart-markers').first();
         await expect(ring).not.toHaveAttribute('d', '');
         await expect(page.locator('.xs-bin-ring')).toHaveText('early exercise');
+        // The Early column is the last, past the grid's right edge, where the grid draws no cell until it is scrolled to.
+        await page.locator('.ex-grid .ex-scroller').first().evaluate((scroller) => { scroller.scrollLeft = scroller.scrollWidth; });
         await expect(page.locator('.ex-grid [role=gridcell]').filter({ hasText: /^Exercise$/ }).first()).toBeAttached();
     });
 

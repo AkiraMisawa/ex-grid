@@ -68,13 +68,13 @@
                     @if (Mud)
                     {
                         <MudExGridPaper Elevation="1" Style="display: flex">
-                            <ExGrid TRow="LatticeNode" Window="_nodes" RowKey="KeyOf" Columns="Columns" ViewportHeight="GridHeight"
+                            <ExGrid TRow="LatticeNode" Source="_source" Columns="Columns" ViewportHeight="GridHeight"
                                     ViewportWidth="ViewportSize.Stretch" Chrome="MudGridChrome.Default" />
                         </MudExGridPaper>
                     }
                     else
                     {
-                        <ExGrid TRow="LatticeNode" Window="_nodes" RowKey="KeyOf" Columns="Columns" ViewportHeight="GridHeight"
+                        <ExGrid TRow="LatticeNode" Source="_source" Columns="Columns" ViewportHeight="GridHeight"
                                 ViewportWidth="ViewportSize.Stretch" />
                     }
                 </div>
@@ -193,6 +193,8 @@
     private double _price, _bs, _maxValue;
     private (double Delta, double Gamma, double Vega, double Theta) _greeks;
     private LatticeNode[] _nodes = [];
+    // A keyed source each repricing replaces, so the grid's Sort, Filter and selection outlive it.
+    private readonly InMemoryGridSource<LatticeNode> _source = GridSource.From<LatticeNode>([], KeyOf);
     private ChartDefinition _lattice = null!, _convergence = null!;
 
     private string Kind => (_american ? "American " : "European ") + (_put ? "put" : "call");
@@ -213,6 +215,7 @@
     {
         var terms = new OptionTerms(_spot, _strike, _rate, _vol, _maturity, _put, _american);
         (_price, _nodes) = BinomialLattice.Price(terms, _n);
+        _source.ReplaceAll(_nodes);
         _maxValue = _nodes.Max(n => n.Value);
         _bs = BinomialLattice.BlackScholes(terms);
         _greeks = BinomialLattice.Greeks(terms, GreekSteps);
@@ -242,7 +245,7 @@
             series.Add(ChartSeries.Of($"band{b}", string.Create(Invariant, $"Value {max * b / Bands:0.0}–{max * (b + 1) / Bands:0.0}"),
                 SeriesKind.Observation, nodes.Where(x => Band(x.Value, max) == band).Select(Mark)) with { Keys = new AppearanceKeys($"band{b}") });
         }
-        return new ChartDefinition(ChartAxis.Numbers("Step i") with { Format = x => x.ToString("0", Invariant) }, series,
+        return new ChartDefinition(ChartAxis.Numbers("Step i") with { FormatCode = "0" }, series,
             ["Colour is the option value, in eight bands; a ring marks early exercise."]);
     }
 
@@ -260,7 +263,7 @@
     {
         var lattice = Enumerable.Range(1, nMax).Select(m => new ChartPoint(m, ChartValue.Of(BinomialLattice.Price(terms, m).Price)));
         ChartPoint[] flat = [new(1, ChartValue.Of(bs)), new(nMax, ChartValue.Of(bs))];
-        return new ChartDefinition(ChartAxis.Numbers("Steps N") with { Format = x => x.ToString("0", Invariant) },
+        return new ChartDefinition(ChartAxis.Numbers("Steps N") with { FormatCode = "0" },
         [
             ChartSeries.Of("lattice", "Lattice price", SeriesKind.Level, lattice) with { Keys = new AppearanceKeys("lattice", "solid"), FromZero = false, Format = Money },
             ChartSeries.Of("black-scholes", string.Create(Invariant, $"Black–Scholes {bs:0.0000}"), SeriesKind.Level, flat)

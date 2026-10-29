@@ -1,13 +1,13 @@
 @page "/script-chart"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExChart
-@using global::ExChart.Components
+@using global::ExChart.Script
 @using global::ExChart.Engine
 @using ScriptFunction = global::ExGrid.Data.ScriptFunction
 
 <DemoChromeAssets Name="builtin">
     <Head>
-        <ExChartStylesheet />
+        <ExChart.Components.ExChartStylesheet />
     </Head>
 </DemoChromeAssets>
 
