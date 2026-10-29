@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 93.5% | 87.4% |
+| ExGrid | 93.4% | 87.4% |
 | ExSheet | 90.6% | 86.4% |
 | ExPivot | 88.5% | 82.7% |
 | ExChart | 90% | 84.9% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/29/2026 - 08:59:25 |
+| Generated on: | 10/29/2026 - 17:43:38 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1393 |
 | Files: | 680 |
-| **Line coverage:** | 90.1% (93316 of 103459) |
-| Covered lines: | 93316 |
-| Uncovered lines: | 10143 |
-| Coverable lines: | 103459 |
-| Total lines: | 157781 |
-| **Branch coverage:** | 85% (54416 of 63997) |
-| Covered branches: | 54416 |
-| Total branches: | 63997 |
+| **Line coverage:** | 90.1% (93500 of 103688) |
+| Covered lines: | 93500 |
+| Uncovered lines: | 10188 |
+| Coverable lines: | 103688 |
+| Total lines: | 158177 |
+| **Branch coverage:** | 85% (54528 of 64131) |
+| Covered branches: | 54528 |
+| Total branches: | 64131 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -286,11 +286,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 93.4%</summary>
+<details><summary>ExGrid - 93.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**93.4%**|**87.6%**|
+|**ExGrid**|**93.3%**|**87.6%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -497,7 +497,7 @@
 |ExGrid.Finding.HeaderFindWalk|100%|100%|
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
 |ExGrid.GridColumn<TRow>|75%||
-|ExGrid.GridColumn<TRow>|96.8%|91.6%|
+|ExGrid.GridColumn<TRow>|97.7%|91%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.5%|86.5%|
 |ExGrid.GridMetrics|97.7%|92.5%|
@@ -557,9 +557,9 @@
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
 |ExGrid.Script.CrossedText|92%|88.8%|
 |ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow>|70.9%|67.6%|
-|ExGrid.Script.ExGrid<TRow>|80.3%|70.4%|
-|ExGrid.Script.FormatNames|50%||
+|ExGrid.Script.ExGrid<TRow>|68.1%|67.2%|
+|ExGrid.Script.ExGrid<TRow>|82%|73.7%|
+|ExGrid.Script.FormatNames|100%||
 |ExGrid.Script.GridRefusal.Action<TRow>|0%||
 |ExGrid.Script.GridRefusal.Commit<TRow>|0%||
 |ExGrid.Script.GridRefusal.Copy<TRow>|0%||
@@ -568,15 +568,15 @@
 |ExGrid.Script.GridRefusal.Paste<TRow>|0%||
 |ExGrid.Script.GridRefusal.Placement<TRow>|0%||
 |ExGrid.Script.GridRefusal<TRow>|0%||
-|ExGrid.Script.HeldCalls|79.3%|62.5%|
-|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
+|ExGrid.Script.HeldCalls|82.4%|62.5%|
+|ExGrid.Script.HeldCalls<T>|82.4%|62.5%|
 |ExGrid.Script.RazorSlot|90.1%|74.1%|
 |ExGrid.Script.RazorSlotHolders|90.9%|88.8%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.RowPaint<TRow>|88.3%|84.7%|
-|ExGrid.Script.ScriptBridge<TRow>|47.7%|16.6%|
-|ExGrid.Script.ScriptBridge<TRow>|85.3%||
-|ExGrid.Script.ScriptColumns|76.1%|71.4%|
+|ExGrid.Script.ScriptBridge<TRow>|56.6%|12.5%|
+|ExGrid.Script.ScriptBridge<TRow>|85.1%|50%|
+|ExGrid.Script.ScriptColumns|77.6%|75%|
 |ExGrid.Script.ScriptFunctionJson|100%||
 |ExGrid.Script.ScriptJson|100%|91.6%|
 |ExGrid.Script.ScriptMetricsJson|94%|80%|
@@ -727,7 +727,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1194,7 +1194,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**89.3%**|**81.4%**|
+|**ExSheet**|**89.3%**|**81.5%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
@@ -1304,7 +1304,7 @@
 |ExSheet.SheetToolbarContext.NotJoined|0%||
 |ExSheet.SheetToolbarItemView|53.3%||
 |ExSheet.SheetWidening|100%|97.5%|
-|ExSheet.SheetWords|94.8%|89.4%|
+|ExSheet.SheetWords|94.9%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
 |ExSheet.ToolbarButton|100%|50%|
 |ExSheet.ToolbarChoice|100%||
