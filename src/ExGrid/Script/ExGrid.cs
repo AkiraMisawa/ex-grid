@@ -26,14 +26,14 @@ namespace ExGrid.Script;
 /// </summary>
 /// <remarks>
 /// It stands beside <see cref="Components.ExGrid{TRow}"/>, the C# core, until every product that draws through
-/// that one has moved (ADR-0350 section 7). What this adapter does not carry yet is refused by name as its
-/// parameters are set, never left out quietly. Find is the source's: Ctrl+F asks
+/// that one has moved (ADR-0350 section 7). Find is the source's: Ctrl+F asks
 /// <see cref="IGridSource{TRow}.FindAsync"/> where the source <see cref="IGridSource{TRow}.CanFind"/>, and is refused as
-/// a Find with nothing to answer it where it does not; Replace is not carried, so Ctrl+H is refused as Replace unavailable. The Selection
-/// Summary, which no column declares, is not offered: no summary is drawn.
+/// a Find with nothing to answer it where it does not; Replace All is <see cref="OnReplace"/>'s. The Selection Summary is
+/// the source's <see cref="IGridSource{TRow}.SummarizeAsync"/> where it <see cref="IGridSource{TRow}.CanSummarize"/>, or
+/// <see cref="OnSummarize"/>'s.
 /// </remarks>
 /// <typeparam name="TRow">The Consumer's row type.</typeparam>
-public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
+public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     where TRow : class
 {
     /// <summary>The script's address under the application's base: the package's minified Script Core and bridge.</summary>
@@ -495,6 +495,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _toldColumns = null;
             source.StateChanged += OnSourceChanged;
         }
+        TakeSurface(source);
         var culture = CultureInfo.CurrentCulture.Name;
         var sameColumns = SameColumns(_toldColumns, Columns);
         if (!sameColumns || culture != _toldCulture)
@@ -549,6 +550,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             yield return cycleReference;
         if (ReferencesIn is { } referencesIn)
             yield return referencesIn;
+        foreach (var script in PaintScripts())
+            yield return script;
     }
 
     // A Scope's declaration, taken once, as the grid is made: the browser registers it in its Scope then, and every row
@@ -970,6 +973,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("rowKey", source.RowKey is not null);
         json.WriteBoolean("vouchesDistinctRows", source.VouchesDistinctRows);
         json.WriteBoolean("finds", source.CanFind);
+        // Over Rows, OnSummarize answers in place of the source the grid made (ADR-0440).
+        json.WriteBoolean("summarizes", source.CanSummarize && !(Rows is not null && OnSummarize is not null));
         json.WriteEndObject();
     }
 
@@ -986,7 +991,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cv", _columnsVersion);
             json.WriteStartArray("window");
             for (var at = from; at < to; at++)
-                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, CellState, _pointedAt?.TableRow);
+                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
             json.WriteEndArray();
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
             if (source.TotalCount is { } total)
@@ -996,6 +1001,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("loading", source.IsLoading);
             json.WriteNumber("rowSequenceVersion", source.RowSequenceVersion);
             json.WriteString("query", GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), source.Sorts, source.Filter)));
+            WriteSurfaceState(json);
             json.WriteEndObject();
         }));
     }
@@ -1038,9 +1044,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("showFillHandle", ShowFillHandle);
         json.WriteBoolean("showFormulaBar", ShowFormulaBar);
         json.WriteBoolean("findsHeaders", FindsHeaders);
-        // Nothing answers a Selection Summary over a source in .NET yet (ADR-0130): none is drawn, rather than a
-        // status line that never fills.
-        json.WriteBoolean("showSelectionSummary", false);
+        WriteSurfaceOptions(json);
         if (CopyCellCap is { } copyCap)
             json.WriteNumber("copyCellCap", copyCap);
         if (PasteByteCap is { } pasteCap)
@@ -1088,6 +1092,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             WriteScript(json, "referenceText", ReferenceText);
             WriteScript(json, "cycleReference", CycleReference);
             WriteScript(json, "referencesIn", ReferencesIn);
+            WriteSurfaceScripts(json);
             json.WriteEndObject();
         }
         if (OutlinedColumns is { Count: > 0 } outlined)
@@ -1173,6 +1178,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("action", OnAction.HasDelegate);
         yield return ("nameBoxEntered", OnNameBoxEntered.HasDelegate);
         yield return ("referenceKeyColoursChanged", OnReferenceKeyColoursChanged.HasDelegate);
+        foreach (var heard in SurfaceHears())
+            yield return heard;
     }
 
     private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
@@ -1266,8 +1273,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteNumber("cv", _columnsVersion);
                 json.WriteStartArray("rows");
                 foreach (var row in rows)
-                    // Read for a copy or a find, never painted: their states are not asked.
-                    _rows.Write(json, row, Columns, source.RowKey, cellState: null, _pointedAt?.TableRow);
+                    // Read for a copy or a find, never painted: what a row paints is not asked.
+                    _rows.Write(json, row, Columns, source.RowKey, paint: null, _pointedAt?.TableRow);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }));
@@ -1385,7 +1392,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     internal Task<string?> HeardAsync(string kind, JsonElement payload)
     {
         Func<Task<string?>> hand;
-        var answers = kind is "edit" or "paste" or "fill";
+        var answers = kind is "edit" or "paste" or "fill" or "replace";
         try
         {
             hand = kind switch
@@ -1393,7 +1400,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 "edit" => PrepareEdit(payload),
                 "paste" => PreparePaste(payload),
                 "fill" => PrepareFill(payload),
-                _ => Unanswered(Prepare(kind, payload)),
+                _ => PrepareSurface(kind, payload) ?? Unanswered(Prepare(kind, payload)),
             };
         }
         catch (Exception ex)
@@ -1879,6 +1886,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _source.StateChanged -= OnSourceChanged;
             (_source as IBindsToOneCircuit)?.Binding.Detach(this);
         }
+        LetGoOfSurface();
         // A question's continuation may run inside Cancel and take itself off the list.
         foreach (var asked in _asked.Values.ToArray())
             asked.Cancel();

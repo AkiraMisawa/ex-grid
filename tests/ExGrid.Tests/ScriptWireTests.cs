@@ -39,7 +39,7 @@ public class ScriptWireTests
                 json.WriteNumber("seq", sequence);
                 json.WriteStartArray("rows");
                 foreach (var row in written)
-                    rows.Write(json, row, Columns, key, cellState, tableRow: null);
+                    rows.Write(json, row, Columns, key, new RowPaint<Trade>(cellState, null, null, null, null), tableRow: null);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }

@@ -4,8 +4,8 @@
 // stays the Consumer's: it sorts, filters and answers in .NET, and the grid neither holds nor executes.
 
 import {
-    engineFilterOf, readGridQueryJson, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
-    type GridSourceState, type QueryColumn, type RowKeyOf, type RowRange, type SortSpec,
+    engineFilterOf, readGridQueryJson, RowMarkCounts, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
+    type GridSourceState, type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowKeyOf, type RowRange, type SortSpec,
 } from '@ex-grid/core';
 import { filterText, sortsText } from './wire-query';
 import type { BlazorRow, ColumnSet, RowSet, WireRow } from './wire-rows';
@@ -28,6 +28,19 @@ export interface WireState {
     readonly loading: boolean;
     readonly rowSequenceVersion: number;
     readonly query: string;
+    /** .NET's clock as it wrote the message, in milliseconds since the epoch, where its rows carry change times
+     * (ADR-0068): the browser reads them on its own clock by the difference. */
+    readonly now?: number;
+    /** The Row Marks' counts as .NET's marks answer them, where the grid has Row Marks (ADR-0043): `null` while they
+     * are not known, and the grid claims nothing then. */
+    readonly markCounts?: WireMarkCounts | null;
+}
+
+/** Row Marks' counts, as .NET's `RowMarkCounts` holds them. */
+export interface WireMarkCounts {
+    readonly markedInResult: number;
+    readonly rowsInResult: number;
+    readonly markedOutsideResult: number;
 }
 
 /** What .NET says of its source once, when the grid is attached: whether it names its rows by a Row Key, and
@@ -40,10 +53,16 @@ export interface WireSourceTraits {
     readonly vouchesDistinctRows: boolean;
     /** Whether the source answers a Find step (`IGridSource.CanFind`, ADR-0055): where it does not, Ctrl+F is refused. */
     readonly finds: boolean;
+    /** Whether the source answers a Selection Summary (`IGridSource.CanSummarize`, ADR-0130). */
+    readonly summarizes?: boolean;
 }
 
 /** A Find step asked of .NET's source, the one numbered `generation` (ADR-0055). */
 export type FindOf = (generation: number, request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+
+/** A Selection Summary asked of .NET's source, the one numbered `generation`, or of the component's `OnSummarize` where
+ * `generation` is undefined (ADR-0130). */
+export type SummarizeOf = (generation: number | undefined, request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
 
 let requests = 0;
 
@@ -60,8 +79,11 @@ export class DotNetSource implements GridSource<BlazorRow> {
     readonly vouchesDistinctRows: boolean;
     /** A Find step, answered by .NET's source where it searches: the core refuses Ctrl+F where this is absent. */
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    /** A Selection Summary, answered by .NET's source where it summarises: none is asked where this is absent. */
+    readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
+    #markCounts: RowMarkCounts | undefined;
 
-    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits, find: FindOf) {
+    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits, find: FindOf, summarize?: SummarizeOf) {
         this.#dotnet = dotnet;
         this.#rows = rows;
         this.#columns = columns;
@@ -69,6 +91,10 @@ export class DotNetSource implements GridSource<BlazorRow> {
         this.vouchesDistinctRows = traits.vouchesDistinctRows;
         if (traits.rowKey) this.rowKey = keyOf;
         if (traits.finds) this.find = (request, signal) => find(this.generation, request, signal);
+        if (traits.summarizes === true) {
+            if (summarize === undefined) throw new TypeError('Internal: .NET said its source summarises, and nothing here asks it.');
+            this.summarize = (request, signal) => summarize(this.generation, request, signal);
+        }
         this.#state = Object.freeze({
             window: Object.freeze([]), windowStart: 0, totalCount: undefined, loading: true, rowSequenceVersion: 0, sorts: Object.freeze([]), filter: undefined,
         });
@@ -80,8 +106,12 @@ export class DotNetSource implements GridSource<BlazorRow> {
         if (state.cv !== this.#columns.version) throw new Error(`Internal: .NET sent rows read by columns ${state.cv}, and the grid has columns ${this.#columns.version}.`);
         const query = readGridQueryJson(state.query);
         const filter = engineFilterOf(query.filter, name => this.#columns.columns.find(column => column.name === name));
+        // The browser's clock less .NET's, read as the message is taken in: change times .NET read cross onto this one.
+        const clockOffset = state.now === undefined ? 0 : performance.timeOrigin + performance.now() - state.now;
+        const counts = state.markCounts;
+        this.#markCounts = counts === undefined || counts === null ? undefined : new RowMarkCounts(counts);
         this.#state = Object.freeze({
-            window: this.#rows.read(state.window, state.seq, this.#columns),
+            window: this.#rows.read(state.window, state.seq, this.#columns, clockOffset),
             windowStart: state.windowStart,
             totalCount: state.totalCount === null ? undefined : state.totalCount,
             loading: state.loading,
@@ -91,6 +121,11 @@ export class DotNetSource implements GridSource<BlazorRow> {
         });
         // A listener that stops listening while it is told does not stop the others hearing.
         for (const listener of Array.from(this.#listeners)) listener();
+    }
+
+    /** The Row Marks' counts .NET sent with the state it last sent, or `undefined` where they are not known. */
+    get markCounts(): RowMarkCounts | undefined {
+        return this.#markCounts;
     }
 
     subscribe(listener: () => void): () => void {

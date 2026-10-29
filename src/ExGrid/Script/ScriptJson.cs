@@ -18,9 +18,11 @@ internal static class ScriptJson
     }
 
     /// <summary>The member the Script Core's string names.</summary>
-    internal static TEnum Member<TEnum>(JsonElement text) where TEnum : struct, Enum
+    internal static TEnum Member<TEnum>(JsonElement text) where TEnum : struct, Enum => Member<TEnum>(text.GetString());
+
+    /// <summary>The member the Script Core's string names.</summary>
+    internal static TEnum Member<TEnum>(string? name) where TEnum : struct, Enum
     {
-        var name = text.GetString();
         if (string.IsNullOrEmpty(name)
             || !Enum.TryParse<TEnum>(char.ToUpperInvariant(name[0]) + name[1..], ignoreCase: false, out var member)
             || !Enum.IsDefined(member)

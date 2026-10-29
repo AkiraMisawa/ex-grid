@@ -944,3 +944,109 @@ describe('Template columns (ADR-0020, ADR-0410 section 6)', () => {
         expect(mounted).toEqual([1, 2]);
     });
 });
+
+/** A function of ./js/grid.js, as .NET names it. */
+const gridScript = (name: string): WireScript => ({ module: './js/grid.js', export: name });
+
+describe('what .NET answers of each row, and asks of the user\'s gestures (ADR-0440)', () => {
+    const toned: WireColumn = { ...notional, tone: true };
+    const mark: WireColumn = { ...book, name: 'Mark', header: '', type: 'text', editable: false, queryable: false, width: { px: 40, minPx: 40, maxPx: 40 }, mark: true };
+
+    it('ADR-0440: a row\'s kind, tones, appearance and change times come with it, and a change time is read on the browser\'s clock', () => {
+        const columns = new ColumnSet();
+        columns.take([book, toned], 1);
+        const rows = new RowSet(new FakeCollector().make, () => { throw new Error('Nothing is collected here.'); });
+        const total: WireRow = { ...rates, r: 'total', o: [null, 'negative'], a: [null, { bold: true }], h: [null, 1000] };
+        const [first] = rows.read([total], 1, columns, 500);
+        expect([first?.kind, first?.appearances, first?.changedAt]).toEqual(['total', [null, { bold: true }], [null, 1500]]);
+        expect(columns.columns[1]?.tone?.(1500)).toBe('negative');
+        // Sent again unchanged it is the row it was; a cell painted another way makes it another (ADR-0003).
+        expect(rows.read([total], 2, columns, 500)[0]).toBe(first);
+        expect(rows.read([{ ...total, a: [null, { italic: true }] }], 3, columns, 500)[0]).not.toBe(first);
+        expect(() => rows.read([{ ...total, r: 'subtotal' }], 4, columns)).toThrow(/the kind 'subtotal'/);
+    });
+
+    it('ADR-0043 / ADR-0440: marks kept in .NET paint from the row and count from the state, and a press on a box crosses as a write naming the row', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({
+            options: options({ columns: [mark, book, notional], rowHeight: 24, marks: true }),
+            state: state(1, [{ ...rates, c: [null, 'Rates', 1500], t: [null, null, '1,500.00'], m: true }, { ...credit, c: [null, 'Credit', 2500], t: [null, null, '2,500.00'], m: false }],
+                { markCounts: { markedInResult: 1, rowsInResult: 2, markedOutsideResult: 0 } }),
+        }, dotnet);
+        await turns();
+        const boxes = [...root.querySelectorAll('.ex-row .ex-mark')];
+        expect(boxes.map(box => box.getAttribute('aria-checked'))).toEqual(['true', 'false']);
+        expect(root.querySelector('.ex-mark-count')?.textContent).toMatch(/1/);
+        const box = boxes[1];
+        if (box === undefined) throw new Error('The second row has a box.');
+        for (const name of ['mousedown', 'mouseup', 'click']) box.dispatchEvent(new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mousedown' ? 1 : 0 }));
+        await turns();
+        expect(dotnet.heard('mark')).toEqual([{ kind: 'oneRow', row: 2, marked: true }]);
+    });
+
+    it('ADR-0130 / ADR-0440: the component\'s OnSummarize is asked by number, its exact figure crossing as digits each way', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'Summarize'
+            ? '{"kind":"answered","figures":{"average":{"kind":"number","number":2000},"count":{"kind":"number","number":2},"sum":{"kind":"number","number":4000,"exact":{"mantissa":"400000","scale":2}}},"texts":{"average":"2,000.00","count":"2","sum":"4,000.00"}}'
+            : null);
+        const { root } = mount({ options: options({ rowHeight: 24, summarizes: true, hears: ['selectionSummaryChanged'] }) }, dotnet);
+        await turns();
+        press(root, 130, 5);
+        key('ArrowDown', { shiftKey: true });
+        await turns();
+        const asked = dotnet.calls.filter(call => call.method === 'Summarize').map(call => call.args);
+        expect(asked).toHaveLength(1);
+        expect(asked[0]?.slice(0, 2)).toEqual([1, null]);
+        expect([...root.querySelectorAll('.ex-summary-figure')].map(figure => figure.textContent)).toContain('Sum: 4,000.00');
+        const heard = dotnet.heard('selectionSummaryChanged').at(-1);
+        expect(Reflect.get(Reflect.get(Reflect.get(Reflect.get(heard as object, 'result') as object, 'figures') as object, 'sum') as object, 'exact'))
+            .toEqual({ mantissa: '400000', scale: 2 });
+    });
+
+    it('ADR-0050 item 9 / ADR-0440: a copy .NET answers is asked by number, and what it answers is written', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'Copy' ? '{"kind":"write","text":"Rates (desk)","html":"<table><tr><td>Rates (desk)</td></tr></table>"}' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, copies: true }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        const copy = new Event('copy', { bubbles: true, cancelable: true });
+        Object.defineProperty(copy, 'clipboardData', { value: { setData: () => { throw new Error('A copy .NET answers later is not written on the event.'); } } });
+        document.activeElement?.dispatchEvent(copy);
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Copy').map(call => call.args[0])).toEqual([1]);
+        expect(await navigator.clipboard.readText()).toBe('Rates (desk)');
+    });
+
+    it('ADR-0440: a declared key crosses as a write with the selection it was pressed on', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, declaredKeys: ['F9'], hears: ['declaredKey'] }) }, dotnet);
+        await turns();
+        press(root, 10, 29);
+        key('F9');
+        await turns();
+        expect(dotnet.heard('declaredKey')).toEqual([{
+            key: 'F9', editOpen: false, rowSequenceVersion: 0,
+            selection: expect.objectContaining({ focus: { row: 1, column: 0 } }) as unknown,
+        }]);
+    });
+
+    it('ADR-0440: the Consumer\'s rowHeadings and findMatch are its own script, findMatch reading a row by its columns\' names', async () => {
+        const matched: unknown[][] = [];
+        const { root } = mount({
+            options: options({ rowHeight: 24, rowHeadingWidth: 40, scripts: { rowHeadings: gridScript('rowHeadings'), findMatch: gridScript('findMatch') } }),
+            source: { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: true },
+        },
+            new FakeDotNet(), new FakeCollector(), {
+                rowHeadings: (row: unknown) => `#${String(row)}`,
+                findMatch: (...args: unknown[]) => { matched.push(args); return false; },
+            });
+        await turns();
+        expect([...root.querySelectorAll('.ex-row-heading')].map(heading => heading.textContent)).toEqual(['#0', '#1']);
+        press(root, 10, 5);
+        key('f', { ctrlKey: true });
+        await turns();
+        type('Rates');
+        await turns();
+        expect(matched[0]?.slice(0, 2)).toEqual([{ Book: 'Rates', Notional: 1500 }, 'Book']);
+    });
+});

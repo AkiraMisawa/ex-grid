@@ -547,12 +547,18 @@ ExGrid.GridViewSpecReading.ViewState.get -> ExGrid.GridViewState!
 ExGrid.GridViewSpecReading.ViewState.init -> void
 ExGrid.InMemoryGridSource<TRow>.Replace(ExGrid.Finding.GridReplaceRequest! request, System.Func<TRow, string!, string!, ExGrid.Finding.GridReplaceWrite<TRow>>! write, System.Func<TRow, string!, string?>? entryOf = null) -> ExGrid.Finding.GridReplaceAnswer<TRow>!
 ExGrid.Script.ExGrid<TRow>
+ExGrid.Script.ExGrid<TRow>.CellAppearance.get -> ExGrid.Cells.CellAppearanceOf<TRow!>?
+ExGrid.Script.ExGrid<TRow>.CellAppearance.set -> void
+ExGrid.Script.ExGrid<TRow>.CellChangedAt.get -> ExGrid.Cells.CellChangeOf<TRow!>?
+ExGrid.Script.ExGrid<TRow>.CellChangedAt.set -> void
 ExGrid.Script.ExGrid<TRow>.CellMessageOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
 ExGrid.Script.ExGrid<TRow>.CellMessageOf.set -> void
 ExGrid.Script.ExGrid<TRow>.CellMetrics.get -> ExGrid.Columns.CellTextMetrics?
 ExGrid.Script.ExGrid<TRow>.CellMetrics.set -> void
 ExGrid.Script.ExGrid<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
 ExGrid.Script.ExGrid<TRow>.CellState.set -> void
+ExGrid.Script.ExGrid<TRow>.ChangeHighlightDuration.get -> System.TimeSpan?
+ExGrid.Script.ExGrid<TRow>.ChangeHighlightDuration.set -> void
 ExGrid.Script.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExGrid.Script.ExGrid<TRow>.Chrome.set -> void
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
@@ -563,14 +569,24 @@ ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.get -> System.Func<string!, strin
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?
 ExGrid.Script.ExGrid<TRow>.ContextCommands.set -> void
+ExGrid.Script.ExGrid<TRow>.CopyAnswer.get -> System.Func<ExGrid.Clipboard.GridCopyRequest!, ExGrid.Clipboard.GridCopyAnswer!>?
+ExGrid.Script.ExGrid<TRow>.CopyAnswer.set -> void
+ExGrid.Script.ExGrid<TRow>.CopyAnswerAsync.get -> System.Func<ExGrid.Clipboard.GridCopyRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Clipboard.GridCopyAnswer!>!>?
+ExGrid.Script.ExGrid<TRow>.CopyAnswerAsync.set -> void
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.get -> long?
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.set -> void
 ExGrid.Script.ExGrid<TRow>.CycleReference.get -> ExGrid.Data.ScriptFunction?
 ExGrid.Script.ExGrid<TRow>.CycleReference.set -> void
+ExGrid.Script.ExGrid<TRow>.DataEdge.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.DataEdge.set -> void
+ExGrid.Script.ExGrid<TRow>.DeclaredKeys.get -> System.Collections.Generic.IReadOnlyCollection<string!>?
+ExGrid.Script.ExGrid<TRow>.DeclaredKeys.set -> void
 ExGrid.Script.ExGrid<TRow>.Density.get -> ExGrid.GridDensity?
 ExGrid.Script.ExGrid<TRow>.Density.set -> void
 ExGrid.Script.ExGrid<TRow>.DisposeAsync() -> System.Threading.Tasks.ValueTask
 ExGrid.Script.ExGrid<TRow>.ExGrid() -> void
+ExGrid.Script.ExGrid<TRow>.FindMatch.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.FindMatch.set -> void
 ExGrid.Script.ExGrid<TRow>.FindsHeaders.get -> bool
 ExGrid.Script.ExGrid<TRow>.FindsHeaders.set -> void
 ExGrid.Script.ExGrid<TRow>.FocusAsync() -> System.Threading.Tasks.Task!
@@ -586,10 +602,16 @@ ExGrid.Script.ExGrid<TRow>.HideColumnMenu.get -> bool
 ExGrid.Script.ExGrid<TRow>.HideColumnMenu.set -> void
 ExGrid.Script.ExGrid<TRow>.HideCopyWithHeaders.get -> bool
 ExGrid.Script.ExGrid<TRow>.HideCopyWithHeaders.set -> void
+ExGrid.Script.ExGrid<TRow>.HideHeader.get -> bool
+ExGrid.Script.ExGrid<TRow>.HideHeader.set -> void
 ExGrid.Script.ExGrid<TRow>.HighlightFocusRow.get -> bool
 ExGrid.Script.ExGrid<TRow>.HighlightFocusRow.set -> void
 ExGrid.Script.ExGrid<TRow>.HighlightHoverRow.get -> bool
 ExGrid.Script.ExGrid<TRow>.HighlightHoverRow.set -> void
+ExGrid.Script.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
+ExGrid.Script.ExGrid<TRow>.Marks.set -> void
+ExGrid.Script.ExGrid<TRow>.NameBoxLabel.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.NameBoxLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.OnAction.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridActionEventArgs<TRow!>>
 ExGrid.Script.ExGrid<TRow>.OnAction.set -> void
 ExGrid.Script.ExGrid<TRow>.OnCellDoubleClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.CellPosition>
@@ -602,6 +624,8 @@ ExGrid.Script.ExGrid<TRow>.OnColumnOrderChanged.get -> Microsoft.AspNetCore.Comp
 ExGrid.Script.ExGrid<TRow>.OnColumnOrderChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.OnColumnWidthChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.ColumnWidthChange!>
 ExGrid.Script.ExGrid<TRow>.OnColumnWidthChanged.set -> void
+ExGrid.Script.ExGrid<TRow>.OnDeclaredKey.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Keys.GridDeclaredKeyPress>
+ExGrid.Script.ExGrid<TRow>.OnDeclaredKey.set -> void
 ExGrid.Script.ExGrid<TRow>.OnEdit.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridEditIntent<TRow!>!>
 ExGrid.Script.ExGrid<TRow>.OnEdit.set -> void
 ExGrid.Script.ExGrid<TRow>.OnEditDiscarded.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.EditDiscardReason>
@@ -630,10 +654,18 @@ ExGrid.Script.ExGrid<TRow>.OnReferenceKeyColoursChanged.get -> Microsoft.AspNetC
 ExGrid.Script.ExGrid<TRow>.OnReferenceKeyColoursChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.OnRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Script.GridRefusal<TRow!>!>
 ExGrid.Script.ExGrid<TRow>.OnRefused.set -> void
+ExGrid.Script.ExGrid<TRow>.OnReplace.get -> System.Func<ExGrid.Finding.GridReplaceRequest!, System.Threading.Tasks.Task<ExGrid.Finding.GridReplaceResult!>!>?
+ExGrid.Script.ExGrid<TRow>.OnReplace.set -> void
+ExGrid.Script.ExGrid<TRow>.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
+ExGrid.Script.ExGrid<TRow>.OnSelectionSummaryChanged.set -> void
+ExGrid.Script.ExGrid<TRow>.OnSummarize.get -> System.Func<ExGrid.Summarizing.GridSummaryRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Summarizing.GridSummaryResult!>!>?
+ExGrid.Script.ExGrid<TRow>.OnSummarize.set -> void
 ExGrid.Script.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnUndo.set -> void
 ExGrid.Script.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
 ExGrid.Script.ExGrid<TRow>.OutlinedColumns.set -> void
+ExGrid.Script.ExGrid<TRow>.PageSize.get -> int?
+ExGrid.Script.ExGrid<TRow>.PageSize.set -> void
 ExGrid.Script.ExGrid<TRow>.PasteByteCap.get -> long?
 ExGrid.Script.ExGrid<TRow>.PasteByteCap.set -> void
 ExGrid.Script.ExGrid<TRow>.PasteMaySpill.get -> bool
@@ -647,14 +679,22 @@ ExGrid.Script.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!>?
 ExGrid.Script.ExGrid<TRow>.PointedAt.set -> void
 ExGrid.Script.ExGrid<TRow>.Presentation.get -> ExGrid.GridPresentationDefaults?
 ExGrid.Script.ExGrid<TRow>.Presentation.set -> void
+ExGrid.Script.ExGrid<TRow>.RangeRequestMargin.get -> int
+ExGrid.Script.ExGrid<TRow>.RangeRequestMargin.set -> void
 ExGrid.Script.ExGrid<TRow>.ReferencesIn.get -> ExGrid.Data.ScriptFunction?
 ExGrid.Script.ExGrid<TRow>.ReferencesIn.set -> void
 ExGrid.Script.ExGrid<TRow>.ReferenceText.get -> ExGrid.Data.ScriptFunction?
 ExGrid.Script.ExGrid<TRow>.ReferenceText.set -> void
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from) -> System.Threading.Tasks.Task!
+ExGrid.Script.ExGrid<TRow>.RowHeadings.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.RowHeadings.set -> void
+ExGrid.Script.ExGrid<TRow>.RowHeadingWidth.get -> double?
+ExGrid.Script.ExGrid<TRow>.RowHeadingWidth.set -> void
 ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?
 ExGrid.Script.ExGrid<TRow>.RowHeight.set -> void
+ExGrid.Script.ExGrid<TRow>.RowKind.get -> System.Func<TRow!, ExGrid.Rows.RowKind>?
+ExGrid.Script.ExGrid<TRow>.RowKind.set -> void
 ExGrid.Script.ExGrid<TRow>.Rows.get -> System.Collections.Generic.IReadOnlyList<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Rows.set -> void
 ExGrid.Script.ExGrid<TRow>.RowSource.get -> ExGrid.IGridSource<TRow!>?
@@ -664,10 +704,16 @@ ExGrid.Script.ExGrid<TRow>.ShowFillHandle.get -> bool
 ExGrid.Script.ExGrid<TRow>.ShowFillHandle.set -> void
 ExGrid.Script.ExGrid<TRow>.ShowFormulaBar.get -> bool
 ExGrid.Script.ExGrid<TRow>.ShowFormulaBar.set -> void
+ExGrid.Script.ExGrid<TRow>.ShowSelectionSummary.get -> bool
+ExGrid.Script.ExGrid<TRow>.ShowSelectionSummary.set -> void
 ExGrid.Script.ExGrid<TRow>.Source.get -> ExGrid.IGridSource<TRow!>?
 ExGrid.Script.ExGrid<TRow>.Source.set -> void
 ExGrid.Script.ExGrid<TRow>.StripeRows.get -> bool
 ExGrid.Script.ExGrid<TRow>.StripeRows.set -> void
+ExGrid.Script.ExGrid<TRow>.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
+ExGrid.Script.ExGrid<TRow>.SummaryFigures.set -> void
+ExGrid.Script.ExGrid<TRow>.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
+ExGrid.Script.ExGrid<TRow>.SummaryFiguresChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.ViewportHeight.get -> ExGrid.ViewportSize?
 ExGrid.Script.ExGrid<TRow>.ViewportHeight.set -> void
 ExGrid.Script.ExGrid<TRow>.ViewportWidth.get -> ExGrid.ViewportSize?
