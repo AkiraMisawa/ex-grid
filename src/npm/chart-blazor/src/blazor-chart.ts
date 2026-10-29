@@ -9,7 +9,7 @@ import {
     type SurfaceSlice, type SurfaceView,
 } from '@ex-grid/chart';
 import type { GridDensity } from '@ex-grid/core';
-import { crossingCalls, HeldMessages } from '@ex-grid/blazor-shared';
+import { crossingCalls, HeldMessages, type WireHeld } from '@ex-grid/blazor-shared';
 import { chartRazorChrome, chartRazorSlots } from './razor-slots';
 import { ScriptFunctionError, ScriptModules, type ScriptCalls, type WireScript } from './scripts';
 import { readDefinition, readSurface, scriptsOf, surfaceScriptsOf, type WireDefinition, type WireSurface } from './wire';
@@ -68,6 +68,12 @@ export interface BlazorChart {
     slotRendered(id: number, version: number, contents: HTMLElement | null): void;
     /** The call held as `held`, too large for a message of its own, as .NET takes it. */
     take(held: number): Promise<Uint8Array<ArrayBuffer>>;
+    /**
+     * .NET refused the range the user narrowed on the definition numbered `generation`, since the Consumer had handed
+     * another before the release reached it (ADR-0272, spine rule 6): the range returns to the whole unless the user
+     * has narrowed it again since.
+     */
+    dropRange(generation: number): void;
     /** Stops the chart and empties its element. */
     dispose(): void;
 }
@@ -88,7 +94,9 @@ export async function attachChart(root: HTMLElement, dotnet: DotNetHandle, json:
     const holding = new HeldMessages(init.circuit);
     const crossing = crossingCalls(dotnet, holding, heldChartCalls);
     const send = heard(crossing);
-    const handlers = chartHandlers(send, () => generation);
+    // The definition the user's range was last narrowed on, which a refusal of it names.
+    let rangeOn: number | undefined;
+    const handlers = chartHandlers(send, () => generation, () => { rangeOn = generation; });
     const slots = chartRazorSlots(crossing);
     const place = new Place<ChartHandle, ChartOptions>(root, (options: ChartOptions) => createChart(root, options));
     // The definition drawn, or none while the chart is refused in its place. It and its generation move only once the
@@ -131,6 +139,9 @@ export async function attachChart(root: HTMLElement, dotnet: DotNetHandle, json:
         },
         slotRendered: (id: number, version: number, contents: HTMLElement | null) => { slots.rendered(id, version, contents); },
         take: (held: number) => holding.take(held),
+        dropRange: (refused: number) => {
+            if (rangeOn === refused) place.drawing?.dropRange();
+        },
         dispose: () => {
             send.stop();
             // The contents go back to their holders before the chart takes its slots away, so the chart's cleanup finds
@@ -162,6 +173,8 @@ export interface WireSurfaceOptions {
 
 /** What `attachSurface` and `update` are handed: the parameters, and the definition when the Consumer handed another. */
 export interface WireSurfaceUpdate {
+    /** Whether the surface is across Blazor Server's circuit, as {@link WireChart.circuit} says: read at the attach. */
+    readonly circuit: boolean;
     readonly options: WireSurfaceOptions;
     readonly definition?: WireSurface;
     /** Which of the Consumer's definitions it is; with `definition`. A slice carries it back, as a click does. */
@@ -174,8 +187,11 @@ export interface BlazorSurface {
     update(json: string): Promise<void>;
     /** Saves the drawing as it stands (`SurfaceHandle.download`); false while the surface is refused. */
     download(format: ChartFileFormat): Promise<boolean>;
-    /** The drawing as it stands as SVG text, or `null` once the surface is stopped or while it is refused. */
-    svgText(): string | null;
+    /** The drawing as it stands as SVG text, or `null` once the surface is stopped or while it is refused: held when it
+     * is too large for a message of its own, and .NET takes it with `take`. */
+    svgText(): string | WireHeld | null;
+    /** The text held as `held`, as .NET takes it. */
+    take(held: number): Promise<Uint8Array<ArrayBuffer>>;
     /** Stops the surface and empties its element. */
     dispose(): void;
 }
@@ -185,6 +201,7 @@ export async function attachSurface(root: HTMLElement, dotnet: DotNetHandle, jso
     const init = parsed<WireSurfaceUpdate>(json);
     if (init.definition === undefined) throw new Error('Internal: .NET attached a surface without its definition.');
     let generation = generationOf(init);
+    const holding = new HeldMessages(init.circuit);
     const send = heard(dotnet);
     const handlers: Required<Pick<SurfaceOptions, 'onViewChanged' | 'onSliceChanged'>> = Object.freeze({
         onViewChanged: (view: SurfaceView) => { send('viewChanged', view); },
@@ -226,13 +243,16 @@ export async function attachSurface(root: HTMLElement, dotnet: DotNetHandle, jso
             const checked = fileFormat(format);
             return place.drawing === undefined ? Promise.resolve(false) : place.drawing.download(checked);
         },
+        // A drawing is many times the 32 KB a message across Blazor Server's circuit may carry.
         svgText: () => {
             const text = place.drawing?.svgText();
-            return text === undefined ? null : text;
+            return text === undefined ? null : holding.crossing(text) ?? text;
         },
+        take: (held: number) => holding.take(held),
         dispose: () => {
             send.stop();
             place.destroy();
+            holding.clear();
         },
     });
 }
@@ -402,10 +422,14 @@ function generationOf(wire: { readonly generation?: number }): number {
 }
 
 // One function per event, made once, so the chart sees the same handler on every update.
-function chartHandlers(send: Send, generation: () => number): ChartHandlers {
+function chartHandlers(send: Send, generation: () => number, ranged: () => void): ChartHandlers {
     return Object.freeze({
         onSeriesVisibilityChanged: (change: SeriesVisibility) => { send('seriesVisibilityChanged', change); },
-        onRangeChanged: (range: ChartRange | null) => { send('rangeChanged', range); },
+        // Said with the definition it was narrowed on, which .NET holds against the one the Consumer last handed.
+        onRangeChanged: (range: ChartRange | null) => {
+            ranged();
+            send('rangeChanged', { generation: generation(), range });
+        },
         onScaleChanged: (scale: AxisScale) => { send('scaleChanged', scale); },
         // The Row Key is the JSON value .NET sent for it, and goes back as it came.
         onPointClick: (click: ChartPointClick) => {

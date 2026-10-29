@@ -25,4 +25,9 @@
     <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The stream a held message crosses as, as the grid's paste tests stand it in. -->
+    <Compile Include="..\ExGrid.Components\Support\FakeJSStream.cs" Link="Support\FakeJSStream.cs" />
+  </ItemGroup>
+
 </Project>

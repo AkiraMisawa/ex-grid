@@ -199,23 +199,41 @@ describe('the chart the component attached', () => {
     });
 });
 
+// A grid of `side` by `side` values.
+const surfaceJson = (circuit: boolean, side = 2): string => JSON.stringify({
+    circuit,
+    options: { width: 640, height: 420, sliceWidth: 420, density: 'standard', title: null, description: null, view: null, slice: null, fileName: null, hears: [] },
+    definition: {
+        form: 'grid',
+        x: { title: 'x', values: Array.from({ length: side }, (_, i) => i + 1), scale: 'categories', writing: null, formatCode: null, formatScript: null },
+        y: { title: 'y', values: Array.from({ length: side }, (_, j) => j + 1), scale: 'categories', writing: null, formatCode: null, formatScript: null },
+        z: Array.from({ length: side }, (_row, j) => Array.from({ length: side }, (_column, i) => i + j * side + 1)),
+        method: null, interpolated: null, zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null, zFormatCode: null, zFormatScript: null, notes: [],
+    },
+    generation: 1,
+});
+
 describe('the surface the component attached', () => {
+
     it('ADR-0370: the surface draws, and its SVG text is there until it stops', async () => {
-        const element = root();
-        const surface = await attachSurface(element, new FakeDotNet(), JSON.stringify({
-            options: { width: 640, height: 420, sliceWidth: 420, density: 'standard', title: null, description: null, view: null, slice: null, fileName: null, hears: [] },
-            definition: {
-                form: 'grid',
-                x: { title: 'x', values: [1, 2], scale: 'categories', writing: null, formatCode: null, formatScript: null },
-                y: { title: 'y', values: [1, 2], scale: 'categories', writing: null, formatCode: null, formatScript: null },
-                z: [[1, 2], [3, 4]],
-                method: null, interpolated: null, zTitle: 'z', zScale: 'proportional', centre: null, zTexts: null, zFormatCode: null, zFormatScript: null, notes: [],
-            },
-            generation: 1,
-        }));
+        const surface = await attachSurface(root(), new FakeDotNet(), surfaceJson(false));
         expect(surface.svgText()).toContain('<svg');
         surface.dispose();
         expect(surface.svgText()).toBeNull();
+    });
+
+    it('ADR-0282: across a circuit the SVG text, larger than a message may carry, is held for .NET to take', async () => {
+        const surface = await attachSurface(root(), new FakeDotNet(), surfaceJson(true, 20));
+        // A small one crosses as it is, held or not.
+        const small = await attachSurface(root(), new FakeDotNet(), surfaceJson(true));
+        expect(small.svgText()).toContain('<svg');
+        small.dispose();
+        const crossed = surface.svgText();
+        if (crossed === null || typeof crossed === 'string') throw new Error('The drawing crossed as it is.');
+        const taken = new TextDecoder().decode(await new Response(new Blob([await surface.take(crossed.held)]).stream()
+            .pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+        expect(JSON.parse(taken)).toContain('<svg');
+        surface.dispose();
     });
 });
 
@@ -364,16 +382,49 @@ describe('a Razor Chrome in the chart\'s slots', () => {
         field(filters, '[data-ex-chart-from]').value = '2';
         field(filters, '[data-ex-chart-to] input').value = '8';
         press(filters, '[data-ex-chart-apply]');
-        expect(dotnet.calls.filter(call => call.method === 'Heard')).toEqual([{ method: 'Heard', args: ['rangeChanged', { from: 2, to: 8 }] }]);
+        expect(dotnet.calls.filter(call => call.method === 'Heard')).toEqual([{ method: 'Heard', args: ['rangeChanged', { generation: 1, range: { from: 2, to: 8 } }] }]);
         // Reset range returns the range, and the fields with it, before .NET has drawn anything again.
         press(filters, '[data-ex-command="exchart.reset-range"]');
-        expect(dotnet.calls.at(-1)).toMatchObject({ method: 'Heard', args: ['rangeChanged', null] });
+        expect(dotnet.calls.at(-1)).toMatchObject({ method: 'Heard', args: ['rangeChanged', { generation: 1, range: null }] });
         expect(field(filters, '[data-ex-chart-from]').value).toBe('');
         expect(field(filters, '[data-ex-chart-to] input').value).toBe('');
         chart.dispose();
         // The contents are back in their holder, which .NET removes, and nothing is asked of .NET as the chart goes.
         expect(filters.parentElement?.hidden).toBe(true);
         expect(dotnet.calls.filter(call => call.method === 'UnmountSlot')).toEqual([]);
+    });
+
+    it('ADR-0272, spine rule 6: a range .NET refused as taken on a replaced definition returns to the whole, unless narrowed again since', async () => {
+        const dotnet = new SlotDotNet();
+        const chart = await attachChart(root(), dotnet, JSON.stringify({
+            circuit: true, options: { ...options, hears: ['rangeChanged'], razorSlots: ['toolbar'] }, definition: definition(), generation: 1,
+        } satisfies WireChart));
+        const first = dotnet.last('toolbar');
+        const contents = drawn(toolbarMarkup, first.version);
+        chart.slotRendered(first.id, first.version, contents);
+        press(contents, '[data-ex-command="exchart.filters"]');
+        const opened = dotnet.last('toolbar');
+        const filters = drawn(filtersMarkup, opened.version);
+        chart.slotRendered(opened.id, opened.version, filters);
+        const narrow = (from: string, to: string): void => {
+            field(filters, '[data-ex-chart-from]').value = from;
+            field(filters, '[data-ex-chart-to] input').value = to;
+            press(filters, '[data-ex-chart-apply]');
+        };
+        narrow('2', '8');
+        const resetEnabled = (): unknown => (dotnet.last('toolbar').data['commands'] as Array<{ id: string; enabled: boolean }>)
+            .find(command => command.id === 'exchart.reset-range')?.enabled;
+        expect(resetEnabled()).toBe(true);
+        const heard = dotnet.calls.filter(call => call.method === 'Heard').length;
+
+        // Refused for a definition the range was not narrowed on: nothing moves.
+        chart.dropRange(2);
+        expect(resetEnabled()).toBe(true);
+        // Refused for the one it was: the range is the whole again, and nothing is said back to .NET.
+        chart.dropRange(1);
+        expect(resetEnabled()).toBe(false);
+        expect(dotnet.calls.filter(call => call.method === 'Heard')).toHaveLength(heard);
+        chart.dispose();
     });
 
     it('ADR-0410, spine rule 6: ends typed into fields .NET drew, before the browser hears they were drawn, are the ones applied', async () => {
@@ -395,7 +446,7 @@ describe('a Razor Chrome in the chart\'s slots', () => {
         chart.slotRendered(opened.id, opened.version, contents);
         expect([field(contents, '[data-ex-chart-from]').value, field(contents, '[data-ex-chart-to] input').value]).toEqual(['2', '8']);
         press(contents, '[data-ex-chart-apply]');
-        expect(dotnet.calls.filter(call => call.method === 'Heard')).toEqual([{ method: 'Heard', args: ['rangeChanged', { from: 2, to: 8 }] }]);
+        expect(dotnet.calls.filter(call => call.method === 'Heard')).toEqual([{ method: 'Heard', args: ['rangeChanged', { generation: 1, range: { from: 2, to: 8 } }] }]);
         chart.dispose();
     });
 

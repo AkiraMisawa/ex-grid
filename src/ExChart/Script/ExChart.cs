@@ -465,9 +465,18 @@ public sealed class ExChart : ComponentBase, IAsyncDisposable
             }
             case "rangeChanged":
             {
-                ChartRange? range = payload.ValueKind == JsonValueKind.Null
+                // Narrowed on a definition the Consumer has since replaced: the data moved under the gesture before its
+                // release reached .NET, so it is refused, and the browser returns to the whole range (ADR-0272, spine rule 6).
+                var narrowedOn = payload.GetProperty("generation").GetInt32();
+                if (narrowedOn != _generation)
+                {
+                    _ = _mount?.TellAsync("dropRange", narrowedOn);
+                    return null;
+                }
+                var ends = payload.GetProperty("range");
+                ChartRange? range = ends.ValueKind == JsonValueKind.Null
                     ? null
-                    : new ChartRange(End(payload, "from"), End(payload, "to"), End(payload, "yFrom"), End(payload, "yTo"));
+                    : new ChartRange(End(ends, "from"), End(ends, "to"), End(ends, "yFrom"), End(ends, "yTo"));
                 return async () =>
                 {
                     var handed = Range;

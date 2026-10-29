@@ -286,6 +286,41 @@ internal sealed class ScriptMount(
         }
     }
 
+    /// <summary>Tells the browser's drawing something that answers nothing; nothing before it is attached, once it is
+    /// stopped, or when the circuit has gone.</summary>
+    public async Task TellAsync(string method, params object?[] args)
+    {
+        if (_handle is not { } handle || Disposed)
+            return;
+        try
+        {
+            await handle.InvokeVoidAsync(method, args);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the drawing with it.
+        }
+    }
+
+    /// <summary>Asks the browser's drawing for a text, which crosses held when it is too large for a message of its own
+    /// (<see cref="HeldCalls"/>); null before it is attached, once it is stopped, or when the circuit has gone.</summary>
+    public async Task<string?> AskTextAsync(string method)
+    {
+        if (_handle is not { } handle || Disposed)
+            return null;
+        try
+        {
+            var crossed = await handle.InvokeAsync<JsonElement>(method);
+            if (HeldCalls.IsHeld(crossed))
+                crossed = await HeldCalls.TakeAsync(handle, crossed);
+            return crossed.ValueKind == JsonValueKind.Null ? null : crossed.GetString();
+        }
+        catch (JSDisconnectedException)
+        {
+            return null;
+        }
+    }
+
     // The browser's events, handed to the Consumer one at a time in the order the browser raised them.
     internal async Task HeardAsync(string kind, JsonElement payload)
     {

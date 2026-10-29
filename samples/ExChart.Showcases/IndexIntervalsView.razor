@@ -22,6 +22,10 @@
 
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
+    // The showcases' own module: the position under the pointer is written in the browser, as React's showcase writes it,
+    // and the ticks are left as numbers.
+    private const string Formats = "./_content/ExChart.Showcases/showcase-formats.js";
+
     private static string Percent(object v) => Convert.ToDecimal(v, Invariant).ToString("0.00", Invariant) + "%";
 
     private RenderFragment Chart(ChartDefinition definition, string title, double width, double height) => Mud
@@ -49,7 +53,7 @@
         },
     ]);
 
-    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)") with { FormatCode = "0.0\"%\"" },
+    private static readonly ChartDefinition Estimates = new(ChartAxis.Numbers("Volatility (% a year)") with { FormatScript = ScriptFunction.Of(Formats, "percentOne") },
     [
         ChartSeries.Of("strategies", "Strategies", SeriesKind.Observation,
             IntervalData.Strategies.Select(s => new ChartPoint((double)s.Vol, s.Return) { Name = s.Name })) with

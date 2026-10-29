@@ -342,6 +342,17 @@ export class ChartElement {
         this.#paint();
     }
 
+    /**
+     * Returns the range the user narrowed to the whole without raising `onRangeChanged`: a Framework Adapter's
+     * refusal of a narrowing its host learned was taken against data replaced before it ended (ADR-0272, spine rule 6).
+     */
+    dropRange(): void {
+        this.#alive();
+        if (this.#range !== null) {
+            this.#showRange(null);
+        }
+    }
+
     /** Stops the chart: it hears nothing more and empties its element. */
     destroy(): void {
         if (this.#destroyed) {
@@ -913,13 +924,17 @@ export class ChartElement {
     // ---- What the user changes ----
 
     #setRange(range: ChartRange | null): void {
+        this.#showRange(range);
+        this.#options.onRangeChanged?.(range);
+    }
+
+    #showRange(range: ChartRange | null): void {
         this.#range = range;
         this.#filterError = null;
         // Chart Filters shows the range as it now stands, however it was set (ADR-0273).
         this.#writeFilterTexts();
         this.#rebuild();
         this.#paint();
-        this.#options.onRangeChanged?.(range);
     }
 
     #writeFilterTexts(): void {

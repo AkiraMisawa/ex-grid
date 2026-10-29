@@ -10,3 +10,13 @@ export function rateTenor(position) {
     const at = years.indexOf(position);
     return at >= 0 ? tenors[at] : `${Number(position.toFixed(4))}Y`;
 }
+
+/** A leverage, as the position under the pointer: two places and an x. */
+export function times(x) {
+    return `${x.toFixed(2)}x`;
+}
+
+/** A volatility in percent, as the position under the pointer: one place and a percent sign. */
+export function percentOne(x) {
+    return `${x.toFixed(1)}%`;
+}

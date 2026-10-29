@@ -3,6 +3,7 @@ using System.Text.Json;
 using Bunit;
 using ExChart.Engine;
 using ExChart.Script;
+using ExGrid.Components.Tests.Support;
 using ExGrid.Testing;
 using Microsoft.JSInterop;
 using Xunit;
@@ -32,6 +33,7 @@ public class ScriptChartTests : BunitContext
         _chart = _module.SetupModule("attachChart", _ => true);
         _chart.SetupVoid("update", _ => true).SetVoidResult();
         _chart.SetupVoid("dispose", _ => true).SetVoidResult();
+        _chart.SetupVoid("dropRange", _ => true).SetVoidResult();
         _surface = _module.SetupModule("attachSurface", _ => true);
         _surface.SetupVoid("update", _ => true).SetVoidResult();
         _surface.SetupVoid("dispose", _ => true).SetVoidResult();
@@ -152,16 +154,23 @@ public class ScriptChartTests : BunitContext
     public async Task A_range_is_raised_in_the_datas_terms()
     {
         var ranges = new List<ChartRange?>();
-        Render<ScriptChart>(ps => ps
+        var cut = Render<ScriptChart>(ps => ps
             .Add(c => c.Definition, Bonds(P(0, 1), P(5, 2)))
             .Add(c => c.Range, new ChartRange(1, null))
             .Add(c => c.OnRangeChanged, (ChartRange? r) => ranges.Add(r)));
         Assert.Equal("""{"from":1}""", Attached(_module, "attachChart").GetProperty("options").GetProperty("range").GetRawText());
 
         var bridge = Bridge("attachChart").Value;
-        await bridge.Heard("rangeChanged", Parsed("""{"from":2,"to":4}"""));
-        await bridge.Heard("rangeChanged", Parsed("null"));
+        await bridge.Heard("rangeChanged", Parsed("""{"generation":1,"range":{"from":2,"to":4}}"""));
+        await bridge.Heard("rangeChanged", Parsed("""{"generation":1,"range":null}"""));
         Assert.Equal([new ChartRange(2, 4), null], ranges);
+
+        // ADR-0272, spine rule 6: narrowed on data the Consumer replaced before the release reached .NET, the range is
+        // refused, and the browser is told to return the range of that definition to the whole.
+        cut.Render(ps => ps.Add(c => c.Definition, Bonds(P(0, 3), P(5, 4))));
+        await bridge.Heard("rangeChanged", Parsed("""{"generation":1,"range":{"from":2,"to":4}}"""));
+        Assert.Equal(2, ranges.Count);
+        Assert.Equal(1, Assert.Single(_chart.Invocations["dropRange"]).Arguments[0]);
     }
 
     [Fact] // ADR-0123: a module of another version is refused, and the root says so in the built-in words
@@ -182,6 +191,21 @@ public class ScriptChartTests : BunitContext
         await DisposeComponentsAsync();
         Assert.Single(_surface.Invocations["dispose"]);
         Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
+    [Fact] // ADR-0282, ADR-0005: the drawing's SVG text, held by the browser when it is larger than a message, is taken whole
+    public async Task The_svg_text_held_by_the_browser_is_taken_whole()
+    {
+        var cut = Render<ScriptSurface>(ps => ps.Add(c => c.Definition, Vol()));
+        var svg = "<svg>" + new string('x', 40_000) + "</svg>";
+        var json = JsonSerializer.Serialize(svg);
+        _surface.Setup<JsonElement>("svgText").SetResult(Parsed($$"""{"held":1,"bytes":{{json.Length}}}"""));
+        _surface.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 1)).SetResult(FakeJSStream.Of(json));
+        Assert.Equal(svg, await cut.InvokeAsync(() => cut.Instance.SvgTextAsync().AsTask()));
+
+        // One that fits crosses as it is.
+        _surface.Setup<JsonElement>("svgText").SetResult(Parsed(JsonSerializer.Serialize("<svg/>")));
+        Assert.Equal("<svg/>", await cut.InvokeAsync(() => cut.Instance.SvgTextAsync().AsTask()));
     }
 
     private static SurfaceDefinition Vol() => new(
@@ -420,8 +444,9 @@ public class ScriptChartTests : BunitContext
         cut.Render(ps => ps.Add(c => c.Range, new ChartRange(1000, 2000)));
         // The range crosses with the points read over it, never before them.
         Assert.Equal(updates, _chart.Invocations["update"].Count);
-        // Handled without waiting on the source: the ask it makes is not awaited, so no later event waits on it.
-        await Bridge("attachChart").Value.Heard("rangeChanged", Parsed("""{"from":3000,"to":4000}"""));
+        // Handled without waiting on the source: the ask it makes is not awaited, so no later event waits on it. Narrowed
+        // on the definition read from the first answer, the second the chart held after the one it opened on.
+        await Bridge("attachChart").Value.Heard("rangeChanged", Parsed("""{"generation":2,"range":{"from":3000,"to":4000}}"""));
         Assert.Equal(3, source.Asks.Count);
         Assert.Equal((3000.0, 4000.0), (source.Asks[2].Query.From!.Value, source.Asks[2].Query.To!.Value));
         Assert.Single(DefinitionsSent());

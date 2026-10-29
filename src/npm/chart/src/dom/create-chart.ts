@@ -14,6 +14,11 @@ export interface ChartHandle {
      * for a CSV of a chart its Chart Source thinned (ADR-0344), and once the chart is destroyed.
      */
     download(format: ChartFileFormat): Promise<boolean>;
+    /**
+     * Returns the range the user narrowed to the whole without raising `onRangeChanged`: for a Framework Adapter
+     * whose host learns only after the release that the data was replaced before it (ADR-0272, spine rule 6).
+     */
+    dropRange(): void;
 }
 
 /**
@@ -27,5 +32,6 @@ export function createChart(element: HTMLElement, options: ChartOptions): ChartH
         update: (next: ChartOptions) => { chart.update(next); },
         destroy: () => { chart.destroy(); },
         download: (format: ChartFileFormat) => chart.download(format),
+        dropRange: () => { chart.dropRange(); },
     });
 }
