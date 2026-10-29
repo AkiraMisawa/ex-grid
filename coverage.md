@@ -5,7 +5,7 @@
 | ExGrid | 92.6% | 87% |
 | ExSheet | 90.6% | 86.4% |
 | ExPivot | 88.5% | 82.7% |
-| ExChart | 90% | 84.9% |
+| ExChart | 89.9% | 84.9% |
 | ExBoard | 68.2% | 61% |
 | Data | 94.5% | 89.9% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/29/2026 - 22:15:23 |
+| Generated on: | 10/29/2026 - 23:07:56 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1399 |
 | Files: | 683 |
-| **Line coverage:** | 89.9% (94647 of 105205) |
-| Covered lines: | 94647 |
-| Uncovered lines: | 10558 |
-| Coverable lines: | 105205 |
-| Total lines: | 159086 |
-| **Branch coverage:** | 84.9% (54964 of 64717) |
-| Covered branches: | 54964 |
-| Total branches: | 64717 |
+| **Line coverage:** | 89.9% (94686 of 105255) |
+| Covered lines: | 94686 |
+| Uncovered lines: | 10569 |
+| Coverable lines: | 105255 |
+| Total lines: | 159130 |
+| **Branch coverage:** | 84.9% (54991 of 64745) |
+| Covered branches: | 54991 |
+| Total branches: | 64745 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -103,11 +103,11 @@
 |ExPivot.Script.PivotRazorSlot|24.1%|34.1%|
 
 </details>
-<details><summary>ExChart - 84.6%</summary>
+<details><summary>ExChart - 84.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.6%**|**76.1%**|
+|**ExChart**|**84.5%**|**76.3%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -152,20 +152,20 @@
 |ExChart.Script.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Script.ChartWire|80.8%|74.6%|
 |ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|87.8%|87.6%|
-|ExChart.Script.ExSurface|78.3%|61.1%|
+|ExChart.Script.ExChart|88%|87.3%|
+|ExChart.Script.ExSurface|79%|62.9%|
 |ExChart.Script.RowKeys|77.5%|71.6%|
 |ExChart.Script.ScriptBridge|86.3%|50%|
-|ExChart.Script.ScriptMount|77.6%|73%|
-|ExChart.Script.ScriptMount<T>|77.6%|73%|
+|ExChart.Script.ScriptMount|76.4%|71.1%|
+|ExChart.Script.ScriptMount<T>|76.4%|71.1%|
 |ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
 |ExChart.SnapshotChartData|100%|100%|
-|ExGrid.Script.CrossedText|80%|44.4%|
-|ExGrid.Script.HeldCalls|79.3%|62.5%|
-|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
+|ExGrid.Script.CrossedText|92%|66.6%|
+|ExGrid.Script.HeldCalls|80.4%|75%|
+|ExGrid.Script.HeldCalls<T>|80.4%|75%|
 |ExGrid.Script.RazorSlotHolders|92.7%|94.4%|
 |ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
 |ExGrid.Script.ScriptFunctionJson|100%||
@@ -733,7 +733,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1143,8 +1143,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1200,7 +1200,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**89.3%**|**81.4%**|
+|**ExSheet**|**89.3%**|**81.5%**|
 |ExGrid.Script.CrossedText|92%|72.2%|
 |ExGrid.Script.HeldCalls|80.4%|75%|
 |ExGrid.Script.HeldCalls<T>|80.4%|75%|
