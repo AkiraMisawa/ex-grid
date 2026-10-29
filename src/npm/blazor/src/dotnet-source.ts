@@ -180,7 +180,6 @@ export class DotNetSource implements GridSource<BlazorRow> {
             this.#publish();
         };
         let answer: Promise<unknown>;
-        // oxlint-disable-next-line ex-grid/no-catch -- a request refused as it is made never crossed: it is taken back, and the refusal rethrown
         try {
             answer = this.#dotnet.invokeMethodAsync(method, this.generation, text, asked);
         } catch (error) {
