@@ -472,6 +472,13 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Without it both commands are shown disabled. */
     readonly onPinnedCountChanged?: (count: number) => void;
     /**
+     * Hears that a `'stretch'` height has a parent that gives it none (ADR-0028, "A parent with no height is
+     * named"): the browser reports the Viewport as tall as its header band, so no row can be painted. Heard once,
+     * until a real height arrives, and never thrown, because a layout can pass through this state; a hidden tab
+     * reports 0, which is not this. The core says nothing itself: the Consumer, or its adapter, names the parent.
+     */
+    readonly onParentWithoutHeight?: () => void;
+    /**
      * The culture the grid reads typed text in (ADR-0370 section 10): a BCP 47 tag, or `'invariant'`, which
      * reads as .NET's InvariantCulture. A value typed into a filter's condition is read in it, and refused
      * where it is not the column's type as the culture writes it (ADR-0023). `'invariant'` unless given; the
@@ -920,6 +927,7 @@ interface Taken<Row> {
     readonly hideColumnMenu: boolean;
     readonly onColumnHidden: ((column: string) => void) | undefined;
     readonly onPinnedCountChanged: ((count: number) => void) | undefined;
+    readonly onParentWithoutHeight: (() => void) | undefined;
     readonly onHeaderGroupToggled: ((toggle: HeaderGroupToggle) => void) | undefined;
     readonly culture: GridCulture;
     readonly temporal: TemporalLike | undefined;
@@ -1746,6 +1754,9 @@ export class GridView<Row> {
     #groupToggles = new Map<Element, string>();
     #toggleFocus: ToggleFocus | undefined;
     #onPinnedCountChanged: ((count: number) => void) | undefined;
+    // Who hears a stretched height with no parent height, and whether it has heard this one (ADR-0028).
+    #onParentWithoutHeight: (() => void) | undefined;
+    #namedParentWithoutHeight = false;
     // The culture typed text is read in, and the Temporal a typed date is made with (ADR-0370 section 10).
     #culture: GridCulture = gridCulture(invariantLocale);
     #temporal: TemporalLike | undefined;
@@ -2116,6 +2127,7 @@ export class GridView<Row> {
                 () => { root.removeEventListener('paste', this.#onPaste); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
+                    this.#nameParentWithoutHeight(report.contentHeightPx);
                     this.#invalidate();
                 }),
                 reports.observeCeiling(tallest, ceilingPx => {
@@ -2428,7 +2440,7 @@ export class GridView<Row> {
         const {
             onSelectionChanged, onRefused, onAction, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
             onOverwriteNotice, onCellDoubleClick, onLeave, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
-            hideColumnMenu, onColumnHidden, onPinnedCountChanged,
+            hideColumnMenu, onColumnHidden, onPinnedCountChanged, onParentWithoutHeight,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onAction?: unknown; readonly onPaste?: unknown;
             readonly pasteMaySpill?: unknown;
@@ -2438,6 +2450,7 @@ export class GridView<Row> {
             readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
             readonly contextCommands?: unknown; readonly commandLabel?: unknown; readonly hideCopyWithHeaders?: unknown;
             readonly hideColumnMenu?: unknown; readonly onColumnHidden?: unknown; readonly onPinnedCountChanged?: unknown;
+            readonly onParentWithoutHeight?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
@@ -2563,6 +2576,9 @@ export class GridView<Row> {
         if (onPinnedCountChanged !== undefined && typeof onPinnedCountChanged !== 'function') {
             throw new TypeError('onPinnedCountChanged is a function of the Pinned Columns\' count.');
         }
+        if (onParentWithoutHeight !== undefined && typeof onParentWithoutHeight !== 'function') {
+            throw new TypeError('onParentWithoutHeight is a function of nothing.');
+        }
         const { locale = invariantLocale, temporal }: { readonly locale?: unknown; readonly temporal?: unknown } = options;
         if (typeof locale !== 'string') {
             throw new TypeError(`locale is a BCP 47 tag or '${invariantLocale}', not ${String(locale)} (ADR-0370 section 10).`);
@@ -2652,7 +2668,7 @@ export class GridView<Row> {
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             chrome: checkedChrome<Row>(options.chrome), hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
-            onPinnedCountChanged: options.onPinnedCountChanged, onHeaderGroupToggled: options.onHeaderGroupToggled, culture, temporal,
+            onPinnedCountChanged: options.onPinnedCountChanged, onParentWithoutHeight: options.onParentWithoutHeight, onHeaderGroupToggled: options.onHeaderGroupToggled, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findError: options.findError, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
             rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
@@ -2919,6 +2935,7 @@ export class GridView<Row> {
         this.#hideColumnMenu = taken.hideColumnMenu;
         this.#onColumnHidden = taken.onColumnHidden;
         this.#onPinnedCountChanged = taken.onPinnedCountChanged;
+        this.#onParentWithoutHeight = taken.onParentWithoutHeight;
         this.#onHeaderGroupToggled = taken.onHeaderGroupToggled;
         // A toggle no longer heard remembers no Focus for an answer that will not come.
         if (taken.onHeaderGroupToggled === undefined) this.#toggleFocus = undefined;
@@ -3109,6 +3126,22 @@ export class GridView<Row> {
         if (settled === this.#settledShown) return;
         this.#settledShown = settled;
         this.#root.toggleAttribute('data-ex-settled', settled);
+    }
+
+    // A stretched height whose parent gives it none is as tall as its content, which before any row is painted is
+    // the header band alone: the exact signature (ADR-0028, "A parent with no height is named"). Heard once until a
+    // real height arrives; a hidden tab reports 0 and is not this.
+    #nameParentWithoutHeight(heightPx: number): void {
+        if (this.#height !== 'stretch') return;
+        const band = this.#bandHeightPx;
+        if (heightPx > band + 0.5) {
+            this.#namedParentWithoutHeight = false;
+            return;
+        }
+        // Without a header the band is 0, which a hidden tab reports too: nothing tells them apart.
+        if (this.#namedParentWithoutHeight || band === 0 || heightPx < band - 0.5) return;
+        this.#namedParentWithoutHeight = true;
+        this.#onParentWithoutHeight?.();
     }
 
     // ---- Resolving (the C# core's PrepareRender) ------------------------------------------------------

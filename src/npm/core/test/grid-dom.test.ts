@@ -161,6 +161,27 @@ describe('createGrid', () => {
         expect(rowsOf(root)).toHaveLength(19);
     });
 
+    it('ADR-0028 (VZ-12b): a stretched height as tall as its header band is heard once, until a real height arrives', async () => {
+        let heard = 0;
+        const { root, told } = mount({
+            columns, rows: trades(100), rowHeight: 24, headerHeight: 32, viewportHeight: 'stretch',
+            onParentWithoutHeight: () => { heard++; },
+        });
+        await painted();
+        told.viewport({ contentHeightPx: 0 });
+        expect(heard).toBe(0);
+        told.viewport({ contentHeightPx: 32 });
+        told.viewport({ contentHeightPx: 32, contentWidthPx: 700 });
+        await painted();
+        expect(heard).toBe(1);
+        expect(rowsOf(root)).toHaveLength(0);
+        told.viewport({ contentHeightPx: 320 });
+        await painted();
+        expect(rowsOf(root).length).toBeGreaterThan(0);
+        told.viewport({ contentHeightPx: 32 });
+        expect(heard).toBe(2);
+    });
+
     it('ADR-0016: an Auto column grows to its widest painted value, and a number too wide for a Fixed one is ####', async () => {
         const rows = [{ book: 'A', notional: 123_456_789_012_345 }, { book: 'A much longer book name', notional: 1 }];
         const { root } = mount<Trade>({

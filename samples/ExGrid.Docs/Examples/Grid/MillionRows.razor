@@ -2,7 +2,7 @@
 @implements IDisposable
 
 @* The DOM does not grow with the row count: a million rows paint the same few dozen elements as a hundred. *@
-<ExGrid TRow="Trade" Source="_source" Columns="MillionTrades.Columns" HideColumnMenu="true"
+<ExGrid TRow="Trade" Source="_source" Columns="MillionTrades.Columns"
         ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
 
 <p style="margin: 12px 0 0; font-size: 14px">@MillionTrades.Holding(_source)</p>

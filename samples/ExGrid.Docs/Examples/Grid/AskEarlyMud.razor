@@ -12,7 +12,7 @@
         </MudText>
     </ToolBarContent>
     <ChildContent>
-        <ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns" HideColumnMenu="true" Chrome="_chrome"
+        <ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns" Chrome="_chrome"
                 RangeRequestMargin="@(_early ? ReadAheadTrades.Margin : 0)"
                 ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>

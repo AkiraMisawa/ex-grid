@@ -11,6 +11,7 @@ using ExGrid.Selection;
 using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 namespace ExGrid.Script;
@@ -40,6 +41,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private const string ScriptPath = "_content/ExGrid/ex-grid-core.min.js";
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IServiceProvider Services { get; set; } = default!;
 
     /// <summary>Where the rows come from (ADR-0001): the grid neither holds nor executes, and tells the source the
     /// columns, the Sort and the Filter. Exactly one of this and <see cref="Rows"/>.</summary>
@@ -1175,6 +1177,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("editDiscarded", OnEditDiscarded.HasDelegate);
         yield return ("cellDoubleClick", OnCellDoubleClick.HasDelegate);
         yield return ("leave", OnLeave.HasDelegate);
+        yield return ("parentWithoutHeight", ViewportHeight is { IsStretch: true });
         yield return ("overwriteNotice", OnOverwriteNotice.HasDelegate);
         yield return ("action", OnAction.HasDelegate);
         yield return ("nameBoxEntered", OnNameBoxEntered.HasDelegate);
@@ -1761,6 +1764,19 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         });
     }
 
+    // A Stretch-height grid whose parent gives it no height, as the core heard it: once, until a real height arrives
+    // (ADR-0028, "A parent with no height is named"). Named through the host's logger, never thrown, because a layout
+    // can pass through this state.
+    private Task NameAParentWithoutHeight()
+    {
+        var logger = (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("ExGrid.Script.ExGrid");
+        logger?.LogWarning(
+            "ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header " +
+            "and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, " +
+            "a grid track, or a flex item with min-height: 0 (ADR-0028).");
+        return Task.CompletedTask;
+    }
+
     private Func<Task> Prepare(string kind, JsonElement payload)
     {
         switch (kind)
@@ -1827,6 +1843,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             case "leave":
                 return () => OnLeave.InvokeAsync();
+            case "parentWithoutHeight":
+                return NameAParentWithoutHeight;
             case "overwriteNotice":
             {
                 var notice = new GridOverwriteNotice(

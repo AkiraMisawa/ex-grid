@@ -202,7 +202,7 @@ public sealed record GridColumn<TRow>
             align: CellAlign.Center, headerAlign: CellAlign.Center);
 
     /// <summary>The slice filtering and sorting need — handed to the engine as-is.</summary>
-    public ColumnInfo<TRow> Info { get; }
+    public ColumnInfo<TRow> Info { get; private init; }
 
     /// <summary>What the column is addressed by — in the Sorts list, the Filter and every
     /// notification that names a column. Unique among a grid's columns.</summary>
@@ -311,9 +311,16 @@ public sealed record GridColumn<TRow>
     /// the row and the core's focus request for the cell (ADR-0037).</summary>
     public RenderFragment<TemplateCellContext<TRow>>? Template { get; }
 
-    /// <summary>Whether the query engine will sort or filter on this column. False only
-    /// for an Action or Mark Column, which has no value to order by (ADR-0020/0043).</summary>
-    public bool IsQueryable => Info.IsQueryable;
+    /// <summary>Whether the query engine will sort or filter on this column. False for an
+    /// Action or Mark Column, which has no value to order by (ADR-0020/0043), and for a column
+    /// the Consumer declares so with <c>IsQueryable = false</c>, because its source cannot
+    /// order or filter by it: a header click then sorts nothing and its menu offers commands
+    /// only.</summary>
+    public bool IsQueryable
+    {
+        get => Info.IsQueryable;
+        init => Info = Info with { IsQueryable = value };
+    }
 
     /// <summary>The cells' alignment (ADR-0016): Auto derives from the type — the
     /// ex-cell-numeric behaviour — and an explicit value beats the derivation.</summary>

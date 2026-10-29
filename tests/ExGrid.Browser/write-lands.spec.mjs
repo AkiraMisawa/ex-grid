@@ -1,5 +1,5 @@
 import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
-import { REACT, SERVER } from './hosting.mjs';
+import { SERVER } from './hosting.mjs';
 import { expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
 // A write lands as the user entered it, on the row the user aimed it at (ADR-0142, rewritten
@@ -23,9 +23,9 @@ function grid(page) {
 const NOTIONAL = 2;
 const ACT = 3;
 
-// The text a Notional written as `typed` is painted with. C#'s decimal keeps the places it was typed with; the
-// Script Core's number keeps none, so the React page writes every Notional with two (ADR-0350's values).
-const written = (typed) => (REACT ? Number(typed).toFixed(2) : typed);
+// The text a Notional written as `typed` is painted with. The Script Core's number keeps no places of its own, so
+// the page writes every Notional with two, on React and Blazor alike (ADR-0350's values).
+const written = (typed) => Number(typed).toFixed(2);
 
 function cell(page, row, column) {
     return grid(page).locator(`[id$='r${row}c${column}']`);

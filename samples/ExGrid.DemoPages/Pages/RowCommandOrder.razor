@@ -32,7 +32,6 @@
     private readonly MudGridChrome _chrome = new();
     private readonly PushedSource<CommandRow> _source = new(Rows(), rowKey: Key);
     private static CommandRow[] Rows() => Enumerable.Range(0, 80).Select(id => new CommandRow(id)).ToArray();
-    private int _version;
     private readonly List<string> _trace = [];
     private TaskCompletionSource? _release;
     private MarkAdapter _marks = default!;
@@ -48,8 +47,8 @@
         Record("finished");
     }
     private void Release() => _release?.TrySetResult();
-    private void Drop() => _source.Push([.. _source.Window.Where(row => row.Id >= 2)], rowSequenceVersion: ++_version);
-    private void Restore() => _source.Push(Rows(), rowSequenceVersion: ++_version);
+    private void Drop() => _source.Push([.. _source.Window.Where(row => row.Id >= 2)], orderMoved: true);
+    private void Restore() => _source.Push(Rows(), orderMoved: true);
     private void Act(GridActionEventArgs<CommandRow> args) => Record($"action:{args.Row.Id}");
     private void Refused(GridRefusal<CommandRow> refusal) => Record(refusal switch
     {

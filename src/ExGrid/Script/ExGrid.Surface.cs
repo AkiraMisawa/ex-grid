@@ -139,8 +139,9 @@ public sealed partial class ExGrid<TRow>
     /// refusals (<see cref="RefusalLabelIds"/>, <see cref="KeyRefusalLabelIds"/>), its summary
     /// (<see cref="SummaryLabelIds"/>), its find panel's (<see cref="FindPanelLabelIds"/>) and its reload notice
     /// (<see cref="ReloadNoticeLabelIds"/>), as the grid is made and whenever another function is set, and the browser
-    /// words the grid from what it answered (ADR-0440 section 4). The commands <see cref="ContextCommands"/> answers
-    /// take their words from <see cref="ContextCommandLabel"/>.
+    /// words the grid from what it answered (ADR-0440 section 4). Pass a method or a function held in a field: a lambda
+    /// that captures a local is another function on every render, and every id is asked again. The commands
+    /// <see cref="ContextCommands"/> answers take their words from <see cref="ContextCommandLabel"/>.
     /// </summary>
     [Parameter] public Func<string, string?>? CommandLabel { get; set; }
 
@@ -168,7 +169,8 @@ public sealed partial class ExGrid<TRow>
     {
         if (CommandLabel is not { } label)
             return;
-        if (!ReferenceEquals(label, _labelled))
+        // Delegate equality, so a method group made again on each render is the same function.
+        if (label != _labelled)
         {
             var labels = new List<KeyValuePair<string, string>>();
             foreach (var id in LabelIds)
@@ -477,10 +479,28 @@ public sealed partial class ExGrid<TRow>
             request.GetProperty("withHeaders").GetBoolean(), request.GetProperty("rowSequenceVersion").GetInt32());
         return InTurnAsync(new Heard(Answered(number, async cancelled =>
         {
-            var answer = CopyAnswer is { } now ? now(asked)
-                : CopyAnswerAsync is { } later ? await later(asked, cancelled)
-                : throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
-            ArgumentNullException.ThrowIfNull(answer);
+            GridCopyAnswer answer;
+            try
+            {
+                answer = CopyAnswer is { } now ? now(asked)
+                    : CopyAnswerAsync is { } later ? await later(asked, cancelled)
+                    : throw new InvalidOperationException("Internal: the browser asked a copy's answer of a Consumer that took CopyAnswer away.");
+                ArgumentNullException.ThrowIfNull(answer);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException && cancelled.IsCancellationRequested))
+            {
+                // A copy whose answer failed is said where the copy was made, and writes nothing (CON-8, ADR-0005): the
+                // browser refuses it aloud and surfaces the failure, as the core does for a script's failed answer. The
+                // grid goes on, where handing it to the renderer would end the circuit over one copy. Only the type
+                // crosses: an exception's message is the server's, which Blazor keeps from the browser.
+                return Json(json =>
+                {
+                    json.WriteStartObject();
+                    json.WriteString("kind", "failed");
+                    json.WriteString("error", ex.GetType().FullName);
+                    json.WriteEndObject();
+                });
+            }
             return Json(json =>
             {
                 json.WriteStartObject();
@@ -527,7 +547,7 @@ public sealed partial class ExGrid<TRow>
                 var summarize = OnSummarize ?? throw new InvalidOperationException("Internal: the browser asked OnSummarize, which the Consumer took away.");
                 result = await summarize(asked, cancelled);
             }
-            return SummaryJson(result);
+            return SummaryJson(result, FocusFormat(asked.Focus));
         }), Answers: true, SendsState: false));
     }
 
@@ -539,7 +559,31 @@ public sealed partial class ExGrid<TRow>
         return figures;
     }
 
-    private static string SummaryJson(GridSummaryResult result) => Json(json =>
+    // The format of the Focus's column where it is a Number column with one (ADR-0130): the figures take it, a grid's
+    // formats being its columns', as Excel's status bar takes the active cell's.
+    private Func<object, string>? FocusFormat(CellPosition? focus)
+        => focus is { } cell && cell.Column < Columns.Count && Columns[cell.Column] is { Type: ColumnType.Number, Format: { } format }
+            ? format
+            : null;
+
+    // A figure's text where the answer gave none: in the Focus column's format, written here because the format is the
+    // Consumer's .NET function, which the browser cannot run on a figure no row holds. Counts keep their own text, and
+    // a format written for the column's own type that cannot take the figure leaves the browser to write it (ADR-0130).
+    private static string? FormattedFigure(SummaryFigures figure, Data.AggregateResult value, Func<object, string>? format)
+    {
+        if (format is null || SummaryFigureOrder.IsCount(figure) || !value.IsNumber)
+            return null;
+        try
+        {
+            return format(value.Exact is { } exact ? exact : value.Number);
+        }
+        catch (InvalidCastException)
+        {
+            return null;
+        }
+    }
+
+    private static string SummaryJson(GridSummaryResult result, Func<object, string>? format) => Json(json =>
     {
         ArgumentNullException.ThrowIfNull(result);
         json.WriteStartObject();
@@ -563,7 +607,8 @@ public sealed partial class ExGrid<TRow>
             json.WriteStartObject("texts");
             foreach (var figure in SummaryFigureOrder.Each)
             {
-                if (result.Figures.HasFlag(figure) && result.TextOf(figure) is { } text)
+                if (result.Figures.HasFlag(figure)
+                    && (result.TextOf(figure) ?? FormattedFigure(figure, result[figure] ?? throw new InvalidOperationException($"Internal: a summary answered '{figure}' without its figure."), format)) is { } text)
                     json.WriteString(ScriptJson.Camel(figure), text);
             }
             json.WriteEndObject();

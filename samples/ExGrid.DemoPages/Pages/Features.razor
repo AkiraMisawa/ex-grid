@@ -33,6 +33,8 @@
     <span id="clear-status">Cleared: @_clearStatus</span>
     <span id="history-status">History: @_historyStatus</span>
     <span id="copy-status">Copy refused: @_copyStatus</span>
+    @* A refusal of a kind this page has no words of its own for, shown by name. *@
+    <span id="other-refused-status">Other refusal: @_otherRefusedStatus</span>
     @* A refusal is the grid telling the user their write did not happen. The built-in Chrome words
        it and the grid's live region announces it (ADR-0203), so this line only shows the reason by
        name, and is not a live region: one would say the refusal a second time. *@
@@ -411,13 +413,13 @@
         // its mark. Which is which is this side's convention, not the grid's.
         new("Notional", ColumnType.Number, t => t.Notional,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(140)), editable: true,
-            validate: _rules.ValidatorFor("Notional")),
+            validate: _rules.ValidatorFor("Notional"), format: TwoPlaces),
         // Deliberately too narrow for its values: what #### looks like, and what the
         // clipboard must never receive (ADR-0016 / CP-5). The label is the full word,
         // so the header's own ellipsis is the real thing and widening the column
         // restores it along with the values.
         new("Narrow", ColumnType.Number, t => t.Notional,
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(48)), format: TwoPlaces),
         // ISO, and the widths sum under the Viewport minus its scrollbar gutter: a
         // horizontal bar here would sit exactly where the browser suite drags into the
         // bottom edge band (SL-14/15), the CLAUDE.md gutter trap in its purest form.
@@ -426,6 +428,10 @@
         new("Confirmed", ColumnType.Boolean, t => t.Confirmed,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
     ];
+
+    // A notional in two places, as a decimal's own text kept its scale on the C# core's grid: the Script grid writes
+    // an unformatted number as Excel's General does (0.3, not 0.30).
+    private static string TwoPlaces(object value) => ((decimal)value).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string IsoDate(object value)
         => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
@@ -440,6 +446,7 @@
     private string _pasteStatus = "—";
     private string _pasteFields = "—";
     private string _copyStatus = "—";
+    private string _otherRefusedStatus = "—";
     private string _pasteRefusedStatus = "—";
     private string _editDiscardedStatus = "—";
     private string _contextStatus = "—";
@@ -682,8 +689,9 @@
                 OnActionRefused(action);
                 break;
             default:
-                // One this page does not word is a defect to see, not a sentence to guess (principle 1).
-                throw new ArgumentOutOfRangeException(nameof(refusal), refusal, "A refusal this page does not word.");
+                // One this page has no words for is shown by name, not guessed at (principle 1): still reported.
+                Status(refusal.GetType().Name, refusal.ToString(), s => _otherRefusedStatus = s);
+                break;
         }
     }
 

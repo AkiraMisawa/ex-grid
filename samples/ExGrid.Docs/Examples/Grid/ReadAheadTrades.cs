@@ -73,7 +73,7 @@ public sealed class ReadAheadTrades : IGridSource<Trade>
         StateChanged?.Invoke();
     }
 
-    // This server neither sorts nor filters, and its grid hides the column menu: the grid never asks.
+    // This server neither sorts nor filters, and no column is queryable: the grid never asks.
 
     /// <inheritdoc />
     public void OnSortChanged(IReadOnlyList<SortSpec> sorts)

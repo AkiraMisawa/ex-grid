@@ -96,7 +96,7 @@ test.describe('in a box that follows the window', () => {
     });
 
     test('a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044)', async ({ page }) => {
-        // This grid sorts and has no filter sink: the popover is the menu alone.
+        // This grid's Trader column cannot be sorted or filtered: the popover is the menu alone, Hide its one enabled item.
         const grid = page.locator('#window-box .ex-grid');
         await grid.locator("[id$='r1c1']").click({ force: true });
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -110,7 +110,7 @@ test.describe('in a box that follows the window', () => {
 
         await expect(grid.locator('.ex-popover')).toHaveCount(0);
         await expectKeyboardOn(grid);
-        await expect(page.locator('#sort-status')).toHaveText('Sorts: none');
+        await expect(page.locator('#hidden-status')).toHaveText('Hidden: none');
     });
 
     test('a column menu with less than a row of room closes, and the keyboard is the grid\'s (UX-11a, ADR-0040)', async ({ page }) => {

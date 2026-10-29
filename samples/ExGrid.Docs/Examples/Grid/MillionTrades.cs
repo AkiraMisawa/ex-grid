@@ -16,17 +16,17 @@ public static class MillionTrades
     private static readonly string[] Instruments = ["UST 10Y", "Bund 5Y", "EUR/USD", "USD/JPY", "iTraxx Main", "CDX IG", "SPX Dec", "NKY Mar"];
     private static readonly string[] Currencies = ["USD", "EUR", "JPY", "GBP"];
 
-    /// <summary>The columns of a trade. This server neither sorts nor filters, so its grid hides the column menu, which
-    /// offers both.</summary>
+    /// <summary>The columns of a trade. This server neither sorts nor filters, so no column is queryable: a header click
+    /// sorts nothing, and a column's menu offers its commands only.</summary>
     public static readonly GridColumn<Trade>[] Columns =
     [
-        new("Id", ColumnType.Number, t => t.Id),
-        new("Book", ColumnType.Text, t => t.Book),
-        new("Trader", ColumnType.Text, t => t.Trader),
-        new("Instrument", ColumnType.Text, t => t.Instrument),
-        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
-        new("Price", ColumnType.Number, t => t.Price),
-        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+        new("Id", ColumnType.Number, t => t.Id) { IsQueryable = false },
+        new("Book", ColumnType.Text, t => t.Book) { IsQueryable = false },
+        new("Trader", ColumnType.Text, t => t.Trader) { IsQueryable = false },
+        new("Instrument", ColumnType.Text, t => t.Instrument) { IsQueryable = false },
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")) { IsQueryable = false },
+        new("Price", ColumnType.Number, t => t.Price) { IsQueryable = false },
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly) { IsQueryable = false },
     ];
 
     /// <summary>

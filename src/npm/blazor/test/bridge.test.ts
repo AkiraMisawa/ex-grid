@@ -267,15 +267,14 @@ describe('texts', () => {
     });
 });
 
-function gate(): { readonly gate: WriteGate<string, number>; readonly taken: Sent<string, number>[]; readonly discarded: number[] } {
+function gate(): { readonly gate: WriteGate<string, number>; readonly taken: Sent<string, number>[] } {
     const taken: Sent<string, number>[] = [];
-    const discarded: number[] = [];
-    return { gate: new WriteGate<string, number>(message => { taken.push(message); }, given => { discarded.push(given); }), taken, discarded };
+    return { gate: new WriteGate<string, number>(message => { taken.push(message); }), taken };
 }
 
 describe('writes of the user\'s own', () => {
-    it('ADR-0142 D1: what .NET sends while it handles a write is taken in once it is handled, the last state of a run alone', async () => {
-        const { gate: held, taken, discarded } = gate();
+    it('ADR-0142 D1 / ADR-0240: what .NET sends while it handles a write is taken in once it is handled, every state in its order', async () => {
+        const { gate: held, taken } = gate();
         const settle: (() => void)[] = [];
         const handling = held.handling(new Promise<void>(resolve => { settle.push(resolve); }));
         held.receive({ state: 1 });
@@ -286,8 +285,8 @@ describe('writes of the user\'s own', () => {
         expect(taken).toEqual([]);
         settle[0]?.();
         await handling;
-        expect(taken).toEqual([{ state: 2 }, { update: 'columns' }, { state: 4 }]);
-        expect(discarded).toEqual([1, 3]);
+        // A Window replaced by the next is still one the source held: a row command whose row it lacked lost it.
+        expect(taken).toEqual([{ state: 1 }, { state: 2 }, { update: 'columns' }, { state: 3 }, { state: 4 }]);
         held.receive({ state: 5 });
         expect(taken.at(-1)).toEqual({ state: 5 });
     });

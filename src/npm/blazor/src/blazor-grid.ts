@@ -276,7 +276,7 @@ export function attach(
             source.take(message.state);
             marks.changed();
         }
-    }, held => { rows.discard(held.window, held.seq); });
+    });
     const write = (kind: HeardKind, payload: unknown): Promise<unknown> => gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload));
     const heard = handlers(dotnet, write, asking);
     const paint = cellPaint(dotnet, columns);
@@ -356,7 +356,7 @@ export function parsed<T>(json: string): T {
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
     | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onHeaderGroupToggled' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave'
-    | 'onOverwriteNotice' | 'onAction' | 'onNameBoxEntered' | 'onReferenceKeyColoursChanged'>>;
+    | 'onOverwriteNotice' | 'onAction' | 'onNameBoxEntered' | 'onReferenceKeyColoursChanged' | 'onParentWithoutHeight'>>;
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
@@ -406,6 +406,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
         onEditDiscarded: reason => { send('editDiscarded', reason); },
         onCellDoubleClick: cell => { send('cellDoubleClick', cell); },
         onLeave: () => { send('leave', null); },
+        onParentWithoutHeight: () => { send('parentWithoutHeight', null); },
         onOverwriteNotice: notice => { send('overwriteNotice', notice); },
         onAction: event => { send('action', { row: event.row.id, column: event.column, action: event.action }); },
         onNameBoxEntered: typed => { send('nameBoxEntered', typed); },
@@ -661,6 +662,7 @@ function gridOptions(
         ...(hears.has('editDiscarded') ? { onEditDiscarded: heard.onEditDiscarded } : {}),
         ...(hears.has('cellDoubleClick') ? { onCellDoubleClick: heard.onCellDoubleClick } : {}),
         ...(hears.has('leave') ? { onLeave: heard.onLeave } : {}),
+        ...(hears.has('parentWithoutHeight') ? { onParentWithoutHeight: heard.onParentWithoutHeight } : {}),
         ...(hears.has('overwriteNotice') ? { onOverwriteNotice: heard.onOverwriteNotice } : {}),
         ...(hears.has('action') ? { onAction: heard.onAction } : {}),
         ...(hears.has('nameBoxEntered') ? { onNameBoxEntered: heard.onNameBoxEntered } : {}),
@@ -915,7 +917,9 @@ function figureNumberOf(value: unknown): number | undefined {
 function copyAnswerOf(answer: unknown): GridCopyAnswer {
     if (answer === null) throw new DOMException('.NET gave the copy no answer: the component is gone.', 'AbortError');
     if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a copy with something other than JSON text.');
-    const read = parsed<{ readonly kind?: unknown; readonly text?: unknown; readonly html?: unknown; readonly sentence?: unknown }>(answer);
+    const read = parsed<{ readonly kind?: unknown; readonly text?: unknown; readonly html?: unknown; readonly sentence?: unknown; readonly error?: unknown }>(answer);
+    // The Consumer's answer failed in .NET (CON-8): the core refuses the copy aloud and surfaces this.
+    if (read.kind === 'failed' && typeof read.error === 'string') throw new Error(`[ex-grid] the grid failed to build a copy: the Consumer's answer threw ${read.error}.`);
     if (read.kind === 'write' && typeof read.text === 'string' && typeof read.html === 'string') return { kind: 'write', text: read.text, html: read.html };
     if (read.kind === 'refuse' && typeof read.sentence === 'string') return { kind: 'refuse', sentence: read.sentence };
     throw new TypeError(`Internal: .NET answered a copy with ${answer}.`);

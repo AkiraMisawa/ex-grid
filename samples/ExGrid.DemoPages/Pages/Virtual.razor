@@ -14,13 +14,17 @@
 </p>
 
 <p class="demo-status">
-    @if (_source.Window.Count == 0)
+    @if (_source.TotalCount is null)
     {
         <text>Window: nothing pushed yet, of @Total rows.</text>
     }
+    else if (_source.Window.Count == 0)
+    {
+        <text>Window: no rows, of @_source.TotalCount.</text>
+    }
     else
     {
-        <text>Window: rows @_source.WindowStart–@(_source.WindowStart + _source.Window.Count - 1) of @Total.</text>
+        <text>Window: rows @_source.WindowStart–@(_source.WindowStart + _source.Window.Count - 1) of @_source.TotalCount.</text>
     }
     @if (_source.IsLoading)
     {
@@ -59,14 +63,32 @@
         _source.StateChanged += OnSourceChanged;
     }
 
+    private static readonly ColumnInfo<DemoTrade>[] Infos = [.. DemoData.Columns.Select(column => column.Info)];
+
+    // The last order asked for and its rows, so scrolling through one order sorts once (a header click still sorts).
+    private (GridQuery Order, IReadOnlyList<DemoTrade> Rows)? _ordered;
+
     // Where a server call would go. The wait is what makes the Placeholders visible long enough to watch; a request
-    // the grid gave up is cancelled, and its answer is never read.
-    private static async ValueTask<GridPage<DemoTrade>> AnswerLateAsync(GridQuery query, CancellationToken cancellationToken)
+    // the grid gave up is cancelled, and its answer is never read. It answers in the order and under the filter asked.
+    private async ValueTask<GridPage<DemoTrade>> AnswerLateAsync(GridQuery query, CancellationToken cancellationToken)
     {
         await Task.Delay(300, cancellationToken);
-        var start = Math.Min(query.Range.Start, Total);
-        var end = Math.Min(Total, query.Range.Start + query.Range.Count);
-        return new GridPage<DemoTrade>(AllRows[start..end], start, Total);
+        var rows = Ordered(query);
+        var start = Math.Min(query.Range.Start, rows.Count);
+        var end = Math.Min(rows.Count, query.Range.Start + query.Range.Count);
+        return new GridPage<DemoTrade>([.. rows.Skip(start).Take(end - start)], start, rows.Count);
+    }
+
+    private IReadOnlyList<DemoTrade> Ordered(GridQuery query)
+    {
+        if (query.Sorts.Count == 0 && query.Filter is null)
+            return AllRows;
+        var order = query with { Range = new RowRange(0, 0) };
+        if (_ordered is { } held && held.Order.Equals(order))
+            return held.Rows;
+        var rows = GridQueryEngine.Apply(AllRows, Infos, query.Filter, query.Sorts);
+        _ordered = (order, rows);
+        return rows;
     }
 
     private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);

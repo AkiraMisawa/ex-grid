@@ -143,8 +143,8 @@
         <p>
             The source itself drops an answer a newer request overtook, and cancels the <code>CancellationToken</code>
             it handed that fetch so the call can stop early. This Example's server neither sorts nor filters, so its
-            grid hides the column menu with <code>HideColumnMenu="true"</code>, and offers neither; its fetch refuses a
-            sort or a filter rather than answer one it ignored. ExGrid for React takes the same million through
+            columns say <code>IsQueryable = false</code>: a header click sorts nothing, and a column's menu offers its
+            commands only. Its fetch still refuses a sort or a filter rather than answer one it ignored. ExGrid for React takes the same million through
             <code>GridSource.fetch</code>, aborts the <code>AbortSignal</code> it handed a fetch it no longer needs, and
             lets a column say <code>queryable: false</code>.
         </p>

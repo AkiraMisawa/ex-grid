@@ -1,4 +1,5 @@
 @page "/wide"
+@implements IDisposable
 @using System.Globalization
 
 <DemoNav />
@@ -23,8 +24,7 @@
 </div>
 
 <p class="demo-status">
-    @* The grid's source holds every row, so its Window is all of them. *@
-    Window: rows 0–@(_total - 1) of @_total,
+    Window: rows @_source.WindowStart–@(_source.WindowStart + _source.Window.Count - 1) of @_total,
     @DemoData.WideColumns.Length columns.
     <span id="selection-status">
         @* The count is the sum of the rectangles' areas, so it costs nothing to show for
@@ -34,7 +34,7 @@
 </p>
 
 <ExGrid TRow="DemoWideRow"
-        Rows="_rows"
+        Source="_source"
         Columns="DemoData.WideColumns"
         RowHeight="28"
         ViewportHeight="600"
@@ -56,9 +56,17 @@
 
     private int _total = -1;
 
-    /// <summary>Every row, held as the grid's: a row is the same instance for as long as the page shows it, so the rows
-    /// that survive a scroll keep their identity (ADR-0003).</summary>
-    private DemoWideRow[] _rows = [];
+    /// <summary>Rows either side of the Viewport to answer with, so ordinary scrolling
+    /// does not ask again immediately (ADR-0001: read-ahead belongs to the Consumer).</summary>
+    private const int ReadAhead = 60;
+
+    /// <summary>Made the first time a range asks for them, and kept: a row answered twice
+    /// is the same instance both times, so the rows that survive a scroll keep their
+    /// identity and skip their render (ADR-0003). Nothing is made for rows nobody
+    /// scrolled to — a million up front would be most of what this page costs to open.</summary>
+    private DemoWideRow?[] _rows = [];
+
+    private FetchingGridSource<DemoWideRow> _source = default!;
 
     private bool _virtualiseColumns = true;
     private int _pinnedColumnCount = 2;
@@ -71,9 +79,40 @@
             return;
 
         _total = total;
-        _rows = new DemoWideRow[Math.Max(0, total)];
-        for (var i = 0; i < _rows.Length; i++)
-            _rows[i] = new DemoWideRow { Index = i };
+        _rows = new DemoWideRow?[Math.Max(0, total)];
+        if (_source is not null)
+        {
+            _source.StateChanged -= OnSourceChanged;
+            _source.Dispose();
+        }
+        _source = GridSource.Fetch<DemoWideRow>(AnswerAsync, readAheadRows: ReadAhead, rowKey: Key);
+        _source.StateChanged += OnSourceChanged;
+    }
+
+    private static readonly Func<DemoWideRow, object> Key = row => row.Index;
+
+    // Answered on the spot rather than after a delay: this page is here to compare frame
+    // times across the two settings, and a fake latency would be the thing being timed.
+    // The Virtualised page shows the waiting case.
+    private ValueTask<GridPage<DemoWideRow>> AnswerAsync(GridQuery query, CancellationToken cancellationToken)
+    {
+        if (query.Sorts.Count > 0 || query.Filter is not null)
+            throw new NotSupportedException("The Wide page neither sorts nor filters: none of its columns is queryable.");
+        var rows = _rows;
+        var start = Math.Min(query.Range.Start, rows.Length);
+        var end = Math.Min(rows.Length, query.Range.Start + query.Range.Count);
+        var window = new DemoWideRow[end - start];
+        for (var i = 0; i < window.Length; i++)
+            window[i] = rows[start + i] ??= new DemoWideRow { Index = start + i };
+        return ValueTask.FromResult(new GridPage<DemoWideRow>(window, start, rows.Length));
+    }
+
+    private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        _source.StateChanged -= OnSourceChanged;
+        _source.Dispose();
     }
 
     private void OnSelectionChanged(GridSelection selection) => _selection = selection;

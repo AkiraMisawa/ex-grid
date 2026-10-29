@@ -674,21 +674,18 @@ test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrive
 });
 
 // CON-8 (ADR-0005): a copy that fails in .NET is never silent. A Consumer's CopyAnswer that throws
-// (/features?copythrows=1) fails the build of the payload. On WebAssembly a Ctrl+C asks for it
-// synchronously, through the channel the probe at attach found, and the failure is said on the
-// console and not run again down the asynchronous route, as a missing channel would be: nothing is
-// written. A menu copy takes the asynchronous route on every host, and on the Server host so does
-// every copy; its failure is said too. The clipboard keeps what it held either way.
+// (/features?copythrows=1) fails the build of the payload: .NET answers that it failed, naming the
+// exception, and the grid refuses the copy and raises the failure on the page, by a Ctrl+C or the
+// menu's Copy alike. The clipboard keeps what it held either way.
 test.describe(() => {
-    test.use({ expectedErrors: [/\[ex-grid\] the grid failed to build a copy/] });
+    test.use({ expectedPageErrors: [/\[ex-grid\] the grid failed to build a copy/] });
 
-    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the console on either route, and writes nothing', async ({ page }) => {
+    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the page by either gesture, and writes nothing', async ({ page }) => {
         await page.goto('/features?copythrows=1');
         await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
-        await watchCopyRoutes(page);
-        const said = () => page.waitForEvent('console', {
-            predicate: (m) => m.type() === 'error' && m.text().includes('[ex-grid] the grid failed to build a copy'),
+        const said = () => page.waitForEvent('pageerror', {
+            predicate: (error) => error.message.includes('[ex-grid] the grid failed to build a copy'),
             timeout: 5000,
         });
 
@@ -697,9 +694,6 @@ test.describe(() => {
         await page.keyboard.press('ControlOrMeta+C');
         await failure;
         await circuitQuiet();
-        if (!SERVER) {
-            expect((await copyRoutes(page)).writes, 'the failure was not run again down the asynchronous route').toEqual([]);
-        }
         expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('SENTINEL');
 
         failure = said();

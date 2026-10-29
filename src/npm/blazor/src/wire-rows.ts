@@ -135,9 +135,11 @@ class FormatTexts {
         if (held.holders === 0) this.#texts.delete(key);
     }
 
+    // A value no row was sent with is one the browser cannot run .NET's format on: a TypeError, as a format that cannot
+    // take a value throws, so a Selection Summary figure .NET wrote no text for is shown in its own (ADR-0130).
     textOf(value: unknown): string {
         const held = this.#texts.get(valueKey(value));
-        if (held === undefined) throw new Error(`Internal: column '${this.#column}' was asked the text of a value no row it holds was sent with.`);
+        if (held === undefined) throw new TypeError(`Column '${this.#column}' was asked the text of a value no row it holds was sent with: its format is .NET's.`);
         return held.text;
     }
 

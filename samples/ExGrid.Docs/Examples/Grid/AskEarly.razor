@@ -6,7 +6,7 @@
     Ask @ReadAheadTrades.Margin rows before the Window runs out
 </label>
 
-<ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns" HideColumnMenu="true"
+<ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns"
         RangeRequestMargin="@(_early ? ReadAheadTrades.Margin : 0)"
         ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
 

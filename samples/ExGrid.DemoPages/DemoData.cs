@@ -138,7 +138,8 @@ public static class DemoData
     /// metrics — the shape ADR-0004 measured as unpaintable at 60fps without horizontal
     /// virtualisation. Fixed widths so a frame-time comparison is not also measuring
     /// Auto columns settling. One shared, reference-stable array, for the same reason
-    /// <see cref="Columns"/> is one.
+    /// <see cref="Columns"/> is one. None is queryable: the page makes its rows as they are
+    /// asked for, and neither sorts nor filters them.
     /// </summary>
     public static readonly GridColumn<DemoWideRow>[] WideColumns = BuildWideColumns(100);
 
@@ -146,9 +147,9 @@ public static class DemoData
     {
         var columns = new GridColumn<DemoWideRow>[count];
         columns[0] = new GridColumn<DemoWideRow>("Key", ColumnType.Text, r => $"K-{r.Index:D6}",
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(140)));
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(140))) { IsQueryable = false };
         columns[1] = new GridColumn<DemoWideRow>("Book", ColumnType.Text, r => Books[r.Index % Books.Length],
-            width: new ColumnWidthSpec(ColumnWidth.Fixed(110)));
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(110))) { IsQueryable = false };
         for (var i = 2; i < count; i++)
         {
             var metric = i;
@@ -159,7 +160,7 @@ public static class DemoData
                 // the widest platform measured (ADR-0016), so 90px showed ####. No wider:
                 // the browser suite's drags (PF-7) are laid out on seven of these columns
                 // beside the pinned block in a 900px Viewport.
-                width: new ColumnWidthSpec(ColumnWidth.Fixed(91)));
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(91))) { IsQueryable = false };
         }
 
         return columns;

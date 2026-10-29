@@ -28,6 +28,7 @@
 
 <p class="demo-status">
     <span id="sort-status">Sorts: @_sortStatus</span>
+    <span id="hidden-status">Hidden: @_hiddenStatus</span>
 </p>
 
 @switch (Parent)
@@ -41,8 +42,8 @@
     case "window":
         @* The box follows the window's height, so a resize is a change of Viewport. *@
         <section id="window-box" style="height: calc(100vh - 220px); min-height: 0">
-            <ExGrid TRow="DemoTrade" Source="_sorted" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
+            <ExGrid TRow="DemoTrade" Source="_sorted" Columns="WindowColumns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" OnColumnHidden="OnColumnHidden" />
         </section>
         break;
     default:
@@ -93,6 +94,19 @@
     private readonly DemoTrade[] _rows = DemoData.Window(500, seed: 3);
 
     private string _sortStatus = "none";
+    private string _hiddenStatus = "none";
+
+    // The page hides nothing: the line says which column a Hide asked for, so a menu closed as a Cancel shows none.
+    private void OnColumnHidden(string column) => _hiddenStatus = column;
+
+    // The window-box grid's columns: Trader cannot be sorted or filtered, so its menu is the commands alone, of which
+    // Hide is enabled (KB-30).
+    private static readonly GridColumn<DemoTrade>[] WindowColumns =
+    [
+        DemoData.Columns[0],
+        new("Trader", ColumnType.Text, r => r.Trader) { IsQueryable = false },
+        .. DemoData.Columns.Skip(2),
+    ];
 
     // The window-box grid's rows, which hold a sort and are not reordered: the line shows the sort asked for.
     private PushedSource<DemoTrade>? _sorted;

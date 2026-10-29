@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bunit;
 using ExGrid.Cells;
@@ -179,6 +180,27 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.True(attached.GetProperty("options").GetProperty("marks").GetBoolean());
         Assert.True(attached.GetProperty("options").GetProperty("summarizes").GetBoolean());
         Assert.False(attached.GetProperty("source").GetProperty("summarizes").GetBoolean());
+    }
+
+    [Fact] // ADR-0130 / ADR-0440: a figure takes the Focus column's .NET format before it crosses, which the browser cannot run
+    public async Task ADR0440_a_figure_crosses_in_the_focus_columns_format()
+    {
+        GridColumn<TestRow>[] columns =
+        [
+            new("Book", ColumnType.Text, r => r.Book),
+            new("Amount", ColumnType.Number, r => r.Amount, format: v => ((decimal)v).ToString("0.00", CultureInfo.InvariantCulture)),
+            new("AsOf", ColumnType.Date, r => r.AsOf),
+            new("Active", ColumnType.Boolean, r => r.Active),
+        ];
+        var cut = Grid(columns: columns);
+        var request = Payload("""{"ranges":[{"topRow":0,"leftColumn":1,"rowCount":2,"columnCount":1}],"columns":["Book","Amount","AsOf","Active"],"rowSequenceVersion":0,"figures":["count","sum"],"focus":{"row":0,"column":1}}""");
+        var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
+
+        var answered = Parsed(await cut.InvokeAsync(() => Bridge().Summarize(1, generation, request)));
+
+        var texts = answered.GetProperty("texts");
+        Assert.Equal("93.50", texts.GetProperty("sum").GetString());
+        Assert.False(texts.TryGetProperty("count", out _));
     }
 
     [Fact] // ADR-0130 / ADR-0440: a figure past a double's range crosses by its name, never as another number
