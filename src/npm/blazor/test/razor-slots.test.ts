@@ -464,7 +464,7 @@ describe('a completion list filled with Razor', () => {
     });
 });
 
-const row = (id: number): BlazorRow => ({ id, key: undefined, cells: ['Alpha'], states: undefined, table: undefined });
+const row = (id: number): BlazorRow => ({ id, key: undefined, cells: ['Alpha'], states: undefined, table: undefined, kind: undefined, marked: undefined, appearances: undefined, changedAt: undefined });
 const cell = (of: BlazorRow, focusRequest: number): GridTemplateCell<BlazorRow> => ({ row: of, column: 'Note', focusRequest, takeKeyboard: () => undefined });
 const sent = (dotnet: FakeDotNet, at: number): unknown => JSON.parse(String(dotnet.calls[at]?.args.at(-1)));
 

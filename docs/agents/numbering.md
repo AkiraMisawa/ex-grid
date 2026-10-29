@@ -56,7 +56,8 @@ block on `main` before it uses the first number.
 | 0410–0419 | `claude/project-thread-sh93yf` | The Blazor adapters' slots: how a Blazor adapter fills the Script Core's Chrome and Template slots with Razor (ADR-0410, proposed 2026-10-27), and what else finishing ExPivot's Blazor adapter needs decided |
 | 0420–0429 | `claude/project-thread-puo7a6` | Blazor's ExChart over its Script Core: format codes and the Consumer's own script in place of a .NET function the browser's drawing would call (ADR-0420, decided with the user 2026-10-28), and a Consumer's context commands answered later, for the Chart Dock over the Script grid (ADR-0421, decided with the user 2026-10-28) |
 | 0430–0439 | `claude/project-thread-38pg92` | Blazor's ExSheet over its Script Core: the Pointing Scope kept as it is, held in the browser, and the grids it registers (chosen with the user 2026-10-28) |
-| 0440– | free | reserve a block of ten |
+| 0440–0449 | `claude/project-thread-63tdem` | The C# core removed (ADR-0370 step 3): what Blazor's Script ExGrid carries of the Razor component's surface first, and how (ADR-0440, 2026-10-29) |
+| 0450– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

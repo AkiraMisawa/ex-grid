@@ -94,8 +94,9 @@
             grid reads and writes their text, places the caret and gives them the keyboard in the browser, so what is
             typed is what the Enter commits, and a field a Chrome draws shows a formula's References uncoloured.
             ExSheet therefore keeps its own Cell Editor and Formula Bar text, whatever the Chrome, and takes the
-            Chrome's Name Box. On this grid the Name Box names no cell yet, since the grid asks its label in the browser
-            and a .NET <code>NameBoxLabel</code> would cost a round trip at every move; Enter in it hands
+            Chrome's Name Box. The Name Box names a cell by <code>NameBoxLabel</code>, which is your own script, as the
+            Formula entry functions below are, since the grid asks its label in the browser at every move; without it,
+            it names no cell until the user types in it. Enter in it hands
             <code>OnNameBoxEntered</code> what was typed, and the Example places the Selection on the trade whose Id it
             names. The
             grid's script hands each to the grid in the browser, so nothing a user does waits on a Blazor Server
@@ -122,16 +123,16 @@
         </p>
         <p>
             Find is the source's, as on the grid above: <kbd>Ctrl</kbd>+<kbd>F</kbd> asks its
-            <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace is not carried
-            yet, so <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused. It takes <code>CellMetrics</code>, and inside
+            <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace All is
+            <code>OnReplace</code>, handed the request in its turn, and <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused without
+            it. It takes <code>CellMetrics</code>, and inside
             <code>MudExGridPaper</code> the paper's Roboto widths, Density, hover band and Row Stripes, as the grid
             above does: a value written on the grid beats the paper's.
             A Template Column is drawn as on the grid above: its fragment is rendered in .NET from the row and moved into
             the cell by the grid's script, and <kbd>Space</kbd> asks its control for the keyboard, which it takes
             through <code>HandKeyboardToAsync</code>. The Example's Confirmed column is one. A cell scrolled into view
             shows its content a round trip later over Blazor Server.
-            Not carried yet, and refused by name when a column declares it: Tone and Row Marks.
-            The Selection Summary is not offered yet either, and no summary is drawn. <code>PointedAt</code> takes
+            <code>PointedAt</code> takes
             the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid
             (<a href="exsheet/linked-tables">Linked Tables</a>); a declaration of your own, whose
             <code>OnPress</code> is a .NET function, is refused by name. Use the grid above for that. The browser is sent the rows around the ones in view, a few
@@ -166,6 +167,23 @@
             carried: this grid joins no surface to its order. Both are judged
             in the browser: a control the user pressed meanwhile keeps the keyboard, however long the circuit took
             to carry the request.
+        </p>
+        <p>
+            The rest of the grid above's surface is here too, each answered where the browser asks it. What a row
+            paints, its <code>RowKind</code>, <code>CellAppearance</code>, <code>CellChangedAt</code>, a toned column's
+            tones and whether the row is marked, is asked in .NET as the row is sent and comes with it, so a cell paints
+            without a round trip; a change time is read on the server's clock, so the Change Highlight lasts its
+            <code>ChangeHighlightDuration</code> wherever the browser's clock stands. Row Marks cross only beside a Mark
+            Column: the source's own, or your <code>Marks</code>, never both, and over <code>Rows</code> only yours,
+            since the grid makes a new source of each new array and its marks would go with it. The Selection Summary
+            stands under the grid, as above, wherever the source summarises or <code>OnSummarize</code> answers; its
+            figures are asked in their turn, and an exact sum crosses with every digit. <code>CopyAnswer</code> or
+            <code>CopyAnswerAsync</code>, <code>OnReplace</code> and <code>OnDeclaredKey</code> for your
+            <code>DeclaredKeys</code> are handed their request in its turn, and the input after them waits.
+            <code>PageSize</code>, <code>RangeRequestMargin</code>, <code>RowHeadingWidth</code> and
+            <code>HideHeader</code> are as above. <code>RowHeadings</code>, <code>FindMatch</code> and
+            <code>DataEdge</code> are asked by position as the browser paints or decides a key, so each is your own
+            script, as <code>NameBoxLabel</code> is: <code>FindMatch</code> is handed the row's values by column name.
         </p>
     </DocsSection>
 

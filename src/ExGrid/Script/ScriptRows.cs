@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ExGrid.Cells;
+using ExGrid.Rows;
 
 namespace ExGrid.Script;
 
@@ -34,6 +35,8 @@ internal sealed class ScriptRows<TRow>
         public List<(long Id, Held Held, long Before, bool Added)> Touched { get; } = [];
         /// <summary>Whether the message's columns format any value, read once for all its rows.</summary>
         public bool? Formatted { get; set; }
+        /// <summary>Whether the message's columns tone any value, read once for all its rows.</summary>
+        public bool? Toned { get; set; }
     }
 
     /// <summary>How many rows are kept, for the tests.</summary>
@@ -79,11 +82,12 @@ internal sealed class ScriptRows<TRow>
     }
 
     /// <summary>Writes <paramref name="row"/> into the message being written (<see cref="Sending{T}"/>): its id,
-    /// its Row Key where the source has one, each column's value, each formatted column's text of it, and each
-    /// cell's state where <paramref name="cellState"/> answers one other than Normal for any of them (ADR-0006), and,
-    /// for a grid of a Pointing Scope, the row read as the table's row by <paramref name="tableRow"/> (ADR-0430).</summary>
+    /// its Row Key where the source has one, each column's value, each formatted column's text of it, and, for a row
+    /// the grid paints, what <paramref name="paint"/> answers of it: each cell's state where one is other than Normal
+    /// (ADR-0006), its tone, its Row Kind, whether it is marked, each cell's appearance and when it changed. For a grid
+    /// of a Pointing Scope, the row read as the table's row by <paramref name="tableRow"/> (ADR-0430).</summary>
     internal void Write(
-        Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey, CellStateOf<TRow>? cellState, Func<TRow, string>? tableRow)
+        Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey, RowPaint<TRow>? paint, Func<TRow, string>? tableRow)
     {
         ArgumentNullException.ThrowIfNull(row);
         var message = _writing ?? throw new InvalidOperationException("Internal: a row written outside a message.");
@@ -115,8 +119,15 @@ internal sealed class ScriptRows<TRow>
             }
             json.WriteEndArray();
         }
-        if (cellState is not null)
-            WriteStates(json, row, columns, cellState);
+        if (paint is not null)
+        {
+            if (paint.CellState is { } cellState)
+                WriteStates(json, row, columns, cellState);
+            message.Toned ??= columns.Any(column => column.Tone is not null);
+            if (message.Toned.Value)
+                WriteTones(json, values, columns);
+            paint.WriteRow(json, row, columns);
+        }
         if (tableRow is not null)
         {
             json.WritePropertyName("p");
@@ -144,6 +155,27 @@ internal sealed class ScriptRows<TRow>
         json.WriteStartArray("s");
         foreach (var state in states)
             json.WriteStringValue(ScriptJson.Camel(state));
+        json.WriteEndArray();
+    }
+
+    // Each toned column's tone of the cell's value, a function of the value alone (ADR-0006), as a format's text is.
+    private static void WriteTones(Utf8JsonWriter json, object?[] values, IReadOnlyList<GridColumn<TRow>> columns)
+    {
+        json.WriteStartArray("o");
+        for (var c = 0; c < columns.Count; c++)
+        {
+            if (columns[c].Tone is { } tone && values[c] is { } value)
+            {
+                var toned = tone(value);
+                if (!Enum.IsDefined(toned))
+                    throw new ArgumentOutOfRangeException(nameof(columns), toned, $"Column '{columns[c].Name}' toned a value with a tone the grid does not know (ADR-0006).");
+                json.WriteStringValue(ScriptJson.Camel(toned));
+            }
+            else
+            {
+                json.WriteNullValue();
+            }
+        }
         json.WriteEndArray();
     }
 

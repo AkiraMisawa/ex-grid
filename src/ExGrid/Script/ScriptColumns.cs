@@ -6,9 +6,7 @@ namespace ExGrid.Script;
 /// <summary>
 /// A column as it crosses to the Script Core (ADR-0350 section 16): its declaration, which the core reads as a
 /// plain column of its own, and nothing of its behaviour, which stays in .NET. A column's values and its format
-/// are read in .NET and sent with each row, and its verdict is asked of .NET as a commit is made (ADR-0380). What a column declares that this adapter does not carry yet is
-/// refused by name, never dropped: a grid that quietly did not tone a column would look as if it did (the spine's
-/// first rule).
+/// are read in .NET and sent with each row, as are its tones, and its verdict is asked of .NET as a commit is made (ADR-0380).
 /// </summary>
 internal static class ScriptColumns
 {
@@ -23,22 +21,13 @@ internal static class ScriptColumns
         return false;
     }
 
-    /// <summary>Refuses what the adapter does not carry yet, naming the column.</summary>
+    /// <summary>Refuses a list that holds no column where one should stand.</summary>
     internal static void Check<TRow>(IReadOnlyList<GridColumn<TRow>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
         foreach (var column in columns)
-        {
             ArgumentNullException.ThrowIfNull(column);
-            if (column.Tone is not null)
-                throw NotCarried(column.Name, "a Tone");
-            if (column.IsMarkColumn)
-                throw NotCarried(column.Name, "Row Marks");
-        }
     }
-
-    private static NotSupportedException NotCarried(string column, string what) => new(
-        $"Column '{column}' declares {what}: ExGrid over the Script Core does not carry it yet (ADR-0350 section 7). Use ExGrid.Components.ExGrid for it meanwhile.");
 
     /// <summary>Writes the columns as the bridge reads them (<c>WireColumn</c>). A formatted column's <c>format</c>
     /// names its format and <paramref name="culture"/>: another format, or the same in another culture, writes
@@ -71,6 +60,11 @@ internal static class ScriptColumns
             // by the script (ADR-0020, ADR-0410 section 6).
             if (column.Template is not null)
                 json.WriteBoolean("template", true);
+            // Each row carries the tone of each toned value, as it carries a formatted value's text (ADR-0006).
+            if (column.Tone is not null)
+                json.WriteBoolean("tone", true);
+            if (column.IsMarkColumn)
+                json.WriteBoolean("mark", true);
             if (column.Actions.Count > 0)
             {
                 json.WriteStartArray("actions");

@@ -41,6 +41,12 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task<string?> RunContextCommand(long number, int index) => Calls.InOrder(() => grid.RunContextCommandAsync(number, index));
 
     [JSInvokable]
+    public Task<string?> Copy(long number, JsonElement request) => Calls.InOrder(() => grid.CopyAsync(number, request));
+
+    [JSInvokable]
+    public Task<string?> Summarize(long number, int? generation, JsonElement request) => Calls.InOrder(() => grid.SummarizeAsync(number, generation, request));
+
+    [JSInvokable]
     public Task CancelAnswer(long number) => Calls.InOrder(() => grid.CancelAnswer(number));
 
     [JSInvokable]
@@ -94,6 +100,10 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
                 return await grid.ContextCommandsAsync(At(0).GetInt64(), At(1).GetInt32(), At(2).GetInt32(), At(3).GetInt64(), Text(4), At(5), At(6).GetInt32());
             case nameof(Complete):
                 return await grid.CompleteAsync(Text(0), At(1).GetInt32());
+            case nameof(Copy):
+                return await grid.CopyAsync(At(0).GetInt64(), At(1));
+            case nameof(Summarize):
+                return await grid.SummarizeAsync(At(0).GetInt64(), At(1).ValueKind == JsonValueKind.Null ? null : At(1).GetInt32(), At(2));
             case nameof(FindError):
                 return await grid.FindErrorAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
             case nameof(SetSorts):

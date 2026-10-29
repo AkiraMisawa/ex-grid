@@ -5,15 +5,17 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, EditorCompletion, EditorHint, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict, type GridColumn, type GridCommand, type GridContextMenuContext, type GridErrorStepRequest,
-    type GridEditorReference, type GridEditorRewrite, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection,
-    type SelectionRange, type TemporalLike,
+    createGrid, EditorCompletion, EditorHint, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
+    type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
+    type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
+    type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
+    type SummaryFigure, type TemporalLike,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
     slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
-import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
+import { DotNetSource, type DotNetHandle, type SummarizeOf, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
 import { WriteGate } from './write-gate';
@@ -23,7 +25,8 @@ import { WriteGate } from './write-gate';
 export type HeardKind =
     | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'headerGroupToggled' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice'
-    | 'action' | 'nameBoxEntered' | 'referenceKeyColoursChanged';
+    | 'action' | 'nameBoxEntered' | 'referenceKeyColoursChanged' | 'declaredKey' | 'selectionSummaryChanged' | 'summaryFiguresChanged'
+    | 'replace' | 'mark';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
  * core's own default stands for the rest, so a default is written once, in the core. */
@@ -52,8 +55,24 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly razorSlots?: readonly GridRazorSlotName[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
     readonly pointedAt?: WirePointedAt;
-    /** The Consumer's functions of Formula entry, its own script, loaded before the grid was made (ADR-0431). */
+    /** The Consumer's functions of Formula entry, its own script, loaded before the grid was made (ADR-0431), and the
+     * other functions the browser asks as it paints or decides a key (ADR-0440). */
     readonly scripts?: WireScripts;
+    /** Whether the Consumer answers each row's Row Kind, which comes with the row (ADR-0024). */
+    readonly rowKinds?: true;
+    /** Whether the Consumer answers cells' Font, Fill and Borders, which come with each row (ADR-0050 item 15). */
+    readonly appearances?: true;
+    /** Whether the Consumer answers when cells changed, which comes with each row (ADR-0068). */
+    readonly changeTimes?: true;
+    /** Whether the grid has Row Marks, kept in .NET by the component's `Marks` or its source's (ADR-0043): each row comes
+     * with whether it is marked, and the state with the counts. */
+    readonly marks?: true;
+    /** Whether the Consumer answers each copy in place of the grid's assembly, asked of .NET (ADR-0050 item 9). */
+    readonly copies?: true;
+    /** Whether the Consumer answers Replace All, asked of .NET (ADR-0332). */
+    readonly replaces?: true;
+    /** Whether the component's `OnSummarize` answers the Selection Summary, asked of .NET (ADR-0130). */
+    readonly summarizes?: true;
 }
 
 /** The functions of Formula entry the browser asks as it decides a key, each the Consumer's script (ADR-0431). */
@@ -62,6 +81,10 @@ export interface WireScripts {
     readonly referenceText?: WireScript;
     readonly cycleReference?: WireScript;
     readonly referencesIn?: WireScript;
+    readonly rowHeadings?: WireScript;
+    readonly nameBoxLabel?: WireScript;
+    readonly findMatch?: WireScript;
+    readonly dataEdge?: WireScript;
 }
 
 /** A Pointing Scope's declaration for this grid, as .NET's `GridPointedInBrowser` names it (ADR-0430). */
@@ -76,12 +99,14 @@ export interface WirePointedAt {
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
     | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
-    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar' | 'outlinedColumns';
+    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar' | 'outlinedColumns'
+    | 'pageSize' | 'rangeRequestMargin' | 'rowHeadingWidth' | 'hideHeader' | 'summaryFigures' | 'declaredKeys' | 'changeHighlightDuration';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
     'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
     'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar', 'outlinedColumns',
+    'pageSize', 'rangeRequestMargin', 'rowHeadingWidth', 'hideHeader', 'summaryFigures', 'declaredKeys', 'changeHighlightDuration',
 ]);
 
 /** What the component asks of the grid it attached. Each call carries its data as the JSON text .NET wrote, read
@@ -166,7 +191,8 @@ function pageFunctionOf(script: WireScript): LoadedScriptFunction {
 
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
 const heldGridCalls: ReadonlySet<string> = new Set([
-    'Heard', 'Validate', 'Find', 'FindError', 'Complete', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands',
+    'Heard', 'Validate', 'Find', 'FindError', 'Complete', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands', 'Copy',
+    'Summarize',
 ]);
 
 /**
@@ -205,8 +231,14 @@ export function attach(
     const columns = new ColumnSet(verdict, (slot, cell) => slots.template(slot, cell));
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
+    // A Selection Summary is asked of the source numbered `generation`, or of the component's OnSummarize (ADR-0130).
+    const summarize: SummarizeOf = (generation, request, signal) => asking(signal, async number => {
+        const answer = await dotnet.invokeMethodAsync('Summarize', number, generation === undefined ? null : generation, request);
+        signal.throwIfAborted();
+        return summaryResultOf(answer);
+    });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const taken = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal));
+        const taken = new DotNetSource(dotnet, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize);
         taken.take(state);
         return taken;
     };
@@ -214,9 +246,9 @@ export function attach(
     // The parameters as .NET last sent them, and the Scope's declaration once the page's Scope stands (ADR-0430).
     let wired = init.options;
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
-    const scripts = new ScriptHooks(functionOf);
+    const scripts = new ScriptHooks(functionOf, columns);
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics, scripts);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics, scripts, asked);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -231,11 +263,16 @@ export function attach(
         }
         wired = next.options;
         grid.update(optionsNow());
+        marks.changed();
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
-        if ('update' in message) update(message.update);
-        else source.take(message.state);
+        if ('update' in message) {
+            update(message.update);
+        } else {
+            source.take(message.state);
+            marks.changed();
+        }
     }, held => { rows.discard(held.window, held.seq); });
     const write = (kind: HeardKind, payload: unknown): Promise<unknown> => gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload));
     const heard = handlers(dotnet, write, asking);
@@ -263,6 +300,8 @@ export function attach(
     const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
     const menus = contextMenus(dotnet, () => ({ generation: source.generation, columnsVersion: columns.version }));
     const metrics = new WireMetrics();
+    const marks = new WireMarks(() => source, write);
+    const asked = askedThrough(dotnet, asking, marks, summarize, write);
     const grid: GridHandle<BlazorRow> = createGrid(root, optionsNow());
     made.grid = grid;
     // The grid joins its Scope once a Sheet of it brings it to the page, and is pointed at from then on (ADR-0430).
@@ -501,6 +540,9 @@ type MessageOf = NonNullable<GridOptions<BlazorRow>['cellMessage']>;
 
 interface Paint {
     readonly cellState: NonNullable<GridOptions<BlazorRow>['cellState']>;
+    readonly rowKind: (row: BlazorRow) => RowKind;
+    readonly cellAppearance: (row: BlazorRow, column: GridColumn<BlazorRow>) => CellAppearance;
+    readonly cellChangedAt: (row: BlazorRow, column: string) => number | undefined;
     /** The message function for the Consumer's judgement numbered `judgement`: the same while the number is, and
      * another when it moves, which the core hears as another judgement and asks a message it shows again. */
     cellMessage(judgement: number): MessageOf;
@@ -527,12 +569,29 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
             if (made?.judgement !== judgement) made = { judgement, ask: (row, column) => ask(row, column) };
             return made.ask;
         },
+        // Each comes with its row, as a state does: a row whose kind, appearance or change times change is another object.
+        rowKind: (row: BlazorRow): RowKind => row.kind ?? 'detail', // oxlint-disable-line ex-grid/no-stand-in-default -- a Detail row crosses with no kind (RowPaint.WriteRow)
+        cellAppearance: (row: BlazorRow, column: GridColumn<BlazorRow>): CellAppearance => {
+            if (row.appearances === undefined) return noAppearance;
+            const appearance = row.appearances[columns.indexOf(column)];
+            if (appearance === undefined) throw new Error(`Internal: row ${row.id} came with no appearance for column '${column.name}'.`);
+            return appearance ?? noAppearance; // null on the wire is the column's own paint (RowPaint.WriteRow)
+        },
+        cellChangedAt: (row: BlazorRow, column: string): number | undefined => {
+            if (row.changedAt === undefined) return undefined;
+            const at = row.changedAt[columns.indexNamed(column)];
+            if (at === undefined) throw new Error(`Internal: row ${row.id} came with no change time for column '${column}'.`);
+            return at ?? undefined; // oxlint-disable-line ex-grid/no-stand-in-default -- null on the wire is a cell never changed (RowPaint.WriteRow)
+        },
     });
 }
 
+/** No Font, Fill or Border of the Consumer's: the column's own paint. */
+const noAppearance: CellAppearance = Object.freeze({});
+
 function gridOptions(
     wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf,
-    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics, scripts: ScriptHooks,
+    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics, scripts: ScriptHooks, asked: Asked,
 ): GridOptions<BlazorRow> {
     const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
     const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
@@ -555,6 +614,16 @@ function gridOptions(
         // by name, as it refuses one given none.
         ...(temporal === undefined ? {} : { temporal: temporal as TemporalLike }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks it is a Temporal namespace as it takes it
         ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
+        ...(wire.rowKinds === true ? { rowKind: paint.rowKind } : {}),
+        ...(wire.appearances === true ? { cellAppearance: paint.cellAppearance } : {}),
+        ...(wire.changeTimes === true ? { cellChangedAt: paint.cellChangedAt } : {}),
+        ...(wire.marks === true ? { marks: asked.marks } : {}),
+        ...(wire.copies === true ? { copyAnswerAsync: asked.copyAnswerAsync } : {}),
+        ...(wire.replaces === true ? { onReplace: asked.onReplace } : {}),
+        ...(wire.summarizes === true ? { onSummarize: asked.onSummarize } : {}),
+        ...(hears.has('declaredKey') ? { onDeclaredKey: asked.onDeclaredKey } : {}),
+        ...(hears.has('selectionSummaryChanged') ? { onSelectionSummaryChanged: asked.onSelectionSummaryChanged } : {}),
+        ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: asked.onSummaryFiguresChanged } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
         ...(wire.completesText === true ? { completeEditorText } : {}),
@@ -585,7 +654,7 @@ function gridOptions(
     };
 }
 
-type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn'>;
+type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn' | 'rowHeadings' | 'nameBoxLabel' | 'findMatch' | 'dataEdge'>;
 
 /**
  * The Consumer's functions of Formula entry as the core takes them (ADR-0431), each made once per function, so the
@@ -596,15 +665,39 @@ type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 
 class ScriptHooks {
     readonly #made = new Map<string, unknown>();
     readonly #functionOf: (script: WireScript) => LoadedScriptFunction;
+    readonly #columns: ColumnSet;
 
-    constructor(functionOf: (script: WireScript) => LoadedScriptFunction) {
+    constructor(functionOf: (script: WireScript) => LoadedScriptFunction, columns: ColumnSet) {
         this.#functionOf = functionOf;
+        this.#columns = columns;
+    }
+
+    readonly #values = new WeakMap<BlazorRow, Readonly<Record<string, unknown>>>();
+
+    // A row's values by its columns' names, as the Consumer's script reads a row: made once a row, as the core asks of
+    // each painted cell.
+    #valuesOf(row: BlazorRow): Readonly<Record<string, unknown>> {
+        const made = this.#values.get(row);
+        if (made !== undefined) return made;
+        const values = Object.freeze(Object.fromEntries(this.#columns.columns.map((column, index) => [column.name, row.cells[index]])));
+        this.#values.set(row, values);
+        return values;
     }
 
     options(wire: WireScripts | undefined): Partial<ScriptOptions> {
         if (wire === undefined) return {};
-        const { pointAt, referenceText, cycleReference, referencesIn } = wire;
+        const { pointAt, referenceText, cycleReference, referencesIn, rowHeadings, nameBoxLabel, findMatch, dataEdge } = wire;
         return {
+            // A position's label, asked as each row is painted, a row not yet arrived included (ADR-0050 item 1).
+            ...(rowHeadings === undefined ? {} : { rowHeadings: this.#hook('rowHeadings', rowHeadings, f => (row: number) => checkedAnswer(rowHeadings,
+                'rowHeadings', f(row), (a): a is string => typeof a === 'string', 'text')) }),
+            ...(nameBoxLabel === undefined ? {} : { nameBoxLabel: this.#hook('nameBoxLabel', nameBoxLabel, f => (cell: CellPosition) => checkedAnswer(nameBoxLabel,
+                'nameBoxLabel', f(cell), (a): a is string => typeof a === 'string', 'text')) }),
+            // A row is handed to the Consumer's script as its values by column name: the browser holds no row of .NET's.
+            ...(findMatch === undefined ? {} : { findMatch: this.#hook('findMatch', findMatch, f => (row: BlazorRow, column: GridColumn<BlazorRow>, pattern: GridFindPattern) =>
+                checkedAnswer(findMatch, 'findMatch', f(this.#valuesOf(row), column.name, pattern), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
+            ...(dataEdge === undefined ? {} : { dataEdge: this.#hook('dataEdge', dataEdge, f => (from: CellPosition, direction: GridDirection) => checkedAnswer(dataEdge,
+                'dataEdge', f(from, direction), isCell, 'a cell { row, column }')) }),
             ...(pointAt === undefined ? {} : { pointAt: this.#hook('pointAt', pointAt, f => (text: string, caret: number) => checkedAnswer(pointAt, 'pointAt',
                 f(text, caret), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
             ...(referenceText === undefined ? {} : { referenceText: this.#hook('referenceText', referenceText, f => (range: SelectionRange) => checkedAnswer(referenceText,
@@ -652,6 +745,11 @@ function nothingAsUndefined<T>(answer: T | null): T | undefined {
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === 'object' && value !== null;
 
+/** Whether an answer is shaped as a cell's position. */
+function isCell(value: unknown): value is CellPosition {
+    return isRecord(value) && Number.isInteger(value['row']) && Number.isInteger(value['column']);
+}
+
 /** Whether an answer is shaped as a rewrite of the editor's text. */
 function isRewrite(value: unknown): value is GridEditorRewrite {
     return isRecord(value) && typeof value['text'] === 'string' && typeof value['selectionStart'] === 'number' && typeof value['selectionEnd'] === 'number';
@@ -687,4 +785,185 @@ function wireRefusal(refusal: GridRefusal<BlazorRow>): unknown {
         case 'placement': return refusal;
         default: throw new Error(`Internal: a refusal of the kind ${String((refusal as { readonly kind: unknown }).kind)}.`);
     }
+}
+
+/** The functions the grid asks .NET through beyond its events, made once, so the core sees the same ones on every
+ * update (ADR-0003). */
+interface Asked {
+    readonly marks: WireMarks;
+    readonly copyAnswerAsync: NonNullable<GridOptions<BlazorRow>['copyAnswerAsync']>;
+    readonly onReplace: NonNullable<GridOptions<BlazorRow>['onReplace']>;
+    readonly onSummarize: NonNullable<GridOptions<BlazorRow>['onSummarize']>;
+    readonly onDeclaredKey: NonNullable<GridOptions<BlazorRow>['onDeclaredKey']>;
+    readonly onSelectionSummaryChanged: NonNullable<GridOptions<BlazorRow>['onSelectionSummaryChanged']>;
+    readonly onSummaryFiguresChanged: NonNullable<GridOptions<BlazorRow>['onSummaryFiguresChanged']>;
+}
+
+// A declared key, a Replace All and a marking gesture are writes of the user's: each goes by `write`, which holds what
+// .NET sends until .NET has handled it, and the core holds the input after it until it has (ADR-0240's note of
+// 2026-10-19, ADR-0142). A copy's answer and a summary are questions, numbered so a newer one calls off the older.
+function askedThrough(
+    dotnet: DotNetHandle, asking: Asking, marks: WireMarks, summarize: SummarizeOf, write: (kind: HeardKind, payload: unknown) => Promise<unknown>,
+): Asked {
+    const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
+    return Object.freeze({
+        marks,
+        copyAnswerAsync: (request: GridCopyRequest, signal: AbortSignal) => asking(signal, async number => {
+            const answer = await dotnet.invokeMethodAsync('Copy', number, request);
+            signal.throwIfAborted();
+            return copyAnswerOf(answer);
+        }),
+        onReplace: async (request: GridReplaceRequest) => replaceResultOf(await write('replace', request)),
+        onSummarize: (request: GridSummaryRequest, signal: AbortSignal) => summarize(undefined, request, signal),
+        onDeclaredKey: async (press: GridDeclaredKeyPress) => {
+            await write('declaredKey', { key: press.key, editOpen: press.editOpen, selection: wireSelection(press.selection), rowSequenceVersion: press.rowSequenceVersion });
+        },
+        onSelectionSummaryChanged: (summary: SelectionSummary) => { send('selectionSummaryChanged', wireSummary(summary)); },
+        onSummaryFiguresChanged: (figures: readonly SummaryFigure[]) => { send('summaryFiguresChanged', figures); },
+    });
+}
+
+/**
+ * Row Marks kept in .NET (ADR-0043), by the component's `Marks` or by its source's: whether a row is marked comes with
+ * the row, and the counts with the source's state, so the core paints what .NET last sent. A gesture crosses to .NET as
+ * a write, and what it marked comes back as the state its handling sends. The Row Kind the core pushes is .NET's
+ * already: the component hands the marks its own `RowKind` there, where every row's kind is read.
+ */
+class WireMarks implements RowMarks<BlazorRow> {
+    readonly #source: () => DotNetSource;
+    readonly #write: (kind: HeardKind, payload: unknown) => Promise<unknown>;
+    readonly #listeners = new Set<() => void>();
+
+    constructor(source: () => DotNetSource, write: (kind: HeardKind, payload: unknown) => Promise<unknown>) {
+        this.#source = source;
+        this.#write = write;
+    }
+
+    isMarked(row: BlazorRow): boolean {
+        if (row.marked === undefined) throw new Error(`Internal: row ${row.id} came without its mark from a grid with Row Marks.`);
+        return row.marked;
+    }
+
+    get counts(): RowMarkCounts | undefined {
+        return this.#source().markCounts;
+    }
+
+    async onMarkIntent(intent: RowMarkIntent<BlazorRow>): Promise<void> {
+        await this.#write('mark', intent.kind === 'oneRow' ? { kind: intent.kind, row: intent.row.id, marked: intent.marked } : intent);
+    }
+
+    setRowKind(): void {
+        // .NET's marks read the component's own RowKind, which it hands them as it is set.
+    }
+
+    subscribe(listener: () => void): () => void {
+        this.#listeners.add(listener);
+        return () => { this.#listeners.delete(listener); };
+    }
+
+    /** .NET sent a state: the marks and their counts in it are the ones to paint. */
+    changed(): void {
+        for (const listener of Array.from(this.#listeners)) listener();
+    }
+}
+
+/** A Selection Summary as .NET reads it back: an exact figure's digits as text, which JSON holds whole where a `bigint`
+ * cannot cross at all. */
+function wireSummary(summary: SelectionSummary): unknown {
+    const { result } = summary;
+    if (result?.kind !== 'answered') return summary;
+    const figures = Object.fromEntries(Object.entries(result.figures).map(([figure, figured]) => [figure,
+        figured.kind === 'number'
+            ? {
+                ...figured, number: wireNumber(figured.number),
+                exact: figured.exact === undefined ? undefined : { mantissa: figured.exact.mantissa.toString(), scale: figured.exact.scale },
+            }
+            : figured]));
+    return { ...summary, result: { ...result, figures } };
+}
+
+/** A figure's number as JSON holds it: one past a double's range by the name .NET reads, never JSON's null. */
+function wireNumber(value: number): number | string {
+    return Number.isFinite(value) ? value : String(value);
+}
+
+/** A figure's number as .NET writes it: a number, or the name of one JSON cannot hold. */
+function figureNumberOf(value: unknown): number | undefined {
+    if (typeof value === 'number') return value;
+    if (value === 'NaN') return Number.NaN;
+    if (value === 'Infinity') return Number.POSITIVE_INFINITY;
+    if (value === '-Infinity') return Number.NEGATIVE_INFINITY;
+    return undefined;
+}
+
+/** .NET's answer to a copy, as `ExGrid.Script` writes a `GridCopyAnswer`; one .NET did not answer, its component gone, is
+ * given up, and nothing is written. */
+function copyAnswerOf(answer: unknown): GridCopyAnswer {
+    if (answer === null) throw new DOMException('.NET gave the copy no answer: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a copy with something other than JSON text.');
+    const read = parsed<{ readonly kind?: unknown; readonly text?: unknown; readonly html?: unknown; readonly sentence?: unknown }>(answer);
+    if (read.kind === 'write' && typeof read.text === 'string' && typeof read.html === 'string') return { kind: 'write', text: read.text, html: read.html };
+    if (read.kind === 'refuse' && typeof read.sentence === 'string') return { kind: 'refuse', sentence: read.sentence };
+    throw new TypeError(`Internal: .NET answered a copy with ${answer}.`);
+}
+
+/** .NET's answer to a Replace All, as `ExGrid.Script` writes a `GridReplaceResult`. */
+function replaceResultOf(answer: unknown): GridReplaceResult {
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a Replace All with something other than JSON text.');
+    const read = parsed<{ readonly kind?: unknown; readonly count?: unknown; readonly cells?: unknown; readonly rowSequenceVersion?: unknown }>(answer);
+    const version = read.rowSequenceVersion;
+    if (typeof version !== 'number') throw new TypeError(`Internal: .NET answered a Replace All with ${answer}.`);
+    if (read.kind === 'replaced' && typeof read.count === 'number') return { kind: 'replaced', count: read.count, rowSequenceVersion: version };
+    if (read.kind === 'refused' && Array.isArray(read.cells)) {
+        const cells = (read.cells as readonly unknown[]).map(cell => {
+            const { row, column, message } = cell as { readonly row?: unknown; readonly column?: unknown; readonly message?: unknown }; // oxlint-disable-line typescript/no-unsafe-type-assertion -- each member is checked below
+            if (typeof row !== 'number' || typeof column !== 'string' || (message !== null && typeof message !== 'string')) {
+                throw new TypeError(`Internal: .NET answered a refused cell as ${JSON.stringify(cell)}.`);
+            }
+            return { row, column, message: message === null ? undefined : message };
+        });
+        return { kind: 'refused', cells, rowSequenceVersion: version };
+    }
+    throw new TypeError(`Internal: .NET answered a Replace All with ${answer}.`);
+}
+
+/** .NET's answer to a Selection Summary, as `ExGrid.Script` writes a `GridSummaryResult`; one .NET did not answer, its
+ * source replaced or its component gone, is given up, and no figure is shown for it. */
+function summaryResultOf(answer: unknown): GridSummaryResult {
+    if (answer === null) throw new DOMException('.NET gave the Selection Summary no answer: its source or component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a Selection Summary with something other than JSON text.');
+    const read = parsed<{ readonly kind?: unknown; readonly reason?: unknown; readonly figures?: unknown; readonly texts?: unknown }>(answer);
+    if (read.kind === 'declined' && typeof read.reason === 'string') return { kind: 'declined', reason: read.reason };
+    if (read.kind !== 'answered' || !isRecord(read.figures) || !isRecord(read.texts)) throw new TypeError(`Internal: .NET answered a Selection Summary with ${answer}.`);
+    const figures: Partial<Record<SummaryFigure, AggregateResult>> = {};
+    for (const [figure, result] of Object.entries(read.figures)) figures[summaryFigureOf(figure)] = aggregateOf(result);
+    const texts: Partial<Record<SummaryFigure, string>> = {};
+    for (const [figure, text] of Object.entries(read.texts)) {
+        if (typeof text !== 'string') throw new TypeError(`Internal: .NET wrote the text of '${figure}' as ${JSON.stringify(text)}.`);
+        texts[summaryFigureOf(figure)] = text;
+    }
+    return { kind: 'answered', figures: Object.freeze(figures), texts: Object.freeze(texts) };
+}
+
+const summaryFigures: readonly string[] = ['average', 'count', 'numericalCount', 'min', 'max', 'sum'];
+
+function summaryFigureOf(name: string): SummaryFigure {
+    if (!summaryFigures.includes(name)) throw new TypeError(`Internal: .NET answered the figure '${name}'.`);
+    return name as SummaryFigure; // oxlint-disable-line typescript/no-unsafe-type-assertion -- checked against the figures above
+}
+
+// A figure as .NET's AggregateResult holds it: nothing, an error, or a number, with the decimal it was summed in.
+function aggregateOf(value: unknown): AggregateResult {
+    if (!isRecord(value)) throw new TypeError(`Internal: .NET wrote a figure as ${JSON.stringify(value)}.`);
+    const { kind, error, exact } = value;
+    const number = figureNumberOf(value['number']);
+    if (kind === 'empty') return { kind: 'empty' };
+    if (kind === 'error' && (error === 'divideByZero' || error === 'notANumber')) return { kind: 'error', error };
+    if (kind === 'number' && number !== undefined) {
+        if (exact === undefined) return { kind: 'number', number, exact: undefined };
+        if (isRecord(exact) && typeof exact['mantissa'] === 'string' && Number.isInteger(exact['scale'])) {
+            return { kind: 'number', number, exact: Object.freeze({ mantissa: BigInt(exact['mantissa']), scale: exact['scale'] as number }) }; // oxlint-disable-line typescript/no-unsafe-type-assertion -- checked an integer above
+        }
+    }
+    throw new TypeError(`Internal: .NET wrote a figure as ${JSON.stringify(value)}.`);
 }
