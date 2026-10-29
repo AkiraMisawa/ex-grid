@@ -35,11 +35,12 @@ function activeItemName(page) {
 }
 
 /**
- * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover,
- * MudBlazor's the Wrapper's list the adapter's script shows (ADR-0410), drawn closed inside every item.
+ * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover;
+ * MudBlazor's, over the Script Core, the Wrapper's list the adapter's script shows (ADR-0410), drawn
+ * closed inside every item, and, in the Razor component a circuit's specs open, an open MudPopover.
  */
 function openLists(page) {
-    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden])');
+    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden]), .mud-popover-open .mud-ex-sheet-toolbar-choices');
 }
 
 /** Format Cells: the grid's popover under either Chrome, over the Script Core (ADR-0410). */
