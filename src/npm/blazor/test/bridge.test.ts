@@ -782,6 +782,19 @@ describe('the Context Menu\'s commands .NET answers (ADR-0421)', () => {
     });
 });
 
+describe('the grid\'s own words .NET sends (ADR-0440 section 4)', () => {
+    it('ADR-0440: the table words the grid\'s commands, and a command the Consumer answered keeps its own words', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'ContextCommands' ? '[{"id":"audit","enabled":true,"label":"Audit"}]' : null);
+        const { root } = mount({ options: options({ rowHeight: 24, contextCommands: true, commandLabels: { copy: 'Duplicate', audit: 'Not this' } }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('F10', { shiftKey: true });
+        await turns();
+        expect([...root.querySelectorAll('.ex-popover [role=menuitem]')].map(item => item.textContent)).toEqual(['Duplicate', 'Copy with headers', 'Audit']);
+    });
+});
+
 describe('completion .NET answers (ADR-0051)', () => {
     it('ADR-0051: the editor\'s text and caret are asked of .NET as typed, and its answer is listed, Tab writing the chosen candidate', async () => {
         const dotnet = new FakeDotNet();

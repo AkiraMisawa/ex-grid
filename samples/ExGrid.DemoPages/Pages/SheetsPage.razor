@@ -41,7 +41,7 @@
             @OnPaper(@<ExSheet.Components.ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
                                                   PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
             <div id="sheet-left-positions">
-                <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                <ExGrid.Components.ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
                         ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
             </div>
         }
@@ -61,7 +61,7 @@
             @OnPaper(@<ExSheet.Components.ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
                                                   PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
             <div id="sheet-right-positions">
-                <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                <ExGrid.Components.ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
                         ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
             </div>
         }

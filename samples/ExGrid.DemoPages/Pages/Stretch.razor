@@ -34,27 +34,26 @@
 {
     case "auto":
         <section id="auto-box">
-            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+            <ExGrid TRow="DemoTrade" Rows="_rows" Columns="DemoData.Columns" RowHeight="24"
                     ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
         break;
     case "window":
         @* The box follows the window's height, so a resize is a change of Viewport. *@
         <section id="window-box" style="height: calc(100vh - 220px); min-height: 0">
-            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
-                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch"
-                    OnSortChanged="OnSortChanged" />
+            <ExGrid TRow="DemoTrade" Source="_sorted" Columns="DemoData.Columns" RowHeight="24"
+                    ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
         break;
     default:
         <section id="fixed-box" style="height: 300px">
-            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+            <ExGrid TRow="DemoTrade" Rows="_rows" Columns="DemoData.Columns" RowHeight="24"
                     ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
 
         <section id="flex-box" style="display: flex; flex-direction: column; height: 360px; margin-top: 16px">
             <div id="flex-toolbar" style="height: 60px; flex: none">A toolbar the grid sits under</div>
-            <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns" RowHeight="24"
+            <ExGrid TRow="DemoTrade" Rows="_rows" Columns="DemoData.Columns" RowHeight="24"
                     ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
         </section>
 
@@ -65,7 +64,7 @@
                 <MudText Typo="Typo.h6">Positions</MudText>
             </ToolBarContent>
             <ChildContent>
-                <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns"
+                <ExGrid TRow="DemoTrade" Rows="_rows" Columns="DemoData.Columns"
                         ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </ChildContent>
         </MudExGridPaper>
@@ -76,7 +75,7 @@
                 <MudText Typo="Typo.h6">Orders</MudText>
             </ToolBarContent>
             <ChildContent>
-                <ExGrid TRow="DemoTrade" Window="_rows" Columns="DemoData.Columns"
+                <ExGrid TRow="DemoTrade" Rows="_rows" Columns="DemoData.Columns"
                         ViewportHeight="200" ViewportWidth="560" />
             </ChildContent>
         </MudExGridPaper>
@@ -95,6 +94,14 @@
 
     private string _sortStatus = "none";
 
+    // The window-box grid's rows, which hold a sort and are not reordered: the line shows the sort asked for.
+    private PushedSource<DemoTrade>? _sorted;
+
+    protected override void OnInitialized() => _sorted = new PushedSource<DemoTrade>(_rows) { SortChanged = OnSortChanged };
+
     private void OnSortChanged(IReadOnlyList<SortSpec> sorts)
-        => _sortStatus = sorts.Count == 0 ? "none" : string.Join(",", sorts.Select(s => $"{s.Column} {s.Direction}"));
+    {
+        _sortStatus = sorts.Count == 0 ? "none" : string.Join(",", sorts.Select(s => $"{s.Column} {s.Direction}"));
+        _ = InvokeAsync(StateHasChanged);
+    }
 }

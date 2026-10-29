@@ -23,7 +23,7 @@
     and the Focus above it.
 </p>
 <div id="appearance-borders">
-    <ExGrid TRow="AppearanceRow" Window="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
+    <ExGrid TRow="AppearanceRow" Rows="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
             Density="GridDensity.Excel" ViewportHeight="320" ViewportWidth="360" />
 </div>
 
@@ -35,7 +35,7 @@
 </p>
 <div id="appearance-bold" class="demo-roboto">
     <CascadingValue Value="MudExGridPresentation.Roboto">
-        <ExGrid TRow="AppearanceRow" Window="BoldRows" Columns="BoldColumns" CellAppearance="BoldOf"
+        <ExGrid TRow="AppearanceRow" Rows="BoldRows" Columns="BoldColumns" CellAppearance="BoldOf"
                 Density="GridDensity.Standard" ViewportHeight="140" ViewportWidth="420" />
     </CascadingValue>
 </div>
@@ -46,7 +46,7 @@
     right edge of a column exactly as wide as the number needs.
 </p>
 <div id="appearance-italic">
-    <ExGrid TRow="AppearanceRow" Window="ItalicRows" Columns="ItalicColumns" CellAppearance="ItalicOf"
+    <ExGrid TRow="AppearanceRow" Rows="ItalicRows" Columns="ItalicColumns" CellAppearance="ItalicOf"
             Density="GridDensity.Excel" ViewportHeight="120" ViewportWidth="320" />
 </div>
 
@@ -60,7 +60,7 @@
     between are plain, so no Fill reaches across from one of them to the next.
 </p>
 <div id="appearance-tints">
-    <ExGrid TRow="AppearanceRow" Window="TintRows" Columns="TintColumns" CellAppearance="TintOf"
+    <ExGrid TRow="AppearanceRow" Rows="TintRows" Columns="TintColumns" CellAppearance="TintOf"
             RowKind="TintKindOf" CellState="TintStateOf" StripeRows="true" PinnedColumnCount="5"
             Density="GridDensity.Excel" ViewportHeight="220" ViewportWidth="480" />
 </div>
@@ -68,8 +68,8 @@
 <h2>Marked Row Headings keep their weight</h2>
 <p>Select a cell or a whole row. Group and Total Row Headings retain their own font weight under the Heading Mark.</p>
 <div id="appearance-headings" style="--ex-row-group-weight: 700; --ex-row-total-weight: 800">
-    <ExGrid TRow="AppearanceRow" Window="TintRows" Columns="TintColumns" RowKind="TintKindOf"
-            RowHeadings="HeadingNumber" RowHeadingWidth="44" ViewportHeight="300" ViewportWidth="480" />
+    <ExGrid TRow="AppearanceRow" Rows="TintRows" Columns="TintColumns" RowKind="TintKindOf"
+            RowHeadings="GridScripts.HeadingNumber" RowHeadingWidth="44" ViewportHeight="300" ViewportWidth="480" />
 </div>
 
 <style>
@@ -176,7 +176,6 @@
         [.. "ABCDEFGHIJ".Select(name => new GridColumn<AppearanceRow>(
             name.ToString(), ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(44))))];
 
-    private static readonly Func<int, string> HeadingNumber = row => (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static readonly Func<AppearanceRow, RowKind> TintKindOf = row => row.Index switch
     {

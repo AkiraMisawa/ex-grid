@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Bunit;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Data;
@@ -104,6 +105,37 @@ public class ScriptGridSurfaceTests : BunitContext
         var state = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
         Assert.True(state.GetProperty("window")[1].GetProperty("m").GetBoolean());
         Assert.Equal(1, state.GetProperty("markCounts").GetProperty("markedInResult").GetInt32());
+    }
+
+    [Fact] // ADR-0036 / ADR-0440 section 4: the grid's own words cross as a table, asked once per function, placeholders never asked
+    public void ADR0440_command_label_crosses_as_a_table_of_the_ids_it_answers()
+    {
+        var asked = new List<string>();
+        Func<string, string?> words = id =>
+        {
+            asked.Add(id);
+            return id switch
+            {
+                RefusalLabelIds.CopyTooLarge => "Too many cells.",
+                GridCommandIds.Copy => "Duplicate",
+                _ => null,
+            };
+        };
+        var cut = Grid(ps => ps.Add(g => g.CommandLabel, words));
+
+        var table = Attached().GetProperty("options").GetProperty("commandLabels");
+        Assert.Equal("Too many cells.", table.GetProperty(RefusalLabelIds.CopyTooLarge).GetString());
+        Assert.Equal("Duplicate", table.GetProperty(GridCommandIds.Copy).GetString());
+        Assert.Equal(2, table.EnumerateObject().Count());
+        Assert.DoesNotContain(asked, id => id.StartsWith('{'));
+        var once = asked.Count;
+
+        cut.Render(ps => ps.Add(g => g.ViewportHeight, 300));
+        Assert.Equal(once, asked.Count);
+
+        cut.Render(ps => ps.Add(g => g.CommandLabel, id => id == GridCommandIds.Copy ? "Copy cells" : null));
+        var updated = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("options").GetProperty("commandLabels");
+        Assert.Equal("Copy cells", Assert.Single(updated.EnumerateObject()).Value.GetString());
     }
 
     [Fact] // ADR-0043 / ADR-0440: a source that keeps marks sends none for a grid with no Mark Column

@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Reflection;
 using System.Text.Json;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Clipboard;
 using ExGrid.Finding;
 using ExGrid.Keys;
@@ -129,6 +132,58 @@ public sealed partial class ExGrid<TRow>
     /// cell on that line where the data ends. Set as the grid is made. None, and Ctrl+arrow goes to the grid's edge.
     /// </summary>
     [Parameter] public ScriptFunction? DataEdge { get; set; }
+
+    /// <summary>
+    /// The grid's own words, by id (ADR-0036): null keeps the grid's, "" says nothing. It is asked of every id the grid
+    /// words, the commands' (<see cref="GridCommandIds"/>), its fields' names (<see cref="GridLabelIds"/>), its
+    /// refusals (<see cref="RefusalLabelIds"/>, <see cref="KeyRefusalLabelIds"/>), its summary
+    /// (<see cref="SummaryLabelIds"/>), its find panel's (<see cref="FindPanelLabelIds"/>) and its reload notice
+    /// (<see cref="ReloadNoticeLabelIds"/>), as the grid is made and whenever another function is set, and the browser
+    /// words the grid from what it answered (ADR-0440 section 4). The commands <see cref="ContextCommands"/> answers
+    /// take their words from <see cref="ContextCommandLabel"/>.
+    /// </summary>
+    [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    // Every id the grid words, read once from the classes that name them; a placeholder ("{column}") is a mark inside
+    // the words, not an id.
+    private static readonly string[] LabelIds =
+    [
+        .. new[]
+        {
+            IdsOf(typeof(GridCommandIds)), IdsOf(typeof(GridLabelIds)), IdsOf(typeof(RefusalLabelIds)), IdsOf(typeof(KeyRefusalLabelIds)),
+            IdsOf(typeof(SummaryLabelIds)), IdsOf(typeof(FindPanelLabelIds)), IdsOf(typeof(ReloadNoticeLabelIds)),
+        }.SelectMany(ids => ids).Where(id => !id.StartsWith('{')).Distinct(),
+    ];
+
+    private static IEnumerable<string> IdsOf([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type)
+        => type.GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)(field.GetRawConstantValue() ?? throw new InvalidOperationException($"Internal: {type.Name}.{field.Name} holds no id.")));
+
+    private Func<string, string?>? _labelled;
+    private KeyValuePair<string, string>[] _labels = [];
+
+    // Asked once per function: another function is another wording, and the same one answers as it did (ADR-0003).
+    private void WriteCommandLabels(Utf8JsonWriter json)
+    {
+        if (CommandLabel is not { } label)
+            return;
+        if (!ReferenceEquals(label, _labelled))
+        {
+            var labels = new List<KeyValuePair<string, string>>();
+            foreach (var id in LabelIds)
+            {
+                if (label(id) is { } words)
+                    labels.Add(KeyValuePair.Create(id, words));
+            }
+            _labels = [.. labels];
+            _labelled = label;
+        }
+        json.WriteStartObject("commandLabels");
+        foreach (var (id, words) in _labels)
+            json.WriteString(id, words);
+        json.WriteEndObject();
+    }
 
     private RowPaint<TRow>? _paint;
     private IRowMarks<TRow>? _marks;
@@ -261,6 +316,7 @@ public sealed partial class ExGrid<TRow>
             json.WriteNumber("rowHeadingWidth", headingWidth);
         if (HideHeader)
             json.WriteBoolean("hideHeader", true);
+        WriteCommandLabels(json);
     }
 
     private void WriteSurfaceScripts(Utf8JsonWriter json)

@@ -1,6 +1,7 @@
 @using global::ExGrid.Chrome
 @using global::ExGrid.Cells
 @using global::ExGrid.Columns
+@using global::ExGrid.Data
 @using global::ExGrid.Selection
 
 <div class="docs-ordered-field-text">
@@ -22,7 +23,8 @@
         new("Id", ColumnType.Number, row => row.Id, width: new(ColumnWidth.Fixed(90))),
         new("Text", ColumnType.Text, row => row.Text, editable: true, width: new(ColumnWidth.Fixed(300))),
     ];
-    private static readonly Func<CellPosition, string> Name = cell => $"Row {cell.Row + 1}";
+    // Asked in the browser as the Focus moves, by the site's js/name-box.js.
+    private static readonly ScriptFunction Name = ScriptFunction.Of("./js/name-box.js", "rowName");
     private string _message = "Edit a note or type a name and press Enter.";
     private void Edited(GridEditIntent<Note> edit)
     {

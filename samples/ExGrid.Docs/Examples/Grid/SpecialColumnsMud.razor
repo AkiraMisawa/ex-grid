@@ -16,7 +16,7 @@
            page's notes: both cascaded once, so they never change. *@
         <CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
             <CascadingValue Name="Notes" Value="_notes" IsFixed="true">
-                <ExGrid TRow="Position" @ref="_grid" Source="_source" Columns="_columns" OnAction="OnAction" OnMarkRefused="OnMarkRefused"
+                <ExGrid TRow="Position" @ref="_grid" Source="_source" Columns="_columns" OnAction="OnAction" OnRefused="OnRefused"
                         PinnedColumnCount="2" Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
             </CascadingValue>
         </CascadingValue>
@@ -78,13 +78,19 @@
 
     // A press made on rows that moved, or on data since replaced, marks nothing; the grid names why,
     // and the words are yours. Under live data that is a press the network was slower than.
-    private void OnMarkRefused(MarkRefusalReason reason) => Snackbar.Add(reason switch
+    private void OnRefused(GridRefusal<Position> refusal)
+    {
+        if (refusal is GridRefusal<Position>.Mark mark)
+            Snackbar.Add(Worded(mark.Reason), Severity.Warning);
+    }
+
+    private static string Worded(MarkRefusalReason reason) => reason switch
     {
         MarkRefusalReason.RowLeftTheWindow => "Nothing marked: the row left the Window while your command waited. Press again on the current data.",
         MarkRefusalReason.OrderMoved => "Nothing marked: the rows moved before your press arrived. Press again on the rows as they are now.",
         MarkRefusalReason.SourceChanged => "Nothing marked: the data was replaced before your press arrived. Press again on what is shown now.",
         _ => $"Nothing marked: {reason}.",
-    }, Severity.Warning);
+    };
 
     public void Dispose() => _source.Marks.Changed -= StateHasChanged;
 }

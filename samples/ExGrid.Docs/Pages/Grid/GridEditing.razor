@@ -37,7 +37,7 @@
             update, a sort — the editor stays open with the text. With a Row Key it moves with its row, the Focus
             with it, and <kbd>Enter</kbd> writes to that row wherever it stands now; the grid does not scroll to
             follow it. Without a Row Key the editor stays where it is, and <kbd>Enter</kbd> is refused through
-            <code>OnCommitRefused</code> as <code>OrderMoved</code>, the text kept, because the position now names
+            <code>OnRefused</code> with a <code>GridRefusal.Commit</code> of <code>OrderMoved</code>, the text kept, because the position now names
             another row; <kbd>Escape</kbd> leaves without writing. An editor opened with <kbd>F2</kbd> and not typed
             into closes instead when its row leaves the Window, and, without a Row Key, when the order moves, since
             its position then names another row — once the browser has confirmed that nothing was typed into it. See
@@ -204,7 +204,7 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
             </li>
             <li>
                 <strong>A gesture that touches a column that is not editable is refused whole</strong> through
-                <code>OnPasteRefused</code>, before anything is raised, never half-applied. The grid says so in its
+                <code>OnRefused</code>, before anything is raised, never half-applied. The grid says so in its
                 live region, naming the column — see
                 <a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>.
             </li>
@@ -273,16 +273,16 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
             <kbd>Delete</kbd> refused as <code>OrderMoved</code> or <code>SourceChanged</code> is also said by the
             grid, in its live region and in the built-in Chrome's words, as every refused write is
             (<a href="exgrid/clipboard#what-a-refusal-sounds-like">what a refusal sounds like</a>). For the rest —
-            <code>OnCommitRefused</code>, <code>OnActionRefused</code> and <code>OnEditDiscarded</code> — the grid
+            a commit or an Action refused through <code>OnRefused</code>, and <code>OnEditDiscarded</code> — the grid
             holds no string: the words are yours.
         </p>
         <ul>
             <li>
                 <code>OrderMoved</code> — the Row Sequence Version moved after the gesture was aimed: the Selection a
                 paste, a fill or <kbd>Delete</kbd> was aimed with no longer names those rows
-                (<code>OnPasteRefused</code>); without a Row Key, an editor's position names another row
-                (<code>OnCommitRefused</code>); a press on an Action that only a position names
-                (<code>OnActionRefused</code>). Typing — a character, <kbd>F2</kbd>, <kbd>Backspace</kbd>, an IME's
+                (a <code>GridRefusal.Paste</code>); without a Row Key, an editor's position names another row
+                (a <code>GridRefusal.Commit</code>); a press on an Action that only a position names
+                (a <code>GridRefusal.Action</code>). Typing — a character, <kbd>F2</kbd>, <kbd>Backspace</kbd>, an IME's
                 text — that reaches the grid after the order moved, typed against the Selection the move dropped,
                 opens no editor and writes nothing anywhere, rather than landing on the first cell of the new order:
                 <code>OnEditDiscarded</code> says <code>OrderMoved</code>, once for the run of keys. A key typed once
@@ -323,7 +323,7 @@ rules.evaluate(trades, columns);   // after each apply, over the whole collectio
             An accepted Action reaches <code>OnAction</code> once, with the row as it is now.
             While it waits behind earlier input, the row must remain in the Window: leaving it
             invalidates the waiting command even if the row returns, with <code>RowLeftTheWindow</code>
-            reported through <code>OnActionRefused</code>. Scrolling it outside the painted slice is harmless. Whether the command is still
+            reported through <code>OnRefused</code>. Scrolling it outside the painted slice is harmless. Whether the command is still
             allowed — a price limit, a status — is your business rule there, and your page says why it declines.
         </p>
         <DocsExample Title="A feed, a user's write and the Consumer's decisions" Builtin="typeof(LiveWrites)" Mud="typeof(LiveWritesMud)"

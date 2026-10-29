@@ -75,18 +75,14 @@
         OnClear="OnClear"
         OnUndo="OnUndo"
         OnRedo="OnRedo"
-        OnCopyRefused="OnCopyRefused"
-        OnPasteRefused="OnPasteRefused"
+        OnRefused="OnRefused"
         OnEditDiscarded="OnEditDiscarded"
-        OnCommitRefused="OnCommitRefused"
         OnOverwriteNotice="OnOverwriteNotice"
         OnAction="OnAction"
-        OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
         OnFill="OnFill"
         DeclaredKeys="@(RowKeyOn ? UpstreamAndResortKeys : UpstreamOn ? UpstreamKeys : null)"
         OnDeclaredKey="OnUpstreamKey"
-        OnFindRefused="OnFindRefused"
         OnReplace="OnReplace"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
@@ -141,7 +137,7 @@
     </p>
     <div id="held-summary">
         <ExGrid TRow="DemoTrade"
-                Window="_heldRows"
+                Rows="_heldRows"
                 Columns="_heldColumns"
                 RowHeight="20"
                 ViewportHeight="140"
@@ -665,6 +661,32 @@
         _ => null,
     };
 
+    /// <summary>Every gesture the grid refused, worded by kind (ADR-0005).</summary>
+    private void OnRefused(GridRefusal<DemoTrade> refusal)
+    {
+        switch (refusal)
+        {
+            case GridRefusal<DemoTrade>.Copy copy:
+                OnCopyRefused(copy.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Paste paste:
+                OnPasteRefused(paste.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Commit commit:
+                OnCommitRefused(commit);
+                break;
+            case GridRefusal<DemoTrade>.Find find:
+                OnFindRefused(find.Reason);
+                break;
+            case GridRefusal<DemoTrade>.Action action:
+                OnActionRefused(action);
+                break;
+            default:
+                // One this page does not word is a defect to see, not a sentence to guess (principle 1).
+                throw new ArgumentOutOfRangeException(nameof(refusal), refusal, "A refusal this page does not word.");
+        }
+    }
+
     private void OnCopyRefused(CopyRefusalReason reason)
         => Status(reason, reason.ToString(), s => _copyStatus = s);
 
@@ -711,7 +733,7 @@
 
     /// <summary>A commit whose row the grid could not find in the rows it holds now (ADR-0142,
     /// LV-20). The editor still stands with the typing; Escape leaves it.</summary>
-    private void OnCommitRefused(GridCommitRefusal refusal)
+    private void OnCommitRefused(GridRefusal<DemoTrade>.Commit refusal)
         => Status(refusal, refusal.Reason switch
         {
             CommitRefusalReason.OrderMoved =>
@@ -733,7 +755,7 @@
     /// <summary>An action whose row the grid could not find in the rows it holds when the press
     /// landed (ADR-0142, LV-12, LV-20): out of the Window, or named by a place the rows moving gave
     /// to another row. Nothing was done; the row's values changing never refuses one.</summary>
-    private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
+    private void OnActionRefused(GridRefusal<DemoTrade>.Action refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
             ActionRefusalReason.RowLeftTheWindow =>

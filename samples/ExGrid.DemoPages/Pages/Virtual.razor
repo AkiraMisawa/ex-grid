@@ -1,4 +1,5 @@
 @page "/virtual"
+@implements IDisposable
 
 <DemoNav />
 
@@ -13,30 +14,27 @@
 </p>
 
 <p class="demo-status">
-    @if (_window.Count == 0)
+    @if (_source.Window.Count == 0)
     {
         <text>Window: nothing pushed yet, of @Total rows.</text>
     }
     else
     {
-        <text>Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @Total.</text>
+        <text>Window: rows @_source.WindowStart–@(_source.WindowStart + _source.Window.Count - 1) of @Total.</text>
     }
-    @if (_isLoading)
+    @if (_source.IsLoading)
     {
         <strong>Loading…</strong>
     }
 </p>
 
 <ExGrid TRow="DemoTrade"
-        Window="_window"
-        WindowStart="_windowStart"
-        TotalCount="Total"
+        Source="_source"
         Columns="DemoData.Columns"
         RowHeight="24"
         ViewportHeight="480"
-        IsLoading="_isLoading"
         ShowFormulaBar="Bar is not null"
-        OnRangeNeeded="OnRangeNeededAsync" />
+        HideColumnMenu="true" />
 
 @code {
     private const int Total = 100_000;
@@ -53,29 +51,29 @@
 
     private static readonly DemoTrade[] AllRows = DemoData.Window(Total, seed: 7);
 
-    private IReadOnlyList<DemoTrade> _window = [];
-    private int _windowStart;
-    private bool _isLoading;
-    private RowRange? _outstanding;
+    private FetchingGridSource<DemoTrade> _source = default!;
 
-    private async Task OnRangeNeededAsync(RowRange range)
+    protected override void OnInitialized()
     {
-        _outstanding = range;
-        _isLoading = true;
+        _source = GridSource.Fetch<DemoTrade>(AnswerLateAsync, readAheadRows: ReadAhead);
+        _source.StateChanged += OnSourceChanged;
+    }
 
-        // Where a server call would go. The wait is what makes the Placeholders visible
-        // long enough to watch.
-        await Task.Delay(300);
+    // Where a server call would go. The wait is what makes the Placeholders visible long enough to watch; a request
+    // the grid gave up is cancelled, and its answer is never read.
+    private static async ValueTask<GridPage<DemoTrade>> AnswerLateAsync(GridQuery query, CancellationToken cancellationToken)
+    {
+        await Task.Delay(300, cancellationToken);
+        var start = Math.Min(query.Range.Start, Total);
+        var end = Math.Min(Total, query.Range.Start + query.Range.Count);
+        return new GridPage<DemoTrade>(AllRows[start..end], start, Total);
+    }
 
-        // A later request overtook this one: discarding the stale answer is the
-        // Consumer's job too.
-        if (_outstanding != range)
-            return;
+    private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);
 
-        var start = Math.Max(0, range.Start - ReadAhead);
-        var end = Math.Min(Total, range.Start + range.Count + ReadAhead);
-        _windowStart = start;
-        _window = AllRows[start..end];
-        _isLoading = false;
+    public void Dispose()
+    {
+        _source.StateChanged -= OnSourceChanged;
+        _source.Dispose();
     }
 }

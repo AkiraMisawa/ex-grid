@@ -28,8 +28,8 @@
             </li>
             <li>
                 <strong>Rows off screen are copied too.</strong> A selection larger than the rows the grid has painted
-                asks the source for the rest. When you push rows yourself, answer <code>OnCopyRowsNeeded</code>;
-                without it, such a copy is refused, not cut short.
+                asks the source for the rest; a source of your own answers them through <code>GetRowsAsync</code>. A
+                copy whose rows cannot be read is refused, not cut short.
             </li>
             <li>
                 <strong>Several ranges copy as one block</strong> when they line up — the same rows, or the same
@@ -41,7 +41,7 @@
                 (<code>GridCopyRequest</code>, with the Row Sequence Version their positions are read under) and the
                 grid writes exactly what it returns: <code>GridCopyAnswer.Write(text, html)</code>, or
                 <code>GridCopyAnswer.Refuse(sentence)</code>, which leaves the clipboard as it was, announces your
-                sentence and raises <code>OnCopyRefused</code> as <code>RefusedByConsumer</code>. It is asked
+                sentence and raises <code>OnRefused</code> with a <code>GridRefusal.Copy</code> of <code>RefusedByConsumer</code>. It is asked
                 synchronously, in the same process, so it answers from data you hold — ExSheet answers its copies
                 this way, from the values its formulas give. <code>CopyAnswerAsync</code> is the same answer for data
                 you must ask for first, such as a report a server computes, which is how ExPivot copies: the copy
@@ -76,7 +76,8 @@
             The everyday use of a blotter is to select rows, paste them into Excel and total them there. If a copy
             quietly kept only the first thousand rows, the total would be too small and nothing on screen would say
             so. So past <code>CopyCellCap</code> — a million cells by default — the grid copies <strong>nothing</strong>,
-            leaves the clipboard as it was, says so (below), and raises <code>OnCopyRefused</code> with the reason:
+            leaves the clipboard as it was, says so (below), and raises <code>OnRefused</code> with a
+            <code>GridRefusal.Copy</code> naming the reason:
             <code>TooLarge</code>, <code>MisalignedShape</code>, <code>EmptySelection</code>, and a few more. A
             selection of exactly the cap still copies.
         </p>
@@ -133,7 +134,7 @@
         <p>
             <kbd>Escape</kbd>, pressed then, <strong>cancels the paste</strong> and does nothing else. If the grid
             has not yet raised the paste's Edit Intent, nothing is written and the paste is refused as
-            <code>PasteRefusalReason.Cancelled</code>, through <code>OnPasteRefused</code> like any refusal. If
+            <code>PasteRefusalReason.Cancelled</code>, through <code>OnRefused</code> like any refusal. If
             the intent was already raised, your handler has the paste, it stands, and the grid says so:
             “@BuiltInCommandLabels.For(GridLabelIds.PasteAlreadyLanded)” Which of the two you get depends on
             when the key arrives, the one outcome in the grid that does; either is said aloud. On WebAssembly a
@@ -174,8 +175,7 @@
             export, replace those words with what it does offer.
         </p>
         <p>
-            <code>OnPasteRefused</code> and <code>OnCopyRefused</code> still receive the reason, whatever was said,
-            and binding them silences nothing. If you also show a refusal on the page, put it in an element that is
+            <code>OnRefused</code> still receives the reason, whatever was said, and binding it silences nothing. If you also show a refusal on the page, put it in an element that is
             not a live region, or it is announced twice. A sentence your <code>CopyAnswer</code> refuses with is
             announced in place of the words for <code>RefusedByConsumer</code>.
         </p>

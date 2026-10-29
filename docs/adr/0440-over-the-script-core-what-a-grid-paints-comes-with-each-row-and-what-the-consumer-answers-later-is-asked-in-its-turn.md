@@ -54,6 +54,18 @@ Consumer in its turn, what it writes crosses before the browser hears it was han
 made, refused by name as ADR-0431 section 1 has the Formula entry functions refused. `FindMatch` is handed the row's
 values by column name, since the browser holds no row of .NET's.
 
+### 4. The grid's own words cross as a table, asked of every id
+
+`CommandLabel` words the grid's own UI (ADR-0036): its commands, its fields, its refusals, its summary, its find
+panel and its reload notice. The browser words them as it draws, synchronously, so .NET asks the function of every
+id the grid words, the public constants of the classes that name them, as the grid is made and whenever another
+function is given, and sends the answers as one table; an id answered null keeps the grid's words. A placeholder such
+as `{column}` is a mark inside the words, not an id, and is not asked. The commands `ContextCommands` answers keep
+their own words, `ContextCommandLabel`'s, which come with the menu (ADR-0421).
+
+*Added on 2026-10-29, in the same thread, when the DemoHost pages and the Docs Examples moved onto
+`ExGrid.Script.ExGrid` and an Example that replaced two refusals' words had no parameter to take them.*
+
 ## Considered options
 
 - **Asking .NET as the core paints.** A round trip per row or per cell on Server, and no answer at all where the core
@@ -65,5 +77,6 @@ values by column name, since the browser holds no row of .NET's.
 
 - A Consumer that answered Row Headings, the Name Box's label, a Find rule or the data edge in C# writes them in a
   module once, for both hosts.
+- A grid with `CommandLabel` sends its words once per function, a few hundred short strings, not per row or key.
 - Each row crosses with what it paints, so a grid with appearances, change times or marks sends more per row; a grid
   without them sends nothing more.

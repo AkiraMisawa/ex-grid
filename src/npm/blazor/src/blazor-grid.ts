@@ -51,6 +51,9 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly completesText?: true;
     /** Whether the Consumer adds commands to the Context Menu, which .NET is asked for as it opens (ADR-0421). */
     readonly contextCommands?: true;
+    /** The Consumer's words for the grid's own, by id, as .NET's `CommandLabel` answers each id the grid words
+     * (ADR-0440 section 4). */
+    readonly commandLabels?: Readonly<Record<string, string>>;
     /** The Chrome slots the Consumer's Chrome fills with Razor, which .NET renders as each is mounted (ADR-0410). */
     readonly razorSlots?: readonly GridRazorSlotName[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
@@ -489,7 +492,9 @@ function findResultOf(answer: unknown): GridFindResult | 'moved' {
 /** The Consumer's Context Menu commands, and their words, as the core takes them (ADR-0421). */
 interface ContextMenus {
     readonly commands: (context: GridContextMenuContext<BlazorRow>) => Promise<readonly GridCommand[]>;
-    readonly label: (id: string) => string | undefined;
+    /** The words of an id: the Consumer's command's as .NET answered the menu, else the grid's own as `table` gives
+     * them. The same function while the table holds the same words, so the core words nothing again for nothing. */
+    labelFor(table: Readonly<Record<string, string>> | undefined): (id: string) => string | undefined;
 }
 
 // The Consumer's commands are .NET's, asked as the menu opens, which stands once they come (ADR-0421). Each menu is
@@ -500,6 +505,7 @@ interface ContextMenus {
 function contextMenus(dotnet: DotNetHandle, held: () => { readonly generation: number; readonly columnsVersion: number }): ContextMenus {
     let asked = 0;
     let words: ReadonlyMap<string, string> = new Map();
+    let labels: { readonly text: string; readonly label: (id: string) => string | undefined } | undefined;
     return Object.freeze({
         commands: async (context: GridContextMenuContext<BlazorRow>): Promise<readonly GridCommand[]> => {
             asked += 1;
@@ -513,7 +519,14 @@ function contextMenus(dotnet: DotNetHandle, held: () => { readonly generation: n
                 id, enabled, invoke: async () => { await dotnet.invokeMethodAsync('RunContextCommand', number, index); },
             })));
         },
-        label: (id: string) => words.get(id),
+        labelFor: (table: Readonly<Record<string, string>> | undefined) => {
+            const text = table === undefined ? '' : JSON.stringify(table);
+            if (labels?.text !== text) {
+                const own = new Map(table === undefined ? [] : Object.entries(table));
+                labels = { text, label: (id: string) => (words.has(id) ? words.get(id) : own.get(id)) };
+            }
+            return labels.label;
+        },
     });
 }
 
@@ -628,7 +641,8 @@ function gridOptions(
         ...(wire.findsErrors === true ? { findError } : {}),
         ...(wire.completesText === true ? { completeEditorText } : {}),
         ...scripts.options(wire.scripts),
-        ...(wire.contextCommands === true ? { contextCommands: menus.commands, commandLabel: menus.label } : {}),
+        ...(wire.contextCommands === true ? { contextCommands: menus.commands } : {}),
+        ...(wire.contextCommands === true || wire.commandLabels !== undefined ? { commandLabel: menus.labelFor(wire.commandLabels) } : {}),
         ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),

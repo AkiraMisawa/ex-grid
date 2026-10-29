@@ -1,4 +1,5 @@
 @using ExGrid.Docs.Examples.Data
+@implements IDisposable
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
     <ToolBarContent>
@@ -11,10 +12,8 @@
         </MudText>
     </ToolBarContent>
     <ChildContent>
-        <ExGrid TRow="Trade" Window="_trades.Window" WindowStart="_trades.WindowStart" TotalCount="MillionTrades.Count"
-                IsLoading="_trades.IsLoading" OnRangeNeeded="_trades.RangeNeededAsync"
+        <ExGrid TRow="Trade" Source="_trades" Columns="MillionTrades.Columns" HideColumnMenu="true" Chrome="_chrome"
                 RangeRequestMargin="@(_early ? ReadAheadTrades.Margin : 0)"
-                Columns="Columns" Chrome="_chrome" RowKey="TradeId" VouchesDistinctRows="true"
                 ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
 </MudExGridPaper>
@@ -28,15 +27,10 @@
     // Off at first: the grid asks once the rows on screen are not all held, as by default.
     private bool _early;
 
-    private static readonly GridColumn<Trade>[] Columns =
-    [
-        new("Id", ColumnType.Number, t => t.Id),
-        new("Book", ColumnType.Text, t => t.Book),
-        new("Trader", ColumnType.Text, t => t.Trader),
-        new("Instrument", ColumnType.Text, t => t.Instrument),
-        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
-        new("Price", ColumnType.Number, t => t.Price),
-    ];
+    // The counts in the toolbar follow the source as it is asked.
+    protected override void OnInitialized() => _trades.StateChanged += OnSourceChanged;
 
-    private static readonly Func<Trade, object> TradeId = static t => t.Id;
+    private void OnSourceChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => _trades.StateChanged -= OnSourceChanged;
 }

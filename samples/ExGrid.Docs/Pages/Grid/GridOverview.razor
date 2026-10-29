@@ -45,16 +45,17 @@
 
     <DocsSection Title="A grid drawn in the browser">
         <p>
-            Blazor's ExGrid is moving onto the same TypeScript core as React's, after which only the rows, their
-            order and what an intent does to them stay in .NET. <code>ExGrid.Script.ExGrid</code> is that grid,
-            beside the one above while the move is under way: the keys, the Selection, the clipboard and the
-            editor run in the browser on both hosting models, so on Blazor Server a key or a drag no longer
-            crosses the circuit. It takes the same <code>GridColumn</code>s and <code>IGridSource</code>, and its
+            Blazor's ExGrid is drawn by the same TypeScript core as React's, and only the rows, their order and what
+            an intent does to them stay in .NET. <code>ExGrid.Script.ExGrid</code> is that grid, and every Example on
+            this site draws it, through <code>@@using ExGrid.Script</code> in the site's <code>_Imports.razor</code>; the
+            grid drawn in .NET, <code>ExGrid.Components.ExGrid</code>, stays in the package until it is removed in
+            this release. The keys, the Selection, the clipboard and the editor run in the browser on both hosting
+            models, so on Blazor Server a key or a drag never crosses the circuit. It takes the same <code>GridColumn</code>s and <code>IGridSource</code>, and its
             parameters and events are named as the core's are. Edit a Book below: the commit waits for
             <code>OnEdit</code> to answer, and the cell then paints the row your source holds. A column's
             <code>Validate</code>, a <code>Refuse</code> from <code>OnEdit</code>, <code>OnPaste</code> or
             <code>OnFill</code>, and <code>CellState</code> and <code>CellMessageOf</code> work as on the grid
-            above; each answer crosses from .NET, and the input behind it waits for it
+            drawn in .NET; each answer crosses from .NET, and the input behind it waits for it
             (<a href="exgrid/editing#validation">a verdict may come later</a>). Select a few Books and drag the
             small square at the Selection's bottom-right down or up, or select a Trader alone and drag it left onto
             Book: with
@@ -105,7 +106,9 @@
         </p>
         <p>
             <code>ContextCommands</code> adds your own commands to the Context Menu, after Copy and Copy with
-            headers, as on the grid above, and <code>ContextCommandLabel</code> gives them their words (the grid's own commands keep its words). The menu is drawn in
+            headers, as on the grid drawn in .NET, and <code>ContextCommandLabel</code> gives them their words. The grid's own
+            words, its commands', its refusals', its find panel's and its summary's, are <code>CommandLabel</code>'s, asked of
+            every id as the grid is made and whenever another function is given, as on the grid drawn in .NET. The menu is drawn in
             the browser, so it asks .NET for your commands as it opens and opens once they arrive. A key typed in the
             meantime is held and reaches the menu once it is open. A command's <code>Invoke</code> runs in .NET, and the
             input after it waits until it completes, so the next menu is asked of what the command left. The context's
@@ -122,20 +125,20 @@
             value is typed as text for every type, read in the column's culture as the grid's own panel reads it.
         </p>
         <p>
-            Find is the source's, as on the grid above: <kbd>Ctrl</kbd>+<kbd>F</kbd> asks its
+            Find is the source's, as on the grid drawn in .NET: <kbd>Ctrl</kbd>+<kbd>F</kbd> asks its
             <code>FindAsync</code> in .NET, and is refused where the source does not search. Replace All is
             <code>OnReplace</code>, handed the request in its turn, and <kbd>Ctrl</kbd>+<kbd>H</kbd> is refused without
             it. It takes <code>CellMetrics</code>, and inside
             <code>MudExGridPaper</code> the paper's Roboto widths, Density, hover band and Row Stripes, as the grid
-            above does: a value written on the grid beats the paper's.
-            A Template Column is drawn as on the grid above: its fragment is rendered in .NET from the row and moved into
+            drawn in .NET does: a value written on the grid beats the paper's.
+            A Template Column is drawn as on the grid drawn in .NET: its fragment is rendered in .NET from the row and moved into
             the cell by the grid's script, and <kbd>Space</kbd> asks its control for the keyboard, which it takes
             through <code>HandKeyboardToAsync</code>. The Example's Confirmed column is one. A cell scrolled into view
             shows its content a round trip later over Blazor Server.
             <code>PointedAt</code> takes
             the declaration a <code>PointingScope</code> made, so a Sheet over the same core points into the grid
             (<a href="exsheet/linked-tables">Linked Tables</a>); a declaration of your own, whose
-            <code>OnPress</code> is a .NET function, is refused by name. Use the grid above for that. The browser is sent the rows around the ones in view, a few
+            <code>OnPress</code> is a .NET function, is refused by name. Use the grid drawn in .NET for that. The browser is sent the rows around the ones in view, a few
             screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
             few hundred. The script it runs is bundled into the package, at an address that changes with its
             content, as ExGrid's own script is, and the core under it is the Shared Script beside it,
@@ -144,12 +147,12 @@
             package's files names it too.
         </p>
         <p>
-            A Formula editor of your own takes the same aids as on the grid above, with one difference: the four
+            A Formula editor of your own takes the same aids as on the grid drawn in .NET, with one difference: the four
             functions the browser asks as it decides a key, <code>PointAt</code>, <code>ReferenceText</code>,
             <code>CycleReference</code> and <code>ReferencesIn</code>, are your own script. Each is a
             <code>ScriptFunction</code> (in <code>ExGrid.Data</code>), naming a function exported from a JavaScript
             module your application serves, <code>ScriptFunction.Of("./js/formula-entry.js", "pointAt")</code>, called
-            with the arguments and answering what the grid above's .NET function answers: an arrow decides at once
+            with the arguments and answering what the .NET function of the grid drawn in .NET answers: an arrow decides at once
             whether it points, on Blazor Server as on WebAssembly, with no round trip. The modules load before the
             grid is drawn, so give the functions as the grid is made: one given later is refused. A module that does not
             load, or an export that is not a function, is said in the grid's place; a function that throws, or answers
@@ -169,19 +172,19 @@
             to carry the request.
         </p>
         <p>
-            The rest of the grid above's surface is here too, each answered where the browser asks it. What a row
+            The rest of the surface of the grid drawn in .NET is here too, each answered where the browser asks it. What a row
             paints, its <code>RowKind</code>, <code>CellAppearance</code>, <code>CellChangedAt</code>, a toned column's
             tones and whether the row is marked, is asked in .NET as the row is sent and comes with it, so a cell paints
             without a round trip; a change time is read on the server's clock, so the Change Highlight lasts its
             <code>ChangeHighlightDuration</code> wherever the browser's clock stands. Row Marks cross only beside a Mark
             Column: the source's own, or your <code>Marks</code>, never both, and over <code>Rows</code> only yours,
             since the grid makes a new source of each new array and its marks would go with it. The Selection Summary
-            stands under the grid, as above, wherever the source summarises or <code>OnSummarize</code> answers; its
+            stands under the grid, as there, wherever the source summarises or <code>OnSummarize</code> answers; its
             figures are asked in their turn, and an exact sum crosses with every digit. <code>CopyAnswer</code> or
             <code>CopyAnswerAsync</code>, <code>OnReplace</code> and <code>OnDeclaredKey</code> for your
             <code>DeclaredKeys</code> are handed their request in its turn, and the input after them waits.
             <code>PageSize</code>, <code>RangeRequestMargin</code>, <code>RowHeadingWidth</code> and
-            <code>HideHeader</code> are as above. <code>RowHeadings</code>, <code>FindMatch</code> and
+            <code>HideHeader</code> are as there. <code>RowHeadings</code>, <code>FindMatch</code> and
             <code>DataEdge</code> are asked by position as the browser paints or decides a key, so each is your own
             script, as <code>NameBoxLabel</code> is: <code>FindMatch</code> is handed the row's values by column name.
         </p>
@@ -220,13 +223,14 @@
         </p>
     </DocsSection>
 
-    <DocsSection Title="A Source, or a Window you push">
+    <DocsSection Title="Rows through a Source">
         <p>
-            There are two ways to give the grid rows. A <strong>Source</strong> —
+            The grid takes its rows from a <strong>Source</strong> — <code>Rows="rows"</code> or
             <code>GridSource.From(rows)</code> for a list in memory, <code>GridSource.Fetch(...)</code> for a server —
-            holds the rows and answers the grid's questions for you. Or you push a <strong>Window</strong> yourself:
-            the rows you have, where they start and how many there are, answering <code>OnRangeNeeded</code> when the
-            user scrolls past them. A Source drives that same push form, so the grid behaves identically either way.
+            which holds the rows and answers the grid's questions. Or you write a source of your own: the rows you
+            have as its <strong>Window</strong>, where they start and how many there are, answering
+            <code>OnRangeNeededAsync</code> when the user scrolls past them. The grid asks every source the same
+            things, so it behaves identically over each.
             Either way it paints only the rows in view, on both axes: a million rows and a hundred columns keep the same
             few dozen elements. See <a href="exgrid/data">Data sources</a>.
         </p>

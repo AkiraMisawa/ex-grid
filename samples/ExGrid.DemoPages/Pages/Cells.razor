@@ -49,7 +49,7 @@
    cascade never changes. *@
 <CascadingValue Name="TakeKeyboard" Value="TakeKeyboard" IsFixed="true">
     <ExGrid TRow="DemoPosition" @ref="_grid"
-            Window="DemoData.Positions"
+            Rows="DemoData.Positions"
             Columns="_columns"
             CellState="_cellState"
             RowKind="RowKindOf"
@@ -87,7 +87,7 @@
     <h2>A second grid</h2>
     <div id="second-grid">
         <ExGrid TRow="DemoPosition"
-                Window="DemoData.Positions"
+                Rows="DemoData.Positions"
                 Columns="SecondColumns"
                 RowHeight="28"
                 ViewportHeight="200"

@@ -596,11 +596,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         builder.AddElementReferenceCapture(1, element => _root = element);
         if (_refused)
         {
-            // The core never attached: the root is Blazor's to say why, in the built-in words (ADR-0123).
+            // The core never attached: the root is Blazor's to say why, in the Consumer's words where it gives some
+            // (ADR-0123).
             builder.OpenElement(2, "div");
             builder.AddAttribute(3, "role", "alert");
             builder.AddAttribute(4, "data-ex-notice", "script");
-            builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.AddContent(5, CommandLabel?.Invoke(ReloadNoticeLabelIds.Script) ?? BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
         else if (_scriptRefusal is { } refusal)

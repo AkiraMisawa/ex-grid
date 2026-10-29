@@ -23,7 +23,8 @@
 </div>
 
 <p class="demo-status">
-    Window: rows @_windowStart–@(_windowStart + _window.Count - 1) of @_total,
+    @* The grid's source holds every row, so its Window is all of them. *@
+    Window: rows 0–@(_total - 1) of @_total,
     @DemoData.WideColumns.Length columns.
     <span id="selection-status">
         @* The count is the sum of the rectangles' areas, so it costs nothing to show for
@@ -33,16 +34,13 @@
 </p>
 
 <ExGrid TRow="DemoWideRow"
-        Window="_window"
-        WindowStart="_windowStart"
-        TotalCount="_total"
+        Rows="_rows"
         Columns="DemoData.WideColumns"
         RowHeight="28"
         ViewportHeight="600"
         ViewportWidth="900"
         PinnedColumnCount="_pinnedColumnCount"
         VirtualiseColumns="_virtualiseColumns"
-        OnRangeNeeded="OnRangeNeeded"
         SelectionChanged="OnSelectionChanged" />
 
 @code {
@@ -56,20 +54,12 @@
     [SupplyParameterFromQuery(Name = "rows")]
     public int? Rows { get; set; }
 
-    /// <summary>Rows either side of the Viewport to answer with, so ordinary scrolling
-    /// does not ask again immediately (ADR-0001: read-ahead belongs to the Consumer).</summary>
-    private const int ReadAhead = 60;
-
     private int _total = -1;
 
-    /// <summary>Made the first time a range asks for them, and kept: a row answered twice
-    /// is the same instance both times, so the rows that survive a scroll keep their
-    /// identity and skip their render (ADR-0003). Nothing is made for rows nobody
-    /// scrolled to — a million up front would be most of what this page costs to open.</summary>
-    private DemoWideRow?[] _rows = [];
+    /// <summary>Every row, held as the grid's: a row is the same instance for as long as the page shows it, so the rows
+    /// that survive a scroll keep their identity (ADR-0003).</summary>
+    private DemoWideRow[] _rows = [];
 
-    private IReadOnlyList<DemoWideRow> _window = [];
-    private int _windowStart;
     private bool _virtualiseColumns = true;
     private int _pinnedColumnCount = 2;
     private GridSelection _selection = GridSelection.Empty;
@@ -81,23 +71,9 @@
             return;
 
         _total = total;
-        _rows = new DemoWideRow?[Math.Max(0, total)];
-        _window = [];
-        _windowStart = 0;
-    }
-
-    // Answered on the spot rather than after a delay: this page is here to compare frame
-    // times across the two settings, and a fake latency would be the thing being timed.
-    // The Virtualised page shows the waiting case.
-    private void OnRangeNeeded(RowRange range)
-    {
-        var start = Math.Max(0, range.Start - ReadAhead);
-        var end = Math.Min(_total, range.Start + range.Count + ReadAhead);
-        var window = new DemoWideRow[Math.Max(0, end - start)];
-        for (var i = 0; i < window.Length; i++)
-            window[i] = _rows[start + i] ??= new DemoWideRow { Index = start + i };
-        _windowStart = start;
-        _window = window;
+        _rows = new DemoWideRow[Math.Max(0, total)];
+        for (var i = 0; i < _rows.Length; i++)
+            _rows[i] = new DemoWideRow { Index = i };
     }
 
     private void OnSelectionChanged(GridSelection selection) => _selection = selection;

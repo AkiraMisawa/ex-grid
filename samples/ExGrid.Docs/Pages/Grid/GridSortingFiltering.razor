@@ -27,7 +27,7 @@
                 searches the column headers too, below. With several cells selected, it searches the selection. <kbd>Enter</kbd> in its field goes to the
                 next match, and <kbd>Shift</kbd>+<kbd>Enter</kbd> to the previous one. If the rows move, or another
                 <code>Source</code> is handed over, while a step is out, its answer moves nothing: the panel says
-                to find again, and <code>OnFindRefused</code> says <code>OrderChanged</code> or
+                to find again, and <code>OnRefused</code> says, with a <code>GridRefusal.Find</code>, <code>OrderChanged</code> or
                 <code>SourceChanged</code>.
                 Characters and completed IME compositions typed as the panel opens reach its text field in
                 order, including over Blazor Server. Ticking <em>Match case</em> or <em>Match entire cell
@@ -79,7 +79,7 @@
                 <strong>Every header on screen that matches is marked</strong>, as matching cells are, with the
                 same two Visual Tokens. The grid judges the headers itself, by the rule <code>GridSource.From</code>
                 finds by, over the text the header shows; it holds that text, so this needs no
-                <code>FindMatch</code> of yours, and headers are marked even where your own <code>OnFind</code>
+                <code>FindMatch</code> of yours, and headers are marked even where your own find
                 answers and no cell is.
             </li>
             <li>
@@ -108,7 +108,7 @@
             <strong>Press <kbd>Ctrl</kbd>+<kbd>H</kbd></strong> for the find panel with Replace, as Excel's dialog
             has both. It is offered where a replacement can land: you pass <code>OnReplace</code>, at least one
             visible column is Editable, and Find is wired. Anywhere else <kbd>Ctrl</kbd>+<kbd>H</kbd> is still taken
-            from the browser (whose own key opens its history), opens nothing, and <code>OnFindRefused</code> says
+            from the browser (whose own key opens its history), opens nothing, and <code>OnRefused</code> says
             <code>ReplaceUnavailable</code>, as <kbd>Ctrl</kbd>+<kbd>F</kbd> is refused where nothing can search.
             <kbd>Ctrl</kbd>+<kbd>F</kbd> turns the panel back into Find alone.
         </p>
@@ -193,15 +193,15 @@
 
     <DocsSection Title="When you hold the rows yourself">
         <p>
-            Without a Source you push the rows (see <a href="exgrid/data">Data sources</a>), and the gestures arrive
-            as notifications. Pass <code>Sorts</code> and <code>Filters</code> so the header and panel show what is in
-            force, answer <code>OnSortChanged</code> and <code>OnFilterChanged</code> with a new <code>Window</code>,
-            <code>OnDistinctValuesNeeded</code> for the value list, and <code>OnFind</code> for
-            <kbd>Ctrl</kbd>+<kbd>F</kbd>. <code>GridQueryEngine.Apply</code> and <code>GridFind.Step</code> are the
+            A source of your own (see <a href="exgrid/data">Data sources</a>) is told the gestures. It is called with
+            <code>OnSortChanged</code> and <code>OnFilterChanged</code>, holds what it was given as <code>Sorts</code>
+            and <code>Filter</code> so the header and panel show what is in force, and answers with a new
+            <code>Window</code>; it answers <code>GetDistinctValuesAsync</code> for the value list, and, where it says
+            <code>CanFind</code>, <code>FindAsync</code> for <kbd>Ctrl</kbd>+<kbd>F</kbd>. <code>GridQueryEngine.Apply</code> and <code>GridFind.Step</code> are the
             reference implementations, if you want to run them over rows of your own.
         </p>
         <p>
-            Bump <code>RowSequenceVersion</code> whenever the order of the rows changes. The grid holds only the
+            Move your source's <code>RowSequenceVersion</code> whenever the order of the rows changes. The grid holds only the
             Window and cannot see a reorder; the version is how it knows to drop a selection that would now cover
             other rows.
         </p>
@@ -211,14 +211,17 @@
             little further down.
         </p>
         <p>
-            <strong>When you answer the find yourself — with <code>OnFind</code>, with the <code>find</code> delegate
-            of <code>GridSource.Fetch</code>, or with a Source of your own — the matches on screen are marked only if
-            you pass <code>FindMatch</code></strong>: the rule your answer finds by, asked of each cell on screen with the
-            text and the two options the panel holds (a <code>GridFindPattern</code>). Your search may not be the
-            reference one, and a mark your next step does not reach would be wrong, so without it nothing is marked.
-            If you find by the reference rule, pass it over the columns' displayed text,
-            <code>(row, column, pattern) =&gt; GridFind.Matches(column.Info.TextOf(row), pattern)</code>, and hold
-            the function in a field: a new one makes every row on screen judge its cells again.
+            <strong>When you answer the find yourself — with the <code>find</code> delegate of
+            <code>GridSource.Fetch</code>, or with a Source of your own — the matches on screen are marked only if
+            you pass <code>FindMatch</code></strong>: the rule your answer finds by. The grid asks it of each cell on
+            screen in the browser, where a round trip per cell is not to be had, so it is a function in a module your
+            application serves, <code>ScriptFunction.Of("./js/find-marks.js", "match")</code>, called with the row's
+            values by column name, the column's name and the pattern the panel holds,
+            <code>{ text, matchCase, wholeCell }</code>. Your search may not be the reference one, and a mark your next
+            step does not reach would be wrong, so without it nothing is marked. If you find by the reference rule,
+            <code>GridFind.Matches</code> over the columns' displayed text, write that rule in the script over the
+            values it is handed: in the Example, the columns that hold text, compared ordinally, ignoring case by
+            each character's upper case. Set it as the grid is made; it may be taken away and given back.
             Under React the prop is <code>findMatch</code>, and the reference rule is
             <code>(row, column, pattern) =&gt; findMatches(textOf(column, row), pattern)</code>, made once outside the
             component; <code>findStep</code> is the reference step, and all three come from <code>@@ex-grid/core</code>.
@@ -226,12 +229,13 @@
         <p>
             <strong>A step you cannot answer is given up, not answered "no match".</strong> When your search cannot
             read what it searches — a server refused, or the data moved under it — throw
-            <code>OperationCanceledException</code> from <code>OnFind</code>: the Focus does not move, the panel stays
+            <code>OperationCanceledException</code> from your source's <code>FindAsync</code>, or from the
+            <code>find</code> delegate: the Focus does not move, the panel stays
             open and says nothing, and you say why yourself, as ExPivot does on its toolbar. Answering
             <code>NotFound</code> instead would claim that cells nobody read hold no match.
         </p>
         <DocsExample Title="Your own find, and its marks" Builtin="typeof(FindMarks)" Mud="typeof(FindMarksMud)"
-                     Files="@(["Examples/Data/Trade.cs"])" />
+                     Files="@(["Examples/Grid/FindingTrades.cs", "wwwroot/js/find-marks.js", "Examples/Data/Trade.cs"])" />
     </DocsSection>
 
     <DocsSection Title="API">

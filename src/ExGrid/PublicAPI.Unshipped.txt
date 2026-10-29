@@ -565,6 +565,8 @@ ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyLi
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
 ExGrid.Script.ExGrid<TRow>.CompleteEditorText.get -> System.Func<string!, int, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditorCompletion?>>?
 ExGrid.Script.ExGrid<TRow>.CompleteEditorText.set -> void
+ExGrid.Script.ExGrid<TRow>.CommandLabel.get -> System.Func<string!, string?>?
+ExGrid.Script.ExGrid<TRow>.CommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.get -> System.Func<string!, string?>?
 ExGrid.Script.ExGrid<TRow>.ContextCommandLabel.set -> void
 ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?
