@@ -3,6 +3,8 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using global::ExChart.Engine;
+using global::ExGrid.Script;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Script;
 
@@ -448,10 +450,8 @@ internal static class ChartWire
             w.WriteNull(name);
             return;
         }
-        w.WriteStartObject(name);
-        w.WriteString("module", script.Module);
-        w.WriteString("export", script.Export);
-        w.WriteEndObject();
+        w.WritePropertyName(name);
+        ScriptFunctionJson.Write(w, script);
     }
 
     // Every value a series other than a Price Range holds that the chart writes through the series: its points' and its

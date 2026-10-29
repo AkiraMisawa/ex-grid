@@ -1,0 +1,53 @@
+@implements IDisposable
+@using ExGrid.Cells
+@using ExSheet
+@using ExSheet.Engine
+
+@* No Pointing Scope: the Sheet tells the page which of the ledger's columns its Formula reads, and in which colour,
+   and the page hands them to the grid that shows the ledger. *@
+<ExGrid.Script.ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" OutlinedColumns="_outlined"
+                      ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
+
+<div class="mt-4">
+    <ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnLinkedColumnColoursChanged="Outline"
+                            ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</div>
+
+@code {
+    private ExSheet.Script.ExSheet? _sheet;
+    private SheetDocument _document = CostReport.Document();
+    private static readonly CostCentre[] Centres = CostCentre.Sample();
+    private readonly InMemoryGridSource<CostCentre> _ledger = GridSource.From(Centres);
+    private IReadOnlyList<OutlinedColumn> _outlined = [];
+
+    // Named as the table's columns, so a column the Formula reads is the grid's column of the same name.
+    private readonly GridColumn<CostCentre>[] _columns =
+    [
+        new("Code", ColumnType.Text, c => c.Code),
+        new("Department", ColumnType.Text, c => c.Department),
+        new("Budget", ColumnType.Number, c => c.Budget, format: v => ((double)v).ToString("N0")),
+        new("Actual", ColumnType.Number, c => c.Actual, format: v => ((double)v).ToString("N0")),
+    ];
+
+    // Each column of the ledger the Formula reads, in the colour its References wear in the Sheet; none once the edit ends.
+    private void Outline(LinkedColumnColours columns) =>
+        _outlined = [.. columns.Where(c => c.Column.Table == CostCentre.Table).Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var sheet = _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
+        try
+        {
+            await sheet.PushLinkedTableAsync(CostCentre.Table, Centres.Select(c => c.ToRow()));
+        }
+        catch (ObjectDisposedException) when (_left)
+        {
+            // Left before the Sheet opened: the Sheet went with the page, and there is nothing to push to.
+        }
+    }
+
+    private bool _left;
+
+    public void Dispose() => _left = true;
+}

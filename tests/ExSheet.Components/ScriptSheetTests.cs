@@ -601,6 +601,24 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(new PointingRefusal(PointingRefusalReason.BlankKey, "m"), refusal);
     }
 
+    [Fact] // ADR-0431 section 2: each Linked Table column the Formula reads reaches the handler with the colour the core handed out
+    public async Task ADR0431_linked_column_colours_reach_the_handler_with_their_places_in_the_palette()
+    {
+        LinkedColumnColours? told = null;
+        var cut = Sheet(ps => ps.Add(p => p.OnLinkedColumnColoursChanged, (LinkedColumnColours columns) => told = columns));
+
+        Assert.Contains("linkedColumnColoursChanged", Attach().GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("linkedColumnColoursChanged",
+            Parsed("""[{"table":"Positions","column":"PV","colour":1},{"table":"Positions","column":"Book","colour":2}]""")));
+
+        Assert.Equal(
+            [new LinkedColumnColour(new LinkedTableColumn("Positions", "PV"), global::ExGrid.Cells.ReferenceColour.Reported(1)),
+             new LinkedColumnColour(new LinkedTableColumn("Positions", "Book"), global::ExGrid.Cells.ReferenceColour.Reported(2))],
+            told);
+        await cut.InvokeAsync(() => Bridge().Value.Heard("linkedColumnColoursChanged", Parsed("[]")));
+        Assert.Empty(Assert.IsType<LinkedColumnColours>(told));
+    }
+
     [Fact] // ADR-0430 section 2: a Scope's declaration reads a row as the table's row, written as a Linked Table's rows are
     public void ADR0430_a_declaration_reads_a_row_as_SheetWire_writes_a_Linked_Tables_row()
     {

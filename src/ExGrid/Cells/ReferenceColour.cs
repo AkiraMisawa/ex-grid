@@ -30,6 +30,17 @@ public readonly record struct ReferenceColour
         _index = place - 1;
     }
 
+    /// <summary>
+    /// A colour the Script Core handed out and reported by its place (ADR-0431), read back by an adapter over it, as
+    /// Blazor's ExGrid and ExSheet over the Script Core read theirs (ADR-0201's note of 2026-10-27). It chooses nothing:
+    /// a Consumer is told the colours, never picks one (ADR-0057), and hands a grid's
+    /// <see cref="OutlinedColumn"/> only a colour it was told.
+    /// </summary>
+    /// <param name="place">1 to 7, the place the Script Core reported.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The place is outside the palette.</exception>
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public static ReferenceColour Reported(int place) => new(place);
+
     /// <summary>Its place in the palette, 1 to 7: the <c>n</c> of
     /// <c>--ex-reference-n</c>.</summary>
     public int Place => _index + 1;

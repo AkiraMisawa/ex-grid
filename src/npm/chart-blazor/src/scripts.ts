@@ -5,30 +5,9 @@
 // that throws or answers what its member does not take refuse the chart in its place, by name, never written another
 // way (spine rule 1).
 
-/** A function of the Consumer's own script, as .NET names it. */
-export interface WireScript {
-    readonly module: string;
-    readonly export: string;
-}
+import { describeAnswer, ScriptFunctionError, scriptFunctionName, type WireScript } from '@ex-grid/blazor-shared';
 
-/** Why the Consumer's script cannot draw the chart, said in the chart's place. */
-export class ScriptFunctionError extends Error {
-    /** A refusal naming the function and what it did. */
-    constructor(message: string, options?: ErrorOptions) {
-        super(message, options);
-        this.name = 'ScriptFunctionError';
-    }
-}
-
-/** How a function is named in a refusal. */
-function named(script: WireScript): string {
-    return `The script function "${script.export}" of "${script.module}"`;
-}
-
-/** The key a function is loaded and looked up by. */
-export function keyOf(script: WireScript): string {
-    return `${script.module}\u0000${script.export}`;
-}
+export { keyOf, ScriptFunctionError, ScriptModules, type WireScript } from '@ex-grid/blazor-shared';
 
 /** The Consumer's functions a definition names, loaded, and what to tell when one fails as the chart draws. */
 export interface ScriptCalls {
@@ -45,14 +24,11 @@ export interface ScriptCalls {
 /** For a definition that names no script function: asking for one is a defect of the reader. */
 export const noScripts: ScriptCalls = Object.freeze({
     functionOf: (script: WireScript) => {
-        throw new Error(`Internal: ${named(script)} was read without being loaded.`);
+        throw new Error(`Internal: ${scriptFunctionName(script)} was read without being loaded.`);
     },
     failed: () => true,
 });
 
-function describe(value: unknown): string {
-    return typeof value === 'string' ? JSON.stringify(value) : typeof value === 'number' || typeof value === 'bigint' ? String(value) : value === null ? 'null' : typeof value;
-}
 
 /** What a failed function answers while its refusal is on its way: never drawn, since the refusal replaces the drawing first. */
 const unseen: unique symbol = Symbol('unseen');
@@ -63,7 +39,7 @@ function call(calls: ScriptCalls, script: WireScript, args: readonly unknown[]):
     try {
         return f(...args);
     } catch (e: unknown) { // oxlint-disable-line ex-grid/no-catch -- named as the Consumer's function's own, and thrown on or refused in the chart's place
-        return failure(calls, new ScriptFunctionError(`${named(script)} threw: ${e instanceof Error ? e.message : describe(e)}.`, { cause: e }));
+        return failure(calls, new ScriptFunctionError(`${scriptFunctionName(script)} threw: ${e instanceof Error ? e.message : describeAnswer(e)}.`, { cause: e }));
     }
 }
 
@@ -77,7 +53,7 @@ export function writerBy(calls: ScriptCalls, script: WireScript, what: string): 
     return value => {
         const text = call(calls, script, [value]);
         if (typeof text === 'string') return text;
-        if (text !== unseen) failure(calls, new ScriptFunctionError(`${named(script)} wrote ${what} ${describe(value)} as ${describe(text)}, which is not text.`));
+        if (text !== unseen) failure(calls, new ScriptFunctionError(`${scriptFunctionName(script)} wrote ${what} ${describeAnswer(value)} as ${describeAnswer(text)}, which is not text.`));
         return ''; // never painted: the refusal takes the drawing's place first
     };
 }
@@ -89,58 +65,8 @@ export function samplerBy(calls: ScriptCalls, script: WireScript, name: string):
         if (value === null || typeof value === 'bigint' || (typeof value === 'number' && Number.isFinite(value))) return value;
         if (value !== unseen) {
             failure(calls, new ScriptFunctionError(
-                `${named(script)} answered ${describe(value)} for '${name}' at ${String(position)}; a value is a finite number, and a missing one is null.`));
+                `${scriptFunctionName(script)} answered ${describeAnswer(value)} for '${name}' at ${String(position)}; a value is a finite number, and a missing one is null.`));
         }
         return null; // never painted: the refusal takes the drawing's place first
     };
-}
-
-/**
- * The modules a chart imported, each once, by its address read against the page's base. An address of another scheme
- * than http or https, a `data:` one above all, would carry the script in the string, and is refused.
- */
-export class ScriptModules {
-    readonly #modules = new Map<string, Promise<Readonly<Record<string, unknown>>>>();
-
-    /** Loads every function `scripts` names, refused by name when one cannot be had. */
-    async load(scripts: readonly WireScript[]): Promise<ScriptCalls['functionOf']> {
-        const modules = await Promise.all(scripts.map(script => this.#module(script)));
-        const loaded = new Map<string, (...args: never[]) => unknown>();
-        scripts.forEach((script, i) => {
-            const module = modules[i];
-            if (module === undefined) throw new Error(`Internal: ${named(script)} has no module loaded for it.`);
-            const f = module[script.export];
-            if (typeof f !== 'function') {
-                throw new ScriptFunctionError(f === undefined
-                    ? `The module "${script.module}" exports no "${script.export}" for the chart to call.`
-                    : `The module "${script.module}" exports "${script.export}" as ${describe(f)}, which is not a function.`);
-            }
-            loaded.set(keyOf(script), f as (...args: never[]) => unknown); // oxlint-disable-line typescript/no-unsafe-type-assertion -- checked to be a function above
-        });
-        return script => {
-            const f = loaded.get(keyOf(script));
-            if (f === undefined) throw new Error(`Internal: ${named(script)} was read without being loaded.`);
-            return f;
-        };
-    }
-
-    #module(script: WireScript): Promise<Readonly<Record<string, unknown>>> {
-        const address = new URL(script.module, document.baseURI);
-        if (address.protocol !== 'http:' && address.protocol !== 'https:') {
-            return Promise.reject(new ScriptFunctionError(
-                `The module "${script.module}" is addressed by "${address.protocol}"; a script function's module is a file the application serves.`));
-        }
-        const key = address.href;
-        let module = this.#modules.get(key);
-        if (module === undefined) {
-            module = (import(/* @vite-ignore */ key) as Promise<Readonly<Record<string, unknown>>>) // oxlint-disable-line typescript/no-unsafe-type-assertion -- a module namespace, read by name below
-                .catch((e: unknown) => { // oxlint-disable-line ex-grid/no-catch -- rethrown as the refusal that names the module
-                    // Asked again by the next definition that names it: a module that failed once may load then.
-                    this.#modules.delete(key);
-                    throw new ScriptFunctionError(`The module "${script.module}" did not load: ${e instanceof Error ? e.message : describe(e)}.`, { cause: e });
-                });
-            this.#modules.set(key, module);
-        }
-        return module;
-    }
 }

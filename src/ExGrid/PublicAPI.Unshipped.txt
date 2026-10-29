@@ -565,6 +565,8 @@ ExGrid.Script.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.Cont
 ExGrid.Script.ExGrid<TRow>.ContextCommands.set -> void
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.get -> long?
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.set -> void
+ExGrid.Script.ExGrid<TRow>.CycleReference.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.CycleReference.set -> void
 ExGrid.Script.ExGrid<TRow>.Density.get -> ExGrid.GridDensity?
 ExGrid.Script.ExGrid<TRow>.Density.set -> void
 ExGrid.Script.ExGrid<TRow>.DisposeAsync() -> System.Threading.Tasks.ValueTask
@@ -624,10 +626,14 @@ ExGrid.Script.ExGrid<TRow>.OnPinnedCountChanged.get -> Microsoft.AspNetCore.Comp
 ExGrid.Script.ExGrid<TRow>.OnPinnedCountChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.OnRedo.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnRedo.set -> void
+ExGrid.Script.ExGrid<TRow>.OnReferenceKeyColoursChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyList<ExGrid.Cells.ReferenceKeyColour!>!>
+ExGrid.Script.ExGrid<TRow>.OnReferenceKeyColoursChanged.set -> void
 ExGrid.Script.ExGrid<TRow>.OnRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Script.GridRefusal<TRow!>!>
 ExGrid.Script.ExGrid<TRow>.OnRefused.set -> void
 ExGrid.Script.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.EventCallback
 ExGrid.Script.ExGrid<TRow>.OnUndo.set -> void
+ExGrid.Script.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
+ExGrid.Script.ExGrid<TRow>.OutlinedColumns.set -> void
 ExGrid.Script.ExGrid<TRow>.PasteByteCap.get -> long?
 ExGrid.Script.ExGrid<TRow>.PasteByteCap.set -> void
 ExGrid.Script.ExGrid<TRow>.PasteMaySpill.get -> bool
@@ -635,10 +641,16 @@ ExGrid.Script.ExGrid<TRow>.PasteMaySpill.set -> void
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.get -> int
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.set -> void
 ExGrid.Script.ExGrid<TRow>.PlaceSelectionAsync(ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Script.ExGrid<TRow>.PointAt.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.PointAt.set -> void
 ExGrid.Script.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!>?
 ExGrid.Script.ExGrid<TRow>.PointedAt.set -> void
 ExGrid.Script.ExGrid<TRow>.Presentation.get -> ExGrid.GridPresentationDefaults?
 ExGrid.Script.ExGrid<TRow>.Presentation.set -> void
+ExGrid.Script.ExGrid<TRow>.ReferencesIn.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.ReferencesIn.set -> void
+ExGrid.Script.ExGrid<TRow>.ReferenceText.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Script.ExGrid<TRow>.ReferenceText.set -> void
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?
@@ -897,6 +909,7 @@ override sealed ExGrid.Script.GridRefusal<TRow>.Find.Equals(ExGrid.Script.GridRe
 override sealed ExGrid.Script.GridRefusal<TRow>.Mark.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 override sealed ExGrid.Script.GridRefusal<TRow>.Paste.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 override sealed ExGrid.Script.GridRefusal<TRow>.Placement.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
+static ExGrid.Cells.ReferenceColour.Reported(int place) -> ExGrid.Cells.ReferenceColour
 static ExGrid.Chrome.FindPanelLabelIds.OutcomeText(ExGrid.Chrome.FindContext! context, System.Func<string!, string!>! words) -> string!
 static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool

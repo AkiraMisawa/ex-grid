@@ -44,3 +44,14 @@ static ExGrid.Data.DataShapeColumn.operator ==(ExGrid.Data.DataShapeColumn left,
 static ExGrid.Data.FormatCode.TryParse(string! code, out ExGrid.Data.FormatCode? format, out string? reason) -> bool
 ~override ExGrid.Data.DataShapeColumn.Equals(object obj) -> bool
 ~override ExGrid.Data.DataShapeColumn.ToString() -> string
+ExGrid.Data.ScriptFunction
+ExGrid.Data.ScriptFunction.<Clone>$() -> ExGrid.Data.ScriptFunction!
+ExGrid.Data.ScriptFunction.Equals(ExGrid.Data.ScriptFunction? other) -> bool
+ExGrid.Data.ScriptFunction.Export.get -> string!
+ExGrid.Data.ScriptFunction.Module.get -> string!
+override ExGrid.Data.ScriptFunction.Equals(object? obj) -> bool
+override ExGrid.Data.ScriptFunction.GetHashCode() -> int
+override ExGrid.Data.ScriptFunction.ToString() -> string!
+static ExGrid.Data.ScriptFunction.Of(string! module, string! export) -> ExGrid.Data.ScriptFunction!
+static ExGrid.Data.ScriptFunction.operator !=(ExGrid.Data.ScriptFunction? left, ExGrid.Data.ScriptFunction? right) -> bool
+static ExGrid.Data.ScriptFunction.operator ==(ExGrid.Data.ScriptFunction? left, ExGrid.Data.ScriptFunction? right) -> bool

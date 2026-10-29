@@ -94,6 +94,7 @@
     <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
     <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
     <Compile Include="..\Shared\Script\ScriptMetricsJson.cs" Link="Script\ScriptMetricsJson.cs" />
+    <Compile Include="..\Shared\Script\ScriptFunctionJson.cs" Link="Script\ScriptFunctionJson.cs" />
   </ItemGroup>
 
 </Project>

@@ -28,8 +28,7 @@ namespace ExSheet.Script;
 /// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
 /// step holds (ADR-0370 section 11).</para>
 /// <para>Not carried yet, and so not offered: the Sheet Tabs' menu and the find panel of an
-/// <see cref="ISheetChrome"/>,
-/// and <c>OnLinkedColumnColoursChanged</c> (ADR-0430 section 3). What the Razor component answers at once is asked of
+/// <see cref="ISheetChrome"/>. What the Razor component answers at once is asked of
 /// the browser here, so it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>;
 /// and <see cref="SetCellFormatFromFocusAsync"/>, which reads the Focus cell in one round trip and sets its change in
 /// another, refuses a change whose Selection moved between them.</para>
@@ -183,6 +182,16 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// of it itself: show the <see cref="PointingRefusal.Message"/> where the page tells its user things.
     /// </summary>
     [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
+
+    /// <summary>
+    /// Tells the Consumer each Linked Table column the Formula being edited reads, and the colour its References wear
+    /// in the editor (ADR-0057, ADR-0049), as the Razor component tells it: each column once, in order of first
+    /// appearance, under the names the Consumer declared, whenever that list changes, and an empty list when the edit
+    /// ends. A <see cref="PointingScope"/> outlines the columns in its own grids; for any other grid, pass the list to
+    /// the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), which the colour was handed out for
+    /// (ADR-0431).
+    /// </summary>
+    [Parameter] public EventCallback<LinkedColumnColours> OnLinkedColumnColoursChanged { get; set; }
 
     /// <summary>
     /// The Chrome that fills slots of the Sheet with Razor (ADR-0410): each slot of the grid's its
@@ -668,6 +677,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             json.WriteStringValue("formatKeyRefused");
         if (OnPointingRefused.HasDelegate)
             json.WriteStringValue("pointingRefused");
+        if (OnLinkedColumnColoursChanged.HasDelegate)
+            json.WriteStringValue("linkedColumnColoursChanged");
         json.WriteEndArray();
         json.WriteEndObject();
     });
@@ -963,6 +974,13 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             {
                 var refusal = new PointingRefusal(Member<PointingRefusalReason>(Text(payload.GetProperty("reason"))), Text(payload.GetProperty("message")));
                 return () => OnPointingRefused.InvokeAsync(refusal);
+            }
+            case "linkedColumnColoursChanged":
+            {
+                var columns = new LinkedColumnColours(payload.EnumerateArray().Select(told => new LinkedColumnColour(
+                    new LinkedTableColumn(Text(told.GetProperty("table")), Text(told.GetProperty("column"))),
+                    global::ExGrid.Cells.ReferenceColour.Reported(told.GetProperty("colour").GetInt32()))));
+                return () => OnLinkedColumnColoursChanged.InvokeAsync(columns);
             }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised an event of the kind '{kind}'.");

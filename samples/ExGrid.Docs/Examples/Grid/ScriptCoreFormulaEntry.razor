@@ -1,0 +1,32 @@
+@using ExGrid.Cells
+@using ExGrid.Columns
+@using ExGrid.Data
+
+@* Type = in a Formula cell, then an arrow: the grid points, and writes what the page's own script calls the cell. F4
+   cycles the Reference at the caret, and each Reference is outlined in its colour while the edit is open. *@
+<ExGrid.Script.ExGrid TRow="Line" Rows="_lines" Columns="Columns" OnEdit="Edit" ShowFormulaBar
+                      PointAt="PointAt" ReferenceText="ReferenceText" CycleReference="CycleReference" ReferencesIn="ReferencesIn"
+                      ViewportHeight="220" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly ScriptFunction PointAt = ScriptFunction.Of("./js/formula-entry.js", "pointAt");
+    private static readonly ScriptFunction ReferenceText = ScriptFunction.Of("./js/formula-entry.js", "referenceText");
+    private static readonly ScriptFunction CycleReference = ScriptFunction.Of("./js/formula-entry.js", "cycleReference");
+    private static readonly ScriptFunction ReferencesIn = ScriptFunction.Of("./js/formula-entry.js", "referencesIn");
+
+    private sealed record Line(int A, int B, int C, string Formula);
+
+    private static readonly GridColumn<Line>[] Columns =
+    [
+        new("A", ColumnType.Number, l => l.A),
+        new("B", ColumnType.Number, l => l.B),
+        new("C", ColumnType.Number, l => l.C),
+        new("Formula", ColumnType.Text, l => l.Formula, editable: true, width: new(ColumnWidth.Fixed(220))),
+    ];
+
+    private Line[] _lines = [new(12, 7, 3, "=A1+B1"), new(40, 18, 5, ""), new(9, 30, 21, ""), new(16, 2, 64, "")];
+
+    // The grid reads no Formula: the text is kept as typed.
+    private void Edit(GridEditIntent<Line> intent) =>
+        _lines = [.. _lines.Select(line => ReferenceEquals(line, intent.Row) ? line with { Formula = intent.Value } : line)];
+}

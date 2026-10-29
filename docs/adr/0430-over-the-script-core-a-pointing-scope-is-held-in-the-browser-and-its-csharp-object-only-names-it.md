@@ -78,6 +78,12 @@ make a `ReferenceColour` is a way for a Consumer to choose one, which
 grids of a Scope are outlined by the Scope itself, in the page, as section 1 says; a grid outside any Scope waits on
 that question.
 
+*Settled on 2026-10-28 by [ADR-0431](./0431-over-the-script-core-a-grids-formula-entry-functions-are-the-consumers-script-and-the-colours-it-hands-out-are-told.md).*
+`PointAt`, `ReferenceText`, `CycleReference` and `ReferencesIn` are the Consumer's script on the Script ExGrid, and
+`CompleteEditorText` a .NET function asked as before. The colours cross as places in the palette, read back through
+`ReferenceColour.Reported`, so `OutlinedColumns`, `OnReferenceKeyColoursChanged` and `OnLinkedColumnColoursChanged`
+are carried. A `GridPointedAt<TRow>` of the Consumer's own is still refused.
+
 ### 4. What ExGrid's surface gains
 
 A `GridPointedAt<TRow>` says where it was made: `GridPointedAt<TRow>.InBrowser`, a `GridPointedInBrowser<TRow>`,
