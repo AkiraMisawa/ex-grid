@@ -1,0 +1,110 @@
+@page "/script-formula-entry"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using global::ExGrid.Data
+@using global::ExSheet
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>Formula entry over the Script Core</h1>
+
+<p>
+    The first grid is <code>ExGrid.Script.ExGrid</code> given the page's own script for Formula entry
+    (<code>_content/ExGrid.DemoPages/formula-entry.js</code>, ADR-0431): type <code>=</code> in a Formula cell and press
+    an arrow, and the grid points, writing what the script calls the cell; F4 cycles the Reference at the caret, and
+    each Reference is outlined in its colour while the edit is open. The browser asks the script as it decides each key,
+    so nothing waits on .NET.
+</p>
+
+<div id="script-formula-entry-lines">
+    <ExGrid.Script.ExGrid TRow="Line" Rows="_lines" Columns="LineColumns" OnEdit="_edit" ShowFormulaBar RowHeight="28"
+                          PointAt="PointAt" ReferenceText="ReferenceText" CycleReference="CycleReference" ReferencesIn="ReferencesIn"
+                          ViewportHeight="200" ViewportWidth="560" />
+</div>
+
+<p>
+    Below, the Sheet is in no Pointing Scope. It tells the page which of the positions' columns its Formula reads, and
+    in which colour (<code>OnLinkedColumnColoursChanged</code>), and the page hands them to the grid that shows the
+    positions as its <code>OutlinedColumns</code>. Type <code>=SUM(Positions[PV])</code> into a cell.
+</p>
+
+<div class="demo-side-by-side">
+    <div id="script-formula-entry-sheet">
+        <ExSheet.Script.ExSheet Document="Opening" Culture="EnUs" OnLinkedColumnColoursChanged="_outline"
+                                ViewportHeight="280" ViewportWidth="520" />
+    </div>
+    <div id="script-formula-entry-positions">
+        <ExGrid.Script.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" OutlinedColumns="_outlined"
+                              RowHeight="28" ViewportHeight="280" ViewportWidth="330" />
+    </div>
+</div>
+
+@code {
+    private const string Module = "./_content/ExGrid.DemoPages/formula-entry.js";
+    private static readonly ScriptFunction PointAt = ScriptFunction.Of(Module, "pointAt");
+    private static readonly ScriptFunction ReferenceText = ScriptFunction.Of(Module, "referenceText");
+    private static readonly ScriptFunction CycleReference = ScriptFunction.Of(Module, "cycleReference");
+    private static readonly ScriptFunction ReferencesIn = ScriptFunction.Of(Module, "referencesIn");
+
+    private sealed record Line(int A, int B, int C, string Formula);
+
+    private static readonly IReadOnlyList<GridColumn<Line>> LineColumns =
+    [
+        new("A", ColumnType.Number, l => l.A),
+        new("B", ColumnType.Number, l => l.B),
+        new("C", ColumnType.Number, l => l.C),
+        new("Formula", ColumnType.Text, l => l.Formula, editable: true, width: new ColumnWidthSpec(ColumnWidth.Fixed(220))),
+    ];
+
+    private Line[] _lines = [new(12, 7, 3, "=A1+B1"), new(40, 18, 5, ""), new(9, 30, 21, ""), new(16, 2, 64, "")];
+
+    private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+
+    private sealed record Position(string Id, string Book, double PV);
+
+    // Named as the table's columns, so a column the Formula reads is the grid's column of the same name.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    private static readonly Position[] Positions = [new("R-1102", "Rates", 1_250), new("R-2210", "Rates", -420.5), new("R-4471", "FX", 318.25)];
+
+    private static readonly SheetDocument Opening = OpeningDocument();
+
+    private readonly IGridSource<Position> _positions = GridSource.From(Positions);
+    private IReadOnlyList<OutlinedColumn> _outlined = [];
+    // Held in fields: a method group would be a new delegate on every render (AGENTS.md, the Blazor traps).
+    private EventCallback<GridEditIntent<Line>> _edit;
+    private EventCallback<LinkedColumnColours> _outline;
+
+    private static SheetDocument OpeningDocument()
+    {
+        var workbook = new Workbook(EnUs);
+        var sheet = workbook.Sheets[0].Name;
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        workbook.DeclareLinkedTable(Table, TableColumns, "Id");
+        workbook.Do(sheet, SheetEdit.Enter(CellAddress.Parse("A1"), "Total PV"));
+        return workbook.ToDocument(sheet);
+    }
+
+    protected override void OnInitialized()
+    {
+        // The grid reads no Formula: the text is kept as typed.
+        _edit = EventCallback.Factory.Create<GridEditIntent<Line>>(this, intent =>
+            _lines = [.. _lines.Select(line => ReferenceEquals(line, intent.Row) ? line with { Formula = intent.Value } : line)]);
+        // Each column of the positions the Formula reads, in the colour its Reference wears in the Sheet; none once
+        // the edit ends.
+        _outline = EventCallback.Factory.Create<LinkedColumnColours>(this, columns =>
+            _outlined = [.. columns.Where(c => c.Column.Table == Table).Select(c => new OutlinedColumn(c.Column.Column, c.Colour))]);
+    }
+}

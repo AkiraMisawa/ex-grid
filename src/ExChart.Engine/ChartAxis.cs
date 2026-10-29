@@ -1,5 +1,6 @@
 using System.Globalization;
 using Code = ExGrid.Data.FormatCode;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Engine;
 

@@ -8,6 +8,7 @@ using Microsoft.JSInterop;
 using Xunit;
 using ScriptChart = ExChart.Script.ExChart;
 using ScriptSurface = ExChart.Script.ExSurface;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Components.Tests;
 

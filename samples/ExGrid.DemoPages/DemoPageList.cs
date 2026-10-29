@@ -84,6 +84,8 @@ public static class DemoPageList
             "Blazor's ExSheet drawn by its TypeScript Script Core: the Workbook and its Formulas in the browser, the Sheet Document bound two ways in .NET, crossing as the JSON both engines read (ADR-0370 section 1)."),
         new("script-pointing", "Pointing over the Script Core", "ExSheet",
             "Blazor's ExSheet and ExGrid over the Script Core in one Pointing Scope: the C# Scope names the Scope the browser holds, and a press on the grid writes a lookup by the key .NET read from the row (ADR-0430)."),
+        new("script-formula-entry", "Formula entry over the Script Core", "ExSheet",
+            "A grid over the Script Core given the page's own script for Formula entry, which points, cycles a Reference with F4 and outlines each in its colour in the browser; and a Sheet with no Pointing Scope whose linked columns' colours outline the grid that shows the table (ADR-0431)."),
         new("workbook", "Workbook", "ExSheet",
             "One ExSheet holding a Workbook of two Sheets behind Sheet Tabs: a press or Ctrl+PageUp and Ctrl+PageDown shows another Sheet, each keeping its own Selection and scroll position (ADR-0331)."),
         new("xlsx", "Open and save .xlsx", "ExSheet",

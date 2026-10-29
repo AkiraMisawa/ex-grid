@@ -32,4 +32,5 @@ export {
     type SlotHostProduct,
 } from './razor-slot-host';
 export { gridRazorSlotKinds, isGridRazorSlotName, type GridRazorSlotName } from './grid-razor-slot-kinds';
+export { describeAnswer, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules, type LoadedScriptFunction, type WireScript } from './script-functions';
 export { WireMetrics, type WireCellMetrics, type WireGlyphWidths, type WirePresentationDefaults } from './wire-metrics';

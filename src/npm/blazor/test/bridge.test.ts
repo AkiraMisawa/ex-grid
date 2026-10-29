@@ -5,7 +5,8 @@
 // .NET has not sent it again, and that what the grid tells its source and its Consumer reaches .NET in order.
 import { afterEach, describe, expect, it } from 'vitest';
 import { GridPointedAt } from '@ex-grid/core';
-import { attach, latestOnly, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
+import { attach, latestOnly, loadScripts, type BlazorGrid, type WireAttach, type WireOptions } from '../src/blazor-grid';
+import { ScriptFunctionError, type LoadedScriptFunction, type WireScript } from '../src/script-functions';
 import { DotNetSource, type DotNetHandle, type WireState } from '../src/dotnet-source';
 import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type WireColumn, type WireRow } from '../src/wire-rows';
 import { awaitPointingScope, holdPointingScope, type PagePointingScope } from '../src/pointing-scopes';
@@ -89,12 +90,19 @@ function sourceOf(dotnet: FakeDotNet): DotNetSource {
         { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, noFind);
 }
 
-function mount(init: Partial<WireAttach> = {}, dotnet = new FakeDotNet(), collector = new FakeCollector()): { root: HTMLElement; grid: BlazorGrid } {
+function mount(
+    init: Partial<WireAttach> = {}, dotnet = new FakeDotNet(), collector = new FakeCollector(), scripts: Readonly<Record<string, LoadedScriptFunction>> = {},
+): { root: HTMLElement; grid: BlazorGrid } {
     const root = document.createElement('div');
     document.body.append(root);
+    const functionOf = (script: WireScript): LoadedScriptFunction => {
+        const f = scripts[script.export];
+        if (f === undefined) throw new Error(`The test loaded no ${script.export}.`);
+        return f;
+    };
     const grid = attach(root, dotnet, JSON.stringify({
         options: options(), source: { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false }, state: state(1, [rates, credit]), ...init,
-    }), collector.make);
+    }), collector.make, functionOf);
     attached.push(grid);
     return { root, grid };
 }
@@ -802,6 +810,80 @@ describe('completion .NET answers (ADR-0051)', () => {
         type('=SU');
         await turns();
         expect(dotnet.calls.filter(call => call.method === 'Complete')).toEqual([]);
+    });
+});
+
+describe('the Consumer\'s own script for Formula entry (ADR-0431)', () => {
+    const script = (name: string): WireScript => ({ module: './js/formula.js', export: name });
+    const pointing = {
+        pointAt: script('pointAt'), referenceText: script('referenceText'), cycleReference: script('cycleReference'), referencesIn: script('referencesIn'),
+    };
+    const reference = (range: { readonly topRow: number; readonly leftColumn: number }): string => `R${String(range.topRow + 1)}C${String(range.leftColumn + 1)}`;
+
+    it('ADR-0431: an arrow typed after = points where the Consumer\'s pointAt says a Reference can go, writing its referenceText', async () => {
+        const asked: unknown[][] = [];
+        const { root } = mount({ options: options({ rowHeight: 24, scripts: pointing, hears: ['edit'] }) }, new FakeDotNet(), new FakeCollector(), {
+            pointAt: (...args: unknown[]) => { asked.push(args); return args[0] === '='; },
+            referenceText: reference,
+            cycleReference: () => null,
+            referencesIn: () => null,
+        });
+        await turns();
+        press(root, 10, 5);
+        type('=');
+        key('ArrowDown');
+        await turns();
+        expect(asked).toContainEqual(['=', 1]);
+        expect(editorOf(root)?.value).toBe('=R2C1');
+    });
+
+    it('ADR-0431: F4 writes what the Consumer\'s cycleReference answers, and its null leaves the text', async () => {
+        let answer: unknown = { text: '=$A$1', selectionStart: 5, selectionEnd: 5 };
+        const { root } = mount({ options: options({ rowHeight: 24, scripts: pointing, hears: ['edit'] }) }, new FakeDotNet(), new FakeCollector(), {
+            pointAt: () => false, referenceText: reference, cycleReference: () => answer, referencesIn: () => null,
+        });
+        await turns();
+        press(root, 10, 5);
+        type('=A1');
+        key('F4');
+        await turns();
+        expect(editorOf(root)?.value).toBe('=$A$1');
+        answer = null;
+        key('F4');
+        await turns();
+        expect(editorOf(root)?.value).toBe('=$A$1');
+    });
+
+    it('ADR-0431: a function answering what its option does not take is refused naming it, never read as another answer', async () => {
+        const { root } = mount({ options: options({ rowHeight: 24, scripts: pointing, hears: ['edit'] }) }, new FakeDotNet(), new FakeCollector(), {
+            pointAt: () => 'yes', referenceText: reference, cycleReference: () => null, referencesIn: () => null,
+        });
+        await turns();
+        press(root, 10, 5);
+        type('=');
+        expect(() => { key('ArrowDown'); }).toThrow(new ScriptFunctionError('The script function "pointAt" of "./js/formula.js" answered "yes" as pointAt, which takes true or false.'));
+        expect(editorOf(root)?.value).toBe('=');
+    });
+
+    it('ADR-0431: the colours handed out for the keys referencesIn answers reach .NET as places in the palette', async () => {
+        const dotnet = new FakeDotNet();
+        const { root } = mount({ options: options({ rowHeight: 24, scripts: pointing, hears: ['edit', 'referenceKeyColoursChanged'] }) }, dotnet, new FakeCollector(), {
+            pointAt: () => false, referenceText: reference, cycleReference: () => null,
+            referencesIn: (text: unknown) => (text === '=X' ? [{ start: 1, length: 1, key: 'Positions[PV]' }] : null),
+        });
+        await turns();
+        press(root, 10, 5);
+        type('=X');
+        await turns();
+        expect(dotnet.heard('referenceKeyColoursChanged').at(-1)).toEqual([{ key: 'Positions[PV]', colour: 1 }]);
+        key('Escape');
+        await turns();
+        expect(dotnet.heard('referenceKeyColoursChanged').at(-1)).toEqual([]);
+    });
+
+    it('ADR-0420 section 3 / ADR-0431: a module addressed by data: carries the script in a string, and is refused by name as it is loaded', async () => {
+        expect(await loadScripts(JSON.stringify([{ module: 'data:text/javascript,export const f = () => true', export: 'f' }])))
+            .toContain('is addressed by "data:"');
     });
 });
 

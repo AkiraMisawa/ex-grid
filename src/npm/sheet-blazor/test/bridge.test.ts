@@ -567,6 +567,23 @@ describe('a Pointing Scope named by .NET (ADR-0430)', () => {
     });
 });
 
+describe('linked column colours across the bridge (ADR-0057, ADR-0431)', () => {
+    it('each Linked Table column the Formula reads reaches .NET under its declared names with its place in the palette, and none once the edit ends', async () => {
+        const { element, sheet, dotnet } = mount({ options: options({ hears: ['linkedColumnColoursChanged'] }) });
+        expect(sheet.declareLinkedTable('Positions', ['Id', 'PV'], ['Id'])).toEqual({ done: null });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('=');
+        const editor = element.querySelector<HTMLInputElement>('input.ex-editor');
+        if (editor === null) throw new Error('No edit opened.');
+        editor.value = '=SUM(Positions[PV])';
+        editor.dispatchEvent(new InputEvent('input', { bubbles: true, data: ')', inputType: 'insertText' }));
+        await vi.waitFor(() => { expect(dotnet.of('linkedColumnColoursChanged').at(-1)).toEqual([{ table: 'Positions', column: 'PV', colour: 1 }]); });
+        key('Escape');
+        await vi.waitFor(() => { expect(dotnet.of('linkedColumnColoursChanged').at(-1)).toEqual([]); });
+    });
+});
+
 describe('words across the bridge (ADR-0370 section 10, ADR-0036)', () => {
     it('asks .NET for the grid\'s ids and ExSheet\'s by the Razor component\'s names', () => {
         const ids = labelIds();

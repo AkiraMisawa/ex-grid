@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using global::ExChart.Engine;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Script;
 

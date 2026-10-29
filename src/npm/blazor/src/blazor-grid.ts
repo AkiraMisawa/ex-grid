@@ -9,8 +9,8 @@ import {
     type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import {
-    awaitPointingScope, crossingCalls, HeldMessages, isGridRazorSlotName, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type WireCellMetrics,
-    type WirePresentationDefaults,
+    awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
+    slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
 import { RazorSlots } from './razor-slots';
@@ -22,7 +22,7 @@ import { WriteGate } from './write-gate';
 export type HeardKind =
     | 'selectionChanged' | 'edit' | 'paste' | 'fill' | 'clear' | 'undo' | 'redo' | 'refused' | 'columnWidthChanged' | 'columnOrderChanged'
     | 'columnHidden' | 'pinnedCountChanged' | 'headerGroupToggled' | 'editingChanged' | 'editDiscarded' | 'cellDoubleClick' | 'leave' | 'overwriteNotice'
-    | 'action' | 'nameBoxEntered';
+    | 'action' | 'nameBoxEntered' | 'referenceKeyColoursChanged';
 
 /** The component's parameters, as the core's options are spelt. .NET sends only what the Consumer set, and the
  * core's own default stands for the rest, so a default is written once, in the core. */
@@ -51,6 +51,16 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly razorSlots?: readonly GridRazorSlotName[];
     /** The Pointing Scope's declaration the grid took as it was made, which it joins in the page (ADR-0430). */
     readonly pointedAt?: WirePointedAt;
+    /** The Consumer's functions of Formula entry, its own script, loaded before the grid was made (ADR-0431). */
+    readonly scripts?: WireScripts;
+}
+
+/** The functions of Formula entry the browser asks as it decides a key, each the Consumer's script (ADR-0431). */
+export interface WireScripts {
+    readonly pointAt?: WireScript;
+    readonly referenceText?: WireScript;
+    readonly cycleReference?: WireScript;
+    readonly referencesIn?: WireScript;
 }
 
 /** A Pointing Scope's declaration for this grid, as .NET's `GridPointedInBrowser` names it (ADR-0430). */
@@ -65,12 +75,12 @@ export interface WirePointedAt {
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
     | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
-    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar';
+    | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar' | 'outlinedColumns';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
     'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
-    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar',
+    'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar', 'outlinedColumns',
 ]);
 
 /** What the component asks of the grid it attached. Each call carries its data as the JSON text .NET wrote, read
@@ -125,6 +135,34 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
     return { register: (row, held) => { registry.register(row, held); } };
 }
 
+// The Consumer's functions, loaded once for the page, before the grids that name them are made (ADR-0431).
+const pageModules = new ScriptModules();
+const pageFunctions = new Map<string, LoadedScriptFunction>();
+
+/**
+ * Loads the Consumer's functions `json` names, a list of {@link WireScript}, before .NET attaches a grid that names
+ * them, so no key is decided without them (ADR-0431). Answers null once each is loaded, or the refusal, which .NET says
+ * in the grid's place: a module that does not load, or an export that is not a function.
+ */
+export async function loadScripts(json: string): Promise<string | null> {
+    const scripts = parsed<readonly WireScript[]>(json);
+    try {
+        const functionOf = await pageModules.load(scripts);
+        for (const script of scripts) pageFunctions.set(keyOf(script), functionOf(script));
+        return null;
+    } catch (e: unknown) { // oxlint-disable-line ex-grid/no-catch -- the refusal of the Consumer's script is answered as its words, which .NET shows in the grid's place; anything else is thrown on
+        if (e instanceof ScriptFunctionError) return e.message;
+        throw e;
+    }
+}
+
+/** A function `loadScripts` loaded for the page, which .NET names only once it has: never one it did not load. */
+function pageFunctionOf(script: WireScript): LoadedScriptFunction {
+    const loaded = pageFunctions.get(keyOf(script));
+    if (loaded === undefined) throw new Error(`Internal: .NET named ${scriptFunctionName(script)} without loading it first.`);
+    return loaded;
+}
+
 /** The calls that can carry more than a message holds, and that .NET's `Held` makes: `ScriptBridge.Held`. */
 const heldGridCalls: ReadonlySet<string> = new Set([
     'Heard', 'Validate', 'Find', 'FindError', 'Complete', 'SetSorts', 'SetFilter', 'Release', 'MountSlot', 'UpdateSlot', 'ContextCommands',
@@ -134,7 +172,9 @@ const heldGridCalls: ReadonlySet<string> = new Set([
  * Mounts the Script Core on `root`, the element the Blazor component rendered, with `dotnet` the component's
  * `DotNetObjectReference` and `json` a {@link WireAttach}. What it answers is the component's handle on the grid.
  */
-export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
+export function attach(
+    root: HTMLElement, bridge: DotNetHandle, json: string, makeCollector = browserCollector, functionOf: (script: WireScript) => LoadedScriptFunction = pageFunctionOf,
+): BlazorGrid {
     const init = parsed<WireAttach>(json);
     // A call too large for a message of its own, a large paste, a long edit, a filter of many values or a filter
     // panel's list, is held, and .NET takes it in its turn: the hub would otherwise close the circuit.
@@ -173,8 +213,9 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string, ma
     // The parameters as .NET last sent them, and the Scope's declaration once the page's Scope stands (ADR-0430).
     let wired = init.options;
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
+    const scripts = new ScriptHooks(functionOf);
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics, scripts);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -272,7 +313,7 @@ export function parsed<T>(json: string): T {
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
     | 'onSelectionChanged' | 'onEdit' | 'onPaste' | 'onFill' | 'onClear' | 'onUndo' | 'onRedo' | 'onRefused' | 'onColumnWidthChanged' | 'onColumnOrderChanged'
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onHeaderGroupToggled' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave'
-    | 'onOverwriteNotice' | 'onAction' | 'onNameBoxEntered'>>;
+    | 'onOverwriteNotice' | 'onAction' | 'onNameBoxEntered' | 'onReferenceKeyColoursChanged'>>;
 
 type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
 
@@ -325,6 +366,7 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
         onOverwriteNotice: notice => { send('overwriteNotice', notice); },
         onAction: event => { send('action', { row: event.row.id, column: event.column, action: event.action }); },
         onNameBoxEntered: typed => { send('nameBoxEntered', typed); },
+        onReferenceKeyColoursChanged: keys => { send('referenceKeyColoursChanged', keys); },
     });
 }
 
@@ -489,7 +531,7 @@ function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
 
 function gridOptions(
     wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf,
-    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics,
+    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics, scripts: ScriptHooks,
 ): GridOptions<BlazorRow> {
     const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
     const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
@@ -515,6 +557,7 @@ function gridOptions(
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
         ...(wire.completesText === true ? { completeEditorText } : {}),
+        ...scripts.options(wire.scripts),
         ...(wire.contextCommands === true ? { contextCommands: menus.commands, commandLabel: menus.label } : {}),
         ...(razorSlots === undefined || razorSlots.length === 0 ? {} : { chrome: slots.chrome(razorSlots) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
@@ -537,7 +580,68 @@ function gridOptions(
         ...(hears.has('overwriteNotice') ? { onOverwriteNotice: heard.onOverwriteNotice } : {}),
         ...(hears.has('action') ? { onAction: heard.onAction } : {}),
         ...(hears.has('nameBoxEntered') ? { onNameBoxEntered: heard.onNameBoxEntered } : {}),
+        ...(hears.has('referenceKeyColoursChanged') ? { onReferenceKeyColoursChanged: heard.onReferenceKeyColoursChanged } : {}),
     };
+}
+
+type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn'>;
+
+/**
+ * The Consumer's functions of Formula entry as the core takes them (ADR-0431), each made once per function, so the
+ * core sees the same one on every update (ADR-0003). Each calls the Consumer's function where the core asks it, and a
+ * throw, or an answer its option does not take, is thrown on as an error naming the function, never answered another
+ * way. The core checks a rewrite and the References themselves, as it checks a React Consumer's.
+ */
+class ScriptHooks {
+    readonly #made = new Map<string, unknown>();
+    readonly #functionOf: (script: WireScript) => LoadedScriptFunction;
+
+    constructor(functionOf: (script: WireScript) => LoadedScriptFunction) {
+        this.#functionOf = functionOf;
+    }
+
+    options(wire: WireScripts | undefined): Partial<ScriptOptions> {
+        if (wire === undefined) return {};
+        const { pointAt, referenceText, cycleReference, referencesIn } = wire;
+        return {
+            ...(pointAt === undefined ? {} : { pointAt: this.#hook('pointAt', pointAt, f => (text: string, caret: number) => checkedAnswer(pointAt, 'pointAt',
+                f(text, caret), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
+            ...(referenceText === undefined ? {} : { referenceText: this.#hook('referenceText', referenceText, f => (range: SelectionRange) => checkedAnswer(referenceText,
+                'referenceText', f(range), (a): a is string => typeof a === 'string', 'text')) }),
+            ...(cycleReference === undefined ? {} : { cycleReference: this.#hook('cycleReference', cycleReference, f => (text: string, start: number, end: number) =>
+                nothingAsUndefined(f(text, start, end)) as ReturnType<NonNullable<ScriptOptions['cycleReference']>>) }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks the rewrite as it takes it
+            ...(referencesIn === undefined ? {} : { referencesIn: this.#hook('referencesIn', referencesIn, f => (text: string) =>
+                nothingAsUndefined(f(text)) as ReturnType<NonNullable<ScriptOptions['referencesIn']>>) }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks each Reference as it takes it
+        };
+    }
+
+    #hook<T>(option: string, script: WireScript, make: (call: (...args: readonly unknown[]) => unknown) => T): T {
+        const key = `${option}\u0000${keyOf(script)}`;
+        const made = this.#made.get(key);
+        if (made !== undefined) return made as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- made by this method for this option
+        const f = this.#functionOf(script) as (...args: readonly unknown[]) => unknown; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the Consumer's function, whose answer is checked as it is called
+        const call = (...args: readonly unknown[]): unknown => {
+            try {
+                return f(...args);
+            } catch (e: unknown) { // thrown on, named as the Consumer's function's own
+                throw new ScriptFunctionError(`${scriptFunctionName(script)} threw as ${option}: ${e instanceof Error ? e.message : describeAnswer(e)}.`, { cause: e });
+            }
+        };
+        const hook = make(call);
+        this.#made.set(key, hook);
+        return hook;
+    }
+}
+
+/** What the Consumer's function answered, when it is what its option takes. */
+function checkedAnswer<T>(script: WireScript, option: string, answer: unknown, is: (answer: unknown) => answer is T, takes: string): T {
+    if (is(answer)) return answer;
+    throw new ScriptFunctionError(`${scriptFunctionName(script)} answered ${describeAnswer(answer)} as ${option}, which takes ${takes}.`);
+}
+
+/** A script's null, which C#'s Consumer writes for nothing, as the core's undefined. */
+function nothingAsUndefined(answer: unknown): unknown {
+    return answer === null ? undefined : answer;
 }
 
 /** A Selection as .NET reads it back: its ranges, its Focus, and which range holds the Focus. */

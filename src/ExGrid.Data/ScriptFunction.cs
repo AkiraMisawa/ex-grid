@@ -1,13 +1,12 @@
-namespace ExChart.Engine;
+namespace ExGrid.Data;
 
 /// <summary>
-/// A function exported from a JavaScript module the Consumer ships (ADR-0420 section 3): what a format code cannot
-/// say, written by the Consumer's own script and called by a chart drawn in the browser as it draws, at once. It
-/// stands where a format code stands, on an axis, a series, a surface axis and a surface's values, and where a
-/// sampler stands on a series. Nothing is evaluated from a string: the module is a file the Consumer serves as any
-/// other static asset, imported by its address. Only a chart drawn in the browser
-/// (<c>ExChart.Script.ExChart</c>, <c>ExChart.Script.ExSurface</c>) can call it; a chart drawn in .NET refuses a
-/// definition that names one.
+/// A function exported from a JavaScript module the Consumer ships (ADR-0420 section 3, ADR-0431): what a .NET function
+/// cannot do where the family's products draw in the browser, which call it at once, as they draw or as they decide a
+/// key. A chart takes one where a format code or a sampler stands; Blazor's ExGrid over the Script Core takes one for
+/// each of its Formula entry functions that the browser asks as a key is decided. Nothing is evaluated from a string: the
+/// module is a file the Consumer serves as any other static asset, imported by its address. Only a component that draws
+/// in the browser can call it; one that draws in .NET refuses it.
 /// </summary>
 public sealed record ScriptFunction
 {

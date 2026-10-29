@@ -8,6 +8,7 @@ using ExGrid.Clipboard;
 using ExGrid.Columns;
 using ExGrid.Components;
 using ExGrid.Selection;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.JSInterop;
@@ -249,6 +250,62 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public Func<string, int, ValueTask<EditorCompletion?>>? CompleteEditorText { get; set; }
 
     /// <summary>
+    /// Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051), as the Razor component's
+    /// <c>PointAt</c> answers it: the Consumer's own script (ADR-0431), since the browser asks it as it decides an
+    /// arrow's key. The function is called with the editor's text and the caret, and answers true or false. While it
+    /// answers true in Overwrite, an arrow points instead of committing, Home points at the row's first column, and a
+    /// press on a cell points in any editing state. Needs <see cref="ReferenceText"/>. Null — the default — never points.
+    ///
+    /// <para>The four functions of Formula entry are set as the grid is made: their modules load before the grid is
+    /// mounted, so no key is decided without them, and a function first given later is refused. A module that does
+    /// not load, or an export that is not a function, stands in the grid's place, named; a function that throws, or
+    /// answers what its option does not take, throws an error naming it where the browser asked.</para>
+    /// </summary>
+    [Parameter] public ScriptFunction? PointAt { get; set; }
+
+    /// <summary>
+    /// The Reference text for a pointed range, written at the caret while pointing (ADR-0051), as the Razor
+    /// component's <c>ReferenceText</c> answers it: the Consumer's own script (ADR-0431). The function is called with
+    /// the range, <c>{ topRow, leftColumn, rowCount, columnCount }</c>, and answers its text, <c>A3</c> or
+    /// <c>B7:C9</c> on a Sheet. Required with <see cref="PointAt"/>.
+    /// </summary>
+    [Parameter] public ScriptFunction? ReferenceText { get; set; }
+
+    /// <summary>
+    /// What F4 makes of the editor's text (ADR-0051), as the Razor component's <c>CycleReference</c> answers it: the
+    /// Consumer's own script (ADR-0431). The function is called with the text and the selection's start and end in the
+    /// surface typed in, and answers the whole new text and the selection in it,
+    /// <c>{ text, selectionStart, selectionEnd }</c>, or null for nothing to change. Given, F4 is taken while an edit
+    /// is open, and only then.
+    /// </summary>
+    [Parameter] public ScriptFunction? CycleReference { get; set; }
+
+    /// <summary>
+    /// The References in the editor's text (ADR-0057), as the Razor component's <c>ReferencesIn</c> answers them: the
+    /// Consumer's own script (ADR-0431), since the browser asks it as each key changes the text. The function is called
+    /// with the text, and answers a list of <c>{ start, length, range }</c>, naming cells on this grid, or
+    /// <c>{ start, length, key }</c>, naming what the grid does not hold, or null for none. References naming the
+    /// same cells, or carrying the same key, share a colour the grid hands out; each range is outlined.
+    /// </summary>
+    [Parameter] public ScriptFunction? ReferencesIn { get; set; }
+
+    /// <summary>
+    /// Tells the Consumer the colour each key <see cref="ReferencesIn"/> answered was given (ADR-0057): each key once,
+    /// in order of first appearance, whenever that set changes, and an empty list when the edit ends, as the Razor
+    /// component tells it. The Consumer outlines what a key names wherever it shows it, through a grid's
+    /// <see cref="OutlinedColumns"/>.
+    /// </summary>
+    [Parameter] public EventCallback<IReadOnlyList<ReferenceKeyColour>> OnReferenceKeyColoursChanged { get; set; }
+
+    /// <summary>
+    /// Columns to outline, each in a colour it was told (ADR-0057), as the Razor component outlines them: a Reference
+    /// Outline over the column's body, across all its rows, with or without an edit or a Selection. A column is named
+    /// as <see cref="GridColumn{TRow}.Name"/> names it; a name the grid does not show is outlined nowhere, and a column
+    /// listed twice is outlined twice, the later over the earlier. Null or empty — the default — outlines nothing.
+    /// </summary>
+    [Parameter] public IReadOnlyList<OutlinedColumn>? OutlinedColumns { get; set; }
+
+    /// <summary>
     /// The Chrome that fills the Script Core's slots with Razor (ADR-0410): each slot its
     /// <see cref="IGridChrome.ScriptSlots"/> names is drawn by its view overload, rendered beside the grid's root
     /// and moved into the slot by the script, which wires its controls in the browser from the attributes of
@@ -353,6 +410,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     // The declaration of a Pointing Scope this grid took as it was made, which it keeps (ADR-0430).
     private GridPointedInBrowser<TRow>? _pointedAt;
     private bool _parametersSet;
+    // The Consumer's functions the grid was made with, whose modules the browser loaded before it mounted the grid, and
+    // why it refused them, said in the grid's place (ADR-0431).
+    private readonly HashSet<ScriptFunction> _scripts = [];
+    private string? _scriptRefusal;
 
     /// <inheritdoc />
     public override Task SetParametersAsync(ParameterView parameters)
@@ -376,6 +437,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
         }
         ScriptColumns.Check(Columns);
+        TakeScripts();
         TakePointedAt();
         if (!ReferenceEquals(Chrome, _renderedChrome))
         {
@@ -454,6 +516,38 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
     }
 
+    // The Consumer's functions of Formula entry, taken as the grid is made: their modules load before the grid is
+    // mounted, so no key is decided without them, and one first given later is refused (ADR-0431).
+    private void TakeScripts()
+    {
+        if (PointAt is not null && ReferenceText is null)
+        {
+            throw new InvalidOperationException("PointAt needs ReferenceText: pointing writes the Consumer's Reference text for the pointed range, "
+                + "and the grid has no names of its own for cells (ADR-0051).");
+        }
+        foreach (var script in Scripts())
+        {
+            if (_parametersSet && !_scripts.Contains(script))
+            {
+                throw new NotSupportedException($"The script function {script} is given after the grid was made. Its module loads before the grid is "
+                    + "mounted, so that no key is decided without it: set it as the grid is made (ADR-0431).");
+            }
+            _scripts.Add(script);
+        }
+    }
+
+    private IEnumerable<ScriptFunction> Scripts()
+    {
+        if (PointAt is { } pointAt)
+            yield return pointAt;
+        if (ReferenceText is { } referenceText)
+            yield return referenceText;
+        if (CycleReference is { } cycleReference)
+            yield return cycleReference;
+        if (ReferencesIn is { } referencesIn)
+            yield return referencesIn;
+    }
+
     // A Scope's declaration, taken once, as the grid is made: the browser registers it in its Scope then, and every row
     // it is sent carries what the Scope reads of it (ADR-0430).
     private void TakePointedAt()
@@ -503,8 +597,17 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
+        else if (_scriptRefusal is { } refusal)
+        {
+            // The Consumer's script could not be had: no grid is made, and the root names the function (ADR-0431).
+            builder.OpenElement(7, "div");
+            builder.AddAttribute(8, "role", "alert");
+            builder.AddAttribute(9, "data-ex-notice", "script-function");
+            builder.AddContent(10, refusal);
+            builder.CloseElement();
+        }
         builder.CloseElement();
-        _slots.Render(builder, 6, (name, view) => view is TemplateCellSlot cell ? TemplateFragment(cell) : RazorSlot.Fragment(Chrome, name, view));
+        _slots.Render(builder, 11, (name, view) => view is TemplateCellSlot cell ? TemplateFragment(cell) : RazorSlot.Fragment(Chrome, name, view));
     }
 
     /// <inheritdoc />
@@ -548,6 +651,23 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _renderOwed = true;
             StateHasChanged();
             return;
+        }
+        if (_scripts.Count > 0)
+        {
+            // The Consumer's functions, loaded before the grid is mounted, so no key is decided without them (ADR-0431).
+            var refusal = await module.InvokeAsync<string?>("loadScripts", ScriptsJson());
+            if (_disposed)
+            {
+                await ReleaseAsync(null, module);
+                return;
+            }
+            if (refusal is not null)
+            {
+                _scriptRefusal = refusal;
+                _renderOwed = true;
+                StateHasChanged();
+                return;
+            }
         }
         // What the attach carries is what the browser holds once it returns: anything that changes while it is on
         // its way is owed again, and sent after it, in the order it changed.
@@ -955,6 +1075,27 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteBoolean("findsErrors", true);
         if (CompleteEditorText is not null)
             json.WriteBoolean("completesText", true);
+        if (Scripts().Any())
+        {
+            json.WriteStartObject("scripts");
+            WriteScript(json, "pointAt", PointAt);
+            WriteScript(json, "referenceText", ReferenceText);
+            WriteScript(json, "cycleReference", CycleReference);
+            WriteScript(json, "referencesIn", ReferencesIn);
+            json.WriteEndObject();
+        }
+        if (OutlinedColumns is { Count: > 0 } outlined)
+        {
+            json.WriteStartArray("outlinedColumns");
+            foreach (var column in outlined)
+            {
+                json.WriteStartObject();
+                json.WriteString("column", column.Column);
+                json.WriteNumber("colour", column.Colour.Place);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
         if (ContextCommands is not null)
             json.WriteBoolean("contextCommands", true);
         if (_pointedAt is { } pointedAt)
@@ -986,6 +1127,30 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteEndObject();
     });
 
+    private static void WriteScript(Utf8JsonWriter json, string name, ScriptFunction? script)
+    {
+        if (script is null)
+            return;
+        json.WriteStartObject(name);
+        json.WriteString("module", script.Module);
+        json.WriteString("export", script.Export);
+        json.WriteEndObject();
+    }
+
+    // The functions the browser loads before it mounts the grid (ADR-0431).
+    private string ScriptsJson() => Json(json =>
+    {
+        json.WriteStartArray();
+        foreach (var script in _scripts)
+        {
+            json.WriteStartObject();
+            json.WriteString("module", script.Module);
+            json.WriteString("export", script.Export);
+            json.WriteEndObject();
+        }
+        json.WriteEndArray();
+    });
+
     private IEnumerable<(string Kind, bool Heard)> Hears()
     {
         yield return ("selectionChanged", SelectionChanged.HasDelegate);
@@ -1008,6 +1173,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         yield return ("overwriteNotice", OnOverwriteNotice.HasDelegate);
         yield return ("action", OnAction.HasDelegate);
         yield return ("nameBoxEntered", OnNameBoxEntered.HasDelegate);
+        yield return ("referenceKeyColoursChanged", OnReferenceKeyColoursChanged.HasDelegate);
     }
 
     private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
@@ -1670,6 +1836,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             {
                 var typed = payload.GetString() ?? throw new InvalidOperationException("Internal: Enter in the Name Box without its text.");
                 return () => OnNameBoxEntered.InvokeAsync(typed);
+            }
+            case "referenceKeyColoursChanged":
+            {
+                IReadOnlyList<ReferenceKeyColour> keys = [.. payload.EnumerateArray().Select(key =>
+                    new ReferenceKeyColour(Text(key, "key"), ReferenceColour.Reported(key.GetProperty("colour").GetInt32())))];
+                return () => OnReferenceKeyColoursChanged.InvokeAsync(keys);
             }
             default:
                 throw new InvalidOperationException($"Internal: the Script Core raised '{kind}', which the adapter does not hear.");

@@ -5,6 +5,7 @@ using global::ExGrid;
 using global::ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Components;
 
