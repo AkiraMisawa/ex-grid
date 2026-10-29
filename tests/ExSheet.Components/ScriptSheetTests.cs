@@ -92,6 +92,19 @@ public class ScriptSheetTests : BunitContext
         Assert.True(attach.GetProperty("circuit").GetBoolean());
     }
 
+    [Fact] // ADR-0030: a Wrapper's paper paints the cells in its font, so the Sheet is handed its widths and Density
+    public void ADR0030_a_Wrappers_cascaded_widths_cross_and_none_crosses_without_one()
+    {
+        Sheet();
+        Sheet(ps => ps.AddCascadingValue(new GridPresentationDefaults(10.4, 8.0, 4.95, 14, GridDensity.Standard)));
+
+        var attached = _module.Invocations["attach"].Select(attach => Parsed(attach.Arguments[2]).GetProperty("options")).ToArray();
+        Assert.False(attached[0].TryGetProperty("presentationDefaults", out _));
+        var defaults = attached[1].GetProperty("presentationDefaults");
+        Assert.Equal(8.0, defaults.GetProperty("digitWidthPx").GetDouble());
+        Assert.Equal("standard", defaults.GetProperty("density").GetString());
+    }
+
     [Fact] // ADR-0048, ADR-0331: a document raised and bound back crosses no more; the Consumer's own does, and null after one opens an empty Sheet
     public async Task ADR0048_a_document_bound_two_ways_crosses_only_when_it_is_the_consumers_own()
     {
@@ -815,28 +828,40 @@ public class ScriptSheetTests : BunitContext
         _sheet.SetupVoid("tell", _ => true).SetVoidResult();
         var cut = Render<ScriptSheetSupport.ScriptSheetWithToolbar>(ps => ps.Add(p => p.OnFlag, () => throw new SheetRefusedException(new SheetRefusal(SheetRefusalReason.EditIsOpen, "An edit is open."))));
 
-        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(1));
+        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(1, 1));
         Assert.Equal(1, cut.Instance.Reviewed);
 
         await cut.InvokeAsync(() => Bridge().Value.MountSlot(1, 1, "toolbarContent", """{"button":2}"""));
         Assert.Equal("F", cut.Find("div[hidden] > .ex-razor-slot > b.flag-icon").TextContent);
 
-        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2));
+        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2, 2));
         Assert.Equal(["An edit is open."], _sheet.Invocations["tell"].Select(call => call.Arguments[0]));
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }
 
-    [Fact] // ADR-0240 section 6, the spine's first rule: a save awaited inside a press, whose place in the order the press holds, is refused by name rather than left to hang
-    public async Task ADR0240_a_save_called_from_a_toolbar_buttons_on_click_is_refused_rather_than_left_waiting()
+    [Fact] // ADR-0240 section 6: a save awaited inside a press is asked for inside that press's turn, by its number, and one called outside any press in its own place
+    public async Task ADR0240_a_save_called_from_a_toolbar_buttons_on_click_is_asked_for_inside_the_press()
     {
+        var answers = _sheet.Setup<JsonElement>("save", _ => true);
         IRenderedComponent<ScriptSheetSupport.ScriptSheetWithToolbar>? cut = null;
         cut = Render<ScriptSheetSupport.ScriptSheetWithToolbar>(ps => ps.Add(p => p.OnFlag, () => cut!.Instance.Sheet!.SaveAsync(_ => Task.CompletedTask)));
 
-        await cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2));
-        Assert.True(Renderer.UnhandledException.IsCompleted);
-        var refused = Assert.IsType<InvalidOperationException>(await Renderer.UnhandledException);
-        Assert.StartsWith("SaveAsync takes its place in the Sheet's Input Order", refused.Message, StringComparison.Ordinal);
-        Assert.Empty(_sheet.Invocations["save"]);
+        var press = cut.InvokeAsync(() => Bridge().Value.ToolbarPressed(2, 7));
+        cut.WaitForAssertion(() => Assert.Single(_sheet.Invocations["save"]));
+        Assert.Equal(7, Assert.IsType<int>(_sheet.Invocations["save"][^1].Arguments[1]));
+        // The press holds its turn until the save it awaits has ended.
+        Assert.False(press.IsCompleted);
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await press;
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+
+        // Outside any press, the save takes its own place.
+        answers = _sheet.Setup<JsonElement>("save", _ => true);
+        var saving = cut.InvokeAsync(() => cut.Instance.Sheet!.SaveAsync(_ => Task.CompletedTask));
+        cut.WaitForAssertion(() => Assert.Equal(2, _sheet.Invocations["save"].Count));
+        Assert.Null(_sheet.Invocations["save"][^1].Arguments[1]);
+        answers.SetResult(Parsed("""{"done":null}"""));
+        await saving;
     }
 
     /// <summary>A Toolbar Item of the Consumer's own, which the Script Core has no counterpart for.</summary>

@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { EditVerdict } from '../src/cells/edit-intent';
 import type { GridSelection } from '../src/selection/selection';
-import type { GridView } from '../src/dom/grid-view';
+import type { GridTurn, GridView } from '../src/dom/grid-view';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
 afterEach(unmountAll);
@@ -106,6 +106,57 @@ describe('work of the Consumer\'s in the Input Order', () => {
         expect(focusRow(atOnce.selections)).toBe(7);
         expect(focusRow(after.selections)).toBe(7);
         expect(atOnce.root.hasAttribute('data-ex-settled')).toBe(after.root.hasAttribute('data-ex-settled'));
+    });
+
+    it('ADR-0240 section 6: work placed through a turn, after the turn has waited, runs inside it, and the keys typed meanwhile wait behind both', async () => {
+        const { view, selections } = grid();
+        await painted();
+        view.focus();
+        const outer: Held[] = [];
+        const inner: Held[] = [];
+        let nested: Promise<boolean> | undefined;
+        const ran = view.inOrder(async turn => {
+            // The turn's work waits for something else, as a press waits for its handler in another runtime, and that
+            // asks for work after the wait: placed in the grid's order it would wait for this turn to end.
+            await heldWork(outer)(new AbortController().signal);
+            nested = turn.cancellableInOrder(lookingWork(inner, () => { placeOn(view, 5); }), () => undefined);
+            await nested;
+        });
+        key('ArrowDown');
+        defined(outer[0], 'the turn\'s wait').land();
+        await settled();
+        // Inside the turn, the nested work is under way at once, ahead of the key held behind the turn.
+        expect(inner.length).toBe(1);
+        expect(focusRow(selections)).toBe(undefined);
+        defined(inner[0], 'the nested work').land();
+        expect(await defined(nested, 'the nested work\'s promise')).toBe(true);
+        await ran;
+        await settled();
+        expect(focusRow(selections)).toBe(6);
+    });
+
+    it('ADR-0240 section 6: an Escape cancels work placed inside a turn, and a turn whose work has ended places nothing', async () => {
+        const { view } = grid();
+        await painted();
+        view.focus();
+        const outer: Held[] = [];
+        const inner: Held[] = [];
+        let nested: Promise<boolean> | undefined;
+        let kept: GridTurn | undefined;
+        const ran = view.inOrder(async turn => {
+            kept = turn;
+            await heldWork(outer)(new AbortController().signal);
+            nested = turn.cancellableInOrder(lookingWork(inner), () => undefined);
+            await nested;
+        });
+        defined(outer[0], 'the turn\'s wait').land();
+        await settled();
+        key('Escape');
+        expect(defined(inner[0], 'the nested work').signal.aborted).toBe(true);
+        defined(inner[0], 'the nested work').land();
+        expect(await defined(nested, 'the nested work\'s promise')).toBe(false);
+        await ran;
+        expect(() => defined(kept, 'the turn').inOrder(() => undefined)).toThrow('This turn has ended');
     });
 
     it('ADR-0240 section 12: while cancellable work is placed the stamp names it, and under way the root is busy', async () => {

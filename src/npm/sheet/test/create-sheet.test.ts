@@ -5,7 +5,7 @@
 // what it refuses (ADR-0370 section 10).
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, type CellFormat, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
-import { createGrid, type GridHandle } from '@ex-grid/core';
+import { createGrid, GridPresentationDefaults, type GridHandle } from '@ex-grid/core';
 import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
 import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
 import type { SheetFormatCellsSlotContext, SheetTabSlotContext } from '../src/sheet-chrome-slots';
@@ -1214,6 +1214,36 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
     });
 
+    it('ADR-0100/ADR-0410: a Sheet destroyed while its KeyTips stand mounts no Chrome slot as the band loses the keyboard', async () => {
+        const mounts: string[] = [];
+        let destroyed = false;
+        const chrome: SheetChrome = {
+            toolbarItem: (_slot, context) => {
+                // A Blazor adapter's slots go before the Sheet does, and refuse a mount after (ADR-0410).
+                if (destroyed) throw new Error(`The slot of ${context.view().name} was mounted on a destroyed Sheet.`);
+                mounts.push(context.view().name);
+                return () => undefined;
+            },
+        };
+        const { element, sheet } = sheetOf({ showToolbar: true, chrome, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        key('Alt', { altKey: true });
+        grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+        expect(document.activeElement).toBe(band);
+        expect(mounts).not.toHaveLength(0);
+
+        destroyed = true;
+        sheet.destroy();
+        mounts.splice(0);
+        // The browser blurs the band as it leaves the page.
+        band?.dispatchEvent(new FocusEvent('blur'));
+
+        expect(mounts).toEqual([]);
+    });
+
     it('ADR-0100: the toolbar hidden while the KeyTips stand takes them away, and shown again it shows none', async () => {
         const options = { showToolbar: true } as const;
         const { element, sheet } = sheetOf(options);
@@ -2196,5 +2226,29 @@ describe('a Framework Adapter\'s hold on the Sheet\'s grid (ADR-0410 section 5)'
         expect(() => { sheet.focus(); }).toThrow('This Sheet was destroyed.');
         expect(() => sheet.holdSettled()).toThrow('This Sheet was destroyed.');
         expect(() => sheet.inOrder(() => undefined)).toThrow('This Sheet was destroyed.');
+    });
+});
+
+/** Column A's width as the grid emitted it, or NaN where no header is painted. */
+const headerWidthOfA = (element: HTMLElement): number =>
+    Number.parseFloat(element.querySelector<HTMLElement>('.ex-header-cell')?.style.width ?? 'NaN'); // oxlint-disable-line ex-grid/no-stand-in-default -- a header not painted reads as no number, which the expectation names
+
+describe("a Wrapper's widths (ADR-0030)", () => {
+    it("measures the Sheet's columns in the characters of the font its cells are painted in, and again when they change", async () => {
+        // A Wrapper's Density is standard, whose rows would put a Sheet's past what a browser scrolls: a Sheet under a
+        // Wrapper names its row height, as Blazor's does.
+        const plain = sheetOf({ rowHeight: 28 });
+        const wide = new GridPresentationDefaults({ wideWidthPx: 20, digitWidthPx: 20, narrowWidthPx: 20, fontSizePx: 20, density: 'standard' });
+        const { element, sheet } = sheetOf({ rowHeight: 28, presentationDefaults: wide });
+
+        // Excel's default column is 8.43 digits and the padding, so the Wrapper's wider digit widens it.
+        expect(headerWidthOfA(element)).toBeGreaterThan(headerWidthOfA(plain.element) + 20);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, rowHeight: 28 });
+        await vi.waitFor(() => { expect(headerWidthOfA(element)).toBe(headerWidthOfA(plain.element)); });
+    });
+
+    it('takes only the defaults a Wrapper makes', () => {
+        expect(() => sheetOf({ presentationDefaults: { digitWidthPx: 20 } as unknown as GridPresentationDefaults }))
+            .toThrow('presentationDefaults is a GridPresentationDefaults, as a Wrapper makes one (ADR-0030).');
     });
 });

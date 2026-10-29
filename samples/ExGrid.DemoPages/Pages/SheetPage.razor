@@ -24,10 +24,7 @@
    ?toolbar=on asks. *@
 @* The Sheet is ExSheet.Script.ExSheet, Blazor's ExSheet over the Script Core, and the positions grid
    ExGrid.Script.ExGrid beside it (ADR-0370 step 2). ?component=razor draws both with the Razor
-   components instead, for the tests of what only they do. Under ?chrome=mud the page draws the Razor
-   components unless ?component=script asks otherwise: the Script grid does not yet fill its Formula
-   Bar, Name Box and Cell Editor with the Wrapper's Razor (ADR-0410's next slices), which the
-   MudBlazor tests of this page read. *@
+   components instead, for the tests of what only they do, under either Chrome. *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
@@ -155,7 +152,7 @@
     [SupplyParameterFromQuery(Name = "component")]
     public string? Component { get; set; }
 
-    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+    private bool Razor => DemoChrome.DrawsRazor(Component);
 
     /// <summary>Which Chrome the Sheet runs with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]

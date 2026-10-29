@@ -19,6 +19,9 @@
     </Head>
 </DemoChromeAssets>
 <DemoNav />
+@* Each product is Blazor's component over the Script Core (ExGrid.Script.ExGrid, ExSheet.Script.ExSheet,
+   ExPivot.Script.ExPivot; ADR-0370 step 2), and ?component=razor draws the Razor components instead, which still
+   ship. *@
 <h1>Responsive family — the report keeps its meaning</h1>
 <p>Parent-only widths model a phone portrait, phone landscape and narrow desktop panel.
     The browser window stays unchanged. This page checks container sizing, not mobile gestures.</p>
@@ -54,6 +57,7 @@
 @code {
     [SupplyParameterFromQuery(Name = "product")] public string Product { get; set; } = "grid";
     [SupplyParameterFromQuery(Name = "chrome")] public string? ChromeName { get; set; }
+    [SupplyParameterFromQuery(Name = "component")] public string? Component { get; set; }
     private int _width = 800;
     private string _layoutKind = "flex";
     private bool _pin = true;
@@ -63,7 +67,24 @@
     private string ParentStyle => _layoutKind == "split" ? FormattableString.Invariant($"display: flex; width: {_width + 88}px") : "display: block";
     private string BoxStyle => FormattableString.Invariant($"display: {(_layoutKind == "grid" ? "grid" : "flex")}; grid-template-columns: auto 1fr; width: {_width}px; min-width: 0");
 
-    private RenderFragment ProductView => Product switch
+    private RenderFragment ProductView => DemoChrome.DrawsRazor(Component) ? RazorView : ScriptView;
+
+    private RenderFragment ScriptView => Product switch
+    {
+        "sheet" => @<ExSheet.Script.ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
+                            Chrome="@(DemoChrome.IsMud(ChromeName) ? MudSheetChrome.Default : null)"
+                            Culture="Culture" ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
+        "pivot" => @<ExPivot.Script.ExPivot Source="_source" Layout="_pivotLayout" LayoutChanged="PivotChanged" ShowFieldList="false"
+                             Chrome="@(DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null)"
+                             ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
+        _ => @<ExGrid.Script.ExGrid TRow="PreciseRow" Rows="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
+                       Chrome="@(DemoChrome.IsMud(ChromeName) ? _gridChrome : null)" RowHeight="24"
+                       ViewportWidth="ViewportSize.Stretch" ViewportHeight="280"
+                       OnColumnWidthChanged="WidthChanged" OnColumnOrderChanged="OrderChanged" OnPinnedCountChanged="PinnedChanged" />,
+    };
+
+    // ?component=razor: the same products drawn by the Razor components.
+    private RenderFragment RazorView => Product switch
     {
         "sheet" => @<ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
                             Chrome="@(DemoChrome.IsMud(ChromeName) ? MudSheetChrome.Default : null)"
@@ -83,8 +104,10 @@
     private void PivotChanged(PivotLayout _) => _changes++;
 
     public sealed record PreciseRow(string Group, string Item, decimal Amount, decimal Fraction);
+    // Fifteen significant digits, the most the Script Core reads a number exactly with (ADR-0350 section 16): more is
+    // refused by name there, and this is the sheet's amount too.
     private static readonly PreciseRow[] Rows = Enumerable.Range(0, 30)
-        .Select(i => new PreciseRow("Long report label that keeps its declared width", $"Item-{i:00}", 9007199254740993.25m, 0.000000000000000123m))
+        .Select(i => new PreciseRow("Long report label that keeps its declared width", $"Item-{i:00}", 1234567890123.45m, 0.000000000000000123m))
         .ToArray();
     private static readonly GridColumn<PreciseRow>[] Columns =
     [

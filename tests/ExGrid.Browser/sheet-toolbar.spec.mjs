@@ -36,15 +36,15 @@ function activeItemName(page) {
 
 /**
  * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover,
- * MudBlazor's in an open MudPopover.
+ * MudBlazor's the Wrapper's list the adapter's script shows (ADR-0410), drawn closed inside every item.
  */
 function openLists(page) {
-    return page.locator('.ex-sheet-choices, .mud-popover-open .mud-ex-sheet-toolbar-choices');
+    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden])');
 }
 
-/** Format Cells: the grid's popover under the built-in Chrome, a MudDialog under the other. */
-function formatCellsOf(page, grid, chrome) {
-    return chrome === 'mud' ? page.locator('.mud-dialog.mud-ex-sheet-format-cells') : grid.locator('.ex-popover-consumer');
+/** Format Cells: the grid's popover under either Chrome, over the Script Core (ADR-0410). */
+function formatCellsOf(grid) {
+    return grid.locator('.ex-popover-consumer');
 }
 
 /**
@@ -172,7 +172,7 @@ for (const chrome of ['builtin', 'mud']) {
             await pressCell(grid, 'C2');
 
             await toolbarArrow(page, 'Fill Colour').click();
-            await page.locator('[role="menuitemradio"][aria-label="Light Blue"]').first().click();
+            await openLists(page).locator('[role="menuitemradio"][aria-label="Light Blue"]').first().click();
 
             await expect(cell(grid, 'C2')).toHaveCSS('background-color', 'rgb(0, 176, 240)');
             await expectKeyboardOn(grid);
@@ -409,7 +409,7 @@ for (const chrome of ['builtin', 'mud']) {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         const tips = toolbar(page).locator('.ex-sheet-keytip');
-        const formatCells = formatCellsOf(page, grid, chrome);
+        const formatCells = formatCellsOf(grid);
 
         await keyTips(page, 'h', 'o');
         await expect(tips).toHaveText(['OE']);
@@ -427,7 +427,7 @@ for (const chrome of ['builtin', 'mud']) {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'C2');
-        const formatCells = formatCellsOf(page, grid, chrome);
+        const formatCells = formatCellsOf(grid);
         // Read once the page has heard C2's format: on the Server host it is told a round trip after
         // the press, and read sooner it is the page's empty first text (widened-run ticket 02).
         await circuitQuiet();
@@ -956,7 +956,7 @@ for (const chrome of ['builtin', 'mud']) {
         test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome})`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C2');
-            const formatCells = formatCellsOf(page, grid, chrome);
+            const formatCells = formatCellsOf(grid);
             // Read once the page has heard C2's format (widened-run ticket 02).
             await circuitQuiet();
             const before = await page.locator('#sheet-focus-number-format').textContent();

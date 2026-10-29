@@ -8,7 +8,7 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, formulaBarHeight, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
+    createGrid, formulaBarHeight, GridMetrics, GridPresentationDefaults, type CellTextMeasure, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
@@ -187,8 +187,13 @@ export interface SheetOptions {
      * cell. The key is still claimed, so the browser's own meaning does not run either: Ctrl+U opens no page source.
      */
     readonly onFormatKeyRefused?: (refusal: SheetRefusal) => void;
-    /** The grid's density (ADR-0028); `compact` unless given. Column widths in characters follow it. */
+    /** The grid's density (ADR-0028); a Wrapper's, then `compact`, unless given. Column widths in characters follow it. */
     readonly density?: GridDensity;
+    /**
+     * A Wrapper's widths and Density (ADR-0030), as the grid takes them: the cells are painted in the Wrapper's font, so
+     * the Sheet's columns are measured in its characters, and the Sheet decides what fits by them (ADR-0016, ADR-0071).
+     */
+    readonly presentationDefaults?: GridPresentationDefaults;
     /** The height of a row in pixels (ADR-0013). */
     readonly rowHeight?: number;
     /** The grid's width: pixels, or `stretch` to fill the element's box. */
@@ -290,6 +295,20 @@ export interface SheetsChange {
 export interface FocusFormatReading {
     /** The Focus cell's Cell Format as it showed. */
     readonly format: CellFormat;
+}
+
+/**
+ * The turn of work the Sheet runs in its Input Order, handed to that work (ADR-0240 section 6). A file opened or saved
+ * through it is opened or saved at once, inside the turn, as `open` and `save` do in their own place: for a Framework
+ * Adapter whose Consumer's handler runs in another runtime while the turn is held, as a Toolbar button's press holds
+ * it, where `open` and `save` would wait for the turn they belong to. The inputs made meanwhile wait behind both. Once
+ * the turn's work has ended, each throws.
+ */
+export interface SheetTurn {
+    /** Opens a file at once, inside this turn, as `SheetHandle.open` does in its place. */
+    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
+    /** Saves the Workbook at once, inside this turn, as `SheetHandle.save` does in its place. */
+    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
 }
 
 /** A Sheet drawn into an element, handed back by {@link createSheet}. */
@@ -471,9 +490,10 @@ export interface SheetHandle {
     /**
      * Runs `handling` in its place in the Input Order of the Sheet's grid (ADR-0240 section 6), as the grid's own
      * `inOrder` does: after every input made so far, and before any made after it, which wait until the promise it
-     * answers settles. A Sheet destroyed before its turn runs nothing; one already destroyed throws.
+     * answers settles. A Sheet destroyed before its turn runs nothing; one already destroyed throws. `handling` is handed
+     * its turn, through which a file is opened or saved as part of it, as the grid's turn places work.
      */
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    inOrder(handling: (turn: SheetTurn) => void | PromiseLike<void>): Promise<void>;
     /**
      * Says `sentence` in the Sheet's notice, where the Sheet says its own refusals (ADR-0100): for a Framework Adapter
      * whose Consumer's Toolbar button ran a command a round trip later that was refused, as the C# toolbar says one.
@@ -548,7 +568,7 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         save: (write: (workbook: Workbook) => void | PromiseLike<void>) => view.save(write),
         focus: () => { view.focus(); },
         holdSettled: () => view.holdSettled(),
-        inOrder: (handling: () => void | PromiseLike<void>) => view.inOrder(handling),
+        inOrder: (handling: (turn: SheetTurn) => void | PromiseLike<void>) => view.inOrder(handling),
         tell: (sentence: string) => { view.tellFromAdapter(sentence); },
         destroy: () => { view.destroy(); },
     });
@@ -653,7 +673,7 @@ class SheetView {
         this.#chosenSeed = chooseSeed();
         this.#workbook = this.#open(this.#options);
         this.#source = new SheetSource(this.#workbook.shown, () => this.#words, this.#findStepOf);
-        this.#columns = new SheetColumns(this.#options.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+        this.#columns = new SheetColumns(SheetView.#metricsOf(this.#options), error => this.#words.formulaUnreadable(error));
         this.#columns.read(this.#workbook.shown);
         this.#appearance = appearanceLookup(this.#reading);
         // Everything a refusal could come from is asked before the element is touched, so a refused Sheet leaves it as
@@ -741,8 +761,8 @@ class SheetView {
             && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
-        if ((next.density ?? 'compact') !== (this.#options.density ?? 'compact')) { // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
-            this.#columns = new SheetColumns(next.density ?? 'compact', error => this.#words.formulaUnreadable(error)); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+        if (next.density !== this.#options.density || next.presentationDefaults !== this.#options.presentationDefaults) {
+            this.#columns = new SheetColumns(SheetView.#metricsOf(next), error => this.#words.formulaUnreadable(error));
             this.#columns.read(this.#source.sheet);
         }
         const wordsMoved = next.label !== this.#options.label || next.japanese !== this.#options.japanese;
@@ -959,8 +979,16 @@ class SheetView {
     // The Consumer chooses the file and delivers the written one (ADR-0330 §2): the Sheet references no file format, and
     // takes a Workbook Document still being read, or lends the Workbook to a writer, each at its own place in the order.
 
-    async open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
+    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean> {
         this.#alive();
+        const grid = this.#grid;
+        if (grid === undefined) throw new Error('This Sheet was destroyed.');
+        return this.#openIn(read, (opening, tooLate) => grid.cancellableInOrder(opening, tooLate));
+    }
+
+    // Opens in the place `place` puts the opening: the Sheet's order, or a turn under way (ADR-0240 section 6).
+    async #openIn(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>,
+        place: (opening: (signal: AbortSignal) => Promise<void>, tooLate: (landed: boolean) => void) => Promise<boolean>): Promise<boolean> {
         if (typeof read !== 'function') throw new TypeError('open takes the read as a function of an AbortSignal (ADR-0330 §10).');
         // What a handler of the Consumer's throws once the file has landed is that handler's, held until the opening has
         // ended as landed: it never reads as a cancel, nor as a failure of the opening.
@@ -974,9 +1002,7 @@ class SheetView {
                 afterLanding = { error };
             }
         };
-        const grid = this.#grid;
-        if (grid === undefined) throw new Error('This Sheet was destroyed.');
-        const landed = await grid.cancellableInOrder(opening, this.#openingCameTooLate);
+        const landed = await place(opening, this.#openingCameTooLate);
         if (afterLanding !== undefined) throw afterLanding.error;
         return landed;
     }
@@ -1042,13 +1068,18 @@ class SheetView {
         this.#armTheMinute();
     }
 
-    async save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
+    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void> {
         this.#alive();
-        if (typeof write !== 'function') throw new TypeError('save takes the write as a function of the Workbook (ADR-0330 §10).');
         const grid = this.#grid;
         if (grid === undefined) throw new Error('This Sheet was destroyed.');
+        return this.#saveIn(write, saving => grid.inOrder(saving));
+    }
+
+    // Saves in the place `place` puts the save: the Sheet's order, or a turn under way (ADR-0240 section 6).
+    async #saveIn(write: (workbook: Workbook) => void | PromiseLike<void>, place: (saving: () => void) => Promise<void>): Promise<void> {
+        if (typeof write !== 'function') throw new TypeError('save takes the write as a function of the Workbook (ADR-0330 §10).');
         const written: { writing?: PromiseLike<void> } = {};
-        await grid.inOrder(() => {
+        await place(() => {
             this.#refuseFileWhileEditing(this.#words.saveWhileEditing);
             written.writing = Promise.resolve(write(this.#workbook));
         });
@@ -1065,9 +1096,18 @@ class SheetView {
         return this.#liveGrid().holdSettled();
     }
 
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
+    inOrder(handling: (turn: SheetTurn) => void | PromiseLike<void>): Promise<void> {
         if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240 section 6).');
-        return this.#liveGrid().inOrder(handling);
+        return this.#liveGrid().inOrder(turn => handling({
+            open: read => {
+                this.#alive();
+                return this.#openIn(read, (opening, tooLate) => turn.cancellableInOrder(opening, tooLate));
+            },
+            save: write => {
+                this.#alive();
+                return this.#saveIn(write, saving => turn.inOrder(saving));
+            },
+        }));
     }
 
     tellFromAdapter(sentence: string): void {
@@ -1122,12 +1162,13 @@ class SheetView {
     // ---- The grid ---------------------------------------------------------------------------------------------
 
     #gridOptions(): GridOptions<SheetRow> {
-        const { rowHeight, viewportWidth, density } = this.#options;
+        const { rowHeight, viewportWidth, density, presentationDefaults } = this.#options;
         const viewportHeight = this.#gridHeight(this.#options);
         return {
             columns: this.#columns.all,
             source: this.#source,
             ...(density === undefined ? {} : { density }),
+            ...(presentationDefaults === undefined ? {} : { presentationDefaults }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(viewportWidth === undefined ? {} : { viewportWidth }),
             ...(viewportHeight === undefined ? {} : { viewportHeight }),
@@ -1633,7 +1674,19 @@ class SheetView {
     }
 
     static #bandRowPxOf(options: SheetOptions): number {
-        return formulaBarHeight(options.density ?? 'compact', options.rowHeight); // oxlint-disable-line ex-grid/no-stand-in-default -- the grid's own default density (ADR-0028)
+        return formulaBarHeight(SheetView.#densityOf(options), options.rowHeight);
+    }
+
+    // The grid's Density as it resolves it (ADR-0028, ADR-0030): the Sheet's, a Wrapper's, then compact.
+    static #densityOf(options: SheetOptions): GridDensity {
+        // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0028: an untouched grid is compact, as createGrid's is
+        return options.density ?? options.presentationDefaults?.density ?? 'compact';
+    }
+
+    // The Cell Metrics the grid paints with: its Density's, or a Wrapper's widths at it (ADR-0030).
+    static #metricsOf(options: SheetOptions): CellTextMeasure {
+        const { presentationDefaults: defaults } = options;
+        return GridMetrics.resolve({ density: SheetView.#densityOf(options), ...(defaults === undefined ? {} : { defaults }) }).cellMetrics;
     }
 
     get #tabsHeightPx(): number {
@@ -3104,6 +3157,10 @@ class SheetView {
         const figures: unknown = options.summaryFigures;
         if (figures !== undefined && (!Array.isArray(figures) || figures.some((figure: unknown) => !summaryFigureOrder.some(known => known === figure)))) {
             throw new TypeError(`summaryFigures is a list of the figures ${summaryFigureOrder.join(', ')} (ADR-0130).`);
+        }
+        const defaults: unknown = options.presentationDefaults;
+        if (defaults !== undefined && !(defaults instanceof GridPresentationDefaults)) {
+            throw new TypeError('presentationDefaults is a GridPresentationDefaults, as a Wrapper makes one (ADR-0030).');
         }
         const chrome: unknown = options.chrome;
         if (chrome !== undefined) {

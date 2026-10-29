@@ -1058,7 +1058,7 @@ export interface GridHandle<Row> {
         readonly preventScroll?: boolean;
     }): void;
     holdSettled(): () => void;
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void>;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string, closed?: () => void): boolean;
     placeMatch(cell: CellPosition, rowSequenceVersion: number): boolean;
@@ -1629,6 +1629,12 @@ export interface GridTextOptions {
     readonly cellMetrics?: CellTextMetrics;
     readonly density?: GridDensity;
     readonly presentationDefaults?: GridPresentationDefaults;
+}
+
+// @public
+export interface GridTurn {
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void>;
 }
 
 // @public

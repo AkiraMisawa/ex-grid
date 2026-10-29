@@ -32,7 +32,7 @@
 }
 
 <div class="demo-side-by-side">
-    @if (DemoChrome.DrawsRazor(Component, null))
+    @if (DemoChrome.DrawsRazor(Component))
     {
         <ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
                                     PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />

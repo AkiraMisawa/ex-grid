@@ -30,6 +30,7 @@ import type { GridPointedPressKind } from '@ex-grid/core';
 import type { GridPointedStep } from '@ex-grid/core';
 import type { GridPointedStepKind } from '@ex-grid/core';
 import type { GridPointState } from '@ex-grid/core';
+import { GridPresentationDefaults } from '@ex-grid/core';
 import { GridSelection } from '@ex-grid/core';
 import type { GridSummaryRequest } from '@ex-grid/core';
 import type { GridSummaryResult } from '@ex-grid/core';
@@ -382,7 +383,7 @@ export interface SheetHandle {
     do(sheet: string, edit: SheetEdit): void;
     focus(): void;
     holdSettled(): () => void;
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void>;
+    inOrder(handling: (turn: SheetTurn) => void | PromiseLike<void>): Promise<void>;
     readonly isEditing: boolean;
     open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
     openFormatCells(): boolean;
@@ -424,6 +425,7 @@ export interface SheetOptions {
     readonly onWorkbookChanged?: (document: WorkbookDocument) => void;
     readonly pinnedColumnCount?: number;
     readonly pointingScope?: PointingScope | undefined;
+    readonly presentationDefaults?: GridPresentationDefaults;
     readonly rowHeight?: number;
     readonly seed?: bigint;
     readonly showColumnHeadings?: boolean;
@@ -582,6 +584,12 @@ export interface SheetToolbarRowOptions {
     readonly items: readonly SheetToolbarEntry[];
     readonly keyTip?: string | undefined;
     readonly label: string;
+}
+
+// @public
+export interface SheetTurn {
+    open(read: (signal: AbortSignal) => PromiseLike<WorkbookDocument>): Promise<boolean>;
+    save(write: (workbook: Workbook) => void | PromiseLike<void>): Promise<void>;
 }
 
 // @public

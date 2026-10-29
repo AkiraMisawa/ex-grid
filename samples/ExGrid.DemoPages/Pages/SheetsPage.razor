@@ -12,8 +12,8 @@
    tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). The Chrome is
    ExSheet.MudBlazor's, so each Sheet's Format Cells is a MudDialog of its own (ADR-0071). Without
    the parameter each Sheet stands on the page as it always did. Each Sheet is drawn by ExSheet.Script.ExSheet and
-   its grid by ExGrid.Script.ExGrid, and both by the Razor components under ?chrome=mud or ?component=razor, for the
-   reasons /sheet gives (ADR-0370 step 2). *@
+   its grid by ExGrid.Script.ExGrid, and both by the Razor components under ?component=razor, for the reasons /sheet
+   gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -92,7 +92,7 @@
     [SupplyParameterFromQuery(Name = "component")]
     public string? Component { get; set; }
 
-    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+    private bool Razor => DemoChrome.DrawsRazor(Component);
 
     /// <summary>Which Chrome the Sheets run with (<see cref="DemoChrome"/>); under the Wrapper's,
     /// each stands on a <see cref="MudExGridPaper"/>.</summary>

@@ -18,25 +18,21 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 
 const ROUND_TRIP_MS = 80;
 
-/** Format Cells: the grid's popover under the built-in Chrome, a MudDialog under the other. */
-function formatCellsOf(page, grid, chrome) {
-    return chrome === 'mud' ? page.locator('.mud-dialog.mud-ex-sheet-format-cells') : grid.locator('.ex-popover-consumer');
+/** Format Cells: the grid's popover under either Chrome, over the Script Core (ADR-0410). */
+function formatCellsOf(grid) {
+    return grid.locator('.ex-popover-consumer');
 }
 
-// What a key reaching Format Cells lands on: the grid's popover under the built-in Chrome; under the
-// other, the MudDialog, or the frame's own element, which holds the keyboard until the dialog's tabs
-// take it and hands them the keys typed there (KeysOnTheirWay, in C#).
-const REACHING_FORMAT_CELLS = {
-    builtin: '.ex-popover-consumer',
-    mud: '.mud-dialog.mud-ex-sheet-format-cells, .mud-ex-sheet-format-cells-leaving',
-};
+// What a key reaching Format Cells lands on: the grid's popover, which under the Wrapper's Chrome holds the tabs
+// the Wrapper's Razor drew (ADR-0410).
+const REACHING_FORMAT_CELLS = '.ex-popover-consumer';
 
 /**
  * Notes, from here on, every key that reaches Format Cells: typed on what holds the keyboard there,
  * or handed to it by the grid's hold (ADR-0039, ADR-0010). A key held on the Sheet's root is not
  * noted until it is handed on. Read with keysReachingFormatCells.
  */
-async function noteKeysReachingFormatCells(page, chrome) {
+async function noteKeysReachingFormatCells(page) {
     await alterPage(page, (selector) => {
         window.__keysReachingFormatCells = [];
         const listener = (e) => {
@@ -52,7 +48,7 @@ async function noteKeysReachingFormatCells(page, chrome) {
             document.removeEventListener('keydown', listener);
             delete window.__keysReachingFormatCells;
         };
-    }, REACHING_FORMAT_CELLS[chrome]);
+    }, REACHING_FORMAT_CELLS);
 }
 
 const keysReachingFormatCells = (page) => page.evaluate(() => window.__keysReachingFormatCells);
@@ -104,8 +100,8 @@ for (const chrome of ['builtin', 'mud']) {
             test(`ticket 93/ADR-0050/ADR-0039: a digit typed straight after ${how} reaches Format Cells, and never starts an edit`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
-                const formatCells = formatCellsOf(page, grid, chrome);
-                await noteKeysReachingFormatCells(page, chrome);
+                const formatCells = formatCellsOf(grid);
+                await noteKeysReachingFormatCells(page);
 
                 await openBy(page, grid, 'C2', how);
                 await page.keyboard.type('5');
@@ -132,7 +128,7 @@ for (const chrome of ['builtin', 'mud']) {
             test(`ticket 93/ADR-0039: End typed straight after ${how} reaches Format Cells' tabs, in order behind the digit`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
-                const formatCells = formatCellsOf(page, grid, chrome);
+                const formatCells = formatCellsOf(grid);
 
                 await openBy(page, grid, 'C2', how);
                 await page.keyboard.type('5');
@@ -164,7 +160,7 @@ for (const chrome of ['builtin', 'mud']) {
         test('ticket 93/ADR-0018: the keys held for one Sheet\'s Format Cells are never the other\'s, and the other types as ever', async ({ page }) => {
             const left = sheet(page, 0);
             const right = sheet(page, 1);
-            const formatCells = formatCellsOf(page, left, chrome);
+            const formatCells = formatCellsOf(left);
             await pressCell(left, 'B2');
 
             await page.keyboard.press('Control+1');

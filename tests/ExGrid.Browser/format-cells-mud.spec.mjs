@@ -3,8 +3,11 @@ import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, editor } fro
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
 
-// Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
-// page level, outside the Sheet's root and its box, which MudBlazor draws. What it offers and what
+// Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47). The Razor component's is a
+// MudDialog at page level, outside the Sheet's root and its box, which MudBlazor draws, and every test but the last
+// opens the pages with ?component=razor for it. Over the Script Core the Wrapper's tabs stand in the grid's popover
+// frame instead (ADR-0410), whose keys are the Script Core's and are judged by format-cells.spec.mjs; the last test
+// judges what the Wrapper adds there, its Razor read by the adapter's script. What it offers and what
 // OK sets are ExSheet's, as under the built-in Chrome (format-cells.spec.mjs); what this file holds
 // the Chrome to is the frame: the keyboard taken and handed back however the dialog closes, the
 // tabs switching with the arrow keys, Tab kept inside, MudBlazor's colour picker for More Colours,
@@ -35,9 +38,9 @@ async function openFromMenu(page, grid, address) {
     await expect(formatCells(page)).toBeVisible();
 }
 
-test.describe('on /sheet?chrome=mud', () => {
+test.describe('on /sheet?chrome=mud&component=razor', () => {
     test.beforeEach(async ({ page }) => {
-        await openSheet(page, 'mud');
+        await openSheet(page, 'mud', 'razor');
     });
 
     test('SH-45/ADR-0071: the Context Menu opens Format Cells as a MudDialog outside the Sheet, with the keyboard on its tab, and the arrows switch the tabs', async ({ page }) => {
@@ -497,9 +500,9 @@ test.describe('on /sheet?chrome=mud', () => {
     });
 });
 
-test.describe('two Sheets on /sheets?chrome=mud', () => {
+test.describe('two Sheets on /sheets?chrome=mud&component=razor', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/sheets?chrome=mud');
+        await page.goto('/sheets?chrome=mud&component=razor');
         await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
         await expect(cell(sheet(page, 0), 'A1')).toHaveText('Left');
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
@@ -528,5 +531,33 @@ test.describe('two Sheets on /sheets?chrome=mud', () => {
         await expect(tab(page, 'Fill')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expectKeyboardOn(left);
+    });
+});
+
+test.describe('over the Script Core, on /sheet?chrome=mud', () => {
+    test.beforeEach(async ({ page }) => {
+        await openSheet(page, 'mud');
+    });
+
+    test('SH-45/ADR-0410: the Wrapper\'s tabs stand in the grid\'s frame, a choice pressed and OK at once set it as one undo step, and the keyboard is the Sheet\'s again', async ({ page }) => {
+        const grid = sheet(page);
+        const frame = grid.locator('.ex-popover-consumer .mud-ex-sheet-script-format-cells');
+        await pressCell(grid, 'C2');
+        await page.locator('#sheet-format-cells').click();
+        await expect(frame).toBeVisible();
+        await expect(page.locator('.mud-dialog')).toHaveCount(0);
+        await expect(frame.getByRole('tab', { name: 'Number', exact: true })).toHaveAttribute('aria-selected', 'true');
+
+        // OK pressed straight after the choice: the adapter's script read the radio as it fired, not a render later.
+        await frame.getByLabel('Percentage', { exact: true }).click();
+        await frame.getByRole('button', { name: 'OK', exact: true }).click();
+
+        await expect(frame).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('50.00%');
+        await expectKeyboardOn(grid);
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'C3');
+        await page.keyboard.press('ControlOrMeta+Z');
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
 });

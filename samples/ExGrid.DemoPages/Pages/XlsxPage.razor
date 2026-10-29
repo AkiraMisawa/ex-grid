@@ -12,7 +12,7 @@
    ?hold=1 holds each read, once the file is chosen, until "Let the read go" is pressed: the opening is
    under way for as long as a test needs, with no clock (ADR-0220), so what is typed meanwhile, and an
    Escape, meet it there. The Workbook is drawn by ExSheet.Script.ExSheet, and by the Razor component under
-   ?chrome=mud or ?component=razor, for the reasons /sheet gives (ADR-0370 step 2). *@
+   ?component=razor, for the reasons /sheet gives (ADR-0370 step 2). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -83,7 +83,7 @@
     [SupplyParameterFromQuery(Name = "component")]
     public string? Component { get; set; }
 
-    private bool Razor => DemoChrome.DrawsRazor(Component, ChromeName);
+    private bool Razor => DemoChrome.DrawsRazor(Component);
 
     /// <summary>Holds each read until "Let the read go" is pressed (1).</summary>
     [SupplyParameterFromQuery(Name = "hold")]

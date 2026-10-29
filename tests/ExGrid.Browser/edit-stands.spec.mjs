@@ -383,7 +383,8 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(left, 'A1')).toHaveText('Left');
         await expect(cell(right, 'A1')).toHaveText('Right');
         if (chrome !== 'builtin') {
-            await expect(left.locator('.mud-ex-editor, .mud-ex-formula-bar-text').first()).toBeAttached();
+            // The Wrapper's Name Box, which it draws in the Script Core's slot: its Chrome stands.
+            await expect(left.locator('.mud-ex-name-box')).toBeAttached();
         }
         // The outline of the box the core floats over the cell, as the browser computes it.
         const outline = (grid) => editor(grid).evaluate((field) => {
@@ -478,7 +479,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(sheet(page, 0), 'A1')).toHaveText('Left');
             await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
             if (chrome !== 'builtin') {
-                await expect(sheet(page, 0).locator('.mud-ex-formula-bar-text').first()).toBeAttached();
+                await expect(sheet(page, 0).locator('.mud-ex-name-box')).toBeAttached();
             }
         });
 

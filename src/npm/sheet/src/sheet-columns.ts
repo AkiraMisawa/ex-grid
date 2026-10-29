@@ -3,8 +3,7 @@
 // them would move what the References name. Their widths are the Sheet's, in Excel's characters, converted to
 // the grid's pixels as the painted text converts them (ADR-0047, third round).
 
-import type { CellAlign, CellAppearance, CellTextMeasure, ColumnType, GridColumn, GridDensity } from '@ex-grid/core';
-import { cellTextMeasure } from '@ex-grid/core';
+import type { CellAlign, CellAppearance, CellTextMeasure, ColumnType, GridColumn } from '@ex-grid/core';
 import { CellAddress, Sheet, type CellRange } from '@ex-grid/sheet-engine';
 import { charactersIn, type FormulaUnreadableWords, type SheetCellText, type SheetRow } from './sheet-row';
 
@@ -78,8 +77,9 @@ export class SheetColumns {
     #columns: readonly GridColumn<SheetRow>[] = [];
     #sheet: Sheet | undefined;
 
-    constructor(density: GridDensity, unreadable: FormulaUnreadableWords) {
-        this.#metrics = cellTextMeasure(density);
+    /** @param metrics The Cell Metrics the grid paints with: its density's, or a Wrapper's widths at it (ADR-0030). */
+    constructor(metrics: CellTextMeasure, unreadable: FormulaUnreadableWords) {
+        this.#metrics = metrics;
         this.#unreadable = unreadable;
         // Excel's default column: 8.43 of the grid's digits and the cell's padding on both sides, in whole pixels.
         this.#defaultWidthPx = Math.ceil(pxOf(Sheet.defaultColumnWidth, this.#metrics));

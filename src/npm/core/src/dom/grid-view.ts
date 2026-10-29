@@ -1234,6 +1234,22 @@ interface PendingCommit<Row> {
 
 // Work of the Consumer's in the Input Order (ADR-0240 sections 6 and 12, ADR-0330 section 10), from the place it took
 // until it ends.
+/**
+ * The turn of work placed in the Input Order, handed to that work (ADR-0240 section 6). Work placed through it runs at
+ * once, inside that turn, rather than after the inputs held behind it: the inputs made meanwhile wait behind both. It
+ * is how work whose turn is held while it asks something else — an adapter's handler running in another runtime —
+ * places what that handler asks for as part of it, where placing it in the order would wait for the turn it belongs
+ * to.
+ */
+export interface GridTurn {
+    /** Runs `handling` at once, inside this turn, as the grid's `inOrder` runs work in its own turn.
+     * @throws Error This turn's work has ended. */
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void>;
+    /** Runs `handling` at once, inside this turn, cancellable by Escape as the grid's `cancellableInOrder` makes it.
+     * @throws Error This turn's work has ended, or cancellable work's handling is being called. */
+    cancellableInOrder(handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean>;
+}
+
 interface PlacedWork {
     /** The number the stamp names cancellable work by (`data-ex-work-placed`, `data-ex-work`). */
     readonly id: number;
@@ -4595,7 +4611,7 @@ export class GridView<Row> {
         // settles, as behind Blazor's awaited OnDeclaredKey (ADR-0240's note of 2026-10-19). A failure the handler throws
         // is thrown here, and one its promise rejects with reaches the page as that rejection, unheard.
         const answer = heard(pressed);
-        if (isThenable(answer)) void this.#placeWork(() => answer, undefined);
+        if (isThenable(answer)) void this.#placeWork(() => answer, undefined, undefined);
         return true;
     }
 
@@ -5205,9 +5221,9 @@ export class GridView<Row> {
      * answers is out, every input made in the grid is held, in its order, and taken once it settles; an Escape is held
      * too, and does what it was typed to do. Once the grid is destroyed it runs nothing.
      */
-    inOrder(handling: () => void | PromiseLike<void>): Promise<void> {
+    inOrder(handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void> {
         if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240).');
-        return this.#placeWork(() => handling(), undefined).then(() => undefined);
+        return this.#placeWork((_signal, work) => handling(this.#turnOf(work)), undefined, undefined).then(() => undefined);
     }
 
     /**
@@ -5230,13 +5246,43 @@ export class GridView<Row> {
         if (typeof handling !== 'function' || typeof cancelledTooLate !== 'function') {
             throw new TypeError('cancellableInOrder takes the work and what says a cancel came too late, as functions (ADR-0240).');
         }
+        this.#refuseCancellableWhileStarting();
+        return this.#placeWork(handling, cancelledTooLate, undefined);
+    }
+
+    #refuseCancellableWhileStarting(): void {
         if (this.#workStarting) {
             throw new Error('Cancellable work cannot be placed while cancellable work starts: one Escape could not say which it cancels. Place it once the work under way has ended (ADR-0240).');
         }
-        return this.#placeWork(handling, cancelledTooLate);
     }
 
-    #placeWork(handling: (signal: AbortSignal) => void | PromiseLike<void>, tooLate: ((landed: boolean) => void) | undefined): Promise<boolean> {
+    // The turn handed to `work`: what is placed through it starts at once, inside the work's turn, while that work has
+    // not ended (ADR-0240 section 6).
+    #turnOf(work: PlacedWork): GridTurn {
+        const within = (): PlacedWork => {
+            if (work.ended !== undefined) throw new Error('This turn has ended: place the work with the grid\'s own inOrder (ADR-0240 section 6).');
+            return work;
+        };
+        return {
+            inOrder: (handling: (turn: GridTurn) => void | PromiseLike<void>): Promise<void> => {
+                if (typeof handling !== 'function') throw new TypeError('inOrder takes the work as a function (ADR-0240).');
+                return this.#placeWork((_signal, inner) => handling(this.#turnOf(inner)), undefined, within()).then(() => undefined);
+            },
+            cancellableInOrder: (handling: (signal: AbortSignal) => void | PromiseLike<void>, cancelledTooLate: (landed: boolean) => void): Promise<boolean> => {
+                if (typeof handling !== 'function' || typeof cancelledTooLate !== 'function') {
+                    throw new TypeError('cancellableInOrder takes the work and what says a cancel came too late, as functions (ADR-0240).');
+                }
+                const outer = within();
+                this.#refuseCancellableWhileStarting();
+                return this.#placeWork(handling, cancelledTooLate, outer);
+            },
+        };
+    }
+
+    // Work in its place in the order: at once when nothing is pending or when it is placed inside a turn under way
+    // (`within`), else after the inputs held so far. Placed inside a turn, it is pending, if at all, once that turn's
+    // own work has ended: the inputs held meanwhile wait behind both.
+    #placeWork(handling: (signal: AbortSignal, work: PlacedWork) => void | PromiseLike<void>, tooLate: ((landed: boolean) => void) | undefined, within: PlacedWork | undefined): Promise<boolean> {
         if (this.#destroyed) return Promise.resolve(false);
         return new Promise<boolean>((resolve, reject) => {
             const work: PlacedWork = {
@@ -5247,13 +5293,13 @@ export class GridView<Row> {
             if (tooLate !== undefined) this.#invalidate();
             const start = (): void => { this.#startWork(work, handling, resolve, reject); };
             const pending = this.#pending;
-            if (pending === undefined) start();
+            if (pending === undefined || within !== undefined) start();
             else pending.held.push({ kind: 'turn', take: start });
         });
     }
 
     // The work's turn: called with its signal, and pending while what it answers is out.
-    #startWork(work: PlacedWork, handling: (signal: AbortSignal) => void | PromiseLike<void>, resolve: (ran: boolean) => void, reject: (error: unknown) => void): void {
+    #startWork(work: PlacedWork, handling: (signal: AbortSignal, work: PlacedWork) => void | PromiseLike<void>, resolve: (ran: boolean) => void, reject: (error: unknown) => void): void {
         if (this.#destroyed) {
             resolve(false);
             return;
@@ -5272,7 +5318,7 @@ export class GridView<Row> {
         const starting = this.#workStarting;
         this.#workStarting = starting || cancellable;
         try {
-            answer = handling(work.controller.signal);
+            answer = handling(work.controller.signal, work);
         // oxlint-disable-next-line ex-grid/no-catch -- the work's own failure is its caller's, answered through the promise
         } catch (error) {
             end(error, true);
@@ -7311,7 +7357,7 @@ export class GridView<Row> {
             // said (ADR-0055). Any other failure reaches the page.
             if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
-        }), undefined);
+        }), undefined, undefined);
     }
 
     // Stands the Context Menu of `context` with `commands`, the core's and the Consumer's.
@@ -7412,7 +7458,7 @@ export class GridView<Row> {
         // it settles (ADR-0421), as behind a declared key's answer. A failure its promise rejects with reaches the page
         // as that rejection, unheard.
         const ran = command.invoke();
-        if (isThenable(ran)) void this.#placeWork(() => ran, undefined);
+        if (isThenable(ran)) void this.#placeWork(() => ran, undefined, undefined);
         this.#invalidate();
     }
 

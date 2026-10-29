@@ -83,6 +83,11 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// browser's scroll ceiling is refused by name (SH-3).</summary>
     [Parameter] public double RowHeight { get; set; } = Components.ExSheet.DefaultRowHeightPx;
 
+    // What a Wrapper's paper hands down (ADR-0030): the cells are painted in its font, so the Sheet measures its columns
+    // and decides what fits in that font's widths, at its Density, as the Razor component does. Private, as the Razor
+    // component's is: a cascade a Consumer never writes.
+    [CascadingParameter] private GridPresentationDefaults? Presentation { get; set; }
+
     /// <summary>The outer height of the sheet, the Formula Bar, the toolbar and the Sheet Tabs included.</summary>
     [Parameter] public ViewportSize ViewportHeight { get; set; } = 600;
 
@@ -119,8 +124,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <remarks>A Toolbar Item of the Consumer's own, derived from <see cref="ToolbarItemBase"/>, is refused: the Script
     /// Core has no such item. So is a KeyTip on one of ExSheet's items, which carry Excel's, and a row without a
     /// <see cref="ToolbarRow.Label"/>. <see cref="OpenAsync"/> and <see cref="SaveAsync"/> called from a button's
-    /// <c>OnClick</c> are refused too: each waits for its place in the Input Order, which the press holds until the
-    /// handler returns, where the Razor component runs it as part of the press. A button's <c>GivesKeyboardBack</c>
+    /// <c>OnClick</c> run inside the press, as part of it, as on the Razor component. A button's <c>GivesKeyboardBack</c>
     /// needs nothing here: the keyboard goes back to the Sheet before <c>OnClick</c> runs, so what it opens takes it.</remarks>
     [Parameter] public RenderFragment? ToolbarContent { get; set; }
 
@@ -611,6 +615,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         json.WriteEndArray();
         json.WriteBoolean("allowCopyWithHeaders", AllowCopyWithHeaders);
         json.WriteNumber("rowHeight", RowHeight);
+        if (Presentation is { } presentation)
+            ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         WriteSize(json, "viewportWidth", ViewportWidth);
         WriteSize(json, "viewportHeight", ViewportHeight);
         if (Today is { } today)
@@ -765,40 +771,35 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <c>OnClick</c> runs, and the Sheet's inputs made after the press wait until it has, as on the Razor component
     /// (ADR-0240 section 6). A refusal of a command it runs is said in the Sheet's notice, as the Razor component's
     /// toolbar says one; anything else it throws fails the component, as a handler's exception does. A button gone since
-    /// the press does nothing.
+    /// the press does nothing. The browser numbers the press <paramref name="press"/>: a file the <c>OnClick</c> opens
+    /// or saves is opened or saved inside the press's turn, as part of it.
     /// </summary>
-    internal Task ToolbarPressedAsync(int number) => InvokeAsync(() => PressAsync(number));
+    internal Task ToolbarPressedAsync(int number, int press) => InvokeAsync(() => PressAsync(number, press));
 
     // The press of a ToolbarButton whose OnClick this flow runs in, while it runs: a flow it started that outlives it
     // carries an ended press, and is free.
     private static readonly AsyncLocal<Press?> PressingOn = new();
 
-    private sealed class Press(ExSheet sheet)
+    private sealed class Press(ExSheet sheet, int number)
     {
         public ExSheet Sheet { get; } = sheet;
+        public int Number { get; } = number;
         public bool Ended { get; set; }
     }
 
     /// <summary>
-    /// Refuses <paramref name="command"/>, work placed in the browser's Input Order, called from a ToolbarButton's
-    /// <c>OnClick</c>: the press holds that order until the handler returns, so the work would wait for it forever,
-    /// where the Razor component runs it as part of the press. Refused by name rather than left to hang.
+    /// The number of this Sheet's press whose <c>OnClick</c> the caller runs in, while it runs, or null: work placed in
+    /// the browser's Input Order from there runs inside the press's turn, as part of it, as on the Razor component
+    /// (ADR-0240 section 6), where its own place would wait for the press it belongs to.
     /// </summary>
-    private void RefuseInsidePress(string command)
-    {
-        if (PressingOn.Value is { Ended: false } press && ReferenceEquals(press.Sheet, this))
-        {
-            throw new InvalidOperationException(
-                $"{command} takes its place in the Sheet's Input Order, which a ToolbarButton's OnClick holds until it returns on ExSheet.Script.ExSheet (ADR-0240 section 6): " +
-                "called while the OnClick runs, it would wait for the press it is part of. Call it from a control outside the Sheet Toolbar.");
-        }
-    }
+    private int? PressCalledFrom() =>
+        PressingOn.Value is { Ended: false } press && ReferenceEquals(press.Sheet, this) ? press.Number : null;
 
-    private async Task PressAsync(int number)
+    private async Task PressAsync(int number, int pressed)
     {
         if (_disposed || _toolbar.Button(number) is not { } button)
             return;
-        var press = new Press(this);
+        var press = new Press(this, pressed);
         PressingOn.Value = press;
         try
         {
