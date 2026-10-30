@@ -19,14 +19,16 @@ if ! [[ "${repeat}" =~ ^[1-9][0-9]*$ ]]; then
 fi
 
 # The tests these arguments choose, each once: Playwright's own listing, which applies --project,
-# --shard, --grep and the files named exactly as the run does.
-listing=$(npx playwright test "$@" --list --reporter=list)
+# --shard, --grep and the files named exactly as the run does. Playwright exits 1 when it lists no
+# test, so its status is kept and read below with the count rather than ending the script here.
+listing_status=0
+listing=$(npx playwright test "$@" --list --reporter=list 2>&1) || listing_status=$?
 listed=$(printf '%s\n' "${listing}" | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
 if [ -z "${listed}" ] || [ "${listed}" -eq 0 ]; then
     # A spec file's tests may all be the other host's (ADR-0370 section 11): the same arguments with
     # no host left out list them, and this host has nothing to repeat. Listed nowhere, the arguments
     # are wrong.
-    anywhere=$(EXGRID_EVERY_HOST=1 npx playwright test "$@" --list --reporter=list \
+    anywhere=$( (EXGRID_EVERY_HOST=1 npx playwright test "$@" --list --reporter=list 2>&1 || true) \
         | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
     if [ -n "${anywhere}" ] && [ "${anywhere}" -gt 0 ]; then
         line="no test of this host's in: $* (${anywhere} are the other host's)."
@@ -37,7 +39,12 @@ if [ -z "${listed}" ] || [ "${listed}" -eq 0 ]; then
         exit 0
     fi
     printf '%s\n' "${listing}" >&2
-    echo "counted-run.sh: Playwright listed no tests for: $*" >&2
+    echo "counted-run.sh: Playwright listed no tests for: $* (its listing exited ${listing_status})" >&2
+    exit 1
+fi
+if [ "${listing_status}" -ne 0 ]; then
+    printf '%s\n' "${listing}" >&2
+    echo "counted-run.sh: Playwright listed ${listed} tests for: $*, and exited ${listing_status}" >&2
     exit 1
 fi
 expected=$((listed * repeat))

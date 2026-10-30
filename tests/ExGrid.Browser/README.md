@@ -108,8 +108,10 @@ each, so a test runs on the hosts its title's tag names (ADR-0370 section 11):
 The tag ends the title. A test run under each Chrome takes `chromeHost(chrome)`, and one run at
 0 ms and across a round trip takes `roundTripHost(ms)`, both from `fixtures.mjs`. A test that
 names neither host, or both, fails by name on every host (the `hostTag` fixture), so none is run
-twice and none is left out by default. Each host's run leaves out the other's tag
-(`playwright.config.mjs`), and `EXGRID_EVERY_HOST=1` lists every test whatever the host.
+twice and none is left out by default. Each host's run leaves out a test that names only the other
+host (`playwright.config.mjs`'s `grepInvert`). A `--grep-invert` on the command line replaces that
+one, so a test of the other host's that then reaches a run fails by name: add the other host's tag
+to the pattern. `EXGRID_EVERY_HOST=1` lists every test whatever the host, and lets one run them.
 
 ```sh
 EXGRID_HOSTING=server npx playwright test

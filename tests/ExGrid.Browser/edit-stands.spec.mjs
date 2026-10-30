@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, settled, chromeHost, roundTripHost } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, settled, chromeHost, roundTripHost, BLAZOR } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -737,7 +737,7 @@ for (const rtt of [0, 150]) {
         });
 
         for (const chrome of ['builtin', 'mud']) {
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (${chrome} Chrome) ${rtt > 0 ? BLAZOR : chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');
@@ -761,7 +761,7 @@ for (const rtt of [0, 150]) {
                 await expect(bar(grid)).toHaveValue('=B2*3-4');
             });
 
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (${chrome} Chrome) ${rtt > 0 ? BLAZOR : chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');
@@ -782,7 +782,7 @@ for (const rtt of [0, 150]) {
                 await expectKeyboardOn(grid);
             });
 
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (${chrome} Chrome) ${rtt > 0 ? BLAZOR : chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');

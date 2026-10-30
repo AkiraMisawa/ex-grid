@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
+import { BASE_URL, HOSTING, HOST_LOG, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
 
 // What every spec shares: the console capture that CON-1/2/3/6 are read from, the two
 // records a run writes — console.json and metrics.json — under one directory, and the app a
@@ -955,12 +955,20 @@ export const roundTripHost = (ms) => (ms > 0 ? BLAZOR : BEHAVIOUR);
 
 export const test = base.extend({
     // ADR-0370 section 11: a test that names neither host, or both, is run on every host and fails
-    // there by name, so it can be neither skipped everywhere nor run twice.
+    // there by name, so it can be neither skipped everywhere nor run twice. A test of the other host's
+    // reaches this host only when a --grep-invert on the command line has replaced the config's, which
+    // leaves out the other host's tests; it fails by name too, rather than pass where it does not
+    // belong.
     hostTag: [async ({ }, use, testInfo) => {
         const hosts = [BEHAVIOUR, BLAZOR].filter((tag) => testInfo.tags.includes(tag));
         if (hosts.length !== 1) {
             throw new Error(`"${testInfo.title}" names ${hosts.length === 0 ? 'no host' : 'both hosts'}: its title ends with `
                 + `${BEHAVIOUR} (the React host) or ${BLAZOR} (both Blazor hosts), ADR-0370 section 11.`);
+        }
+        if (process.env.EXGRID_EVERY_HOST !== '1' && hosts[0] !== (REACT ? BEHAVIOUR : BLAZOR)) {
+            throw new Error(`"${testInfo.title}" is a ${hosts[0]} spec, and this is the ${HOSTING} host. A --grep-invert `
+                + `on the command line replaces playwright.config.mjs's, which leaves the other host's tests out: `
+                + `put the host's own in it too, ${REACT ? '@blazor' : '@behaviour'} (ADR-0370 section 11).`);
         }
         await use(true);
     }, { auto: true }],

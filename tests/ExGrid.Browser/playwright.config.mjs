@@ -63,10 +63,11 @@ const reactHost = REACT
 // Which tests a host runs (ADR-0370 section 11): the React host the behaviour specs, the Script Core
 // under the built-in Chrome; both Blazor hosts the Blazor specs, anything that passes through Blazor.
 // Each test's title names one (fixtures.mjs's `hostTag` refuses a test that names neither or both),
-// so each host leaves out the other's, and an untagged test runs, and fails by name, on every host.
-// EXGRID_EVERY_HOST=1 leaves nothing out, for a listing that asks whether any host has a test
-// (counted-run.sh).
-const HOST_SPECS = process.env.EXGRID_EVERY_HOST === '1' ? undefined : REACT ? /@blazor\b/ : /@behaviour\b/;
+// so each host leaves out a test that names only the other, and a test that names neither or both
+// runs, and fails by name, on every host. EXGRID_EVERY_HOST=1 leaves nothing out, for a listing that
+// asks whether any host has a test (counted-run.sh).
+const HOST_SPECS = process.env.EXGRID_EVERY_HOST === '1' ? undefined
+    : REACT ? /^(?!.*@behaviour\b).*@blazor\b/ : /^(?!.*@blazor\b).*@behaviour\b/;
 
 const hostServers = reactHost !== null
     ? [reactHost]

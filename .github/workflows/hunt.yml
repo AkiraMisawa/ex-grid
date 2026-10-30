@@ -149,6 +149,8 @@ jobs:
         id: shard
         working-directory: tests/ExGrid.Browser
         shell: bash
+        env:
+          EXGRID_HOSTING: ${{ matrix.hosting }}
         run: |
           files=$(node shard-files.mjs ${{ matrix.shard }} 10 ${SPECS})
           echo "files=${files}" >> "$GITHUB_OUTPUT"
@@ -223,6 +225,8 @@ jobs:
         id: shard
         working-directory: tests/ExGrid.Browser
         shell: bash
+        env:
+          EXGRID_HOSTING: ${{ matrix.hosting }}
         run: |
           files=$(node shard-files.mjs ${{ matrix.shard }} 4 ${SPECS})
           echo "files=${files}" >> "$GITHUB_OUTPUT"

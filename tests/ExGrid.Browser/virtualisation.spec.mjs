@@ -160,11 +160,11 @@ test('the spacer is laid out as declared under the Layout Ceiling, and the last 
             // Read from the attribute: the CSSOM serialises a length to six significant
             // figures, so spacer.style.height says 2.23694e+07px for 22,369,362.
             declared: Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]),
-            // Read from layout, not from a rect: a rect is single precision, so at 2^24 px and
-            // above it moves in steps of 2, and the React host's page puts the grid where that
-            // rounding reads 2 px over the true height (2026-10-30).
+            // Both read from layout, not from a rect: a rect is single precision, so at 2^24 px
+            // and above it moves in steps of 2, and the React host's page puts the grid where
+            // that rounding reads the spacer 2 px over its true height (2026-10-30).
             laidOut: spacer.offsetHeight,
-            ceiling: root.querySelector('.ex-ceiling-probe > div').getBoundingClientRect().height,
+            ceiling: root.querySelector('.ex-ceiling-probe > div').offsetHeight,
             dpr: window.devicePixelRatio,
         };
     });

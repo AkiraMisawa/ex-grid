@@ -424,6 +424,20 @@ jobs:
   # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's
   # own log read for CON-6. Split the same way, with a verdict job of its own, so the
   # WebAssembly run keeps its check name.
+  # The React host's run holds the behaviour specs, which no other host runs (ADR-0370 section 11),
+  # so it is judged the way the Blazor hosts' runs are, by one check that is never skipped.
+  browser-react-verdict:
+    name: Layer 3 on Chrome and Edge against the React host (Linux, headed)
+    needs: [changes, browser-react]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # Passed when every project did, or when a pull request of documents alone skipped them all.
+      - name: Every project passed
+        run: >
+          test "${{ needs.browser-react.result }}" = success ||
+          { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser-react.result }}" = skipped; }
+
   browser-server:
     name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }} (Linux, headed)
     needs: hosts
