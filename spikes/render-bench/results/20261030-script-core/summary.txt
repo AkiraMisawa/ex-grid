@@ -35,6 +35,11 @@ What is slower (ADR-0350 section 15: said here and in the Change Notes, and fixe
    CoreSheet binds `Document`, so after every edit the browser hands .NET the whole document as JSON and
    .NET parses it (`SheetDocument.FromJson`, ExSheet.cs's "workbookChanged"): a CPU profile of one L1
    edit on WebAssembly spends about 700 ms in the .NET interpreter.
+   Fixed on this branch (ADR-0370 section 1's note of 2026-10-30): a raised document now crosses as the
+   cells that changed, and .NET builds it from the one before. Measured again the same way
+   (sheet-changes/): A1 127 ms on Server (103) and 129 ms on WebAssembly (641, now five times faster); L1
+   19 ms on Server (13) and 24 ms on WebAssembly (99, four times faster). What is left is the browser's:
+   the Script Core's recalculation and paint, the same on both hosts.
 5. The pivot: one trade amended, 63 ms and 63.5 KB on Server (4 ms, 2.6 KB) and 85 ms on WebAssembly (15);
    the columns swapped, 62 ms on Server (15), the same on WebAssembly (88 against 87). Not profiled: the
    bytes say each question's Leaf Aggregates cross in full.

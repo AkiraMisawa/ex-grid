@@ -1,0 +1,680 @@
+{
+  "about": "A Workbook Document a Sheet raises, written for an adapter as what changed since the one written before (ADR-0370 section 1's note of 2026-10-30): the Script Core's DocumentChanges writes each `raise` as its `written`, numbered from 1, and ExSheet.Engine's DocumentChangesReader reads each `written`, against the document it read before, as the `raise`. A `forget` step forgets on the writer's side, which goes on numbering; the reader is handed every Sheet whole next.",
+  "kind": "documentChanges",
+  "cases": [
+    {
+      "name": "ADR-0370: the first document is written whole, and the next as the cells that changed and the addresses emptied",
+      "steps": [
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  },
+                  {
+                    "at": "B2",
+                    "text": "x"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 1,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1+1"
+                    },
+                    {
+                      "at": "B2",
+                      "text": "x"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              null
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 2
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  },
+                  {
+                    "at": "C3",
+                    "boolean": true
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 2,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 2
+                    },
+                    {
+                      "at": "C3",
+                      "boolean": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              [
+                "B2"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a cell whose format alone changed is written, and the Sheet's columns, rows and widths are written whole",
+      "steps": [
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 1,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1+1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              null
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1,
+                    "format": "0.00"
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 2,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1,
+                      "format": "0.00"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              []
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "columns": [
+                  {
+                    "at": "B:C",
+                    "fill": "#FFFF00"
+                  }
+                ],
+                "columnWidths": [
+                  {
+                    "at": "D:D",
+                    "width": 20,
+                    "kind": "setByUser"
+                  }
+                ],
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1,
+                    "format": "0.00"
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 3,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "columns": [
+                    {
+                      "at": "B:C",
+                      "fill": "#FFFF00"
+                    }
+                  ],
+                  "columnWidths": [
+                    {
+                      "at": "D:D",
+                      "width": 20,
+                      "kind": "setByUser"
+                    }
+                  ],
+                  "cells": []
+                }
+              ]
+            },
+            "emptied": [
+              []
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0370: a Sheet is read against the Sheet of its name, so a renamed or inserted one is written whole, and the Linked Tables are written whole",
+      "steps": [
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "linkedTables": [
+              {
+                "name": "Positions",
+                "columns": [
+                  "Id",
+                  "PV"
+                ],
+                "key": "Id"
+              }
+            ],
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  }
+                ]
+              },
+              {
+                "name": "Prices",
+                "cells": [
+                  {
+                    "at": "B2",
+                    "text": "x"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 1,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "linkedTables": [
+                {
+                  "name": "Positions",
+                  "columns": [
+                    "Id",
+                    "PV"
+                  ],
+                  "key": "Id"
+                }
+              ],
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Prices",
+                  "cells": [
+                    {
+                      "at": "B2",
+                      "text": "x"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Prices",
+            "linkedTables": [
+              {
+                "name": "Positions",
+                "columns": [
+                  "Id",
+                  "PV"
+                ],
+                "key": "Id"
+              }
+            ],
+            "sheets": [
+              {
+                "name": "Costs",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  }
+                ]
+              },
+              {
+                "name": "Prices",
+                "cells": [
+                  {
+                    "at": "B2",
+                    "text": "x"
+                  }
+                ]
+              },
+              {
+                "name": "Sheet3",
+                "cells": []
+              }
+            ]
+          },
+          "written": {
+            "number": 2,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Prices",
+              "linkedTables": [
+                {
+                  "name": "Positions",
+                  "columns": [
+                    "Id",
+                    "PV"
+                  ],
+                  "key": "Id"
+                }
+              ],
+              "sheets": [
+                {
+                  "name": "Costs",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                },
+                {
+                  "name": "Prices",
+                  "cells": []
+                },
+                {
+                  "name": "Sheet3",
+                  "cells": []
+                }
+              ]
+            },
+            "emptied": [
+              null,
+              [],
+              null
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Prices",
+            "linkedTables": [
+              {
+                "name": "Positions",
+                "columns": [
+                  "Id",
+                  "PV"
+                ],
+                "key": "Id"
+              }
+            ],
+            "sheets": [
+              {
+                "name": "Prices",
+                "cells": [
+                  {
+                    "at": "B2",
+                    "text": "x"
+                  },
+                  {
+                    "at": "C3",
+                    "number": 3
+                  }
+                ]
+              },
+              {
+                "name": "Costs",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  }
+                ]
+              },
+              {
+                "name": "Sheet3",
+                "cells": []
+              }
+            ]
+          },
+          "written": {
+            "number": 3,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Prices",
+              "linkedTables": [
+                {
+                  "name": "Positions",
+                  "columns": [
+                    "Id",
+                    "PV"
+                  ],
+                  "key": "Id"
+                }
+              ],
+              "sheets": [
+                {
+                  "name": "Prices",
+                  "cells": [
+                    {
+                      "at": "C3",
+                      "number": 3
+                    }
+                  ]
+                },
+                {
+                  "name": "Costs",
+                  "cells": []
+                },
+                {
+                  "name": "Sheet3",
+                  "cells": []
+                }
+              ]
+            },
+            "emptied": [
+              [],
+              [],
+              []
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: once forgotten, the next document is written whole",
+      "steps": [
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 1,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    },
+                    {
+                      "at": "A2",
+                      "formula": "=A1+1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              null
+            ]
+          }
+        },
+        {
+          "forget": true
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 2,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A1",
+                      "number": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              null
+            ]
+          }
+        },
+        {
+          "raise": {
+            "workbookVersion": 1,
+            "culture": "en-US",
+            "shown": "Sheet1",
+            "sheets": [
+              {
+                "name": "Sheet1",
+                "cells": [
+                  {
+                    "at": "A1",
+                    "number": 1
+                  },
+                  {
+                    "at": "A2",
+                    "formula": "=A1+1"
+                  }
+                ]
+              }
+            ]
+          },
+          "written": {
+            "number": 3,
+            "workbook": {
+              "workbookVersion": 1,
+              "culture": "en-US",
+              "shown": "Sheet1",
+              "sheets": [
+                {
+                  "name": "Sheet1",
+                  "cells": [
+                    {
+                      "at": "A2",
+                      "formula": "=A1+1"
+                    }
+                  ]
+                }
+              ]
+            },
+            "emptied": [
+              []
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

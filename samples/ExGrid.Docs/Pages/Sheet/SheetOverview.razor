@@ -145,7 +145,12 @@
             <code>ToDocumentAsync</code>, <code>CellFormatAtAsync</code> and <code>LinkedTablesAsync</code>. The documents
             cross as the JSON both engines read and write: <code>Document</code> or <code>Workbook</code> goes to the
             browser when you hand over one of your own, and each change comes back through <code>DocumentChanged</code>
-            and <code>WorkbookChanged</code>; one it raised, bound back two ways, crosses no more.
+            and <code>WorkbookChanged</code>; one it raised, bound back two ways, crosses no more. A change crosses
+            back as what it changed: the Sheets' column and row formats and widths whole, the cells whose Entry or
+            Cell Format changed, and the addresses of the cells emptied. .NET builds the document whole from the one
+            before it, so an edit of one cell in a Sheet of thousands of Formulas carries one cell. The changes are
+            written by <code>@@ex-grid/sheet-engine</code>'s <code>DocumentChanges</code> and read by ExSheet.Engine's
+            <code>DocumentChangesReader</code>, for an adapter of your own over the Script Core.
         </p>
         <DocsExample Builtin="typeof(ScriptCoreSheet)" Mud="typeof(ScriptCoreSheetMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
         <p>

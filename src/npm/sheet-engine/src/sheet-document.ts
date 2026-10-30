@@ -156,29 +156,15 @@ export class SheetDocument {
             json.endArray();
         }
         json.startArray('cells');
-        for (const cell of this.cells) {
-            json.startObject();
-            json.string('at', cell.address.toString());
-            const entry = cell.entry;
-            if (entry !== undefined) {
-                if (entry.formula !== undefined) {
-                    json.string('formula', entry.formula);
-                } else {
-                    const constant = entry.constant;
-                    if (constant === undefined) throw new Error('Internal: an Entry holds neither a Formula nor a constant.');
-                    switch (constant.kind) {
-                        case 'number': json.number('number', constant.number); break;
-                        case 'text': json.string('text', constant.text); break;
-                        case 'boolean': json.boolean('boolean', constant.boolean); break;
-                        case 'error': json.string('error', constant.error); break;
-                        default: throw new Error(`Internal: ${String(constant.kind satisfies never)} is not a constant's kind.`);
-                    }
-                }
-            }
-            writeCellFormat(json, cell.numberFormat, cell.alignment, cell.font, cell.fill, cell.borders);
-            json.endObject();
-        }
+        for (const cell of this.cells) writeCell(json, cell);
         json.endArray();
+    }
+
+    /** A cell as the document records it, as JSON: two cells record the same exactly when their texts are equal. @internal */
+    static cellJson(cell: SheetDocumentCell): string {
+        const json = new JsonWriter();
+        writeCell(json, cell);
+        return json.toString();
     }
 
     /**
@@ -253,6 +239,30 @@ export function property(object: JsonElement & { kind: 'object' }, name: string)
 export function sheetDocumentOf(sheet: Sheet, tables: readonly SheetDocumentTable[] = sheet.tableDeclarations): SheetDocument {
     const parts = sheet.toDocumentParts();
     return new SheetDocument(sheet.culture.name, sheet.name, tables, parts.cells, parts);
+}
+
+/** A cell as a Sheet Document records it, one object of its `"cells"`. */
+function writeCell(json: JsonWriter, cell: SheetDocumentCell): void {
+    json.startObject();
+    json.string('at', cell.address.toString());
+    const entry = cell.entry;
+    if (entry !== undefined) {
+        if (entry.formula !== undefined) {
+            json.string('formula', entry.formula);
+        } else {
+            const constant = entry.constant;
+            if (constant === undefined) throw new Error('Internal: an Entry holds neither a Formula nor a constant.');
+            switch (constant.kind) {
+                case 'number': json.number('number', constant.number); break;
+                case 'text': json.string('text', constant.text); break;
+                case 'boolean': json.boolean('boolean', constant.boolean); break;
+                case 'error': json.string('error', constant.error); break;
+                default: throw new Error(`Internal: ${String(constant.kind satisfies never)} is not a constant's kind.`);
+            }
+        }
+    }
+    writeCellFormat(json, cell.numberFormat, cell.alignment, cell.font, cell.fill, cell.borders);
+    json.endObject();
 }
 
 function writeAxis(json: JsonWriter, name: string, runs: readonly SheetDocumentAxisFormat[], at: (run: SheetDocumentAxisFormat) => string): void {

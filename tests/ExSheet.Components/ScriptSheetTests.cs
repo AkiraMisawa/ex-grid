@@ -64,10 +64,16 @@ public class ScriptSheetTests : BunitContext
     // been sent.
     private static JsonElement Raised(Workbook workbook, int documentsSent) => Parsed(JsonSerializer.Serialize(new
     {
-        workbook = workbook.ToDocument().ToJson(),
-        sheet = workbook.ToDocument(workbook.Sheets[0].Name).ToJson(),
+        changes = Whole(workbook.ToDocument()),
+        workbook = true,
+        sheet = true,
         documentsSent,
     }));
+
+    // A Workbook Document handed whole, as the Script Core's DocumentChanges writes the first it hands, numbered 1
+    // (ADR-0370 section 1's note of 2026-10-30).
+    private static string Whole(WorkbookDocument document) =>
+        $$"""{"number":1,"workbook":{{document.ToJson()}},"emptied":[{{string.Join(",", document.Sheets.Select(_ => "null"))}}]}""";
 
     [Fact] // ADR-0370 section 1: the component's defaults cross, and only the handlers the Consumer bound are heard
     public void ADR0370_the_attach_carries_the_components_defaults_and_the_handlers_bound()
@@ -141,6 +147,36 @@ public class ScriptSheetTests : BunitContext
         cut.Render(ps => ps.Add(p => p.Document, (SheetDocument?)null));
         Assert.Equal(JsonValueKind.Null, Updates()[2].GetProperty("document").ValueKind);
         Assert.Equal(4, Updates()[2].GetProperty("documentsSent").GetInt32());
+    }
+
+    [Fact] // ADR-0370 section 1's note of 2026-10-30: a document raised crosses as what changed, and the Consumer is handed it whole
+    public async Task ADR0370_a_document_raised_crosses_as_what_changed_and_is_raised_whole()
+    {
+        var sheets = new List<SheetDocument>();
+        var workbooks = new List<WorkbookDocument>();
+        var cut = Sheet(ps => ps
+            .Add(p => p.DocumentChanged, (SheetDocument document) => sheets.Add(document))
+            .Add(p => p.WorkbookChanged, (WorkbookDocument document) => workbooks.Add(document)));
+        var typed = WorkbookOf("typed");
+        await cut.InvokeAsync(() => Bridge().Value.Heard("workbookChanged", Raised(typed, documentsSent: 0)));
+
+        // B1 typed, A1 emptied: only B1 crosses, and A1 by its address.
+        typed.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("B1"), "=1+1"));
+        typed.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), ""));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("workbookChanged", Parsed(JsonSerializer.Serialize(new
+        {
+            changes = """{"number":2,"workbook":{"workbookVersion":1,"culture":"en-US","shown":"Sheet1","sheets":[{"name":"Sheet1","cells":[{"at":"B1","formula":"=1+1"}]}]},"emptied":[["A1"]]}""",
+            workbook = true,
+            sheet = true,
+            documentsSent = 0,
+        }))));
+        Assert.Equal(typed.ToDocument().ToJson(), workbooks[^1].ToJson());
+        Assert.Equal(typed.ToDocument("Sheet1").ToJson(), sheets[^1].ToJson());
+
+        // Neither raised, nothing crosses and nothing is raised; the next crosses whole.
+        await cut.InvokeAsync(() => Bridge().Value.Heard("workbookChanged", Parsed("""{"changes":null,"workbook":false,"sheet":false,"documentsSent":0}""")));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("workbookChanged", Raised(WorkbookOf("again"), documentsSent: 0)));
+        Assert.Equal([typed.ToDocument().ToJson(), WorkbookOf("again").ToDocument().ToJson()], workbooks.Skip(1).Select(w => w.ToJson()));
     }
 
     [Fact] // ADR-0048: CanUndo and CanRedo are taken as the browser tells them, while a handler ahead of them still awaits
@@ -352,7 +388,7 @@ public class ScriptSheetTests : BunitContext
             .Add(p => p.WorkbookChanged, (WorkbookDocument document) => { heard.Add("workbook"); raised = document; })
             .Add(p => p.EditingChanged, (bool _) => heard.Add("editing")));
         var large = WorkbookOf(new string('x', 20_000));
-        var raisedJson = JsonSerializer.Serialize(new object[] { "workbookChanged", new { workbook = large.ToDocument().ToJson(), sheet = (string?)null, documentsSent = 0 } });
+        var raisedJson = JsonSerializer.Serialize(new object[] { "workbookChanged", new { changes = Whole(large.ToDocument()), workbook = true, sheet = false, documentsSent = 0 } });
         var taking = new TaskCompletionSource();
         _sheet.Setup<IJSStreamReference>("take", invocation => Equals(invocation.Arguments[0], 1))
             .SetResult(FakeJSStream.Gated(raisedJson, taking.Task));

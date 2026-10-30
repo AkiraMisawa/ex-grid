@@ -245,6 +245,9 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private bool _documentOwed;
     // How many of the Consumer's documents have been put on their way to the browser.
     private int _documentsSent;
+    // The Workbook Documents the browser raises, each read from what changed since the one before (ADR-0370 section 1's
+    // note of 2026-10-30).
+    private readonly DocumentChangesReader _documentsHeard = new();
 
     private readonly Queue<Func<Task>> _heard = new();
     private bool _hearing;
@@ -936,8 +939,16 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
                 // The ones on screen as soon as they are read, unless a document of the Consumer's reached the browser
                 // after them.
                 var sentThen = payload.GetProperty("documentsSent").GetInt32();
-                var sheet = payload.GetProperty("sheet") is { ValueKind: JsonValueKind.String } sheetJson ? SheetDocument.FromJson(Text(sheetJson)) : null;
-                var workbook = payload.GetProperty("workbook") is { ValueKind: JsonValueKind.String } workbookJson ? WorkbookDocument.FromJson(Text(workbookJson)) : null;
+                // Only what changed crosses, read against the Workbook read before, in the order the browser raised them
+                // (ADR-0370 section 1's note of 2026-10-30). Nothing crosses of one neither raised, and the next is whole.
+                var raisesSheet = payload.GetProperty("sheet").GetBoolean();
+                var raisesWorkbook = payload.GetProperty("workbook").GetBoolean();
+                var changes = payload.GetProperty("changes");
+                if ((raisesSheet || raisesWorkbook) != (changes.ValueKind == JsonValueKind.String))
+                    throw new InvalidOperationException("Internal: the Script Core raised a document it did not hand, or handed one it did not raise.");
+                var raised = changes.ValueKind == JsonValueKind.String ? _documentsHeard.Read(Text(changes)) : null;
+                var sheet = raisesSheet ? raised?.ToSheetDocument() : null;
+                var workbook = raisesWorkbook ? raised : null;
                 if (sheet is not null)
                     _raised.AddOrUpdate(sheet, new StrongBox<int>(sentThen));
                 if (workbook is not null)

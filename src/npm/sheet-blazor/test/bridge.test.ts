@@ -156,9 +156,18 @@ async function taken(sheet: BlazorSheet, held: WireHeld): Promise<unknown> {
 }
 
 interface Raised {
-    readonly workbook: string | null;
-    readonly sheet: string | null;
+    /** What changed in the Workbook Document raised, as DocumentChanges writes it, or `null` when neither is raised. */
+    readonly changes: string | null;
+    readonly workbook: boolean;
+    readonly sheet: boolean;
     readonly documentsSent: number;
+}
+
+/** The Workbook Document a change handed whole, as JSON. */
+function handedWhole(raised: Raised): string {
+    const changes = JSON.parse(must(raised.changes)) as { readonly workbook: unknown; readonly emptied: readonly unknown[] };
+    expect(changes.emptied.every(sheet => sheet === null)).toBe(true);
+    return JSON.stringify(changes.workbook);
 }
 
 describe('the mount', () => {
@@ -169,7 +178,7 @@ describe('the mount', () => {
 });
 
 describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)', () => {
-    it('opens the document .NET wrote, and raises the Workbook and its one Sheet as documents after a change', async () => {
+    it('opens the document .NET wrote, and hands the Workbook raised after a change whole, and after the next as what changed in it', async () => {
         const { element, dotnet } = mount({ document: workbookJson(['Prices', { A1: '2', A2: '=A1*3' }]), documentsSent: 1 });
         await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe('6'); });
 
@@ -179,11 +188,17 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
         await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(1); });
         const raised = dotnet.of('workbookChanged')[0] as Raised;
         expect(raised.documentsSent).toBe(1);
-        expect(WorkbookDocument.fromJson(must(raised.workbook)).sheets.map(sheet => sheet.name)).toEqual(['Prices']);
-        // A Sheet Document of the one Sheet, as the Razor component's DocumentChanged hands it.
-        const sheet = SheetDocument.fromJson(must(raised.sheet));
-        expect(sheet.name).toBe('Prices');
-        expect(sheet.cells.map(cell => cell.address.toString())).toEqual(['A2']);
+        // The first crosses whole; .NET raises both, the Sheet Document of the one Sheet among them.
+        expect([raised.workbook, raised.sheet]).toEqual([true, true]);
+        const workbook = WorkbookDocument.fromJson(handedWhole(raised));
+        expect(workbook.sheets.map(sheet => sheet.name)).toEqual(['Prices']);
+        expect(workbook.sheets[0]?.cells.map(cell => cell.address.toString())).toEqual(['A2']);
+
+        // The next crosses as what changed: A2 emptied, and nothing else.
+        select(element, 'A2');
+        key('Delete');
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toHaveLength(2); });
+        expect(JSON.parse(must((dotnet.of('workbookChanged')[1] as Raised).changes))).toMatchObject({ workbook: { sheets: [{ name: 'Prices', cells: [] }] }, emptied: [['A2']] });
     });
 
     it('raises no Sheet Document while the Workbook holds several, and only the documents .NET listens to', async () => {
@@ -197,7 +212,7 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
         select(element, 'A1');
         key('Delete');
 
-        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toEqual([{ workbook: null, sheet: null, documentsSent: 1 }]); });
+        await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toEqual([{ changes: null, workbook: false, sheet: false, documentsSent: 1 }]); });
     });
 
     it('tells .NET whether there is a step to undo and to redo whenever that moves, heard or not, and none once a document of the Consumer\'s opens', async () => {
@@ -233,7 +248,7 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
         // Another parameter: the Workbook the Sheet raised is the one it is handed again.
         sheet.update(JSON.stringify({ options: options({ showFormulaBar: false }) }));
         expect(cellText(element, 0, 0)).toBe('');
-        expect(documentsOf(sheet).workbook).toBe((dotnet.of('workbookChanged')[0] as Raised).workbook);
+        expect(JSON.parse(documentsOf(sheet).workbook)).toEqual(JSON.parse(handedWhole(dotnet.of('workbookChanged')[0] as Raised)));
 
         // A document of the Consumer's own making replaces it, and what the Sheet raises next says so.
         sheet.update(JSON.stringify({ options: options(), document: workbookJson(['Sheet1', { A1: 'new' }]), documentsSent: 2 }));
@@ -440,7 +455,7 @@ describe('files across the bridge (ADR-0330 section 10)', () => {
         await expect(sheet.open(7, null)).resolves.toEqual({ done: true });
         expect(dotnet.called).toEqual([{ method: 'Read', args: [7] }]);
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('after'); });
-        expect(WorkbookDocument.fromJson(must((dotnet.of('workbookChanged').at(-1) as Raised).workbook)).sheets.map(s => s.name)).toEqual(['Opened']);
+        expect(WorkbookDocument.fromJson(handedWhole(dotnet.of('workbookChanged').at(-1) as Raised)).sheets.map(s => s.name)).toEqual(['Opened']);
 
         dotnet.answers.set('Read', () => Promise.resolve(JSON.stringify({ failed: 'The file is not an .xlsx workbook.' })));
         await expect(sheet.open(8, null)).resolves.toEqual({ thrown: { kind: 'invalidOperation', message: 'The file is not an .xlsx workbook.' } });
@@ -528,21 +543,21 @@ describe('messages too large for a circuit (Blazor Server\'s hub limit, ADR-0005
         const [kind, raised] = takenArgs[0] as [string, Raised];
         expect(kind).toBe('workbookChanged');
         expect(raised.documentsSent).toBe(1);
-        expect(WorkbookDocument.fromJson(must(raised.workbook)).sheets[0]?.cells).toHaveLength(599);
+        expect(WorkbookDocument.fromJson(handedWhole(raised)).sheets[0]?.cells).toHaveLength(599);
         // Taken once: the bridge holds it no longer.
         expect(() => sheet.take(event.held)).toThrow('which the bridge does not hold');
 
         // An answer, held as the event was.
         const answer = sheet.documents();
         if (!('held' in answer)) throw new Error('The documents crossed in the answer.');
-        expect((await taken(sheet, answer) as WireDocuments).workbook).toBe(raised.workbook);
+        expect(JSON.parse((await taken(sheet, answer) as WireDocuments).workbook)).toEqual(JSON.parse(handedWhole(raised)));
 
         // A save's Workbook, held for .NET's write.
         await expect(sheet.save(1, null)).resolves.toEqual({ done: null });
         expect(dotnet.called.map(call => call.args[0])).toEqual(['Heard', 'Write']);
         const [id, saved] = takenArgs[1] as [number, WireSaved];
         expect(id).toBe(1);
-        expect(saved.document).toBe(raised.workbook);
+        expect(JSON.parse(saved.document)).toEqual(JSON.parse(handedWhole(raised)));
 
         // A small answer still crosses in itself, and without a circuit, as WebAssembly's .NET is, so does a large one.
         expect(sheet.undo()).toEqual({ done: true });

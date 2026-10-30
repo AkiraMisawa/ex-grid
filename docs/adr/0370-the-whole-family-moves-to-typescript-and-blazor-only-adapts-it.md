@@ -125,6 +125,18 @@ Consumer keeps ExSheet's C# `PointingScope` for Blazor's ExSheet and ExGrid adap
 is the Script Core's, held in the page, and the C# object only names it; a registered grid sends each row
 read as the table's row, and a Scope of Razor and Script components together is refused by name.)*
 
+*(2026-10-30, after ADR-0350 section 15's measurement: Blazor's ExSheet handed .NET every document it raised whole, and
+.NET read every Formula of it again. On a Sheet of 20,000 Formulas an edit crossed about 700 KB, and on WebAssembly
+.NET's reading took about 700 ms of the browser's thread before the edit painted: 966 ms where the C# core took 99.
+A raised Workbook Document now crosses as what changed since the one before it: every part whole but the cells, and
+of each Sheet only the cells whose Entry or Cell Format changed since the Sheet of its name crossed, with the addresses
+of those emptied. `@ex-grid/sheet-engine`'s `DocumentChanges` writes it and ExSheet.Engine's `DocumentChangesReader`
+reads it against the document read before, both held to the shared cases of `tests/cases/sheet/document-changes.json`;
+the Consumer is still handed each document whole. The first document after the Sheet opens, and the first after .NET
+stopped listening, crosses whole. Each is numbered, and changes written against a document other than the one read
+last are refused, and so is every one after them until one crosses whole: a change missed is said, never built on. It
+decides nothing: which cells changed is a comparison of what each records.)*
+
 ### 2. The engines move to TypeScript, re-proved against what Excel already answered
 
 ExSheet.Engine with ExSheet.Xlsx, ExPivot.Engine, ExChart.Engine, ExGrid.Data with ExGrid.Data.Xlsx,
