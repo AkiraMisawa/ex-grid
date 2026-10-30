@@ -17,4 +17,4 @@ JSON as `PivotLayoutJson`.
 
 ## Comments
 
-2026-09-30: `tests/ExPivot.Engine.Tests`, 158 tests.
+2026-09-30: `dotnet/tests/ExPivot.Engine.Tests`, 158 tests.

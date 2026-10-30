@@ -1,5 +1,5 @@
 {
-  "about": "The Chart Source (ADR-0322, ADR-0344): thinned where the data lives by the reference implementation, and a Chart Spec read through Chart Sources, with what each refuses before any source is asked, from tests/ExChart.Engine.Tests/ChartSourceTests.cs.",
+  "about": "The Chart Source (ADR-0322, ADR-0344): thinned where the data lives by the reference implementation, and a Chart Spec read through Chart Sources, with what each refuses before any source is asked, from dotnet/tests/ExChart.Engine.Tests/ChartSourceTests.cs.",
   "kind": "chart",
   "tables": {
     "steps": {

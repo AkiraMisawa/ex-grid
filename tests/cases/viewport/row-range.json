@@ -1,5 +1,5 @@
 {
-  "about": "The run of rows a Range Request names. From tests/ExGrid.Tests/GridSourceFromTests.cs.",
+  "about": "The run of rows a Range Request names. From dotnet/tests/ExGrid.Tests/GridSourceFromTests.cs.",
   "kind": "calls",
   "subject": "RowRange",
   "cases": [

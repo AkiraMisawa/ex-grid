@@ -32,12 +32,12 @@ selects nothing by itself, so Ctrl+click toggles at the click and Ctrl+drag adds
 reaches another column. Meta counts as Ctrl where the browser said Meta is Command, from the same
 answer the cells read.
 
-Layer 1: `tests/ExGrid.Tests/HeadingToggleTests.cs` (14 tests). Layer 2:
-`tests/ExGrid.Components/HeadingCtrlClickTests.cs` (11 tests; 9 were red before the wiring, the
+Layer 1: `dotnet/tests/ExGrid.Tests/HeadingToggleTests.cs` (14 tests). Layer 2:
+`dotnet/tests/ExGrid.Components/HeadingCtrlClickTests.cs` (11 tests; 9 were red before the wiring, the
 other two pin that Meta off an Apple platform is unchanged). Layer 3 is written and not yet run:
 the `SR-2e/DC-42:` and `DC-42: Ctrl+click on a Row Heading` tests in
-`tests/ExGrid.Browser/headings.spec.mjs` (/sheet), and the three `(SR-2e, ADR-0012)` tests in
-`tests/ExGrid.Browser/sizing.spec.mjs` (a plain ExGrid). Where a column reorder is wired, Ctrl+click
+`tests/browser/headings.spec.mjs` (/sheet), and the three `(SR-2e, ADR-0012)` tests in
+`tests/browser/sizing.spec.mjs` (a plain ExGrid). Where a column reorder is wired, Ctrl+click
 works at the click, but a Ctrl+drag on the header reorders, as ticket 21 records.
 
 The boxes are ticked on layers 1 and 2. SR-2e is verified on layer 3 as well, so the ticket stays

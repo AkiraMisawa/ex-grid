@@ -16,7 +16,7 @@ This needs Excel on a person's machine, so it is `ready-for-human`. Record the E
 in the Comments.
 
 **Every row below is now a case in the Excel case corpus**
-(`tests/ExSheet.Engine.Tests/ExcelCases/*.json`) with `source: "uncertain"`, its `ticket19Row`,
+(`dotnet/tests/ExSheet.Engine.Tests/ExcelCases/*.json`) with `source: "uncertain"`, its `ticket19Row`,
 and the engine's current answer as `expect`. `ExcelOracle/oracle.ps1` asks Excel all of them with
 the rest of the corpus ([verify-on-windows.md](../verify-on-windows.md), Part A). Row 11 is asked
 with ranges (`=XLOOKUP(1,A1,B1,)`), because ExSheet does not read array constants such as `{1}`.
@@ -83,5 +83,5 @@ correcting the ADR is the user's call.
 *(2026-10-10, backlog cleanup.)* Status set to done, and the last two boxes ticked. ADR-0047's
 "Observed in Excel" corrects the example (Excel gives 0 for `=0.1+0.2-0.3`), and "What the
 observation settled" fixes every disagreement to Excel's answer. All 57 cases that carry a
-`ticket19Row` in `tests/ExSheet.Engine.Tests/ExcelCases/` read `source: "observed"`, none differs by
+`ticket19Row` in `dotnet/tests/ExSheet.Engine.Tests/ExcelCases/` read `source: "observed"`, none differs by
 decision, and `ExcelCaseTests` holds the engine to each.

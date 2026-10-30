@@ -66,7 +66,7 @@ a press on the menu button, a grip, a checkbox, an action or a Template's contro
 rows or the header (`pointer-events: none`), which hand it over; the menu, resize, fit, marks and
 actions also refuse in C# while pointed at. No JavaScript changed.
 
-Tests: `tests/ExGrid.Components/PointedAtTests.cs` (31) and two in `ShippedStylesheetTests.cs`.
+Tests: `dotnet/tests/ExGrid.Components/PointedAtTests.cs` (31) and two in `ShippedStylesheetTests.cs`.
 Layer 3 was not run by this ticket; DC-52 and DC-53 also ask for it, and `document.activeElement`,
 the `cell` pointer and the press made within the round trip after `=` are only seen there
 (tickets 37 and 38).

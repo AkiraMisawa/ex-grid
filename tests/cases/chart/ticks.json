@@ -1,5 +1,5 @@
 {
-  "about": "The horizontal axis' ticks and labels, and the round numbers both axes step by (ticket 04, ADR-0251, ADR-0290), from tests/ExChart.Engine.Tests/TickTests.cs.",
+  "about": "The horizontal axis' ticks and labels, and the round numbers both axes step by (ticket 04, ADR-0251, ADR-0290), from dotnet/tests/ExChart.Engine.Tests/TickTests.cs.",
   "kind": "chart",
   "cases": [
     {

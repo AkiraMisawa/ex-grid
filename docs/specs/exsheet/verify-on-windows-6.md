@@ -16,7 +16,7 @@ everything.** Do not change any ADR, `CONTEXT.md` or `docs/definition-of-done.md
 - Fetch `claude/exsheet-start-8cx3v1`. Branch **`claude/exsheet-windows-verify-6`** from its tip,
   and record that tip as the verified commit. If the tip moves during the run, do not merge it in.
 - Build, then run layers 1–2 in WSL, and record the counts. Run `npm ci` afresh in the Windows copy
-  of `tests/ExGrid.Browser`.
+  of `tests/browser`.
 - **The user has authorised this run in advance:** real keys and mouse to the browsers. Excel is not
   needed. **Do not stop to ask.** Say "starting" before the first input and "finished" after the
   last.

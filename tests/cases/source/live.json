@@ -1,5 +1,5 @@
 {
-  "about": "GridSource.from with a Row Key (ADR-0140, ADR-0141): a Change Batch applied whole (LV-3), a whole new list paired by key (LV-4), changes gathered on the source's clock (LV-6), the Row Sequence Version moving exactly when the sequence did (LV-7), the source's half of vouching (LV-10), what is gathered put out before a write is judged (LV-16), and its Row Marks kept by key (ADR-0043). From tests/ExGrid.Tests/LiveSourceTests.cs.",
+  "about": "GridSource.from with a Row Key (ADR-0140, ADR-0141): a Change Batch applied whole (LV-3), a whole new list paired by key (LV-4), changes gathered on the source's clock (LV-6), the Row Sequence Version moving exactly when the sequence did (LV-7), the source's half of vouching (LV-10), what is gathered put out before a write is judged (LV-16), and its Row Marks kept by key (ADR-0043). From dotnet/tests/ExGrid.Tests/LiveSourceTests.cs.",
   "kind": "source",
   "columns": [{"name": "Id", "type": "text"}, {"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}],
   "cases": [

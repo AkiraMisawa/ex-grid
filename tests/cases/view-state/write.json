@@ -1,5 +1,5 @@
 {
-  "about": "Writing a View State's and a Query's JSON (ADR-0207): the text the C# core writes, byte for byte, which reads back as what was written, and what writing refuses; and a View State made from a grid's columns, and one refused when it is made. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "about": "Writing a View State's and a Query's JSON (ADR-0207): the text the C# core writes, byte for byte, which reads back as what was written, and what writing refuses; and a View State made from a grid's columns, and one refused when it is made. Transcribed from dotnet/tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
   "kind": "viewStateJson",
   "columns": [
     "Notional",

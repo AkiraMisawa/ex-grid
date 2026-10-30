@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExChart</RootNamespace>
+    <Description>ExChart: charts of the data an application shows in ExGrid, drawn as SVG elements Blazor diffs. Line, point and step charts on dates, numbers and categories, each series drawn as its Series Kind says, with a tooltip of every series at the pointer's position, a legend that hides a series, a drag that narrows the range, and an accessible summary and table; the application keeps what the user changed.</Description>
+    <PackageTags>$(PackageTags);chart;svg;finance;steps</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0250): ExChart references its engine and ExGrid, and
+         nothing references ExChart but its Wrapper, the demo pages and its tests. -->
+    <ProjectReference Include="..\ExChart.Engine\ExChart.Engine.csproj" />
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- A saved SVG carries the stylesheet inside it (ADR-0282): the shipped, minified one. -->
+    <EmbeddedResource Include="wwwroot\ex-chart.min.css" LogicalName="ExChart.ex-chart.min.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExChart.Components.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Shared Script's .NET halves (ADR-0411): a call too large for a Server hub's message, and the Chrome slots
+         filled with Razor (ADR-0410), crossing as every product's do. -->
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\Shared\Components\ScriptFunctionJson.cs" Link="Components\ScriptFunctionJson.cs" />
+  </ItemGroup>
+
+  <!-- ExChart's Script Core's module for ExChart.Components.ExChart and ExSurface (ADR-0370 section 1): the bridge and
+       @ex-grid/chart, bundled from their sources in packages/ as this project builds, never committed, as ExPivot's is
+       (ADR-0350 section 7). The module goes to wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
+       ScriptCoreAsset. The npm workspace's dependencies are ExGrid's build's to install: the bundle is built once the project
+       references are, so the two never run npm in the workspace at once. -->
+  <PropertyGroup>
+    <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..'))</ScriptCoreWorkspace>
+    <ScriptCoreModule>$(MSBuildThisFileDirectory)wwwroot/ex-chart-core.min.js</ScriptCoreModule>
+    <ScriptCoreConstants>$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ScriptCoreAsset.g.cs</ScriptCoreConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)packages/core/src/**/*.ts;$(ScriptCoreWorkspace)packages/data/src/**/*.ts;$(ScriptCoreWorkspace)packages/chart/src/**/*.ts;$(ScriptCoreWorkspace)packages/chart-blazor/src/**/*.ts;$(ScriptCoreWorkspace)packages/blazor/src/shared.ts;$(ScriptCoreWorkspace)packages/blazor/src/snapshots.ts;$(ScriptCoreWorkspace)packages/blazor/src/held-messages.ts;$(ScriptCoreWorkspace)packages/blazor/src/razor-slot-host.ts;$(ScriptCoreWorkspace)packages/blazor/src/grid-razor-slot-kinds.ts;$(ScriptCoreWorkspace)packages/blazor/src/pointing-scopes.ts;$(ScriptCoreWorkspace)packages/blazor/src/wire-metrics.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)tools/scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <!-- The Shared Script it imports, whose stamp it carries: built from more of blazor/src than this module reads, so a
+         change there that reaches the Shared Script alone builds this module again. -->
+    <ScriptCoreSource Include="$(MSBuildThisFileDirectory)../ExGrid/wwwroot/ex-grid-script.min.js" />
+    <Content Remove="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+  </ItemGroup>
+
+  <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
+    <Exec Command="node ../../tools/scripts/build-blazor.mjs --name ex-chart-core --namespace ExChart.Components --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-chart-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          WorkingDirectory="$(ScriptCoreWorkspace)packages/chart-blazor" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while its outputs are newer than every source: the items are
+       added on every build, so the static web assets and the compile always hold the module. -->
+  <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
+          BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+      <Content Include="wwwroot/ex-chart-core.min.js;wwwroot/ex-chart-core.min.js.map" />
+      <Compile Remove="$(ScriptCoreConstants)" />
+      <Compile Include="$(ScriptCoreConstants)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- ExChart depends on exactly the core and engine versions it was built with, as ExPivot does
+       (ADR-0042). -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -82,7 +82,7 @@ one, so that a run stopped half way leaves every finished Part on the branch.
   - Before Part A, close every workbook and Excel itself. `oracle.ps1` opens its own.
   - With `-Keys`, nothing else may take the foreground, so tell the user before it starts.
   - No UI Automation between keys, as the sixteenth run had it.
-- **The DemoHost** (Parts C, D, F and G): the pages are under `samples/ExGrid.DemoPages`.
+- **The DemoHost** (Parts C, D, F and G): the pages are under `dotnet/samples/ExGrid.DemoPages`.
   - Run it on WebAssembly and on the Server host, and on the Server host behind 150 ms (the latency
     proxy's `setRoundTrip`), as the sixteenth run did.
   - Use the ports `hosting.mjs` derives. No other checkout runs on this desktop.
@@ -91,7 +91,7 @@ one, so that a run stopped half way leaves every finished Part on the branch.
   - Everything goes under `verification/<date>-windows-17/`: the scripts, the records, the logs, the
     pictures, and one `report.md` with a row per case. Each row says what was read and, where this
     document gives a reading, whether it matches.
-  - Part A's oracle writes `tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>.json`. Commit that
+  - Part A's oracle writes `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>.json`. Commit that
     as well.
 
 ## Part A — the case corpus, put to Excel (ADR-0202, SH-7)
@@ -272,7 +272,7 @@ code a row covers (ADR-0208). Record each row's verdict against its criterion as
 Definition of Done, exactly as a sign-off would, and the difference from the earlier runs. A row that
 cannot be run here is `not run`, with the reason, never a pass.
 
-- **VZ-14.** Run `tests/ExGrid.Browser/scrollbar.spec.mjs`'s "on a Windows desktop at fractional
+- **VZ-14.** Run `tests/browser/scrollbar.spec.mjs`'s "on a Windows desktop at fractional
   display scaling (VZ-14)" block at **150%**, headed, under both browsers, on both hosts, as the
   fifteenth run's Part A did.
 - **VZ-16.**
@@ -312,7 +312,7 @@ cannot be run here is `not run`, with the reason, never a pass.
 | h2 | A1:B2, then Ctrl+click D4:E6 | as h1 | Which range carries an outline, if any; whether the active cell carries a border; where the fill handle is, if any | ticket 24 question 2 |
 | h3 | A whole column, then a whole row, selected from the Headings | as h1 | As h1 | ticket 24 question 3 |
 | h4 | A1:B2, Ctrl+click F6, Ctrl+click F6 again; then Enter three times | Excel | The Selection and the active cell after the take-out (the reading: A1), then the cell after each Enter | SL-5 (ADR-0052, "read, not observed") |
-| h5 | Type `=VLOOKUP(1,A1:B2,2,` and read the list; Escape. The same for `=HLOOKUP(1,A1:B2,2,`, `=MATCH(1,A1:A2,`, `=YEARFRAC(A1,A2,`, `=XMATCH(1,A1:A2,` and `=XMATCH(1,A1:A2,0,`; and the list a Boolean argument offers (`=VLOOKUP(1,A1:B2,2,` is one) | Excel, English | Every entry's text, in order, verbatim. Compare with `src/ExSheet.Engine/Formulas/Functions.cs` | SH-36 (tickets 04, 09, 11) |
+| h5 | Type `=VLOOKUP(1,A1:B2,2,` and read the list; Escape. The same for `=HLOOKUP(1,A1:B2,2,`, `=MATCH(1,A1:A2,`, `=YEARFRAC(A1,A2,`, `=XMATCH(1,A1:A2,` and `=XMATCH(1,A1:A2,0,`; and the list a Boolean argument offers (`=VLOOKUP(1,A1:B2,2,` is one) | Excel, English | Every entry's text, in order, verbatim. Compare with `dotnet/src/ExSheet.Engine/Formulas/Functions.cs` | SH-36 (tickets 04, 09, 11) |
 | h6 | A cell copied in Excel and pasted into `/sheet`, and a cell copied in `/sheet` and pasted into Excel, both directions, with `clipboard-probe.mjs` (`verification/2026-09-27-windows-excel-2/`) | Excel, Chrome and Edge, both hosts | What lands on each side, as the second and third runs recorded it | DC-33, ticket 14 (a real Excel copy, which CI cannot make) |
 | h7 | Ctrl+I, Ctrl+U, and Format Cells' Font tab, each over a number showing `####` | Excel | Whether the column widens | SH-45 (ADR-0071's readings) |
 | h8 | Strikethrough alone over a number showing `####` | Excel | Whether the column widens | ticket 100 |

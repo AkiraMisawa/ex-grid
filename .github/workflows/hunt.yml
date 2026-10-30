@@ -33,10 +33,10 @@ on:
   pull_request:
     paths:
       - .github/workflows/hunt.yml
-      - tests/ExGrid.Browser/counted-run.sh
-      - tests/ExGrid.Browser/shard-files.mjs
-      - tests/ExGrid.Browser/fixtures.mjs
-      - tests/ExGrid.Browser/latency-proxy.mjs
+      - tests/browser/counted-run.sh
+      - tests/browser/shard-files.mjs
+      - tests/browser/fixtures.mjs
+      - tests/browser/latency-proxy.mjs
 
 permissions:
   contents: read
@@ -72,25 +72,22 @@ jobs:
       - uses: ./.github/actions/dotnet
 
       - name: Publish the WebAssembly DemoHost
-        run: dotnet publish samples/ExGrid.DemoHost -c Release -o hosts/wasm
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoHost -c Release -o ../hosts/wasm
 
       - name: Publish the Server host
-        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o hosts/server
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o ../hosts/server
 
       - name: Publish the demo API server
-        run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoApi -c Release -o ../hosts/api
 
       # The React DemoHost, which the behaviour specs run on (ADR-0370 section 11), as ci.yml builds it.
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: samples/ExGrid.DemoHost.React/package-lock.json
-
+      # Its dependencies are the npm workspace's, which the .NET action installed.
       - name: Build the React DemoHost
         working-directory: samples/ExGrid.DemoHost.React
         run: |
-          npm ci
           npm run build
           cp -r dist ../../hosts/react
 
@@ -120,20 +117,10 @@ jobs:
 
       - uses: ./.github/actions/dotnet
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
       - name: The installed browsers the suite resolves by channel
         run: |
           google-chrome --version
           microsoft-edge --version
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
 
       - uses: actions/download-artifact@v8
         with:
@@ -147,7 +134,7 @@ jobs:
       # there a shard with no file is sharding that failed, and the job says so rather than passing.
       - name: Which spec files this shard takes
         id: shard
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         shell: bash
         env:
           EXGRID_HOSTING: ${{ matrix.hosting }}
@@ -165,7 +152,7 @@ jobs:
 
       - name: Layer 3, each test ${{ env.REPEAT }} times, headed under xvfb
         if: steps.shard.outputs.files != ''
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
@@ -182,7 +169,7 @@ jobs:
           name: hunt-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -206,16 +193,6 @@ jobs:
 
       - uses: ./.github/actions/dotnet
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
-
       - uses: actions/download-artifact@v8
         with:
           name: hunt-hosts
@@ -223,7 +200,7 @@ jobs:
 
       - name: Which spec files this shard takes
         id: shard
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         shell: bash
         env:
           EXGRID_HOSTING: ${{ matrix.hosting }}
@@ -241,7 +218,7 @@ jobs:
 
       - name: Layer 3 widened, headed under xvfb
         if: steps.shard.outputs.files != ''
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
@@ -259,6 +236,6 @@ jobs:
           name: widened-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30

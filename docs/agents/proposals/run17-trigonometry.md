@@ -73,7 +73,7 @@ more), the one CSC-001 shows for CSC; the new `uncertain` cases above settle the
 > More than one construction of `TAN`, `COT` and `SEC` fits every observation; the engine takes the one
 > that rounds least, and TAN-006 and 007, COT-006 to 008 and SEC-005 ask the next run which is Excel's.
 
-## Proposed: `src/ExSheet.Engine/README.md`
+## Proposed: `dotnet/src/ExSheet.Engine/README.md`
 
 In "**Asked of Excel before they are answered**", remove `` `SIN`, `COS` and `TAN` of 2^27 or more
 (`#NUM!`, the limit Microsoft documents for `COT` and its kin); `` and `` `LOG` to base 1, and `CSC`,

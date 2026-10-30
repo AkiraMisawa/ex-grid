@@ -70,9 +70,9 @@ and ExPivot adopt that?
 - ADR-0003's rule — a changed row is a new instance, and an unchanged row is the same instance — is
   ag-grid's "immutable store" rule ([doc-rowdata L54-L69]).
 - But ExGrid uses the instance both to decide **that** a row changed (`ShouldRender`) and to decide
-  **which component paints it** (`@key` is the instance; `src/ExGrid/Components/ExGrid.razor:446`).
+  **which component paints it** (`@key` is the instance; `dotnet/src/ExGrid/Components/ExGrid.razor:446`).
   A changed row's component is therefore disposed and a new one mounted, and the row's DOM is
-  rebuilt (`tests/ExGrid.Components/ChangeHighlightTests.cs:227-246`). ag-grid holds a separate id,
+  rebuilt (`dotnet/tests/ExGrid.Components/ChangeHighlightTests.cs:227-246`). ag-grid holds a separate id,
   and refreshes the same row in place.
 - Blazor's own diff would give ExGrid ag-grid's per-cell "write only what changed" if the component
   were kept: within a retained component it emits a text update only for text that differs
@@ -81,18 +81,18 @@ and ExPivot adopt that?
 **ExPivot is ahead of ag-grid's pivot mode in recomputing, and behind it in repainting.**
 
 - It folds a Change Batch into the Leaf Aggregates — exact parts by subtraction and addition —
-  rather than re-bucketing every record (ADR-0067; `src/ExPivot.Engine/SnapshotPivotSource.cs:231-254`).
+  rather than re-bucketing every record (ADR-0067; `dotnet/src/ExPivot.Engine/SnapshotPivotSource.cs:231-254`).
 - It never shows half a batch, and it marks cells by comparing painted text
-  (`src/ExPivot/Components/ReportHistory.cs:7-21`).
+  (`dotnet/src/ExPivot/Components/ReportHistory.cs:7-21`).
 - But each redraw lays out a new report whose rows are all new instances
-  (`src/ExPivot.Engine/PivotReport.cs:236-240`), so every painted row remounts on every redraw — up
+  (`dotnet/src/ExPivot.Engine/PivotReport.cs:236-240`), so every painted row remounts on every redraw — up
   to four times a second by default (ADR-0067).
 
 **`GridSource.From` has no incremental path.** One `ReplaceRow` re-filters and re-sorts every row
-(`src/ExGrid/InMemoryGridSource.cs:148`), and there is no way to replace many rows at once. The
+(`dotnet/src/ExGrid/InMemoryGridSource.cs:148`), and there is no way to replace many rows at once. The
 `/grid-live` demo writes by hand what ag-grid's immutable `rowData` does for its users: pairing by
 key, the Row Sequence Version, and which cells changed
-(`samples/ExGrid.DemoPages/Pages/GridLivePage.razor:226-244`, `:321-387`).
+(`dotnet/samples/ExGrid.DemoPages/Pages/GridLivePage.razor:226-244`, `:321-387`).
 
 **Ranked adoption candidates** (§8):
 
@@ -385,30 +385,30 @@ nothing of it is copied into this note.
 
 - **In the push form, a change is a new Window.** The Consumer hands over new parameters, and the
   grid re-reads the Window, its start, its total and the Row Sequence Version in one place
-  (`src/ExGrid/Components/ExGrid.razor:2528-2545`).
+  (`dotnet/src/ExGrid/Components/ExGrid.razor:2528-2545`).
 - **In the pull form, a Grid Source raises `StateChanged`.** The grid marshals it onto the
   renderer's context, re-runs the same `ApplyState` and renders
-  (`src/ExGrid/Components/ExGrid.razor:2499-2526`). The interface asks a source to raise it only
+  (`dotnet/src/ExGrid/Components/ExGrid.razor:2499-2526`). The interface asks a source to raise it only
   when something painted moved, because the grid re-runs its whole pipeline on it
-  (`src/ExGrid/IGridSource.cs:15-17`).
+  (`dotnet/src/ExGrid/IGridSource.cs:15-17`).
 - **A new Window instance is checked for repeated rows.** Every row of it goes through a
   reference-equality set, and a repeat or a null is refused by name
-  (`src/ExGrid/Components/ExGrid.razor:2689-2693`, `:2858-2875`). The cost is one pass over the
+  (`dotnet/src/ExGrid/Components/ExGrid.razor:2689-2693`, `:2858-2875`). The cost is one pass over the
   whole Window per new Window instance — for `GridSource.From`, the whole result.
 - **Selection is reconciled by the Row Sequence Version.** It is dropped when the version moved, or
   when the visible columns changed, and an open editor's text is discarded and announced
-  (`src/ExGrid/Components/ExGrid.razor:2746-2768`, `:2785-2800`; ADR-0011).
+  (`dotnet/src/ExGrid/Components/ExGrid.razor:2746-2768`, `:2785-2800`; ADR-0011).
 
 ### 3.2 How a row decides to render, and what a changed row costs
 
 - **One component per row, and the cells are plain markup.** `ExGridRow` writes `ShouldRender` by
   hand, comparing the row by reference and every other parameter by reference or value
-  (`src/ExGrid/Components/ExGridRow.razor:302-339`; ADR-0003).
+  (`dotnet/src/ExGrid/Components/ExGridRow.razor:302-339`; ADR-0003).
 - **Each row is keyed by its instance.** The key is an object held per instance in a
   `ConditionalWeakTable`, so that `@key` is reference identity even for a record type with value
-  equality (`src/ExGrid/Components/ExGrid.razor:446`, `:970-974`, `:8681`).
+  equality (`dotnet/src/ExGrid/Components/ExGrid.razor:446`, `:970-974`, `:8681`).
 - **An unchanged instance costs nothing.** Scrolling one row keeps the overlapping rows' components
-  and renders none of them (`tests/ExGrid.Components/VirtualisationTests.cs:87-100`). A
+  and renders none of them (`dotnet/tests/ExGrid.Components/VirtualisationTests.cs:87-100`). A
   fresh-but-equal Window re-renders no surviving row (RR-5,
   [Definition of Done §19](../definition-of-done.md)).
 - **A changed instance is a new key, so Blazor discards the old row and builds a new one.**
@@ -417,7 +417,7 @@ nothing of it is copied into this note.
     elements and components" ([ms-key]).
   - The layer-2 test of a replaced row shows it. After a new `Beta` instance is pushed, every row's
     `RenderCount` is 1, the new `Beta` row's included. A retained component would have rendered a
-    second time (`tests/ExGrid.Components/ChangeHighlightTests.cs:227-246`).
+    second time (`dotnet/tests/ExGrid.Components/ChangeHighlightTests.cs:227-246`).
 - **What a retained component would cost instead.** Blazor's diff of a retained element emits
   `UpdateText` only for a text frame whose content differs ([bl-diff-text]), and `SetAttribute` only
   for an attribute whose value differs ([bl-diff-attr]). A component reached under a matching key
@@ -432,24 +432,24 @@ nothing of it is copied into this note.
 ### 3.3 The bundled Grid Sources
 
 - **`GridSource.From` copies the rows once**, so the base stays immutable
-  (`src/ExGrid/InMemoryGridSource.cs:22-29`).
+  (`dotnet/src/ExGrid/InMemoryGridSource.cs:22-29`).
 - **Its one write, `ReplaceRow`**, finds the row by reference, replaces it, and re-runs the whole
-  query — filter and stable sort over every row (`src/ExGrid/InMemoryGridSource.cs:115-170`, `:148`;
-  `src/ExGrid/GridQueryEngine.cs:17-34`, `:250-287`).
+  query — filter and stable sort over every row (`dotnet/src/ExGrid/InMemoryGridSource.cs:115-170`, `:148`;
+  `dotnet/src/ExGrid/GridQueryEngine.cs:17-34`, `:250-287`).
   - It bumps the Row Sequence Version only when the sequence moved, mapping the replaced instance
     across.
   - There is no form that replaces several rows, adds or removes one.
 - **A sort or filter change** re-runs the whole query too, and bumps the version only when the
-  sequence moved (`src/ExGrid/InMemoryGridSource.cs:263-300`).
+  sequence moved (`dotnet/src/ExGrid/InMemoryGridSource.cs:263-300`).
 - **`GridSource.Fetch` has no entry for "the server's data moved on".** Its public members are the
   column, sort, filter, range, copy, value-list and Find calls and `Dispose`
-  (`src/ExGrid/FetchingGridSource.cs:120`, `:199`, `:211`, `:230`, `:441`, `:474`, `:492`, `:507`).
+  (`dotnet/src/ExGrid/FetchingGridSource.cs:120`, `:199`, `:211`, `:230`, `:441`, `:474`, `:492`, `:507`).
   A sort or filter change drops the Window and bumps the version (ADR-0025).
 
 ### 3.4 `/grid-live`: the Consumer's half of ag-grid's immutable update, written by hand
 
 The demo pushes a Window of a server's trades, and applies the server's notices itself
-(`samples/ExGrid.DemoPages/Pages/GridLivePage.razor`). Set beside §2.1, it is the immutable
+(`dotnet/samples/ExGrid.DemoPages/Pages/GridLivePage.razor`). Set beside §2.1, it is the immutable
 `rowData` path:
 
 - **Pairing by key.** It keeps a map from `TradeId` to position (`:246-252`), and replaces each
@@ -469,18 +469,18 @@ The demo pushes a Window of a server's trades, and applies the server's notices 
   never compares values itself.
 - **One timer.** Each row reports the earliest end among its marks, and the grid keeps one timer for
   the earliest of all. When it fires, only the rows whose marks ended render again
-  (`src/ExGrid/Components/ExGridRow.razor:556-607`;
-  `src/ExGrid/Components/ExGrid.ChangeHighlight.cs:93-157`).
+  (`dotnet/src/ExGrid/Components/ExGridRow.razor:556-607`;
+  `dotnet/src/ExGrid/Components/ExGrid.ChangeHighlight.cs:93-157`).
 - **No animation.** The mark is a class added and removed in one step (ADR-0068; ADR-0027 P8).
 
 ### 3.6 ExGrid.Data: the Snapshot and the Change Batch
 
 - **A Change Batch makes the next Snapshot, whole or not at all** (ADR-0064;
-  `src/ExGrid.Data/Snapshot.cs:192-205`).
+  `dotnet/src/ExGrid.Data/Snapshot.cs:192-205`).
 - **The result says what changed.** `SnapshotChange` carries `Before`, `After`, the rows `Removed`
   (removed records, and the old versions of changed ones) and the rows `Added` (added records, and
   the new versions of changed ones) — "what a reader needs to fold the batch into what it computed
-  rather than start again" (`src/ExGrid.Data/ChangeBatch.cs:76-104`). This is ag-grid's set of
+  rather than start again" (`dotnet/src/ExGrid.Data/ChangeBatch.cs:76-104`). This is ag-grid's set of
   changed rows (§2.2), stated by the data rather than worked out by a grid.
 - **ExGrid does not read Snapshots yet.** ADR-0064 leaves ExGrid's adoption to an ADR of its own,
   "each after measuring", and says a Snapshot serves a grid "as an index beside those objects, never
@@ -491,25 +491,25 @@ The demo pushes a Window of a server's trades, and applies the server's notices 
 - **The bundled source folds a batch in.** `SnapshotPivotSource.Apply` makes the next Snapshot,
   brings the answer it holds up to date from what the batch removed and added (or defers the fold
   while an answer is being assembled), and raises `Changed` with the new Source Version
-  (`src/ExPivot.Engine/SnapshotPivotSource.cs:222-254`; ADR-0067).
+  (`dotnet/src/ExPivot.Engine/SnapshotPivotSource.cs:222-254`; ADR-0067).
 - **The component gathers changes on a clock.** A change is asked for at once when the last one
   reached the screen more than `RedrawInterval` ago (250 ms by default), and otherwise when that time
   comes. A data change never cancels a question that is out, and a user's gesture supersedes a
-  question for newer data (`src/ExPivot/Components/ExPivot.Live.cs:8-19`, `:124-168`; ADR-0067,
+  question for newer data (`dotnet/src/ExPivot/Components/ExPivot.Live.cs:8-19`, `:124-168`; ADR-0067,
   PV-35).
-- **Putting a report on screen** (`src/ExPivot/Components/ExPivot.Asking.cs:636-662`).
+- **Putting a report on screen** (`dotnet/src/ExPivot/Components/ExPivot.Asking.cs:636-662`).
   - The Row Sequence Version is bumped only when the report's rows differ from the previous one's.
   - A data version extends the Change Highlight's history; anything else starts a new one.
   - The history pairs a cell with its previous version by what it stands for — the row's role,
     Value Field and Items, and the column's name — and compares painted text, so a change the
-    number format hides is not marked (`src/ExPivot/Components/ReportHistory.cs:7-21`).
+    number format hides is not marked (`dotnet/src/ExPivot/Components/ReportHistory.cs:7-21`).
 - **Columns are reused by key.** Each `GridColumn` is cached by name, header, index and width, so a
   report whose columns did not change hands ExGrid the same column instances
-  (`src/ExPivot/Components/ExPivot.Report.cs:150-204`) — the same idea as ag-grid's reuse of pivot
+  (`dotnet/src/ExPivot/Components/ExPivot.Report.cs:150-204`) — the same idea as ag-grid's reuse of pivot
   result columns by key ([age-pivotcols-apply]).
 - **Rows are not reused.** The row type says so: "the row's identity is the grid's change signal
-  (ADR-0003), and a new report is new rows" (`src/ExPivot.Engine/PivotReport.cs:236-240`). The report's rows are the
-  Window (`src/ExPivot/Components/ExPivot.Report.cs:415-419`).
+  (ADR-0003), and a new report is new rows" (`dotnet/src/ExPivot.Engine/PivotReport.cs:236-240`). The report's rows are the
+  Window (`dotnet/src/ExPivot/Components/ExPivot.Report.cs:415-419`).
   - Every redraw therefore hands ExGrid a new instance for every row, and every painted row is
     disposed and mounted again (§3.2), including rows whose values did not move.
   - ADR-0067 records what this costs end to end today: 43 ms (35–57) from `Apply` to the frame that
@@ -528,7 +528,7 @@ The demo pushes a Window of a server's trades, and applies the server's notices 
 | The library works out adds, updates and removes from a whole new array by id ([ag-nm-immutable]) | Deferred: "the Consumer hands a whole new Snapshot every time, and the library finds the difference by key" (ADR-0067, Considered options) | **Deferred by ADR** — Open question 5 |
 | `applyTransaction` ([ag-nm-tx]) | A Change Batch applied to a Snapshot (ADR-0064); for ExGrid, only `ReplaceRow`, one row at a time (`InMemoryGridSource.cs:115-170`) | **Equivalent in ExGrid.Data and ExPivot; gap in ExGrid** — candidate 3 |
 | `applyTransactionAsync`: a 50 ms wait, then one refresh ([ag-csrm-async]) | ExPivot gathers changes, redrawing at most every 250 ms from the newest version (ADR-0067); ExGrid leaves gathering to the Consumer (`GridLivePage.razor:282-315`) | **Equivalent in ExPivot**; for ExGrid, see §5.3 |
-| `flushAsyncTransactions` before a gesture ([doc-hf L43-L51]) | A gesture carries the Row Sequence Version it was taken under and is refused if it moved: paste (`src/ExGrid/Clipboard/GridPasteIntent.cs:5-15`), Find (`ExGrid.razor:6581`, `:6601-6607`), Row Marks (`src/ExGrid/Rows/FetchingRowMarks.cs:147-159`) | **ExGrid better** (spine 6) |
+| `flushAsyncTransactions` before a gesture ([doc-hf L43-L51]) | A gesture carries the Row Sequence Version it was taken under and is refused if it moved: paste (`dotnet/src/ExGrid/Clipboard/GridPasteIntent.cs:5-15`), Find (`ExGrid.razor:6581`, `:6601-6607`), Row Marks (`dotnet/src/ExGrid/Rows/FetchingRowMarks.cs:147-159`) | **ExGrid better** (spine 6) |
 | Changed path: re-aggregate only the touched groups, each over all its children ([age-group-delta], [age-agg]) | ExPivot folds a batch into the Leaf Aggregates — exact parts by subtraction and addition, the rest recomputed per touched leaf (ADR-0067) — then computes every cell and total from the leaves, which is report-sized (ADR-0066) | **Different**: work per changed record plus the report's size, against work per touched group's children. Which is cheaper depends on the shape; not measured |
 | `deltaSort` ([ag-deltasort]) | None: `GridQueryEngine.Apply` re-sorts every row (`GridQueryEngine.cs:250-287`) | **Gap** — candidate 4 |
 | Flat filter re-tests every row, reusing the array when unchanged ([ag-filterstage]) | The same: every row re-tested on each requery (`GridQueryEngine.cs:17-34`); the Row Sequence Version moves only when the sequence moved (`InMemoryGridSource.cs:292-294`) | **Equivalent** |
@@ -755,7 +755,7 @@ are listed after the candidates.
   It is the ExGrid adoption that ADR-0064 and ADR-0067 announce ("ExGrid and ExSheet take live data
   up in ADRs of their own"). It would:
   - take a Change Batch and use `SnapshotChange.Removed` and `Added`
-    (`src/ExGrid.Data/ChangeBatch.cs:76-104`) as ag-grid uses its changed rows;
+    (`dotnet/src/ExGrid.Data/ChangeBatch.cs:76-104`) as ag-grid uses its changed rows;
   - keep the row instance of every record the batch did not touch, and make a new one for each
     changed or added record (ADR-0003);
   - bump the Row Sequence Version only when the sequence moved (`InMemoryGridSource.cs:292-294`'s

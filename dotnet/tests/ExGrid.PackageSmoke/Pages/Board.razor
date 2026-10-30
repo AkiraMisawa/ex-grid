@@ -1,0 +1,21 @@
+@page "/board"
+@* A Board read from its JSON and drawn over a Snapshot its input made, as dotnet/src/ExBoard/README.md writes
+   it, taken from the packed ExBoard and the three products it depends on (ADR-0340). *@
+@using ExBoard
+@using ExBoard.Components
+@using ExGrid.Data
+
+<ExBoard Board="_board" Data="_data" Width="800" />
+
+@code {
+    private static readonly BoardReading _board = BoardSpec.Read("""
+        {"version": 1, "inputs": {"trades": {"columns": [{"name": "desk", "type": "text"}, {"name": "pnl", "type": "decimal"}]}},
+         "views": [{"id": "blotter", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "pnl", "format": "#,##0"}]}}],
+         "layout": [{"views": ["blotter"]}]}
+        """);
+
+    private static readonly IReadOnlyDictionary<string, Snapshot> _data = new Dictionary<string, Snapshot>
+    {
+        ["trades"] = _board.Input("trades")!.FromJson("""[{"desk": "Rates", "pnl": 100}, {"desk": "FX", "pnl": -50}]"""),
+    };
+}

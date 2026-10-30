@@ -1,5 +1,5 @@
 {
-  "about": "The Selection Summary on GridSource.from (ADR-0130): the reference figures over the source's current result, each column read by its value. Numbers are written as bigints, which both cores hold exactly. From tests/ExGrid.Tests/GridSummaryTests.cs.",
+  "about": "The Selection Summary on GridSource.from (ADR-0130): the reference figures over the source's current result, each column read by its value. Numbers are written as bigints, which both cores hold exactly. From dotnet/tests/ExGrid.Tests/GridSummaryTests.cs.",
   "kind": "source",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Notional", "type": "number"}, {"name": "Rate", "type": "number"}],
   "cases": [

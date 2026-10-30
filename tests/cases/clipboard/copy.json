@@ -1,5 +1,5 @@
 {
-  "about": "The copy rules (ADR-0005, ADR-0011): an empty selection, then a misaligned one, then one past the cap is refused; otherwise the plan names the rectangles and how they combine. From tests/ExGrid.Tests/CopyRuleTests.cs.",
+  "about": "The copy rules (ADR-0005, ADR-0011): an empty selection, then a misaligned one, then one past the cap is refused; otherwise the plan names the rectangles and how they combine. From dotnet/tests/ExGrid.Tests/CopyRuleTests.cs.",
   "kind": "clipboard",
   "extent": [1000000, 50],
   "cases": [

@@ -1,5 +1,5 @@
 {
-  "about": "The Chart Spec read into a Chart Definition (ADR-0320, ADR-0251, ADR-0253, ADR-0290, ADR-0300): what it reads from the tables it names, what the tool answers the AI, and each refusal with its path, from tests/ExChart.Engine.Tests/ChartSpecTests.cs.",
+  "about": "The Chart Spec read into a Chart Definition (ADR-0320, ADR-0251, ADR-0253, ADR-0290, ADR-0300): what it reads from the tables it names, what the tool answers the AI, and each refusal with its path, from dotnet/tests/ExChart.Engine.Tests/ChartSpecTests.cs.",
   "kind": "chart",
   "tables": {
     "rates": {

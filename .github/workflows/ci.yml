@@ -86,6 +86,11 @@ jobs:
     name: Build, layers 1 and 2, coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Every dotnet command runs in dotnet/, where the SDK finds global.json and the tool manifest
+    # (ADR-0370 section 9).
+    defaults:
+      run:
+        working-directory: dotnet
     steps:
       - uses: actions/checkout@v7
 
@@ -107,7 +112,7 @@ jobs:
         run: >
           dotnet test ExGrid.slnx --no-build
           -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura
-          --coverage-output coverage.cobertura.xml --coverage-settings ${{ github.workspace }}/tests/coverage.settings.xml"
+          --coverage-output coverage.cobertura.xml --coverage-settings ${{ github.workspace }}/dotnet/tests/coverage.settings.xml"
 
       - name: Merge coverage
         run: >
@@ -152,10 +157,11 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: coverage
-          path: coverage/
+          path: dotnet/coverage/
           retention-days: 30
 
-  # The Script Core's npm workspace (ADR-0350, section 13): its sources and tests type-checked, each
+  # The npm workspace at the repository's root (ADR-0350, section 13, ADR-0370 section 9): its packages' sources and
+  # tests type-checked, each
   # package built with its public surface held to its report (API Extractor, the counterpart of
   # PublicAPI.Unshipped.txt), and Vitest's layers 1 and 2, whose layer-1 cases are the JSON under
   # tests/cases/ that the tests job runs against the C# core.
@@ -163,9 +169,6 @@ jobs:
     name: Script Core, layers 1 and 2 (npm)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    defaults:
-      run:
-        working-directory: src/npm
     steps:
       - uses: actions/checkout@v7
 
@@ -173,7 +176,7 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-          cache-dependency-path: src/npm/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install the workspace
         run: npm ci
@@ -193,9 +196,9 @@ jobs:
           EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: npm test
 
-      # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): tools/pivot-oracle
+      # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): dotnet/tools/pivot-oracle
       # answers what .NET and ExPivot.Engine give. The seed is fixed, so the gate answers alike on every
-      # run; another seed is drawn by hand with EXGRID_PIVOT_SEED (src/npm/pivot-engine/differential/README.md).
+      # run; another seed is drawn by hand with EXGRID_PIVOT_SEED (packages/pivot-engine/differential/README.md).
       # The oracle runs on the flake's .NET, whose ICU is the one the Script Core's culture table was written
       # from: the runner's own ICU is another version, and formats en-ZA otherwise (1.5 against 1,5).
       - uses: cachix/install-nix-action@v31
@@ -203,29 +206,27 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build the pivot oracle on the flake's .NET
-        working-directory: .
         run: |
-          nix develop -c dotnet build tools/pivot-oracle -c Release
+          nix develop -c bash -c 'cd dotnet && dotnet build tools/pivot-oracle -c Release'
           echo "PIVOT_DOTNET=$(nix develop -c bash -c 'command -v dotnet' | tail -n 1)" >> "$GITHUB_ENV"
 
       - name: ExPivot's engine against the C# engine (differential)
-        working-directory: src/npm/pivot-engine
+        working-directory: packages/pivot-engine
         env:
           EXGRID_PIVOT_SEED: 20261025
-        run: EXGRID_PIVOT_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve" npm run differential
+        run: EXGRID_PIVOT_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/dotnet/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve" npm run differential
 
       # ExSheet's formula engine held to the C# engine on random Sheets the same way (ADR-0370, section 2):
-      # tools/sheet-oracle answers what ExSheet.Engine gives, on the same flake .NET, under a fixed seed
-      # (src/npm/sheet-engine/differential/README.md).
+      # dotnet/tools/sheet-oracle answers what ExSheet.Engine gives, on the same flake .NET, under a fixed seed
+      # (packages/sheet-engine/differential/README.md).
       - name: Build the sheet oracle on the flake's .NET
-        working-directory: .
-        run: nix develop -c dotnet build tools/sheet-oracle -c Release
+        run: nix develop -c bash -c 'cd dotnet && dotnet build tools/sheet-oracle -c Release'
 
       - name: ExSheet's engine against the C# engine (differential)
-        working-directory: src/npm/sheet-engine
+        working-directory: packages/sheet-engine
         env:
           EXGRID_SHEET_SEED: 20261026
-        run: EXGRID_SHEET_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/tools/sheet-oracle/bin/Release/net10.0/ExSheet.Oracle.dll serve" npm run differential
+        run: EXGRID_SHEET_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/dotnet/tools/sheet-oracle/bin/Release/net10.0/ExSheet.Oracle.dll serve" npm run differential
 
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
@@ -244,26 +245,23 @@ jobs:
       - uses: ./.github/actions/dotnet
 
       - name: Publish the WebAssembly DemoHost
-        run: dotnet publish samples/ExGrid.DemoHost -c Release -o hosts/wasm
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoHost -c Release -o ../hosts/wasm
 
       - name: Publish the Server host
-        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o hosts/server
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o ../hosts/server
 
       - name: Publish the demo API server
-        run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
+        working-directory: dotnet
+        run: dotnet publish samples/ExGrid.DemoApi -c Release -o ../hosts/api
 
       # The React DemoHost (ADR-0350 section 13): the Script Core and its React adapter built from
-      # source by Vite, as a Consumer's bundler builds them, into static files.
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: samples/ExGrid.DemoHost.React/package-lock.json
-
+      # source by Vite, as a Consumer's bundler builds them, into static files. Its dependencies are the
+      # npm workspace's, which the .NET action installed.
       - name: Build the React DemoHost
         working-directory: samples/ExGrid.DemoHost.React
         run: |
-          npm ci
           npm run typecheck
           npm run build
           cp -r dist ../../hosts/react
@@ -299,20 +297,10 @@ jobs:
 
       - uses: ./.github/actions/dotnet
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
       - name: The installed browsers the suite resolves by channel
         run: |
           google-chrome --version
           microsoft-edge --version
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
 
       # The hosts the hosts job published, among them the demo API server the pages call
       # (ADR-0069), which the suite starts beside the host. Its first start on a fresh runner
@@ -327,7 +315,7 @@ jobs:
       # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
       # window) gets its 1280x800 window whole — 1920x1200 device pixels.
       - name: Layer 3, headed under xvfb
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
@@ -342,7 +330,7 @@ jobs:
           name: layer3-records-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -380,20 +368,10 @@ jobs:
       # The React host's /pivot-db asks the demo API server, which runs published under .NET.
       - uses: ./.github/actions/dotnet
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
       - name: The installed browsers the suite resolves by channel
         run: |
           google-chrome --version
           microsoft-edge --version
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
 
       - uses: actions/download-artifact@v8
         with:
@@ -401,7 +379,7 @@ jobs:
           path: hosts
 
       - name: Layer 3 against the React host, headed under xvfb
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: react
@@ -416,7 +394,7 @@ jobs:
           name: layer3-records-react-${{ matrix.project }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -455,20 +433,10 @@ jobs:
 
       - uses: ./.github/actions/dotnet
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
       - name: The installed browsers the suite resolves by channel
         run: |
           google-chrome --version
           microsoft-edge --version
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
 
       # As beside the WebAssembly host: the published hosts, the demo API server started with
       # 20,000 trades.
@@ -478,7 +446,7 @@ jobs:
           path: hosts
 
       - name: Layer 3 against the Server host, headed under xvfb
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: server
@@ -494,7 +462,7 @@ jobs:
           name: layer3-records-server-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -511,7 +479,7 @@ jobs:
           { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser-server.result }}" = skipped; }
 
   # The spec files a push to a pull request changes, each run three times over on each host and
-  # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
+  # browser (tests/browser/README.md, "Before a new or changed spec goes in"). A test that
   # fails one time in a few fails here, on the branch that wrote it, rather than later on a
   # branch that did not touch it. Only the files themselves: a change to a helper they import is
   # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure, and
@@ -548,9 +516,9 @@ jobs:
           BEFORE: ${{ github.event.action == 'synchronize' && github.event.before || '' }}
           AFTER: ${{ github.event.pull_request.head.sha }}
         run: |
-          in_pr=$(git diff --name-only --diff-filter=AMR "origin/${BASE}...HEAD" -- 'tests/ExGrid.Browser/*.spec.mjs')
+          in_pr=$(git diff --name-only --diff-filter=AMR "origin/${BASE}...HEAD" -- 'tests/browser/*.spec.mjs')
           if [ -n "${BEFORE}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
-            in_push=$(git diff --name-only "${BEFORE}" "${AFTER}" -- 'tests/ExGrid.Browser/*.spec.mjs')
+            in_push=$(git diff --name-only "${BEFORE}" "${AFTER}" -- 'tests/browser/*.spec.mjs')
             changed=$(comm -12 <(printf '%s\n' "${in_pr}" | sort -u) <(printf '%s\n' "${in_push}" | sort -u))
           else
             changed=${in_pr}
@@ -569,7 +537,7 @@ jobs:
             fi
           done
           changed=${code}
-          specs=$(printf '%s\n' ${changed} | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
+          specs=$(printf '%s\n' ${changed} | sed '/^$/d; s#^tests/browser/##' | tr '\n' ' ')
           echo "specs=${specs}" >> "$GITHUB_OUTPUT"
           echo "Repeated: ${specs:-none}"
           # A push that changes no spec file in code, a helper alone among them, repeats nothing, and the
@@ -581,18 +549,6 @@ jobs:
       - uses: ./.github/actions/dotnet
         if: steps.changed.outputs.specs != ''
 
-      - uses: actions/setup-node@v7
-        if: steps.changed.outputs.specs != ''
-        with:
-          node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
-      - name: Install the suite
-        if: steps.changed.outputs.specs != ''
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
-
       # As in the full run: the published hosts, the demo API server among them (ADR-0069).
       - uses: actions/download-artifact@v8
         if: steps.changed.outputs.specs != ''
@@ -602,7 +558,7 @@ jobs:
 
       - name: The changed specs, three times, headed under xvfb
         if: steps.changed.outputs.specs != ''
-        working-directory: tests/ExGrid.Browser
+        working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
@@ -617,7 +573,7 @@ jobs:
           name: layer3-repeat-${{ matrix.hosting }}-${{ matrix.project }}
           path: |
             verification/
-            tests/ExGrid.Browser/test-results/
+            tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
 
@@ -636,6 +592,7 @@ jobs:
       # Packs the family's sixteen, reads back what each .nuspec declares, and publishes a net10.0
       # application that restores them from the packed files alone.
       - name: Pack, read back, and consume
+        working-directory: dotnet
         run: tests/ExGrid.PackageSmoke/check.sh "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
 
       # What the release publishes: these files, not a rebuild. The feed is a dot directory,
@@ -644,7 +601,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: packages
-          path: tests/ExGrid.PackageSmoke/.feed/
+          path: dotnet/tests/ExGrid.PackageSmoke/.feed/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30

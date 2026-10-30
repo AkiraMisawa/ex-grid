@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** a defect found while writing `tests/ExGrid.Browser/f4-enter-mode.spec.mjs` (PR #128),
+**What to build:** a defect found while writing `tests/browser/f4-enter-mode.spec.mjs` (PR #128),
 on the Server host only. The cause is in ExGrid's core, not ExSheet: any editing ExGrid met it. A
 press made straight after the Enter that commits an edit, on the cell that was being edited, must
 land on that cell, as it does when made slowly (ADR-0220, the spine's sixth principle; ADR-0010's

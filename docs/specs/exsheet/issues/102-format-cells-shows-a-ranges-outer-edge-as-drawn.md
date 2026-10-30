@@ -35,7 +35,7 @@ Windows run settled", ticket 57's model:
   - It is read from what the Sheet records, as `GetCellFormats` is. Cells beside the edge that record
     Borders of their own are read one by one. Every other place is read from the level across the
     edge there. So the left edge of whole columns costs what is recorded, not a million cells.
-- **The draft uses it** (`FormatCellsSpread` in `src/ExSheet/FormatCellsDraft.cs`). Top, bottom, left
+- **The draft uses it** (`FormatCellsSpread` in `dotnet/src/ExSheet/FormatCellsDraft.cs`). Top, bottom, left
   and right take each range's drawn lines. Horizontal and Vertical still compare the cells' own
   sides, so the eleventh run's case 24 stays mixed. Both Chromes read the draft, so both show it.
 - **OK is unchanged.** It sets only what was touched, so a shown edge left alone writes nothing.

@@ -73,7 +73,7 @@ specs), merged into `claude/exsheet-keyboard-field`, PR #44.
   `/sheet`, `/sheets` and `/pointing`, and `/cells?editable=1`. Every other grid is display-only,
   including the positions grids and `/inspector-edits`.
 - **Layer 3:**
-  - The rewording goes through `tests/ExGrid.Browser/keyboard.mjs`. On a grid with a field,
+  - The rewording goes through `tests/browser/keyboard.mjs`. On a grid with a field,
     `expectKeyboardOn` requires DOM focus on that field. It finds the grid's own field by its path
     from the root, so a nested grid's field never counts.
   - `aria-activedescendant` is read from the element that carries it.

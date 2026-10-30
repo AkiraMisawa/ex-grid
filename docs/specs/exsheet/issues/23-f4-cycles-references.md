@@ -44,7 +44,7 @@ reading Excel contradicts is a defect of the reading, fixed after the run with t
 open boxes; the spec is written and has not been run here (the DemoHost's port is shared).
 
 - **Core.** `CycleReference` (`Func<string, int, int, EditorRewrite?>`, `ExGrid.Pointing.cs`) with
-  its answer `EditorRewrite` (`src/ExGrid/Cells/EditorRewrite.cs`). `OnKeyAsync` hands F4 to
+  its answer `EditorRewrite` (`dotnet/src/ExGrid/Cells/EditorRewrite.cs`). `OnKeyAsync` hands F4 to
   `OnCycleReferenceKey` while an edit is open and the function is declared; the answer is written
   to `_editText`, so both surfaces show it, and `PlaceCaret` now carries a selection end, which
   `setCaret` places. While pointing, the function is asked at the end of the outline's Reference
@@ -62,10 +62,10 @@ open boxes; the spec is written and has not been run here (the DemoHost's port i
   operands its tolerant scan finds, each checked against the Lexer's own Reference grammar
   (`Lexer.MatchReference`), so `LOG10(`, `Positions[PV]`, `ZZZ1` and `TRUE` are not References.
   `SheetFormulaAids.CycleReference` translates, and `ExSheet.razor` declares it.
-- **Tests.** Layer 1: `tests/ExSheet.Engine.Tests/ReferenceCycleTests.cs` (SH-28, every reading).
-  Layer 2: `tests/ExGrid.Components/ReferenceCycleTests.cs` (DC-45, DC-1), the gate's shape in
+- **Tests.** Layer 1: `dotnet/tests/ExSheet.Engine.Tests/ReferenceCycleTests.cs` (SH-28, every reading).
+  Layer 2: `dotnet/tests/ExGrid.Components/ReferenceCycleTests.cs` (DC-45, DC-1), the gate's shape in
   `ShippedStylesheetTests`, and ExSheet's wiring in `FormulaEntryWiringTests` (SH-28). Layer 3,
-  written and not run: the `DC-45:` tests in `tests/ExGrid.Browser/declarations.spec.mjs`.
+  written and not run: the `DC-45:` tests in `tests/browser/declarations.spec.mjs`.
 - **Readings the implementation took where ADR-0051's list is silent**, to be asked of Excel with
   Part A: a selection that overlaps no Reference changes nothing (`=A1|+|B2`, selecting only the
   `+`); a Reference partly inside a selection counts as covered; the text keeps the case and the
@@ -82,4 +82,4 @@ too. The moved flag and the in-flight placement rule stand as built. Layer 3,
 `declarations.spec.mjs` in Chrome (macOS): 51 of 51 on the WebAssembly host and 51 of 51 on the
 Server host, the nine DC-45 tests among them, with no console message. Edge was not run here.
 
-2026-10-26: the layer-1 tests this ticket names (`tests/ExSheet.Engine.Tests/ReferenceCycleTests.cs`) moved to the shared cases, `tests/cases/sheet/reference-cycle.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim, a run of presses a case per press; the xUnit file keeps only a null text.
+2026-10-26: the layer-1 tests this ticket names (`dotnet/tests/ExSheet.Engine.Tests/ReferenceCycleTests.cs`) moved to the shared cases, `tests/cases/sheet/reference-cycle.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim, a run of presses a case per press; the xUnit file keeps only a null text.

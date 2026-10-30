@@ -1,0 +1,31 @@
+{
+  "name": "@ex-grid/data",
+  "version": "0.0.0-dev",
+  "description": "ExGrid's Snapshot in TypeScript: the family's immutable data, held in columns, read from and written to Apache Arrow as ExGrid.Data.Arrow reads and writes it.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/data"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

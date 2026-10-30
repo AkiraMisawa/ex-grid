@@ -29,7 +29,7 @@
           ];
         in
         {
-        # Node too: ExGrid's build bundles the Script Core's module from src/npm
+        # Node too: ExGrid's build bundles the Script Core's module from packages/
         # (ADR-0350 section 7), so `dotnet build` runs it.
         default = pkgs.mkShell {
           packages = [ dotnet nodejs ];
@@ -53,7 +53,7 @@
         # `chromium` is not what that channel means, and `google-chrome` is
         # unfree, which would make this shell fail to build for anyone who has
         # not opted in. Chrome is a machine prerequisite, as
-        # tests/ExGrid.Browser/README.md says (ADR-0026).
+        # tests/browser/README.md says (ADR-0026).
         #
         # It also used to list `pkgs.chromium` unconditionally, which has no
         # aarch64-darwin build: this shell failed to EVALUATE on an Apple

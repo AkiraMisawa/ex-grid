@@ -6,7 +6,7 @@ For a Claude Code session on the Windows desktop used for the first two runs (Ex
 WSL2 with nix). The second run's method, tools and advance authorisation all still apply: read
 [`verify-on-windows-2.md`](verify-on-windows-2.md) first, and reuse
 `verification/2026-09-27-windows-excel-2/` (`active-cell.ps1`, `by-hand.ps1`, `case-guard.ps1`,
-the probes) and `tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1` with its dialog watcher.
+the probes) and `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1` with its dialog watcher.
 **Decide nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
 `docs/definition-of-done.md`.
 
@@ -30,9 +30,9 @@ Parts C and D test code that is still being merged. **Start them only when `git 
 origin/claude/exsheet-start-8cx3v1` contains all four of these**. Search with `git log --grep`:
 
 1. `ADR-0052` in a commit that implements it. Look for a merge of the active-cell work, and for
-   the `test.fail(true, 'ADR-0052` markers being gone from `tests/ExGrid.Browser/sheet-vs-excel.spec.mjs`
+   the `test.fail(true, 'ADR-0052` markers being gone from `tests/browser/sheet-vs-excel.spec.mjs`
 2. `ADR-0053`, the compressed scroll height, with a `chrome-150` or similar project in
-   `tests/ExGrid.Browser/playwright.config.mjs`
+   `tests/browser/playwright.config.mjs`
 3. `GridPasteIntent.Refuse`
 4. The Server Formula Bar fix (DC-19/DC-22)
 
@@ -107,7 +107,7 @@ As the second run's Part C, on both hosts and both browsers:
   name, and the Name Box must stay where it was** (F7, not F7:F9). Also check the
   `data-ex-grid="invariant"` marker again.
 - `typing-probe-2.mjs` on the Server host at 0, 30 and 60 ms, twelve trials each. **Wait for the
-  circuit to be connected** before the first click, the way `tests/ExGrid.Browser`'s fixtures do.
+  circuit to be connected** before the first click, the way `tests/browser`'s fixtures do.
   The second run's "nothing landed" may have been the page not yet being interactive, so record
   which wait was used.
 

@@ -324,17 +324,17 @@ sheet: open from JSON (TypeScript: parse and first recalculation)         -     
 The TypeScript engine is 611 lines (ts-engine/sheet.ts and pivot.ts) for two scenarios. What it would
 replace, in lines (not blank and not a comment in brackets):
 
-  src/ExSheet.Engine      20,874 (13,303)   91 files, about 180 declared functions
-  src/ExPivot.Engine      15,461 (10,872)
-  src/ExGrid.Data          9,923  (7,195)   the Snapshot the pivot reads
-  src/ExSheet.Xlsx         3,300  (2,298)
-  src/ExGrid.Data.Xlsx     4,273  (3,245)
-                          53,831 (36,913)   and src/ExChart.Engine, 5,888 (4,112), if it moves too
+  dotnet/src/ExSheet.Engine      20,874 (13,303)   91 files, about 180 declared functions
+  dotnet/src/ExPivot.Engine      15,461 (10,872)
+  dotnet/src/ExGrid.Data          9,923  (7,195)   the Snapshot the pivot reads
+  dotnet/src/ExSheet.Xlsx         3,300  (2,298)
+  dotnet/src/ExGrid.Data.Xlsx     4,273  (3,245)
+                          53,831 (36,913)   and dotnet/src/ExChart.Engine, 5,888 (4,112), if it moves too
 
 What proves a port answers as Excel does (ADR-0047, ADR-0060) does not need Excel run again: most of it
 is data already, and the rest can be made data. In three parts:
 
-  1. Run the Excel cases as they are. tests/ExSheet.Engine.Tests/ExcelCases: 3,365 cases in 163 area
+  1. Run the Excel cases as they are. dotnet/tests/ExSheet.Engine.Tests/ExcelCases: 3,365 cases in 163 area
      files and fixtures.json, 3,354 of them observed in Excel, their expectations mostly a Value
      (value2, 2,920) and otherwise the kind, the text shown, the Formula written back, the number
      format, digits, a refused entry, a width. ExcelOracle: 77 recorded runs of Excel, about 18,000 case
@@ -342,12 +342,12 @@ is data already, and the rest can be made data. In three parts:
      ExcelCaseTests.cs (916 lines).
   2. Transcribe the remaining C# facts into shared cases (tests/cases/, layer 1's form under ADR-0350),
      so the C# engine passes them first and both engines run them while both exist:
-       tests/ExSheet.Engine.Tests    18,390 lines, 1,125 Facts and Theories
-       tests/ExPivot.Engine.Tests     9,024 lines,   351 (no Excel JSON, though ADR-0060's tables
+       dotnet/tests/ExSheet.Engine.Tests    18,390 lines, 1,125 Facts and Theories
+       dotnet/tests/ExPivot.Engine.Tests     9,024 lines,   351 (no Excel JSON, though ADR-0060's tables
                                                          were observed)
-       tests/ExGrid.Data.Tests        5,670 lines,   273
-       tests/ExSheet.Xlsx.Tests       3,537 lines,   174
-       tests/ExGrid.Data.Xlsx.Tests   2,102 lines,    74
+       dotnet/tests/ExGrid.Data.Tests        5,670 lines,   273
+       dotnet/tests/ExSheet.Xlsx.Tests       3,537 lines,   174
+       dotnet/tests/ExGrid.Data.Xlsx.Tests   2,102 lines,    74
                                      38,723 lines, 1,997
   3. A differential fuzz against the C# engine where neither set reaches, above all:
      - decimal arithmetic: ExPivot sums a Decimal column exactly (decimal appears 93 times in

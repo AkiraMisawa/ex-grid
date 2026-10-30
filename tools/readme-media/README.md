@@ -13,7 +13,7 @@ logs an error is not written.
 
 ## Figures
 
-Each figure in `figures/` opens a page made for it under `samples/ExGrid.Docs/Figures`, waits until
+Each figure in `figures/` opens a page made for it under `dotnet/samples/ExGrid.Docs/Figures`, waits until
 it is ready, and numbers the parts it lists: a ring around each part, and its number beside it with
 a line to the ring. A figure may first make the state it numbers with a user's gestures, as a scene
 does: a Selection, a row marked, a Formula opened with F2. Only the frame's margin moves, to make
@@ -51,11 +51,11 @@ pictures show the product alone.
 
 ```sh
 # 1. Publish the Docs Site as docs.yml does, and serve it (from this folder)
-nix develop ../..#browser -c dotnet publish ../../samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o site
+nix develop ../..#browser -c bash -c 'cd ../../dotnet && dotnet publish samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o ../tools/readme-media/site'
 node serve.mjs site/wwwroot 5310
 
-# 2. Record (from this folder)
-npm ci
+# 2. Record (from this folder; the npm workspace installs its dependencies at the root)
+(cd ../.. && npm ci)
 node record.mjs --base http://localhost:5310/            # every scene, both Chromes, into out/
 node record.mjs --only blotter --chrome mud              # one scene, one Chrome
 node record.mjs --write                                  # also copy the GIFs into docs/readme/

@@ -2,7 +2,7 @@
 // an application bar with the application's name and the screen's, and the screen below it. Its stylesheet is
 // the Razor component's own, read from it, so the three hosts dress the Showcases from one record.
 import type { ReactElement, ReactNode } from 'react';
-import shellSource from '../../../ExChart.Showcases/ShowcaseShell.razor?raw';
+import shellSource from '../../../../dotnet/samples/ExChart.Showcases/ShowcaseShell.razor?raw';
 
 /** The stylesheet a Showcase's Razor component holds in its `<style>`, so the React host dresses it from the same rules. */
 export function razorStyle(source: string, component: string): string {

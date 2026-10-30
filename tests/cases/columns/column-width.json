@@ -1,5 +1,5 @@
 {
-  "about": "A column's declared width, Auto or Fixed (ADR-0016). From tests/ExGrid.Tests/ColumnWidthTests.cs; the zero state and printing are C#'s and stay there.",
+  "about": "A column's declared width, Auto or Fixed (ADR-0016). From dotnet/tests/ExGrid.Tests/ColumnWidthTests.cs; the zero state and printing are C#'s and stay there.",
   "kind": "calls",
   "subject": "ColumnWidth",
   "cases": [

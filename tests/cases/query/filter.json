@@ -1,5 +1,5 @@
 {
-  "about": "How a Filter combines and what it refuses (ADR-0009, ADR-0023). From tests/ExGrid.Tests/FilterCombinationTests.cs and AllowedOperatorTests.cs.",
+  "about": "How a Filter combines and what it refuses (ADR-0009, ADR-0023). From dotnet/tests/ExGrid.Tests/FilterCombinationTests.cs and AllowedOperatorTests.cs.",
   "kind": "query",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
   "cases": [

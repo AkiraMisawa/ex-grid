@@ -62,5 +62,5 @@ and `Clock` (the registered `TimeProvider`, else the system's, as the grid resol
   `StaleReportWords` until `PivotWords` holds them with their Japanese.
 
 Layer 2: `LiveDataTests`, `ChangeHighlightTests` and `StaleReportTests` in
-`tests/ExPivot.Components` (with `LiveSource`), and `MudPivotStaleReportTests`. Layer 3 waits for
+`dotnet/tests/ExPivot.Components` (with `LiveSource`), and `MudPivotStaleReportTests`. Layer 3 waits for
 `/pivot-live` (ticket 19).

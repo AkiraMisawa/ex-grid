@@ -1,5 +1,5 @@
 {
-  "about": "Each panel's legend, placed by a side and an alignment and never over a plot (ADR-0271), from tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
+  "about": "Each panel's legend, placed by a side and an alignment and never over a plot (ADR-0271), from dotnet/tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
   "kind": "chart",
   "definitions": {
     "exposure": {

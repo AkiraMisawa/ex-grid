@@ -64,7 +64,7 @@ nothing reaches the stream.
   once a Workbook opens it (the engine's `OpenedIn`, as Excel records it), and is written as its id. Ticket 03's round trips
   of a file under en-US keep it: what a file stored as its own code reads as its own code, unless the culture spells the
   built-in so.
-- `tests/ExGrid.PackageSmoke/XlsxRoundTrip.cs` saves the opened workbook through the packed writer and opens it again as the
+- `dotnet/tests/ExGrid.PackageSmoke/XlsxRoundTrip.cs` saves the opened workbook through the packed writer and opens it again as the
   same document.
 - **Found, not fixed:** the engine's evaluator recurses once per binary operator, so a Formula of about four thousand
   chained operators (`=1+1+…`) overflows the stack of the process that recalculates it. It is the engine's, and is met before

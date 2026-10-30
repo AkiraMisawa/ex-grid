@@ -1,5 +1,5 @@
 {
-  "about": "What a Wrapper hands down to every grid inside it (ADR-0030), on its own; how a grid resolves with it is in grid-metrics.json. From tests/ExGrid.Tests/GridPresentationDefaultsTests.cs and BoldWidthTests.cs.",
+  "about": "What a Wrapper hands down to every grid inside it (ADR-0030), on its own; how a grid resolves with it is in grid-metrics.json. From dotnet/tests/ExGrid.Tests/GridPresentationDefaultsTests.cs and BoldWidthTests.cs.",
   "kind": "calls",
   "subject": "GridPresentationDefaults",
   "cases": [

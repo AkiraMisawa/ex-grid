@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Mirrors dotnet/tests/ExGrid.Data.Arrow.Tests: net10.0 (ADR-0022), xunit v3 on Microsoft.Testing.Platform,
+         and no native apphost (dotnet/tests/Directory.Build.targets has the account). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+    <!-- Measure/ is a console program of its own, run by hand (ticket 01 of docs/specs/exsheet-xlsx). -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Measure/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shared .xlsx cases (ADR-0370 section 3): written once as data, run here against ExGrid.Data.Xlsx and by
+         Vitest against @ex-grid/data-xlsx. tests/cases/README.md says what a file holds. -->
+    <None Include="..\..\..\tests\cases\xlsx\**\*" Link="cases\xlsx\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
+  </ItemGroup>
+
+</Project>

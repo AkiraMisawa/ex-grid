@@ -16,4 +16,4 @@ core.
 
 ## Comments
 
-2026-09-30: `tests/ExPivot.Components` and `tests/ExGrid.Components/CellDoubleClickTests.cs`.
+2026-09-30: `dotnet/tests/ExPivot.Components` and `dotnet/tests/ExGrid.Components/CellDoubleClickTests.cs`.

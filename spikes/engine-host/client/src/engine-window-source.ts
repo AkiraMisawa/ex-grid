@@ -10,7 +10,7 @@
 // - Until the last write is answered the state says `loading`, which the page shows as calculating: an
 //   answer older than the newest edit is never shown as the current one.
 
-import type { DistinctValues, GridFilter, GridSource, GridSourceState, RowRange, SortSpec } from '../../../../src/npm/core/src/index';
+import type { DistinctValues, GridFilter, GridSource, GridSourceState, RowRange, SortSpec } from '../../../../packages/core/src/index';
 
 /** A Window as the Worker answered it. */
 export interface WindowAnswer<Row> {

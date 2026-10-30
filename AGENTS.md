@@ -28,7 +28,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 
 ### 2. JavaScript is the Script Cores', and the grid still never measures
 
-Every script the packages ship is a Script Core or a Framework Adapter's browser half, TypeScript in `src/npm/`
+Every script the packages ship is a Script Core or a Framework Adapter's browser half, TypeScript in `packages/`
 ([ADR-0350](docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
 [ADR-0370](docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)). ADR-0021's allowlist,
 which governed JavaScript beside a Blazor core, was **superseded on 2026-10-30**, when the last such core was removed.
@@ -89,40 +89,47 @@ replay-time target discovery or product command decisions in the browser that th
 **`dotnet` is not on `PATH`. It is managed by nix.**
 
 ```sh
-nix develop -c dotnet build ...
-nix develop -c dotnet test ...
-nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Browser
+nix develop -c bash -c 'cd dotnet && dotnet build ...'
+nix develop -c bash -c 'cd dotnet && dotnet test ...'
+nix develop .#browser -c npx playwright test   # layer 3, from tests/browser
 ```
+
+- **The repository is laid out by platform** ([ADR-0370](docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+  section 9). The root is the npm workspace (one `package-lock.json`); `packages/` holds the TypeScript
+  packages, `dotnet/` every C# project and the files that configure them, `tests/` what judges both
+  platforms (`tests/cases`, `tests/browser`, `tests/GlyphWidths`), `samples/` the React hosts and
+  `tools/` the workspace's tooling. **Every dotnet command runs in `dotnet/`**, where the SDK finds
+  `global.json` and the tool manifest: a command run from the root takes whichever SDK is installed
 
 - **Shipped packages target `net10.0`** (single-target; newer runtimes load it as-is —
   [ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)). The **SDK**
   is .NET 10 too — SDK version and target framework are independent, and coincide today. The
   code is therefore C# 14; do not raise `LangVersion`
-- **Building ExGrid builds TypeScript.** `src/ExGrid` bundles the Script Core's module for
-  `ExGrid.Components.ExGrid` from `src/npm` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
-  so the default shell carries Node, and the first build runs `npm ci` in `src/npm`. The bundle is not
-  committed
+- **Building ExGrid builds TypeScript.** `dotnet/src/ExGrid` bundles the Script Core's module for
+  `ExGrid.Components.ExGrid` from `packages/` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
+  so the default shell carries Node, and the first build runs `npm ci` at the repository's root. The bundle
+  is not committed
 - **Node is 26.12.1, the security release of 2026-10-21** (26 is LTS from 2026-10-28 to 2029-04-30). `.node-version` names it for CI's
   `setup-node`, and the flake takes it from a later nixpkgs than the SDK's (`nixpkgs-node`). Move both
   together, and the `engines` ranges with them, when the next security release lands. Its npm runs a
-  dependency's install script only when `allowScripts` in that `package.json` names the exact version
-  (esbuild's, today): a bumped esbuild warns until `npm install-scripts approve esbuild` is run again
+  dependency's install script only when `allowScripts` in the root `package.json` names the exact version
+  (esbuild's two, today): a bumped esbuild warns until `npm install-scripts approve esbuild` is run again
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
-- **A shipped script or stylesheet is edited in `src/<Package>/Assets/`, never in `wwwroot`.**
+- **A shipped script or stylesheet is edited in `dotnet/src/<Package>/Assets/`, never in `wwwroot`.**
   `wwwroot` holds its minified build (ADR-0123): after an edit run
-  `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
+  `nix develop .#browser -c bash -c 'npm ci && npm run minify -w tools/assets'` and commit what
   it writes. A minified file older than its source fails `ShippedAssetTests`
-- **The Script Core is the npm workspace at `src/npm/`** (ADR-0350):
-  `nix develop .#browser -c bash -c 'cd src/npm && npm ci && npm run typecheck && npm run lint && npm run build && npm test'`.
-  How its TypeScript is written, and what the lint refuses, is `src/npm/CONVENTIONS.md`. A package's public surface is its `etc/<name>.api.md`, which API Extractor holds the build to, as
+- **The Script Core is the npm workspace's `packages/`** (ADR-0350), run from the repository's root:
+  `nix develop .#browser -c bash -c 'npm ci && npm run typecheck && npm run lint && npm run build && npm test'`.
+  How its TypeScript is written, and what the lint refuses, is `packages/CONVENTIONS.md`. A package's public surface is its `etc/<name>.api.md`, which API Extractor holds the build to, as
   RS0016 holds a NuGet package to `PublicAPI.Unshipped.txt`: `npm run api` writes it, and you read
   the diff. Layer 1's cases are JSON under `tests/cases/`, run by Vitest there and by xUnit against
   the C# core; a case of behaviour the C# core has goes in green there first, and a case of behaviour
-  new to the Script Core goes in on the Script Core alone (`src/npm/README.md`, ADR-0350 section 5's
+  new to the Script Core goes in on the Script Core alone (`packages/README.md`, ADR-0350 section 5's
   note of 2026-10-27)
-- **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
+- **Only `dotnet/src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
   suffix unless its Release Notes name a sign-off, made against a release candidate, that the
   workflow can check (ADR-0042, ADR-0205). It refuses that version, and a release candidate
@@ -132,8 +139,8 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 - **Every public member of a shipped project is declared in its `PublicAPI.Unshipped.txt`**
   (ADR-0201): one added and not declared fails the build (RS0016), and so does one declared and gone
   (RS0017), a Razor component's `@code` members included. Let the analyzer write the line, never type
-  it: `nix develop -c dotnet format analyzers src/<Package>/<Package>.csproj --diagnostics RS0016
-  --severity info --include-generated`, then read the diff — a line you did not mean is a member made
+  it: `nix develop -c bash -c 'cd dotnet && dotnet format analyzers src/<Package>/<Package>.csproj --diagnostics RS0016
+  --severity info --include-generated'`, then read the diff — a line you did not mean is a member made
   public by mistake. A member that leaves the surface is a Change Note (ADR-0190)
 
 ## The spine of the design — how to decide when unsure
@@ -239,13 +246,14 @@ the kind that still look correct on screen**, so review will not catch them.
 starts; they say nothing about whether it does what an ADR decided.
 
 ```sh
-nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
+nix develop -c bash -c 'cd dotnet && dotnet test ExGrid.slnx'   # layers 1 and 2, the .NET suites
+nix develop .#browser -c bash -c 'npm ci && npm test'           # layers 1 and 2, the Script Core's
 ```
 
 - **A UI-facing change is not verified until a real browser has exercised it.** Layers 1 and 2
   cannot see a sticky header slipping, a scrollbar eating the last column, or a key the browser
   took first — which is exactly why layer 3 exists, and why the worst bugs in this project were
-  invisible to suites that were passing at the time. Use `tests/ExGrid.Browser`, and read the
+  invisible to suites that were passing at the time. Use `tests/browser`, and read the
   layer 3 rules below before trusting a pass.
 - **The browser that exercises a change is a targeted run locally, and CI's full run.**
   - **Locally, run the targeted run**: the spec files and `--grep` the change bears on, on one
@@ -269,7 +277,7 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
     Mac (`EXGRID_HEADLESS=1`).
   - **The full run, every host and both browsers, is CI's.** A test runs on the hosts its title's
     tag names: `@behaviour` on the React host, `@blazor` on both Blazor hosts (ADR-0370 section 11,
-    `tests/ExGrid.Browser/README.md`), and a new test names one. CI runs it sharded on Linux in
+    `tests/browser/README.md`), and a new test names one. CI runs it sharded on Linux in
     about twenty minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
     rebuilt meanwhile, because a rebuild under a running DemoHost breaks it.
   - **CI is also the judge of a failure seen only locally.** A Mac has failures of its own, so a
@@ -297,19 +305,19 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 
 | Layer | Where | Tool | Covers |
 |---|---|---|---|
-| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Focus/Extent, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
-| 2. Component | `tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
-| 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter, capture-phase keys, the clipboard, popovers under both Chromes, Row Stripes as painted, multiple-instance independence, large data |
+| 1. Pure logic | `dotnet/tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Focus/Extent, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
+| 2. Component | `dotnet/tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
+| 3. Browser | `tests/browser` | Playwright | The Scrollbar Gutter, capture-phase keys, the clipboard, popovers under both Chromes, Row Stripes as painted, multiple-instance independence, large data |
 
 **Rules:**
 
-- **Layers 1 and 2 cannot cover layer 3.** Locally: `npm ci && npx playwright test` in
-  `tests/ExGrid.Browser`, or `nix develop .#browser -c npx playwright test`. It needs Chrome and
+- **Layers 1 and 2 cannot cover layer 3.** Locally: `npm ci` at the root, then `npx playwright test` in
+  `tests/browser`, or `nix develop .#browser -c npx playwright test` there. It needs Chrome and
   Edge installed and starts the DemoHost itself, and it runs **deliberately on Windows or
   Linux**, where the platform's own scrollbars occupy layout and the assertions are not
   tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
-  `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
+  `tests/browser/README.md` says what it asserts and what it deliberately does not.
   What to run locally, and what to leave to CI, is in "What counts as verified".
 
 - **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0056).
@@ -331,9 +339,9 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   On the Server host, a reading that must see all the host will say awaits `circuitQuiet()`.
   Two pictures to compare are taken with `stillPictures`. A colour is judged with `paints`,
   where the boundary lies on a device pixel. A new or changed test runs with `--repeat-each`
-  before it goes in. `tests/ExGrid.Browser/README.md` says how.
+  before it goes in. `tests/browser/README.md` says how.
 
-- **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
+- **The packages are checked as a Consumer takes them.** `dotnet/tests/ExGrid.PackageSmoke/check.sh`
   packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`
   application that restores them from the packed files alone. CI runs it as its `package` job.
   The DemoHost's project references skip exactly what it checks (ADR-0042).
@@ -372,7 +380,7 @@ reasoning.**
 
 ## The Docs Site moves with the change
 
-The Docs Site (`samples/ExGrid.Docs`, published to GitHub Pages,
+The Docs Site (`dotnet/samples/ExGrid.Docs`, published to GitHub Pages,
 [ADR-0110](docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md))
 is where a Consumer meets each feature. **A change a Consumer can see is not finished until the
 site says it, in the same branch** — a feature added and a page that never mentions it is the
@@ -392,9 +400,9 @@ site quietly wrong about the product, the spine's first rule turned on ourselves
   pages too.
 - **The Showcases and the README's GIFs** are re-recorded (`tools/readme-media/`) when a change
   alters what they show; a GIF is never edited.
-- **Verified as the code is**: the site builds in `ExGrid.slnx`, so an Example that no longer
+- **Verified as the code is**: the site builds in `dotnet/ExGrid.slnx`, so an Example that no longer
   compiles fails the build. Run the site and use the new Example once before calling it done —
-  `nix develop -c dotnet run --project samples/ExGrid.Docs` — and say in the report that it was
+  `nix develop -c bash -c 'cd dotnet && dotnet run --project samples/ExGrid.Docs'` — and say in the report that it was
   run.
 - **A change with nothing for the site** — an internal refactor, a test, a CI script — says so in
   one line of the report or the PR, naming why. Silence is not the same as "nothing to document".
@@ -443,7 +451,7 @@ rules that make this safe:
   separate packages (`ExGrid.MudBlazor`, `ExGrid.Fluxor`). Sharing a repository is not the same
   as mixing dependencies — **enforce it structurally through project reference direction**.
   Browser-specific API use is likewise confined to the Script Cores and their adapters' browser
-  halves in `src/npm/`, under rule 2 above (ADR-0017 / 0018 / 0350).
+  halves in `packages/`, under rule 2 above (ADR-0017 / 0018 / 0350).
 - **Do not turn `CONTEXT.md` into a specification or a scratchpad.** It is a glossary and
   nothing else.
 - **Do not quietly rewrite an ADR.** When a decision changes, leave what changed and why in the
@@ -452,7 +460,7 @@ rules that make this safe:
   that silences the compiler, a `catch` that returns a default, a handler that does nothing: each turns
   a defect into a plausible figure, which is the spine's first rule broken in one line. Throw, or make
   the absence part of the contract where the signature shows it. In TypeScript `npm run lint` refuses
-  these forms, and an exception is one line with its reason after ` -- ` (`src/npm/CONVENTIONS.md`); in
+  these forms, and an exception is one line with its reason after ` -- ` (`packages/CONVENTIONS.md`); in
   C# nothing refuses them yet, so review does.
 - **Do not weaken a requirement to make an implementation easier.** If a criterion cannot be met,
   leave it failing and say so. A criterion quietly relaxed to fit the code is how a specification
@@ -474,8 +482,8 @@ files; where one disagrees with this document, this document wins.
 `/implement` works a spec or ticket under `docs/specs/` through `tdd`. Its generic steps map
 onto this repo as follows:
 
-- **"Typechecking"** is `nix develop -c dotnet build ExGrid.slnx`; **a single test file** is
-  `nix develop -c dotnet test <project> --filter <class>`; **the full suite** is the one in
+- **"Typechecking"** is `nix develop -c bash -c 'cd dotnet && dotnet build ExGrid.slnx'`; **a single test file** is
+  `nix develop -c bash -c 'cd dotnet && dotnet test <project> --filter <class>'`; **the full suite** is the one in
   "What counts as verified", plus the targeted layer-3 run when the change faces the UI, with the
   full layer-3 run left to CI. A green build is still not a result.
 - **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
@@ -483,7 +491,7 @@ onto this repo as follows:
 - **"Done" includes the Docs Site** ("The Docs Site moves with the change"): the pages and
   Examples are written and run before the review step, and `/code-review`'s Standards axis checks
   the diff against that section like any other rule here — a Consumer-visible change with no
-  `samples/ExGrid.Docs` hunk and no stated reason is a finding.
+  `dotnet/samples/ExGrid.Docs` hunk and no stated reason is a finding.
 - **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
   background agent, return the proposal), as in "Working in parallel".
 

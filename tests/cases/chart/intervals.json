@@ -1,5 +1,5 @@
 {
-  "about": "A Level's Interval: what it must say, its whiskers and bands, and where its meaning is said (ADR-0303), from tests/ExChart.Engine.Tests/IntervalTests.cs.",
+  "about": "A Level's Interval: what it must say, its whiskers and bands, and where its meaning is said (ADR-0303), from dotnet/tests/ExChart.Engine.Tests/IntervalTests.cs.",
   "kind": "chart",
   "cases": [
     {

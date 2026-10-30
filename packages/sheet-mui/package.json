@@ -1,0 +1,48 @@
+{
+  "name": "@ex-grid/sheet-mui",
+  "version": "0.0.0-dev",
+  "description": "ExSheet for MUI: the design-system Wrapper that draws ExSheet for React's Chrome, the Sheet Toolbar, Format Cells and the Sheet Tabs among it, with MUI's components and maps its Visual Tokens onto a MUI theme made with CSS variables.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/sheet-mui"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts",
+    "styles.css"
+  ],
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/mui": "0.0.0-dev",
+    "@ex-grid/sheet": "0.0.0-dev",
+    "@ex-grid/sheet-engine": "0.0.0-dev",
+    "@ex-grid/sheet-react": "0.0.0-dev"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^9.5.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

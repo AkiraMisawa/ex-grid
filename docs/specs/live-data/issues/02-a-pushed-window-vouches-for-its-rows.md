@@ -12,7 +12,7 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
 
 - **The grid checks every new Window it cannot trust.** Without a Row Key it checks instances
   (`RequireDistinctRows`), and with one it checks keys (`RequireDistinctKeys`), in `TakeInWindow`
-  (`src/ExGrid/Components/ExGrid.RowKey.cs:88-112`). The check is a hash set built afresh per Window,
+  (`dotnet/src/ExGrid/Components/ExGrid.RowKey.cs:88-112`). The check is a hash set built afresh per Window,
   because the grid holds nothing between Windows (ADR-0001).
 - **A bundled source vouches, and the grid then does not walk its Windows** (LV-10). It keeps a map of
   keys between changes and refuses a repeated key as each change comes, as ag-grid's node manager
@@ -21,7 +21,7 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
   ag-grid warns where ExGrid refuses).
 - **A pushed Window has no one to vouch for it.** For ExPivot's report the walk costs 8.3 ms at
   401,001 rows on every redraw (D10). The engine cannot build a report that repeats a key: an axis
-  node's children are kept by Item (`AxisNode.Child`, `src/ExPivot.Engine/PivotCube.cs`), as
+  node's children are kept by Item (`AxisNode.Child`, `dotnet/src/ExPivot.Engine/PivotCube.cs`), as
   ag-grid's groups are kept by key in `childrenMapped`.
 - **The vouch is already public on `IGridSource`** (`VouchesDistinctRows`), so a Consumer's own
   source can make the promise today. The code review of 2026-10-06 noted that ADR-0141 gives it to "a

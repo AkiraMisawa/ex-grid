@@ -10,7 +10,7 @@
 
 ## Docs Site
 
-<!-- The pages and Examples under samples/ExGrid.Docs this changes, and that the site was run
+<!-- The pages and Examples under dotnet/samples/ExGrid.Docs this changes, and that the site was run
      (AGENTS.md, "The Docs Site moves with the change"). Or one line: why nothing a Consumer
      sees changed. -->
 

@@ -1,5 +1,5 @@
 {
-  "about": "The operators each column type offers (ADR-0009, ADR-0023), which are the ones the reference implementation accepts. From tests/ExGrid.Tests/AllowedOperatorTests.cs. The C# core's FilterOperators is a static class; the Script Core's query/filter.ts has it as filterOperatorsFor.",
+  "about": "The operators each column type offers (ADR-0009, ADR-0023), which are the ones the reference implementation accepts. From dotnet/tests/ExGrid.Tests/AllowedOperatorTests.cs. The C# core's FilterOperators is a static class; the Script Core's query/filter.ts has it as filterOperatorsFor.",
   "kind": "calls",
   "subject": "FilterOperators",
   "cases": [

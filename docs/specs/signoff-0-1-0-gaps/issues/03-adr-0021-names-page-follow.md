@@ -8,7 +8,7 @@ ADR-0021 still says `scrollIntoView()` "is refused" and carries no dated note fo
 the script's first line still says "The six permitted uses", where AGENTS.md and ADR-0021 name ten.
 
 **What:** a dated note in ADR-0021 recording ADR-0204's page-follow use, in the form of its other notes,
-and the script's first comment brought to ten (edited in `src/ExGrid/Assets/`, then minified, AGENTS.md
+and the script's first comment brought to ten (edited in `dotnet/src/ExGrid/Assets/`, then minified, AGENTS.md
 "Toolchain").
 
 ## Comments

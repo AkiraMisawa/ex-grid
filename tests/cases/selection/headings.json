@@ -1,5 +1,5 @@
 {
-  "about": "The Headings' selections (ADR-0050, item 1): a declared header click selects the whole column, a Row Heading the whole row. From tests/ExGrid.Tests/HeadingsSelectionTests.cs; its geometry cases move with the column geometry.",
+  "about": "The Headings' selections (ADR-0050, item 1): a declared header click selects the whole column, a Row Heading the whole row. From dotnet/tests/ExGrid.Tests/HeadingsSelectionTests.cs; its geometry cases move with the column geometry.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

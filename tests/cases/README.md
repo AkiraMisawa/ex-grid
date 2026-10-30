@@ -2,9 +2,9 @@
 
 The cases of ExGrid's pure logic, written once as data: an input and its expected result
 ([ADR-0350](../../docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
-section 5). xUnit runs them against the C# core (`tests/ExGrid.Tests/Cases/`) and Vitest against the
-Script Core (`src/npm/core/test/`); the `chart` area is ExChart's layout, run against `ExChart.Engine`
-(`tests/ExChart.Engine.Tests/Cases/`) and `@ex-grid/chart` (`src/npm/chart/test/`)
+section 5). xUnit runs them against the C# core (`dotnet/tests/ExGrid.Tests/Cases/`) and Vitest against the
+Script Core (`packages/core/test/`); the `chart` area is ExChart's layout, run against `ExChart.Engine`
+(`dotnet/tests/ExChart.Engine.Tests/Cases/`) and `@ex-grid/chart` (`packages/chart/test/`)
 ([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2). A case is green on the C# core before the Script Core takes it, so
 the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
 stays. That holds for behaviour the C# core has. A case of behaviour new to the Script Core, which the
@@ -132,7 +132,7 @@ the selection under the same version, `{"under": version}` reconciles with the v
 ## `clipboard`
 
 The copy, paste and fill rules (ADR-0005, ADR-0011, ADR-0014, ADR-0035, ADR-0050 item 3) and a copy's assembly, run by
-`tests/ExGrid.Tests/Cases/ClipboardCaseTests.cs` and `src/npm/core/test/clipboard.test.ts`. A case's
+`dotnet/tests/ExGrid.Tests/Cases/ClipboardCaseTests.cs` and `packages/core/test/clipboard.test.ts`. A case's
 `steps` make a selection with the gestures of `selection` (on the case's `extent`, or the file's), and
 plan on the selection as it stands:
 
@@ -163,7 +163,7 @@ there is no header row, unless the step says otherwise:
 ## `query`
 
 The reference implementation's Filter and Sort semantics (ADR-0001, ADR-0023), run by
-`tests/ExGrid.Tests/Cases/QueryCaseTests.cs` against `GridQueryEngine` and `src/npm/core/test/query.test.ts`
+`dotnet/tests/ExGrid.Tests/Cases/QueryCaseTests.cs` against `GridQueryEngine` and `packages/core/test/query.test.ts`
 against the Script Core's `query/query-engine.ts`. The file names its `columns`, each `{"name", "type"}`;
 a case gives its `rows`, each an array of one value per column, then any of `filter` and `sorts`, and says
 what stays with `keeps` (the positions of the rows kept, in the Query's order) or how the Query is refused
@@ -187,7 +187,7 @@ A `clauses` or `values` list or a `combinator` written as `null` is absent, as a
 ## `source`
 
 A Grid Source taken through what the grid does to it (ADR-0001), run by
-`tests/ExGrid.Tests/Cases/SourceCaseTests.cs` against `GridSource.From` and `src/npm/core/test/source.test.ts`
+`dotnet/tests/ExGrid.Tests/Cases/SourceCaseTests.cs` against `GridSource.From` and `packages/core/test/source.test.ts`
 against the Script Core's `GridSource.from`. The file names its `columns` as a `query` file does, and a case
 may name its own. A case gives its `rows`, values written as a `query` case writes them, and `steps` taken in
 turn. A row is an object of its own, and stands for its place in `rows`: a Window is read as those places,
@@ -236,7 +236,7 @@ JavaScript's `Math.round` and C# part).
 ## `fetch`
 
 `GridSource.fetch` (ADR-0025), the source over a result a server holds, run by
-`tests/ExGrid.Tests/Cases/FetchCaseTests.cs` against `GridSource.Fetch` and `src/npm/core/test/fetch.test.ts`
+`dotnet/tests/ExGrid.Tests/Cases/FetchCaseTests.cs` against `GridSource.Fetch` and `packages/core/test/fetch.test.ts`
 against the Script Core's `GridSource.fetch`. The file names its `columns`, by name alone: the server, not
 the source, reads them. A row is a text, `Row n` for the row at position n of the result. A case gives the
 `readAhead` the source is made with, whether a listener `hears` failed fetches, and may give `rowKey: true`,
@@ -266,8 +266,8 @@ so far, from 0. Each step is read once the promises it set going have run.
 ## `displayText`
 
 The text a value cell displays (ADR-0006, ADR-0350 section 16), run by
-`tests/ExGrid.Tests/Cases/DisplayTextCaseTests.cs` against `ColumnInfo.TextFor` and
-`src/npm/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
+`dotnet/tests/ExGrid.Tests/Cases/DisplayTextCaseTests.cs` against `ColumnInfo.TextFor` and
+`packages/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
 `value` written as a `query` case writes it, an optional `format` as a `source` column names one, and the
 text it `is`.
 
@@ -291,8 +291,8 @@ Core's `chrome/operand-reading.ts`. Every case names its `culture`, a BCP 47 tag
 ## `find` and `replace`
 
 The reference Find step (ADR-0055) and the reference Replace All (ADR-0332), the rules `GridSource.from`
-answers with and a remote source is held to, run by `tests/ExGrid.Tests/Cases/FindCaseTests.cs` against
-`GridFind.Step` and `GridReplace.Plan` and by `src/npm/core/test/find.test.ts` against `findStep` and
+answers with and a remote source is held to, run by `dotnet/tests/ExGrid.Tests/Cases/FindCaseTests.cs` against
+`GridFind.Step` and `GridReplace.Plan` and by `packages/core/test/find.test.ts` against `findStep` and
 `planReplace`. The file names its `columns` and its `rows`, each row the texts of its cells in that order:
 what a Find matches, the displayed text, or what a Replace matches, the entry. A request is written
 `{"text", "from", "backward", "matchCase", "wholeCell", "scope", "columns"}`, and a Replace All's adds
@@ -313,8 +313,8 @@ given.
 ## `summary`
 
 The reference Selection Summary (ADR-0130) and the exact arithmetic it sums in (ADR-0350 section 16), run by
-`tests/ExGrid.Tests/Cases/SummaryCaseTests.cs` against `GridSummary.Of` and by
-`src/npm/core/test/summary.test.ts` against `summaryOf`. The file names its `columns`, and its `rows`, each
+`dotnet/tests/ExGrid.Tests/Cases/SummaryCaseTests.cs` against `GridSummary.Of` and by
+`packages/core/test/summary.test.ts` against `summaryOf`. The file names its `columns`, and its `rows`, each
 the values of its cells in that order, written as a `query` case writes them; a case may give its own of
 either, and repeat its rows `repeat` times. A number is read as the Script Core reads one: a JSON number as C#
 converts a double to a decimal, a double only where no decimal holds it, and `{"bigint": text}` exactly, as
@@ -331,8 +331,8 @@ with where no format applies.
 ## `formatCode`
 
 An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it
-(ADR-0342, ADR-0120), under `shaped/`: run by `tests/ExGrid.Tests/Cases/FormatCodeCaseTests.cs` against
-`FormatCode` and by `src/npm/core/test/format-code.test.ts` against the Script Core's `FormatCode`. A case
+(ADR-0342, ADR-0120), under `shaped/`: run by `dotnet/tests/ExGrid.Tests/Cases/FormatCodeCaseTests.cs` against
+`FormatCode` and by `packages/core/test/format-code.test.ts` against the Script Core's `FormatCode`. A case
 names its `code` and either `refused`, the reason whole (the phrase that completes "the format code …"), or
 `isDate` and `texts`, each a `value`, the `locale` it is written in (`invariant` or a BCP 47 tag, ADR-0370
 section 10) and the text it `is`. A value is written as a Snapshot holds it: a JSON number a double,
@@ -343,9 +343,9 @@ hold (`"NaN"`, `"Infinity"`), `{"date": text}` a DateTime and a Date's ticks. Th
 ## `viewStateJson`
 
 The View State's JSON and a Query's (ADR-0207), under `view-state/`: run by
-`tests/ExGrid.Tests/Cases/ViewStateJsonCaseTests.cs` against `GridViewStateJson`, `GridViewState` and
+`dotnet/tests/ExGrid.Tests/Cases/ViewStateJsonCaseTests.cs` against `GridViewStateJson`, `GridViewState` and
 `GridQuery`'s equality, every case under the run's culture, de-DE and th-TH, and by
-`src/npm/core/test/view-state-json.test.ts` against the Script Core's `GridViewStateJson`, `GridViewState` and
+`packages/core/test/view-state-json.test.ts` against the Script Core's `GridViewStateJson`, `GridViewState` and
 `sameGridQuery`. The file names the grid's `columns`, the names a View State is read against and read back
 against. A case does one of these:
 
@@ -419,16 +419,16 @@ then one that names no member: C# would read a small one as the member at that p
 A case reads what the core's own code reads: in C#, public and internal members, never private ones;
 in the Script Core, a module's exports.
 
-The runners find members by name (`tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
-`src/npm/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as
+The runners find members by name (`dotnet/tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
+`packages/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as
 does a check that says neither `is` nor `throws`, and a case that checks nothing.
 
 ## `chart`
 
 ExChart's layout (ADR-0370, section 2): scales, ticks, Thinning, each Series Kind's steps and gaps, the
 scene and its legend, what its tooltip, its summary and its files say, the fits and interpolations a
-Consumer hands in, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by `tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
-and `src/npm/chart/test/chart-case.ts`. A file may say `near`, how far a number may be from what a check
+Consumer hands in, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by `dotnet/tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
+and `packages/chart/test/chart-case.ts`. A file may say `near`, how far a number may be from what a check
 expects in every case of the file, and `definitions`, named definitions a case refers to by their name.
 
 A case names one operation, or several under `"build": {name: operation}`, each answer then read under
@@ -538,15 +538,15 @@ an object's keys JavaScript would move.
 
 The Snapshot as Apache Arrow ([ADR-0065](../../docs/adr/0065-a-snapshot-travels-as-apache-arrow.md), ADR-0370
 section 3), under `arrow/`: xUnit runs them against ExGrid.Data.Arrow
-(`tests/ExGrid.Data.Arrow.Tests/Cases/ArrowCaseTests.cs`) and Vitest against `@ex-grid/data`
-(`src/npm/data/test/arrow-cases.test.ts`). These cases are not the Script Core's: they hold the two
+(`dotnet/tests/ExGrid.Data.Arrow.Tests/Cases/ArrowCaseTests.cs`) and Vitest against `@ex-grid/data`
+(`packages/data/test/arrow-cases.test.ts`). These cases are not the Script Core's: they hold the two
 Snapshot packages to one reading of the same bytes, and both stay.
 
 | Directory | Holds |
 |---|---|
 | `streams/` | Arrow streams and files written by pyarrow, a third reader and writer, from `make_streams.py`: each type of ADR-0065's table, each type outside it, each refused value, and bytes cut short or not Arrow at all |
 | `producers/` | Streams other producers wrote (pyarrow, Polars, DuckDB), from `producers/make_streams.py` |
-| `written/` | What `@ex-grid/data` writes for each `arrowWrite` case, which the C# runner reads back. `EXGRID_WRITE_ARROW_CASES=1 npx vitest run` in `src/npm/data` writes them; otherwise the Vitest runner holds the writer to them byte for byte |
+| `written/` | What `@ex-grid/data` writes for each `arrowWrite` case, which the C# runner reads back. `EXGRID_WRITE_ARROW_CASES=1 npx vitest run` in `packages/data` writes them; otherwise the Vitest runner holds the writer to them byte for byte |
 
 An `arrowRead` case names its bytes, `"stream": "streams/…"`, and says either what they read as or how
 they are refused:
@@ -574,9 +574,9 @@ reads `written` the same way.
 
 A Change Batch applied to a Snapshot ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
 [ADR-0067](../../docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md), ADR-0370 section 5), under `data/`: xUnit runs them
-against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/ChangeBatchCaseTests.cs`) and Vitest against `@ex-grid/data`
-(`src/npm/data/test/change-batch-cases.test.ts`). These are not the Script Core's either, and both stay. The C# runner
-writes the answers: with `EXGRID_WRITE_DATA_CASES=1`, `dotnet test tests/ExGrid.Data.Tests` writes what ExGrid.Data
+against ExGrid.Data (`dotnet/tests/ExGrid.Data.Tests/Cases/ChangeBatchCaseTests.cs`) and Vitest against `@ex-grid/data`
+(`packages/data/test/change-batch-cases.test.ts`). These are not the Script Core's either, and both stay. The C# runner
+writes the answers: with `EXGRID_WRITE_DATA_CASES=1`, `dotnet test tests/ExGrid.Data.Tests`, run in `dotnet/`, writes what ExGrid.Data
 answers into each batch's `expect`. It runs every case under three storages (one segment; segments of four rows; segments
 of four that compact after every batch), and they must answer alike, because how a version is stored is ExGrid.Data's own.
 
@@ -598,8 +598,8 @@ the batch did not bring are the rows of the version before less those it removed
 ## `csvRead`
 
 A CSV read under a declared Schema ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
-ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/CsvReadCaseTests.cs`)
-and Vitest against `@ex-grid/data` (`src/npm/data/test/csv-read-cases.test.ts`). These are not the Script Core's either,
+ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`dotnet/tests/ExGrid.Data.Tests/Cases/CsvReadCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`packages/data/test/csv-read-cases.test.ts`). These are not the Script Core's either,
 and both stay. The C# runner writes the answers, with `EXGRID_WRITE_DATA_CASES=1`, as for `changeBatch`; it reads every
 file under a mebibyte twice, through its default buffer and through one of sixteen bytes filled five at a time, and both must
 answer alike, because how the bytes arrive is ExGrid.Data's own.
@@ -620,8 +620,8 @@ it in `csv-read.test.ts`.
 ## `csvSuggest`
 
 A Schema suggested from a CSV's first rows ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)
-Q33, ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/CsvSuggestCaseTests.cs`)
-and Vitest against `@ex-grid/data` (`src/npm/data/test/csv-suggest-cases.test.ts`). Both stay, for the reason `csvRead`'s do.
+Q33, ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`dotnet/tests/ExGrid.Data.Tests/Cases/CsvSuggestCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`packages/data/test/csv-suggest-cases.test.ts`). Both stay, for the reason `csvRead`'s do.
 The C# runner writes the answers, with `EXGRID_WRITE_DATA_CASES=1`, reading each file from a stream that hands over as much
 as is asked of it, so the sample is the one a `Uint8Array` or a `Blob` gives the Script Core.
 
@@ -644,8 +644,8 @@ the copy to the file (`list-separators.test.ts`).
 ## `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape` and `xlsxColor`
 
 The `.xlsx` reader and writer ([ADR-0330](../../docs/adr/0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md),
-ADR-0370 section 3), under `xlsx/`: xUnit runs them against ExGrid.Data.Xlsx (`tests/ExGrid.Data.Xlsx.Tests/Cases/XlsxCaseTests.cs`)
-and Vitest against `@ex-grid/data-xlsx` (`src/npm/data-xlsx/test/xlsx-cases.test.ts`). A reader and a writer of a file format
+ADR-0370 section 3), under `xlsx/`: xUnit runs them against ExGrid.Data.Xlsx (`dotnet/tests/ExGrid.Data.Xlsx.Tests/Cases/XlsxCaseTests.cs`)
+and Vitest against `@ex-grid/data-xlsx` (`packages/data-xlsx/test/xlsx-cases.test.ts`). A reader and a writer of a file format
 have no differential run, so these cases are what holds the two packages together, and both runners stay. The C# runner writes
 the answers, with `EXGRID_WRITE_XLSX_CASES=1`. What a case cannot hold stays with its runner: how a stream that cannot seek is
 copied, the cause a refusal carries, the memory, progress and cancellation of a large read, and where the writer meets its size
@@ -701,8 +701,8 @@ answered by its ARGB or `null`; or an `argb` and a `tint`, answered by the tint 
 ## `sheetXlsx` and `sheetXlsxCall`
 
 Opening and saving a Workbook as an `.xlsx` (ADR-0330, ADR-0370 section 2), under `sheet-xlsx/`: xUnit runs them against
-ExSheet.Xlsx (`tests/ExSheet.Xlsx.Tests/Cases/SheetXlsxCaseTests.cs`) and Vitest against `@ex-grid/sheet-xlsx`
-(`src/npm/sheet-xlsx/test/sheet-xlsx-cases.test.ts`). As with the file layer's cases, nothing else holds the two packages together,
+ExSheet.Xlsx (`dotnet/tests/ExSheet.Xlsx.Tests/Cases/SheetXlsxCaseTests.cs`) and Vitest against `@ex-grid/sheet-xlsx`
+(`packages/sheet-xlsx/test/sheet-xlsx-cases.test.ts`). As with the file layer's cases, nothing else holds the two packages together,
 and the C# runner writes the answers of `open`, `save`, `sameAs` and every call, with `EXGRID_WRITE_SHEET_XLSX_CASES=1`; what a
 sheet step expects is written by hand. What a case cannot hold stays with its runner: a culture one engine knows by name and the
 other does not, the snapshot a write takes when it is called, progress, cancellation and pacing, a table of a worksheet's every
@@ -744,8 +744,8 @@ unit and the file's); `builtInId` (a Number Format's code, answered by the built
 ## `boardInput`
 
 A Board Input ([ADR-0341](../../docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md),
-ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/BoardInputCaseTests.cs`)
-and Vitest against `@ex-grid/data` (`src/npm/data/test/board-input-cases.test.ts`). Both stay, because a .NET server reads a
+ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`dotnet/tests/ExGrid.Data.Tests/Cases/BoardInputCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`packages/data/test/board-input-cases.test.ts`). Both stay, because a .NET server reads a
 Board's inputs as a browser does.
 
 A case does one of four things. `read` is a declaration's text, read as input `trades` standing at `inputs.trades`, and
@@ -759,8 +759,8 @@ its `path` and its `message` whole, or `saying`, the words before a platform's o
 ## `boardSpec`
 
 A Board read whole ([ADR-0340](../../docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md),
-ADR-0370 section 3), under `board/`: xUnit runs them against ExBoard's reader (`tests/ExBoard.Tests/Cases/BoardSpecCaseTests.cs`)
-and Vitest against `@ex-grid/board` (`src/npm/board/test/board-spec-cases.test.ts`). Both stay, because a server reads a
+ADR-0370 section 3), under `board/`: xUnit runs them against ExBoard's reader (`dotnet/tests/ExBoard.Tests/Cases/BoardSpecCaseTests.cs`)
+and Vitest against `@ex-grid/board` (`packages/board/test/board-spec-cases.test.ts`). Both stay, because a server reads a
 Board with ExBoard.Spec as a browser reads it.
 
 `read` is a Board's text. A case read whole says what the reading holds in `expect`: its `title`, its `inputs` as a
@@ -773,8 +773,8 @@ the words before a platform's own JSON parser speaks.
 ## `boardDiff`
 
 A Board Diff (ADR-0340, Q7), under `board/`: xUnit runs them against ExBoard's `BoardDiff`
-(`tests/ExBoard.Tests/Cases/BoardDiffCaseTests.cs`) and Vitest against `@ex-grid/board`
-(`src/npm/board/test/board-diff-cases.test.ts`). The file's `boards` names the Boards its cases are laid against, each a
+(`dotnet/tests/ExBoard.Tests/Cases/BoardDiffCaseTests.cs`) and Vitest against `@ex-grid/board`
+(`packages/board/test/board-diff-cases.test.ts`). The file's `boards` names the Boards its cases are laid against, each a
 Board's text.
 
 `read` is a Diff's text. A case that reads it says in `writes` the text the Diff is written as again, byte for byte. A
@@ -785,9 +785,9 @@ whole, or `saying`, the words before a platform's own message.
 ## ExPivot's engine, under `pivot/`
 
 The cases of ExPivot's engine (ADR-0370, sections 2 and 5): xUnit runs them against `ExPivot.Engine`
-(`tests/ExPivot.Engine.Tests/Cases/`) and Vitest against `@ex-grid/pivot-engine`
-(`src/npm/pivot-engine/test/`). The C# runner writes the answers: with `EXGRID_WRITE_PIVOT_CASES=1`, `dotnet
-test tests/ExPivot.Engine.Tests` writes what the C# engine answers into each case instead of holding the
+(`dotnet/tests/ExPivot.Engine.Tests/Cases/`) and Vitest against `@ex-grid/pivot-engine`
+(`packages/pivot-engine/test/`). The C# runner writes the answers: with `EXGRID_WRITE_PIVOT_CASES=1`, `dotnet
+test dotnet/tests/ExPivot.Engine.Tests` writes what the C# engine answers into each case instead of holding the
 engine to it, so a case is written as its input, transcribed from the fact it holds, and the Script Core is
 held to the C# engine's answer. Where the two engines word a refusal apart because each names its own
 platform's API (`PivotEngine.Aggregate` beside `aggregatePivot`, `Int32` beside `number`), the case says the
@@ -910,8 +910,8 @@ A report source's refusal is `{"refused": kind, "field", "saying"}`; what it thr
 ## ExSheet's engine, under `sheet/`
 
 The cases of ExSheet's engine (ADR-0370, section 2), beside `ExcelCases` and `ExcelOracle`, which hold
-Excel's own answers: xUnit runs them against `ExSheet.Engine` (`tests/ExSheet.Engine.Tests/Cases/`) and
-Vitest against `@ex-grid/sheet-engine` (`src/npm/sheet-engine/test/`). Each file of kind `sheet` names its
+Excel's own answers: xUnit runs them against `ExSheet.Engine` (`dotnet/tests/ExSheet.Engine.Tests/Cases/`) and
+Vitest against `@ex-grid/sheet-engine` (`packages/sheet-engine/test/`). Each file of kind `sheet` names its
 `culture` (a .NET culture name, or `invariant`) and may name `setups`, lists of steps a case runs first by
 naming one in `setup`. A case may name its own `culture`, and `sheets` to start from more than one. A case
 goes in green on the C# engine first, and the xUnit test it transcribes is then deleted. xUnit runs each case with

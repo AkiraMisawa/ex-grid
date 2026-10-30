@@ -1,5 +1,5 @@
 {
-  "about": "What a chart shows as files (ticket 07, ADR-0275): the long and the wide CSV and the table, after the Chart Filters, every point before Thinning, invariant digits and empty fields, Interpolated and extrapolated columns (ADR-0257), Interval bounds (ADR-0303, ADR-0304), a Price Range's rows (ADR-0300, ADR-0302), an Observation's points with its colour, size and tooltip columns and its edges (ADR-0290, ADR-0320, ADR-0321), from tests/ExChart.Engine.Tests (CsvTests, ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
+  "about": "What a chart shows as files (ticket 07, ADR-0275): the long and the wide CSV and the table, after the Chart Filters, every point before Thinning, invariant digits and empty fields, Interpolated and extrapolated columns (ADR-0257), Interval bounds (ADR-0303, ADR-0304), a Price Range's rows (ADR-0300, ADR-0302), an Observation's points with its colour, size and tooltip columns and its edges (ADR-0290, ADR-0320, ADR-0321), from dotnet/tests/ExChart.Engine.Tests (CsvTests, ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
   "kind": "chart",
   "definitions": {
     "exposure": {

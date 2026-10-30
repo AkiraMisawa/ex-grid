@@ -1,5 +1,5 @@
 {
-  "about": "A Chart Spec's colour and size read from columns (ADR-0320, ADR-0310), from tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecScaleTests).",
+  "about": "A Chart Spec's colour and size read from columns (ADR-0320, ADR-0310), from dotnet/tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecScaleTests).",
   "kind": "chart",
   "tables": {
     "credit": {

@@ -1,0 +1,35 @@
+{
+  "name": "@ex-grid/sheet-xlsx",
+  "version": "0.0.0-dev",
+  "description": "An ExSheet Workbook opened from and saved to .xlsx, as ExSheet.Xlsx opens and saves it, over @ex-grid/data-xlsx: constants, Formulas, Cell Formats and column widths carried, everything that would change a Value refused by name, and what else the file held listed in an Open Report.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/sheet-xlsx"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "dependencies": {
+    "@ex-grid/data-xlsx": "0.0.0-dev",
+    "@ex-grid/sheet-engine": "0.0.0-dev"
+  },
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

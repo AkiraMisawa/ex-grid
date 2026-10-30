@@ -1,5 +1,5 @@
 {
-  "about": "The summary a screen reader says (ADR-0275): the title, the axis across with its range, each panel's vertical axes, each visible series' maximum, an Observation's ranges and its colour and size (ADR-0290, ADR-0320), nodes and edges (ADR-0321), a volume panel's volume (ADR-0300), then the description, from tests/ExChart.Engine.Tests (ComponentSupportTests, PointScaleTests, PriceRangeTests, EdgeTests).",
+  "about": "The summary a screen reader says (ADR-0275): the title, the axis across with its range, each panel's vertical axes, each visible series' maximum, an Observation's ranges and its colour and size (ADR-0290, ADR-0320), nodes and edges (ADR-0321), a volume panel's volume (ADR-0300), then the description, from dotnet/tests/ExChart.Engine.Tests (ComponentSupportTests, PointScaleTests, PriceRangeTests, EdgeTests).",
   "kind": "chart",
   "definitions": {
     "exposure": {

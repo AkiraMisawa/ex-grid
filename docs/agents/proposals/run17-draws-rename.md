@@ -78,7 +78,7 @@ with
 > - The seventeenth Windows run asked Excel what an undo, a rename and a refresh do to a draw: each
 >   draws again. A rename now counts as a change (2026-10-12).
 
-## `src/ExSheet/README.md`, "Random draws"
+## `dotnet/src/ExSheet/README.md`, "Random draws"
 
 Replace
 
@@ -92,7 +92,7 @@ with
 > snapshot (the same rows again included) and Linked Table declaration draws again, as Excel's undo,
 > rename and refresh were seen to, and the clock, a format or a width draws nothing.
 
-## `src/ExSheet.Engine/README.md`, the `RAND` paragraph
+## `dotnet/src/ExSheet.Engine/README.md`, the `RAND` paragraph
 
 Replace
 
@@ -117,7 +117,7 @@ with
 > Excel, nothing draws without a change, and there is no manual recalculation. An undo, a redo and a
 > rename draw again, as Excel's were seen to (ADR-0180, 2026-10-12).
 
-## Docs Site, `samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor` (`/exsheet/formulas`), the `RAND` item
+## Docs Site, `dotnet/samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor` (`/exsheet/formulas`), the `RAND` item
 
 Replace
 

@@ -9,7 +9,7 @@ import { GridSource, type GridColumn } from '@ex-grid/core';
 import { ChartDefinition, type ChartPoint, type ChartSeriesOptions, type ChartValue } from '@ex-grid/chart';
 import { ExChart } from '@ex-grid/chart-react';
 import { ExGrid } from '@ex-grid/react';
-import latticeSource from '../../../ExChart.Showcases/BinomialLatticeShowcase.razor?raw';
+import latticeSource from '../../../../dotnet/samples/ExChart.Showcases/BinomialLatticeShowcase.razor?raw';
 import { DemoNav } from '../demo-nav';
 import { navigateTo, useQuery } from '../router';
 import { keyOf, price, type LatticeNode, type OptionTerms } from './binomial-lattice-pricing';

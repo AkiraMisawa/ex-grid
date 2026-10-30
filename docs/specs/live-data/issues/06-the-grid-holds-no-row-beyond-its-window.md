@@ -9,7 +9,7 @@ its Row Key only while it is in the Window it was last given, apart from the two
 
 ## What to build
 
-- **`src/ExGrid/Components/CellAppearances.cs`** forgets every entry whose row instance a new Window does
+- **`dotnet/src/ExGrid/Components/CellAppearances.cs`** forgets every entry whose row instance a new Window does
   not hold (`_byPosition` and `_asked`). It keeps appearance values, not rows of older renders.
 - **Name the two holdings that outlive a Window in code comments citing ADR-0160**: `_measuredWindow`
   while a measure is deferred, and the row of an Action press in flight.

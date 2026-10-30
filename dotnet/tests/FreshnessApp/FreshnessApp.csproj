@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!-- A standalone WebAssembly application as small as one grid, which tests/browser/freshness.spec.mjs publishes
+       twice, against two builds of ExGrid, to deploy one over the other on a host that sends GitHub
+       Pages' headers (ERR-9, ADR-0123). It is outside the solution: only that spec builds it.
+       ExGridProject names the ExGrid project it takes; the spec points the second publish at a copy
+       of dotnet/src/ whose shipped files are another version's. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FreshnessApp</RootNamespace>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- Nothing here is measured, and a trimmed publish takes minutes the spec does not need. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <ExGridProject Condition=" '$(ExGridProject)' == '' ">$(MSBuildThisFileDirectory)../../src/ExGrid/ExGrid.csproj</ExGridProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(ExGridProject)" />
+  </ItemGroup>
+
+</Project>

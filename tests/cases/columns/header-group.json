@@ -1,5 +1,5 @@
 {
-  "about": "A Header Group's declaration, refused at construction when it cannot be a rectangle (ADR-0032). Adjacency, overlap and the pinned boundary are refused at resolution, in header-group-layout.json. From tests/ExGrid.Tests/HeaderGroupTests.cs.",
+  "about": "A Header Group's declaration, refused at construction when it cannot be a rectangle (ADR-0032). Adjacency, overlap and the pinned boundary are refused at resolution, in header-group-layout.json. From dotnet/tests/ExGrid.Tests/HeaderGroupTests.cs.",
   "kind": "calls",
   "subject": "HeaderGroup",
   "defaults": {"label": "X"},

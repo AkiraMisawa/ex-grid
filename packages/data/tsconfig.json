@@ -1,0 +1,9 @@
+{
+  // The sources and the tests, for the editor and for `npm run typecheck`.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "resolveJsonModule": true
+  },
+  "include": ["src", "test"]
+}

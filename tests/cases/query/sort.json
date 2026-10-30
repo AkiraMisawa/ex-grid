@@ -1,5 +1,5 @@
 {
-  "about": "The reference implementation's sort (ADR-0023): case-insensitive ordinal text, one number line, FALSE before TRUE, Blanks last both ways, stable, priority order, refused rather than guessed. From tests/ExGrid.Tests/SortSemanticsTests.cs; its Date rows are in dates.json.",
+  "about": "The reference implementation's sort (ADR-0023): case-insensitive ordinal text, one number line, FALSE before TRUE, Blanks last both ways, stable, priority order, refused rather than guessed. From dotnet/tests/ExGrid.Tests/SortSemanticsTests.cs; its Date rows are in dates.json.",
   "kind": "query",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
   "cases": [

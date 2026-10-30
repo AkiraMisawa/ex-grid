@@ -1,5 +1,5 @@
 {
-  "about": "A table of single glyphs measured at one size (ADR-0016; ticket 83). From tests/ExGrid.Tests/GlyphWidthTableTests.cs.",
+  "about": "A table of single glyphs measured at one size (ADR-0016; ticket 83). From dotnet/tests/ExGrid.Tests/GlyphWidthTableTests.cs.",
   "kind": "calls",
   "subject": "GlyphWidthTable",
   "cases": [

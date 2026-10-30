@@ -20,46 +20,38 @@ docs/agent-runs/
 # it sits on carries nothing the main tip does not.
 .claude/worktrees/
 
-# The package smoke check (tests/ExGrid.PackageSmoke/check.sh)
+# The package smoke check (dotnet/tests/ExGrid.PackageSmoke/check.sh)
 .feed/
 .nuget-packages/
 .publish/
 
-# The asset minifier's own dependencies (ADR-0123)
-tools/assets/node_modules/
+# The npm workspace at the repository's root (ADR-0350, ADR-0370 section 9): every member's dependencies, and what
+# a build writes. A package's report of its public surface, etc/<name>.api.md, is kept; dist/ is built when the
+# package is published.
+node_modules/
+packages/*/dist/
+packages/*/temp/
 
-# The npm workspace (ADR-0350): its dependencies, and what a build writes. A package's report of its
-# public surface, etc/<name>.api.md, is kept; dist/ is built when the package is published.
-src/npm/node_modules/
-src/npm/*/node_modules/
-src/npm/*/dist/
-src/npm/*/temp/
-
-# The React DemoHost (ADR-0350 section 13): its dependencies, and what `vite build` writes for layer 3
-samples/ExGrid.DemoHost.React/node_modules/
+# The React DemoHost (ADR-0350 section 13): what `vite build` writes for layer 3
 samples/ExGrid.DemoHost.React/dist/
 
-# A test runner started from the repository root writes its cache here; the workspace is src/npm
-/node_modules/
+# The Script Core's module for Blazor ExGrid, bundled from packages/ as ExGrid builds (ADR-0350 section 7)
+dotnet/src/ExGrid/wwwroot/ex-grid-core.min.js
+dotnet/src/ExGrid/wwwroot/ex-grid-core.min.js.map
+dotnet/src/ExGrid/wwwroot/ex-grid-script.min.js
+dotnet/src/ExGrid/wwwroot/ex-grid-script.min.js.map
+# ExPivot's, bundled from packages/ as ExPivot builds (ADR-0370 section 1)
+dotnet/src/ExPivot/wwwroot/ex-pivot.min.js
+dotnet/src/ExPivot/wwwroot/ex-pivot.min.js.map
+# ExSheet's, bundled from packages/ as ExSheet builds (ADR-0370 section 1)
+dotnet/src/ExSheet/wwwroot/ex-sheet.min.js
+dotnet/src/ExSheet/wwwroot/ex-sheet.min.js.map
+dotnet/src/ExChart/wwwroot/ex-chart-core.min.js
+dotnet/src/ExChart/wwwroot/ex-chart-core.min.js.map
+# ExBoard's, bundled from packages/ as ExBoard builds (ADR-0370 section 1)
+dotnet/src/ExBoard/wwwroot/ex-board.min.js
+dotnet/src/ExBoard/wwwroot/ex-board.min.js.map
 
-# The Script Core's module for Blazor ExGrid, bundled from src/npm as ExGrid builds (ADR-0350 section 7)
-src/ExGrid/wwwroot/ex-grid-core.min.js
-src/ExGrid/wwwroot/ex-grid-core.min.js.map
-src/ExGrid/wwwroot/ex-grid-script.min.js
-src/ExGrid/wwwroot/ex-grid-script.min.js.map
-# ExPivot's, bundled from src/npm as ExPivot builds (ADR-0370 section 1)
-src/ExPivot/wwwroot/ex-pivot.min.js
-src/ExPivot/wwwroot/ex-pivot.min.js.map
-# ExSheet's, bundled from src/npm as ExSheet builds (ADR-0370 section 1)
-src/ExSheet/wwwroot/ex-sheet.min.js
-src/ExSheet/wwwroot/ex-sheet.min.js.map
-src/ExChart/wwwroot/ex-chart-core.min.js
-src/ExChart/wwwroot/ex-chart-core.min.js.map
-# ExBoard's, bundled from src/npm as ExBoard builds (ADR-0370 section 1)
-src/ExBoard/wwwroot/ex-board.min.js
-src/ExBoard/wwwroot/ex-board.min.js.map
-
-# The Docs Site's React Examples (ADR-0350 section 12): their dependencies, and the frame the Docs project's build
-# writes into the site's static files
-samples/ExGrid.Docs.React/node_modules/
-samples/ExGrid.Docs/wwwroot/react/
+# The Docs Site's React Examples (ADR-0350 section 12): the frame the Docs project's build writes into the site's
+# static files
+dotnet/samples/ExGrid.Docs/wwwroot/react/

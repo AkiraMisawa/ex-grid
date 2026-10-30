@@ -43,7 +43,7 @@ const fontData = (file, type) => `url(data:${type};base64,${fs.readFileSync(file
 const faces = {
   // ExGrid.MudBlazor: MudExGridFont.Roboto.Family, over the files and rules the demo pages serve.
   roboto: () => {
-    const dir = path.join(repo, 'samples/ExGrid.DemoPages/wwwroot/fonts/roboto');
+    const dir = path.join(repo, 'dotnet/samples/ExGrid.DemoPages/wwwroot/fonts/roboto');
     const css = fs.readFileSync(path.join(dir, 'roboto.css'), 'utf8')
       .replace(/url\(([^)]+\.woff2)\)/g, (_, file) => fontData(path.join(dir, file), 'font/woff2'));
     return { css, family: 'Roboto, "Helvetica Neue", Arial, sans-serif' };

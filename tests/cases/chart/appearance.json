@@ -1,5 +1,5 @@
 {
-  "about": "Each series' look from its Appearance Keys, and when colours repeat (ADR-0256), from tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
+  "about": "Each series' look from its Appearance Keys, and when colours repeat (ADR-0256), from dotnet/tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
   "kind": "chart",
   "definitions": {
     "exposure": {

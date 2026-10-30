@@ -124,7 +124,7 @@ included".
 - `SORT`, `SORTBY`, `UNIQUE`: add "; Excel's Anchor recorded (SORT-011, UNIQUE-009), the refusal kept until a run reads
   the rest".
 
-## `src/ExSheet.Engine/README.md`
+## `dotnet/src/ExSheet.Engine/README.md`
 
 - The function table's `INDIRECT` row: "`ref_text, [a1]` — text naming a place on the same Sheet, A1 or absolute R1C1,
   a Linked Table's column or `A1#`; volatile (ADR-0124)".

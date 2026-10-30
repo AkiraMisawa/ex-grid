@@ -1,5 +1,5 @@
 {
-  "about": "A colour of the Reference Outline palette (ADR-0057): a place, 1 to 7, handed out round the palette in order of first appearance. From tests/ExGrid.Tests/ReferenceColouringTests.cs. The Script Core's colour is the place itself, a number; its runner makes { place } of one so the place can be read as C#'s is.",
+  "about": "A colour of the Reference Outline palette (ADR-0057): a place, 1 to 7, handed out round the palette in order of first appearance. From dotnet/tests/ExGrid.Tests/ReferenceColouringTests.cs. The Script Core's colour is the place itself, a number; its runner makes { place } of one so the place can be read as C#'s is.",
   "kind": "calls",
   "subject": "ReferenceColour",
   "cases": [

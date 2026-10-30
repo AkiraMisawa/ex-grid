@@ -1,5 +1,5 @@
 {
-  "about": "The reference Find step (ADR-0055, FD-7): what a match is and the order a step walks, over rows written as the texts their cells display. From tests/ExGrid.Tests/GridFindTests.cs.",
+  "about": "The reference Find step (ADR-0055, FD-7): what a match is and the order a step walks, over rows written as the texts their cells display. From dotnet/tests/ExGrid.Tests/GridFindTests.cs.",
   "kind": "find",
   "columns": ["Book", "Trader", "Notional"],
   "rows": [["Alpha", "Ishikawa", "1,000.00"], ["Beta", "Novak", "2,500.50"], ["Gamma", "novak", "30.00"], ["Alpha", "Osei", "1,000.00"]],

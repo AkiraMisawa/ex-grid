@@ -1,5 +1,5 @@
 {
-  "about": "Every Pivot Source question and answer as it crosses to a server (ADR-0066, ADR-0370 sections 2 and 3): a document read as the document it names and written again, which both engines write as one text to the byte, or what refuses it. The documents the first cases read were written by the C# engine over the Pivot Source tests' deals (tests/ExPivot.Engine.Tests/Sources.cs); the rest are written to be refused.",
+  "about": "Every Pivot Source question and answer as it crosses to a server (ADR-0066, ADR-0370 sections 2 and 3): a document read as the document it names and written again, which both engines write as one text to the byte, or what refuses it. The documents the first cases read were written by the C# engine over the Pivot Source tests' deals (dotnet/tests/ExPivot.Engine.Tests/Sources.cs); the rest are written to be refused.",
   "kind": "pivotJson",
   "cases": [
     {

@@ -36,7 +36,7 @@ observational and never gates.
     (`measure-live.spec.mjs`, `EXGRID_MEASURE=live`, on a published WebAssembly build);
   - the bytes per update on the Server host, by M2's method (`spikes/render-bench`, its Server spike).
 - **ExPivot, a live redraw**, at reports of about 10⁴, 10⁵ and 4×10⁵ rows (two row fields, as in
-  D10's measurement), step by step as `src/ExPivot/Components/ExPivot.Asking.cs` runs them:
+  D10's measurement), step by step as `dotnet/src/ExPivot/Components/ExPivot.Asking.cs` runs them:
   - the bundled source folding the batch (`SnapshotPivotSource.Apply`) and answering;
   - `PivotEngine.CubeAsync` (`ExPivot.Asking.cs:392`; the axis trees in `PivotCube.TreeAsync`);
   - `PivotEngine.ReportAsync` (`:544`; `ReportBuilder`), with the keys it makes;
@@ -54,7 +54,7 @@ observational and never gates.
 - **Write results to a fixed path.** Under `nix develop`, `Path.GetTempPath()` is a directory that
   is removed when the shell exits: a measurement written there is lost without a word.
 - **The shape of D10's harness**, to recreate rather than to commit: a throwaway xUnit test in
-  `tests/ExPivot.Engine.Tests` (it sees the engine's internals) that builds a report from records of
+  `dotnet/tests/ExPivot.Engine.Tests` (it sees the engine's internals) that builds a report from records of
   two text fields (`A00000`… × `B0000`…) with `PivotEngine.Compute`, then times a pass over
   `report.Rows` that puts each `row.Key` into a `Dictionary<object, int>`, beside a pass that puts
   each row into a `HashSet<object>` with `ReferenceEqualityComparer` — the grid's two checks.

@@ -1,5 +1,0 @@
-{
-  // The fixtures are type-checked as the packages are, so the type-aware rules see them.
-  "extends": "../../tsconfig.base.json",
-  "include": ["."]
-}

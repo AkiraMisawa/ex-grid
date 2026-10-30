@@ -28,8 +28,8 @@ Aggregations an error leaves standing. It reaches every answerer that folds an e
   as Numerical Count);
 - **a Consumer's own answerer** through `GridSummaryCells.AddError`.
 
-**Confirmed, as the triage asked:** `AddError` is called only by the summaries — `src/ExSheet/SheetSummary.cs`,
-`src/ExPivot/PivotSummary.cs`, `src/ExPivot/Components/ExPivot.Operations.cs` and `GridSummaryCells` — and never by
+**Confirmed, as the triage asked:** `AddError` is called only by the summaries — `dotnet/src/ExSheet/SheetSummary.cs`,
+`dotnet/src/ExPivot/PivotSummary.cs`, `dotnet/src/ExPivot/Components/ExPivot.Operations.cs` and `GridSummaryCells` — and never by
 ExPivot's engine. `ExPivot.Engine` reads its Value Fields through `AggregateArithmetic.Read`, which has no error
 among values, and nothing in `src/` but `AggregateAccumulator` produces `AggregateError.ErrorAmongValues`. A pivot
 cell's Aggregation is unchanged. `GridSource.From` never folds an error in (a row's value that is not a number is
@@ -41,19 +41,19 @@ formats are its columns', so the Focus's column's format is the same rule on a g
 
 Tests, each named with its ADR:
 
-- `tests/ExGrid.Data.Tests/AggregateAccumulatorTests.cs`: `ADR0130_an_error_among_the_values_leaves_only_the_two_counts`
+- `dotnet/tests/ExGrid.Data.Tests/AggregateAccumulatorTests.cs`: `ADR0130_an_error_among_the_values_leaves_only_the_two_counts`
   (rewritten from `…_leaves_count_alone`, which expected `ErrorAmongValues` from Count Numbers; it now expects 2,
   and the error from all nine Aggregations that read numbers), and `ADR0130_an_error_beside_merged_parts_leaves_only_the_two_counts`
   (ExPivot's server path: a flag and merged parts).
-- `tests/ExGrid.Tests/GridSummaryTests.cs`: `ADR0130_an_error_among_the_cells_leaves_count_and_numerical_count`
+- `dotnet/tests/ExGrid.Tests/GridSummaryTests.cs`: `ADR0130_an_error_among_the_cells_leaves_count_and_numerical_count`
   (b5 through `GridSummaryCells`, no answerer text on the figures shown nowhere) and
   `ADR0130_without_the_error_every_figure_is_shown` (b6).
-- `tests/ExGrid.Browser/selection-summary.spec.mjs`: the spec covered `/features` only, so a Sheet case is added
+- `tests/browser/selection-summary.spec.mjs`: the spec covered `/features` only, so a Sheet case is added
   under both Chromes — b5 typed into F1:F5 of `/sheet`, Numerical Count, Min and Max ticked through the status
   line's right-click menu as the run ticked them, then b6 — with real keys and presses. Run with
   `--project=chrome --repeat-each=3` on the WebAssembly host and the Server host (Playwright's bundled
   Chromium, headed under xvfb).
-- `tests/ExSheet.Components/SheetSummaryTests.cs` (new): b5, b6, b7 and b8 on a rendered Sheet with all six figures
+- `dotnet/tests/ExSheet.Components/SheetSummaryTests.cs` (new): b5, b6, b7 and b8 on a rendered Sheet with all six figures
   shown, by the run's own gestures (typing, Delete, the Name Box, Shift+arrow from the active cell), each figure's
   text Excel's verbatim. The b5 test fails without the fix (`["Count: 4"]`), and passes with it.
 
@@ -138,8 +138,8 @@ note ("A change that reaches two products has a note for each") and `Behaviour` 
 
 ## Files outside the brief's list
 
-- `src/ExPivot/PivotSummary.cs`: its doc comment said an error "leaves Count alone". Comment only.
-- `src/ExGrid/Components/ExGrid.Summary.cs`: the private `SummaryText`'s doc comment said the Focus's column's
+- `dotnet/src/ExPivot/PivotSummary.cs`: its doc comment said an error "leaves Count alone". Comment only.
+- `dotnet/src/ExGrid/Components/ExGrid.Summary.cs`: the private `SummaryText`'s doc comment said the Focus's column's
   format holds "until Excel's own rule is read in a Windows run". Comment only.
 
 ## Not acted on

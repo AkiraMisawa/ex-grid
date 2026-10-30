@@ -1,5 +1,5 @@
 {
-  "about": "The reference rule for one cell's replacement (ADR-0332 §2): every occurrence of the text in the entry, compared as Find compares; with Whole cell, the entry whole; nothing where the entry does not match. From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "about": "The reference rule for one cell's replacement (ADR-0332 §2): every occurrence of the text in the entry, compared as Find compares; with Whole cell, the entry whole; nothing where the entry does not match. From dotnet/tests/ExGrid.Tests/GridReplaceTests.cs.",
   "kind": "calls",
   "subject": "GridReplace",
   "cases": [

@@ -83,21 +83,21 @@ Microsoft's wording as fetched; anything else from those pages is a paraphrase.
 - **[ExSheet] Representation.** A single-cell Reference is held in `_cellDependents` (target to
   readers). A multi-cell rectangle, `A:A` and `1:1` included, is held per reading Formula in
   `_areaPrecedents`, and it is matched by `Area.Contains` when the dependents of a cell are asked
-  for (`src/ExSheet.Engine/Sheet.cs:24-28`, `:312-331`, `:350-366`). Whole columns are therefore
+  for (`dotnet/src/ExSheet.Engine/Sheet.cs:24-28`, `:312-331`, `:350-366`). Whole columns are therefore
   never expanded into cells.
 - **[ExSheet] Linked Tables.** A structured reference (`Positions[PV]`) registers its Formula as a
   reader of the table by name. A new snapshot recalculates only those readers and what depends on
-  them (`src/ExSheet.Engine/Sheet.LinkedTables.cs:90-134`;
+  them (`dotnet/src/ExSheet.Engine/Sheet.LinkedTables.cs:90-134`;
   `docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md:61-64`). Until the first
   snapshot arrives, readers and their dependents are `#GETTING_DATA`, which `IFERROR` does not
   catch (ADR-0049 `:47-55`; `Sheet.cs:458-478`, `Taint`).
 - **[ExSheet] Other sheets.** One Sheet exists. A qualifier naming this Sheet is local
-  (`src/ExSheet.Engine/Sheet.Name.cs:48-57`; NAME-009/010 make a cycle through `Sheet1!`). Any other
-  qualifier evaluates to `#REF!` (`src/ExSheet.Engine/Formulas/Evaluator.cs:55`) and is not
+  (`dotnet/src/ExSheet.Engine/Sheet.Name.cs:48-57`; NAME-009/010 make a cycle through `Sheet1!`). Any other
+  qualifier evaluates to `#REF!` (`dotnet/src/ExSheet.Engine/Formulas/Evaluator.cs:55`) and is not
   registered as a dependency (`Sheet.cs:317`). Renaming the Sheet recalculates every Formula whose
   qualifier starts or stops naming it (`Sheet.Name.cs:40-46`, `:95-110`).
 - **[ExSheet] Defined names** do not exist; an unknown name is `#NAME?`
-  (`tests/ExSheet.Engine.Tests/ExcelCases/references.json`, the first cases).
+  (`dotnet/tests/ExSheet.Engine.Tests/ExcelCases/references.json`, the first cases).
 - **[ExSheet] Auditing.** There is no Trace Precedents or Trace Dependents. While a Formula is
   edited, its References are outlined in colour (ADR-0057), which shows the precedents of the
   Formula being edited only.
@@ -127,7 +127,7 @@ Microsoft's wording as fetched; anything else from those pages is a paraphrase.
 
 ### ExSheet
 
-- **[ExSheet]** `Recalculate` works in three steps (`src/ExSheet.Engine/Sheet.cs:370-455`):
+- **[ExSheet]** `Recalculate` works in three steps (`dotnet/src/ExSheet.Engine/Sheet.cs:370-455`):
   1. It collects everything the change reaches, breadth first.
   2. It orders the Formulas to recompute topologically (Kahn) and evaluates each once into a
      staging set.
@@ -141,7 +141,7 @@ Microsoft's wording as fetched; anything else from those pages is a paraphrase.
   stored (`Sheet.cs:53-79`; ADR-0048 `:18-28`).
 - **[ExSheet] Tests:** only dependents recompute, counted; a diamond recomputes each cell once,
   after its precedents; a long chain does not overflow the stack; a batch publishes only end-state
-  Values (`tests/ExSheet.Engine.Tests/RecalculationTests.cs:9-100`; issue 03 `:12-16`, `:20-28`).
+  Values (`dotnet/tests/ExSheet.Engine.Tests/RecalculationTests.cs:9-100`; issue 03 `:12-16`, `:20-28`).
 - **[ExSheet]** "No Value is ever shown from a recalculation that has not finished" (ADR-0047 `:73-75`).
   The engine half is done. The component half, that no Window is pushed with unfinished Values, is
   still open in layer 2 (`docs/specs/exsheet/issues/03-references-and-recalculation.md:16`, `:28-29`).
@@ -184,7 +184,7 @@ that changes anything today.
   (https://support.microsoft.com/en-us/office/-spill-volatile-size-05aad07c-947e-4c9b-bd6f-7b1f8ae6a7dc).
 - **[ExSheet]** The declared functions are SUM, AVERAGE, MIN, MAX, COUNT, COUNTA, IF, ROUND, IFERROR,
   ISERROR and XLOOKUP (ADR-0047 `:23-26`). None of them is volatile, and the engine has no notion of
-  volatility: a search of `src/ExSheet.Engine` for `Volatile`, `NOW`, `TODAY`, `RAND`, `OFFSET` and
+  volatility: a search of `dotnet/src/ExSheet.Engine` for `Volatile`, `NOW`, `TODAY`, `RAND`, `OFFSET` and
   `INDIRECT` found nothing. Any of these functions typed today is `#NAME?`.
 - **[ExSheet] Related.** ADR-0048 stores no Values, so a volatile result could never go stale in a
   document. But "the same Entries give the same Values" would no longer hold.
@@ -232,7 +232,7 @@ ADR-0047's admission rule.
 - **[ExSheet] Cases.** Members and dependents (ERR-078..081, 083, 084); a range containing its own
   cell, `=SUM(A:A)` in A1 (ERR-093); breaking a cycle recovers (ERR-085..); two cycles stay
   independent (ERR-091/092); IF-015; IFERROR-010; STRUCT-021..023 (deleting a cell of a cycle breaks
-  it). See `tests/ExSheet.Engine.Tests/ExcelCases/errors.json:624-770`, `if.json:134-137`,
+  it). See `dotnet/tests/ExSheet.Engine.Tests/ExcelCases/errors.json:624-770`, `if.json:134-137`,
   `iferror.json:89-92`, `structure.json:187-210`. Each is marked `engineDiffersByDecision`.
   Reopening a document yields `#CIRC!` again (`RecalculationTests.cs:102-115`).
 - **[ExSheet]** There is no iterative calculation, no status-bar notice and no dialog. The display
@@ -301,13 +301,13 @@ ADR-0047's admission rule.
   - A range whose cells are all deleted is written `#REF!` in the stored Formula.
   - `A:A` keeps its text but is still recomputed.
   - It then rebuilds the whole graph and recalculates only the rewritten or reached Formulas
-    (`src/ExSheet.Engine/Sheet.Structure.cs:1-140`; issue 13 `:19-36`).
+    (`dotnet/src/ExSheet.Engine/Sheet.Structure.cs:1-140`; issue 13 `:19-36`).
 
   An insertion that would push an Entry off the Sheet is refused. A Reference pushed off is cut at
   the edge, or becomes `#REF!` (`Sheet.Structure.cs:6-15`, `:51-68`; STRUCT-026..029). That
   supersedes issue 13's first note that such an insertion was refused.
 - **[ExSheet] Copy and fill** shift relative parts and keep `$` parts. A Reference shifted off the
-  Sheet is `#REF!` (`src/ExSheet.Engine/Formulas/ReferenceShift.cs:1-19`; `Sheet.Fill.cs:29`).
+  Sheet is `#REF!` (`dotnet/src/ExSheet.Engine/Formulas/ReferenceShift.cs:1-19`; `Sheet.Fill.cs:29`).
   Copying `=A1` from B1 to B3 is checked against Excel (`excel-behaviours.md:88`, item 16).
 - **[ExSheet]** There is **no cut or move**. No cut, Ctrl+X or move-cells operation was found in the
   engine, the ADRs or the spec. Pasting over a referenced cell writes a new Entry, and its readers

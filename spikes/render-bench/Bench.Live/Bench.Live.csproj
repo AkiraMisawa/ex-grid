@@ -21,13 +21,13 @@
 
   <!-- The Settled Mark's measurement (ADR-0220): the real grid, driven by settled-bench.js. -->
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
   <!-- The core comparison (ADR-0350 section 15): ExSheet and ExPivot, which ExGrid draws. -->
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExSheet\ExSheet.csproj" />
-    <ProjectReference Include="..\..\..\src\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExSheet\ExSheet.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExPivot\ExPivot.csproj" />
   </ItemGroup>
 
 </Project>

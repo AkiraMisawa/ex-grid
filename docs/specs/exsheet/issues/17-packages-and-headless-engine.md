@@ -21,7 +21,7 @@ gets Excel's Values and displayed text; the same document gives the same Values 
 the process runs under, and a Sheet edited (insertion, fill, paste, pasted text), saved and
 opened again computes the same Values. The engine's whole reference closure holds no
 `Microsoft.AspNetCore`, `Microsoft.JSInterop` or `ExGrid` assembly (the second criterion).
-`tests/ExGrid.PackageSmoke/check.sh` now packs `ExSheet.Engine` too, reads its `.nuspec` back
+`dotnet/tests/ExGrid.PackageSmoke/check.sh` now packs `ExSheet.Engine` too, reads its `.nuspec` back
 (MIT, readme, repository and commit, symbols, XML docs, and no dependency at all), and the smoke
 application restores it from the packed file and compiles the README's examples against it.
 It is packed into a feed of its own, `.sheet-feed`, and not `.feed`: `.feed` is exactly what the

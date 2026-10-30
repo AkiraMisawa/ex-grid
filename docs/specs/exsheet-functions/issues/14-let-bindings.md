@@ -30,7 +30,7 @@ decision is ADR-0181, and the boxes below it are the build.)*
 - [x] Every observed `LET` case in the corpus (`verification/2026-10-03-windows-functions/`), with
       the typed answer where COM and the keys differ; the catalogue row Supported (SH-67)
 - [x] Layer 2: a `LET` refused on entry through the component is refused as an unreadable Formula is
-- [x] The Docs Site's Formulas page (`samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`) says
+- [x] The Docs Site's Formulas page (`dotnet/samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`) says
       what is refused, and why
 
 ## Comments

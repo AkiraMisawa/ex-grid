@@ -1,5 +1,5 @@
 {
-  "about": "One rectangle: made from corners, refused when empty, and a cell or an area taken out of it. From tests/ExGrid.Tests/SelectionRangeTests.cs.",
+  "about": "One rectangle: made from corners, refused when empty, and a cell or an area taken out of it. From dotnet/tests/ExGrid.Tests/SelectionRangeTests.cs.",
   "kind": "range",
   "cases": [
     { "name": "ADR-0012: a rectangle from its top-left and bottom-right corners", "fromCorners": [[1, 2], [3, 4]], "expect": [1, 2, 3, 3] },

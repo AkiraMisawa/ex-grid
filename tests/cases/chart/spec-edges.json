@@ -1,5 +1,5 @@
 {
-  "about": "A Chart Spec's nodes and edges, two tables whose keys meet as text, and the columns a node's tooltip says (ADR-0321), from tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecEdgeTests).",
+  "about": "A Chart Spec's nodes and edges, two tables whose keys meet as text, and the columns a node's tooltip says (ADR-0321), from dotnet/tests/ExChart.Engine.Tests/ChartSpecTests.cs (ChartSpecEdgeTests).",
   "kind": "chart",
   "tables": {
     "nodes": {

@@ -1,5 +1,5 @@
 {
-  "about": "What the differential run against the C# engine found (ADR-0370, section 2, src/npm/sheet-engine/differential/README.md), each written down once fixed, cut to the Formula that shows it.",
+  "about": "What the differential run against the C# engine found (ADR-0370, section 2, packages/sheet-engine/differential/README.md), each written down once fixed, cut to the Formula that shows it.",
   "kind": "sheet",
   "culture": "en-US",
   "cases": [

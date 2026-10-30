@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Acceptance experiment: which computation reproduces every trigonometric double Excel returned?
 
-Not shipped. Reads every oracle results file under tests/ExSheet.Engine.Tests/ExcelOracle/, takes
+Not shipped. Reads every oracle results file under dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/, takes
 each number Excel answered for SIN, COS, TAN, COT, CSC and SEC (the agreeing cases too, so a fix
 breaks none), and counts, for each candidate computation, how many of them it reproduces bit for
 bit. Exact arithmetic is Python's Fraction; sine and cosine of a reduced argument are summed to
@@ -24,7 +24,7 @@ from fractions import Fraction
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RESULTS = ROOT / "tests/ExSheet.Engine.Tests/ExcelOracle"
+RESULTS = ROOT / "dotnet/tests/ExSheet.Engine.Tests/ExcelOracle"
 
 decimal.getcontext().prec = 120
 decimal.getcontext().traps[decimal.DivisionByZero] = False  # 1/0 is an infinity, as a double's

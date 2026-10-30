@@ -10,4 +10,4 @@ accessibility tree, not a screen reader").
    report's `aria-rowcount`. Since 2026-10-12 both count the header's rows first: a row per tier of the column
    Items' Header Groups, then the header row. `compare.py` matches the body by row label, so a comparison is
    unchanged. A run that reuses the probe, and reads its `row` or `rowCount` as the report's own numbers,
-   subtracts the header's rows, counted as `headerRowsOf` in `tests/ExGrid.Browser/fixtures.mjs` counts them.
+   subtracts the header's rows, counted as `headerRowsOf` in `tests/browser/fixtures.mjs` counts them.

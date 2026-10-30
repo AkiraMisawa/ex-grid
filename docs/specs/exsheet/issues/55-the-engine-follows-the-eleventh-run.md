@@ -60,7 +60,7 @@ and 15. The Sheet Document is unchanged: it records the same sides, now kept equ
 - **Tests changed because of the change.** Every test that counted the records, or read the cell
   beside a border, now expects that cell's side too: `CellFormatDocumentTests` (two),
   `Cell_over_row_over_column`, `Delete_keeps_them`, and `Each_selected_range_gets_its_own_outline`
-  in `tests/ExSheet.Components`.
+  in `dotnet/tests/ExSheet.Components`.
 - **Public shapes:** unchanged. `CellFormatChange`, `BorderChange`, `CellBorders` and the
   `InsertRows`/`InsertColumns` signatures are as they were; only their doc comments changed.
 - **Readings that remain**, each named in its test:

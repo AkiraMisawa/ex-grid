@@ -17,7 +17,7 @@ that pass today because the engine refuses two things, and fail the day it stops
 
 ## Comments
 
-2026-09-30, done (branch `agent/pointing-scope-36`), in `tests/ExSheet.Engine.Tests/PointingScopeWatchTests.cs`.
+2026-09-30, done (branch `agent/pointing-scope-36`), in `dotnet/tests/ExSheet.Engine.Tests/PointingScopeWatchTests.cs`.
 
 - `ADR0058_a_table_column_compared_with_a_value_over_two_rows_is_VALUE` pushes two rows of `Cds` and
   expects `#VALUE!` from `=(Cds[Entity]="ACME")`, and also from the pair a Scope would write,

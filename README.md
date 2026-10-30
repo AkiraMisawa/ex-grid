@@ -62,7 +62,7 @@ The first four each have a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBl
 The parts of a grid, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exgrid) and the API name them:
 
 <!-- figure grid-anatomy -->
-[![An ExGrid of positions under Header Groups, panned past its Pinned Columns, with two rows marked and a range selected; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/grid-anatomy.png)](https://akiramisawa.github.io/ex-grid/exgrid)
+[![An ExGrid of positions under Header Groups, panned past its Pinned Columns, with two rows marked and a range selected; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/grid-anatomy.png)](https://akiramisawa.github.io/ex-grid/exgrid)
 
 1. **Pinned Column**: held at the edge while the others pan under it
 2. **Header Group**: a label over adjacent columns
@@ -91,7 +91,7 @@ The parts of a grid, as [the Docs Site](https://akiramisawa.github.io/ex-grid/ex
 The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exsheet) and the API name them:
 
 <!-- figure sheet-anatomy -->
-[![An ExSheet expenses claim beside last quarter's, with the total's Formula open in the Cell Editor; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/sheet-anatomy.png)](https://akiramisawa.github.io/ex-grid/exsheet)
+[![An ExSheet expenses claim beside last quarter's, with the total's Formula open in the Cell Editor; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/sheet-anatomy.png)](https://akiramisawa.github.io/ex-grid/exsheet)
 
 1. **Sheet Toolbar**: opt-in buttons that act on the Selection
 2. **Name Box**: where the Focus is
@@ -130,7 +130,7 @@ The parts of a sheet, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/expivot) and the API name them:
 
 <!-- figure pivot-anatomy -->
-[![An ExPivot report of 2025's sales by region and country, with Europe open, beside its PivotTable Fields pane; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/pivot-anatomy.png)](https://akiramisawa.github.io/ex-grid/expivot)
+[![An ExPivot report of 2025's sales by region and country, with Europe open, beside its PivotTable Fields pane; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/pivot-anatomy.png)](https://akiramisawa.github.io/ex-grid/expivot)
 
 1. **Report filter**: a field in Filters
 2. **Value Field**: Revenue, with its Aggregation, Sum
@@ -183,7 +183,7 @@ A selection charted into the Chart Dock under MudBlazor, a new tab beside the fi
 The parts of a chart, as [the Docs Site](https://akiramisawa.github.io/ex-grid/exchart) and the API name them:
 
 <!-- figure chart-anatomy -->
-[![An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/chart-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
+[![An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/chart-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
 
 ### ExBoard
 
@@ -214,7 +214,7 @@ without it: rows of ExGrid, ExPivot and ExChart views over typed Board Inputs.
 The Chart Dock beside the grid it charts:
 
 <!-- figure chart-dock-anatomy -->
-[![A grid of a curve history under MudBlazor with a range selected and its context menu open, beside the Chart Dock holding the chart made from that range; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/chart-dock-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
+[![A grid of a curve history under MudBlazor with a range selected and its context menu open, beside the Chart Dock holding the chart made from that range; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/chart-dock-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
 
 1. **Selection**: the cells to chart, the Date beside the figures
 2. **Chart commands**: in the grid's context menu: a new chart with a series a column or a row, or the series added to a chart already open
@@ -309,12 +309,12 @@ Each package's own readme takes it from there:
 
 | Product | Readmes |
 |---|---|
-| ExGrid | [`ExGrid`](src/ExGrid/README.md), [`ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) |
-| ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md), [`ExSheet.Xlsx`](src/ExSheet.Xlsx/README.md) |
-| ExPivot | [`ExPivot`](src/ExPivot/README.md), [`ExPivot.Engine`](src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) |
-| ExChart | [`ExChart`](src/ExChart/README.md), [`ExChart.Engine`](src/ExChart.Engine/README.md), [`ExChart.MudBlazor`](src/ExChart.MudBlazor/README.md) |
-| ExBoard | [`ExBoard`](src/ExBoard/README.md) |
-| Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md), [`ExGrid.Data.Xlsx`](src/ExGrid.Data.Xlsx/README.md) |
+| ExGrid | [`ExGrid`](dotnet/src/ExGrid/README.md), [`ExGrid.MudBlazor`](dotnet/src/ExGrid.MudBlazor/README.md) |
+| ExSheet | [`ExSheet`](dotnet/src/ExSheet/README.md), [`ExSheet.Engine`](dotnet/src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](dotnet/src/ExSheet.MudBlazor/README.md), [`ExSheet.Xlsx`](dotnet/src/ExSheet.Xlsx/README.md) |
+| ExPivot | [`ExPivot`](dotnet/src/ExPivot/README.md), [`ExPivot.Engine`](dotnet/src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](dotnet/src/ExPivot.MudBlazor/README.md) |
+| ExChart | [`ExChart`](dotnet/src/ExChart/README.md), [`ExChart.Engine`](dotnet/src/ExChart.Engine/README.md), [`ExChart.MudBlazor`](dotnet/src/ExChart.MudBlazor/README.md) |
+| ExBoard | [`ExBoard`](dotnet/src/ExBoard/README.md) |
+| Data | [`ExGrid.Data`](dotnet/src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](dotnet/src/ExGrid.Data.Arrow/README.md), [`ExGrid.Data.Xlsx`](dotnet/src/ExGrid.Data.Xlsx/README.md) |
 
 **Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
 verified under WebAssembly; every browser test also runs under Blazor Server.
@@ -336,6 +336,7 @@ To run the site locally, clone the repository (the .NET 10 SDK is all it needs; 
 [CONTRIBUTING](CONTRIBUTING.md) for Nix) and open <http://localhost:5310>:
 
 ```sh
+cd dotnet
 dotnet run --project samples/ExGrid.Docs --urls http://localhost:5310
 ```
 

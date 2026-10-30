@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client';
 import type { GridColumn, GridTemplateCell } from '@ex-grid/core';
 import { ExGrid, templateColumn } from '@ex-grid/react';
 import '../../Bench.Client/wwwroot/css/app.css';
-import '../../../../src/ExGrid/wwwroot/ex-grid.min.css';
+import '../../../../dotnet/src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../Bench.Live/wwwroot/core-bench.css';
 import '../../Bench.Live/wwwroot/core-bench.js';
 

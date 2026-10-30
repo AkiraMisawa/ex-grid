@@ -10,8 +10,8 @@ import type { ExGridApi } from '@ex-grid/react';
 import { MuiExGrid } from '@ex-grid/mui';
 // The Wrappers' stylesheets, as text this page writes into a <style> of its own and takes away when it goes: the
 // other pages stay bare, and a spec file's document is the one it booted with once the page is left (ADR-0056).
-import gridStyles from '../../../../src/npm/mui/styles.css?inline';
-import chartStyles from '../../../../src/npm/chart-mui/styles.css?inline';
+import gridStyles from '../../../../packages/mui/styles.css?inline';
+import chartStyles from '../../../../packages/chart-mui/styles.css?inline';
 import { DemoNav } from '../demo-nav';
 import { curveBridge, curveColumns, curveGroups, type CurveRow } from '../dock-curves';
 

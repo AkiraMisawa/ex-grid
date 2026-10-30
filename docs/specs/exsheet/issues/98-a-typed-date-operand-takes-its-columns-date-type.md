@@ -43,7 +43,7 @@ date.
 
 2026-10-02, implemented.
 
-- `DateType` (`src/ExGrid/DateType.cs`) on `GridColumn` (and `TemplateColumn`), `ColumnInfo` and
+- `DateType` (`dotnet/src/ExGrid/DateType.cs`) on `GridColumn` (and `TemplateColumn`), `ColumnInfo` and
   `FilterPanelContext`. A `ColumnInfo` built directly is held to the same rule as a `GridColumn`.
 - The engine holds every cell and operand to the declared type in its one normalisation, naming the
   column. That replaces the one-date-type-per-column checks, which the declaration makes redundant.

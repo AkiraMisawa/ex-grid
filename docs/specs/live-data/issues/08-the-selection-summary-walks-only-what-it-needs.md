@@ -10,7 +10,7 @@ positions.
 
 ## Where it stands
 
-`NoteRowsForSummary` (`src/ExGrid/Components/ExGrid.Summary.cs`) runs on every `ApplyState`. It compares
+`NoteRowsForSummary` (`dotnet/src/ExGrid/Components/ExGrid.Summary.cs`) runs on every `ApplyState`. It compares
 every position both Windows hold until the first difference, by the row type's equality. Under live data
 at 10⁶ rows that is up to 11 ms on CoreCLR and about 130 ms in the browser ([ticket 01](../../../../verification/2026-10-06-macos-live-update-costs-cc/README.md)).
 

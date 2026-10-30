@@ -1,5 +1,5 @@
 {
-  "about": "The width declaration a column carries, with its bounds (ADR-0016). From tests/ExGrid.Tests/ColumnWidthTests.cs; printing is C#'s and stays there.",
+  "about": "The width declaration a column carries, with its bounds (ADR-0016). From dotnet/tests/ExGrid.Tests/ColumnWidthTests.cs; printing is C#'s and stays there.",
   "kind": "calls",
   "subject": "ColumnWidthSpec",
   "cases": [

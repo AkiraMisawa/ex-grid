@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
 </Project>

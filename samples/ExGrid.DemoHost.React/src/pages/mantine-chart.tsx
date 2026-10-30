@@ -10,8 +10,8 @@ import { MantineExGrid } from '@ex-grid/mantine';
 // goes: the other pages stay bare, and a spec file's document is the one it booted with once the page is left
 // (ADR-0056).
 import mantineStyles from '@mantine/core/styles.css?inline';
-import gridStyles from '../../../../src/npm/mantine/styles.css?inline';
-import chartStyles from '../../../../src/npm/chart-mantine/styles.css?inline';
+import gridStyles from '../../../../packages/mantine/styles.css?inline';
+import chartStyles from '../../../../packages/chart-mantine/styles.css?inline';
 import { DemoNav } from '../demo-nav';
 import { curveBridge, curveColumns, curveGroups, type CurveRow } from '../dock-curves';
 

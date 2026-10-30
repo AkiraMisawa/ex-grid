@@ -1,5 +1,5 @@
 {
-  "about": "The paste rules (ADR-0014) and the Editable declaration ahead of them (ADR-0035). From tests/ExGrid.Tests/PasteRuleTests.cs.",
+  "about": "The paste rules (ADR-0014) and the Editable declaration ahead of them (ADR-0035). From dotnet/tests/ExGrid.Tests/PasteRuleTests.cs.",
   "kind": "clipboard",
   "extent": [1000000, 50],
   "cases": [

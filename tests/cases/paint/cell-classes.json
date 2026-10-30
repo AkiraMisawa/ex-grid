@@ -1,5 +1,5 @@
 {
-  "about": "The class attribute a cell is painted with (ADR-0006, ADR-0016, ADR-0068, ADR-0332 §4): the DOM contract a replacement Chrome and a theme paint against, the same under every Framework Adapter (ADR-0350). From tests/ExGrid.Tests/CellStateTests.cs, MatchMarkClassesTests.cs and ChangeHighlightRulesTests.cs. The C# core's CellClasses is a static class; the Script Core's paint/cell-classes.ts is cellClasses under the name for. That every combination is a string of its own, and one held string, is checked by each language's own tests.",
+  "about": "The class attribute a cell is painted with (ADR-0006, ADR-0016, ADR-0068, ADR-0332 §4): the DOM contract a replacement Chrome and a theme paint against, the same under every Framework Adapter (ADR-0350). From dotnet/tests/ExGrid.Tests/CellStateTests.cs, MatchMarkClassesTests.cs and ChangeHighlightRulesTests.cs. The C# core's CellClasses is a static class; the Script Core's paint/cell-classes.ts is cellClasses under the name for. That every combination is a string of its own, and one held string, is checked by each language's own tests.",
   "kind": "scriptCalls",
   "subject": "CellClasses",
   "cases": [

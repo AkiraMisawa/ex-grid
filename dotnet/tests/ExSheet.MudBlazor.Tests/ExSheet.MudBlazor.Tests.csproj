@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The same shape as dotnet/tests/ExGrid.MudBlazor.Tests: net10.0 on xunit.v3 and
+         Microsoft.Testing.Platform, no apphost (dotnet/tests/Directory.Build.targets says why). It runs
+         ExSheet.MudBlazor on MudBlazor's floor, 9.6.0, as the Wrapper's tests do (ADR-0022,
+         ADR-0205): NuGet resolves the lowest version the Wrapper's range allows. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+    <RootNamespace>ExSheet.MudBlazor.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageReference Include="bunit" Version="2.9.0" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
+    <!-- Only so NoColourParameterTests reads every shipped component package at once (UX-1);
+         nothing here uses ExPivot, ExChart or ExBoard. -->
+    <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExBoard\ExBoard.csproj" />
+  </ItemGroup>
+
+</Project>

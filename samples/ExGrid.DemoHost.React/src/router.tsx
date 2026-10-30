@@ -1,6 +1,6 @@
 // The host's router: a page per path, as Routes.razor routes the Blazor hosts. A link inside the app is
 // followed without a load, as Blazor's are, and `exDemo.navigateTo` is the counterpart of
-// `Blazor.navigateTo` that layer 3 drives the app with (tests/ExGrid.Browser/fixtures.mjs).
+// `Blazor.navigateTo` that layer 3 drives the app with (tests/browser/fixtures.mjs).
 import { useEffect, useSyncExternalStore, type ReactElement } from 'react';
 
 const listeners = new Set<() => void>();

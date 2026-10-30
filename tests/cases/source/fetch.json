@@ -1,5 +1,5 @@
 {
-  "about": "GridSource.fetch (ADR-0025): the cold start, read-ahead, coalescing, discarding a superseded answer, a restart on a new Query, an answer that does not reach the rows the grid needs, and failures. Transcribed from tests/ExGrid.Tests/GridSourceFetchTests.cs.",
+  "about": "GridSource.fetch (ADR-0025): the cold start, read-ahead, coalescing, discarding a superseded answer, a restart on a new Query, an answer that does not reach the rows the grid needs, and failures. Transcribed from dotnet/tests/ExGrid.Tests/GridSourceFetchTests.cs.",
   "kind": "fetch",
   "columns": ["Book", "Desk"],
   "cases": [

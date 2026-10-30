@@ -6,7 +6,7 @@ how far along it is. Taken on **2026-09-01** (end of the core-completion run), b
 
 ```sh
 nix develop -c dotnet test ExGrid.slnx     # 412 + 306 pass, 0 failed, exit 0
-cd tests/ExGrid.Browser && npx playwright test --project=chrome   # 38 pass (Edge absent here)
+cd tests/browser && npx playwright test --project=chrome   # 38 pass (Edge absent here)
 ```
 
 **Later the same day, ADR-0035** (paste and fill respect the Editable declaration) added 7 layer-1
@@ -256,8 +256,8 @@ before it was built: ADR-0022 rewritten (the packages target `net10.0`), and add
 ADR-0005/0010/0018/0019/0021/0029/0033, the glossary's **Prerendered**, and the Definition
 of Done's A11Y-20, ED-22, CP-21..23, ST-5 and new §24 (SRV). Built:
 
-- `samples/ExGrid.DemoPages` holds the pages; the WebAssembly DemoHost only mounts them;
-  `samples/ExGrid.DemoHost.Server` serves them in `InteractiveServer` with prerendering
+- `dotnet/samples/ExGrid.DemoPages` holds the pages; the WebAssembly DemoHost only mounts them;
+  `dotnet/samples/ExGrid.DemoHost.Server` serves them in `InteractiveServer` with prerendering
   on. `/server` is `/fetch`; `/shared` is SRV-3's two-users-one-store page.
 - Paste crosses as JS stream references under `PasteByteCap` (CP-21/22); a clipboard write
   the browser rejects is `ClipboardUnavailable` (CP-23); a bundled Grid Source refuses a
@@ -288,7 +288,7 @@ it has met `chrome` or `msedge`.
   waiting for it and passing 8 of 8. None is the grid's.
   *(Since then the demo pages serve Roboto themselves, and nothing in layer 3 reaches a
   third-party host. The files are those Google Fonts serves, with its `@font-face` rules,
-  under `samples/ExGrid.DemoPages/wwwroot/fonts/roboto/` with the OFL. Loading it from
+  under `dotnet/samples/ExGrid.DemoPages/wwwroot/fonts/roboto/` with the OFL. Loading it from
   Google was only ever a way of getting the font the Wrapper's widths describe (ADR-0030),
   and it made the container's runs depend on an external host. The MudBlazor specs pass
   36 of 36 on each host with no request leaving localhost.)*
@@ -438,13 +438,13 @@ Chrome and Edge; CI's first run of the split jobs is.
 ## Not in the core, by decision
 
 - **0019 / 0030** `ExGrid.Fluxor` — not started. **`ExGrid.MudBlazor` exists** as the
-  proof of the Wrapper boundary (`src/ExGrid.MudBlazor`, `tests/ExGrid.MudBlazor.Tests`,
+  proof of the Wrapper boundary (`dotnet/src/ExGrid.MudBlazor`, `dotnet/tests/ExGrid.MudBlazor.Tests`,
   the `/mud` page and `mud.spec.mjs`): `MudExGridPaper` (elevation, corners, outline,
   bordered, a toolbar slot, Dense and Hover cascaded as defaults), Roboto's measured
   widths, the Visual Tokens mapped onto MudBlazor's palette variables in the Wrapper's
   stylesheet, and `MudGridChrome` filling two seams — the Cell Editor (a bare input in
   the core's box) and the loading bar. The filter panel and the column menu still fall
-  back to the core's. Nothing in `src/ExGrid` references MudBlazor (PRE-4).
+  back to the core's. Nothing in `dotnet/src/ExGrid` references MudBlazor (PRE-4).
 - ~~**Interactive mode's keyboard entry**~~ — **built** (2026-09-23), once
   [ADR-0037](adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)
   made the decision this entry said was missing: the core never reaches into content it
@@ -462,17 +462,17 @@ Chrome and Edge; CI's first run of the split jobs is.
 
 | Layer | | State |
 |---|---|---|
-| 1 | `tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
-| 2 | `tests/ExGrid.Components` | 43 files, **420 pass, 1 skipped by name** (2026-09-24): ST-1's 10⁶ case, which runs under `EXGRID_ST1_MILLION=1` (§22 Step 5). Including ST-1's randomised 500-operation run at 10³ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
-| 3 | `tests/ExGrid.Browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) had run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24). **Then in CI** (ADR-0041), on Linux, headed under xvfb, on the runner's installed `chrome` and `msedge`: **256 pass, 4 skipped** — VZ-14 and the soak, once per browser — on 2026-09-24, on PR #15's head and again on `main` after its merge. That is the first run of everything added on 2026-09-24 on the two target browsers |
+| 1 | `dotnet/tests/ExGrid.Tests` | 46 files, **449 pass** (2026-09-24) |
+| 2 | `dotnet/tests/ExGrid.Components` | 43 files, **420 pass, 1 skipped by name** (2026-09-24): ST-1's 10⁶ case, which runs under `EXGRID_ST1_MILLION=1` (§22 Step 5). Including ST-1's randomised 500-operation run at 10³ rows, MEM-1's allocation invariant, PF-3's `RenderAllocationTests`, MEM-3's `ResourceDisposalTests` and ADR-0037's `InteractiveTests` |
+| 3 | `tests/browser` | **6 specs, 140 pass** (2026-09-23) on `chrome` and `msedge` together, on Windows 11 at 150% scaling, including ADR-0037's tests and the new VZ-14 block. `scrollbar.spec.mjs` again at 125%, **8 pass** (2026-09-24) (see the Windows paragraph above). And on macOS, `chrome` only (Chrome 153, headed): **69 pass** on 2026-09-23 after the Cmd+Enter fix the Windows run could not have seen, and again on 2026-09-24 after the layer-2 harness's fixes, which touch the action buttons, the header and every cell's id — so those fixes have not yet met `msedge`. The harness's layer-3 half (**8 specs, 78 tests**) had run only on the container's bundled Chromium: **76 pass, 2 skipped**, and the soak separately (2026-09-24). **Then in CI** (ADR-0041), on Linux, headed under xvfb, on the runner's installed `chrome` and `msedge`: **256 pass, 4 skipped** — VZ-14 and the soak, once per browser — on 2026-09-24, on PR #15's head and again on `main` after its merge. That is the first run of everything added on 2026-09-24 on the two target browsers |
 | — | `verification/2026-09-01/` | layer logs + `results.md` with the pass/blocked ledger |
 | — | `verification/2026-09-23-windows/` | the Windows layer-3 run: `results.md`, the 150% and 125% logs, `metrics.json` |
 | — | `verification/2026-09-23-macos/`, `verification/2026-09-24-macos/` | the macOS `chrome` runs' `metrics.json` — the second with MEM-7 under `layer2` |
 
 **2026-09-24, PRE-4 rewritten.** Its check grepped all of `src/` for `Mud` and `Fluxor`. Since
-`src/ExGrid.MudBlazor/` lives there (ADR-0019), and a comment in the core names `MudDataGrid`,
+`dotnet/src/ExGrid.MudBlazor/` lives there (ADR-0019), and a comment in the core names `MudDataGrid`,
 the check as written could no longer pass, although the property held. It now names the core,
-`src/ExGrid/`: no project reference, and no `using` of `MudBlazor` or `Fluxor`. Both come back
+`dotnet/src/ExGrid/`: no project reference, and no `using` of `MudBlazor` or `Fluxor`. Both come back
 clean. The property is unchanged: the dependency points one way.
 
 ## What is left, in the order that costs least
@@ -599,7 +599,7 @@ clean. The property is unchanged: the dependency points one way.
    without waits for it. The line is `0.1.0-beta.N`, under MIT, published by Trusted
    Publishing. Built on 2026-09-24:
    - `LICENSE` and the package metadata;
-   - a readme per package, whose examples `tests/ExGrid.PackageSmoke` compiles from the packed
+   - a readme per package, whose examples `dotnet/tests/ExGrid.PackageSmoke` compiles from the packed
      packages;
    - the Wrapper's dependency on exactly its core version;
    - an XML doc comment on every public member;
@@ -771,7 +771,7 @@ are the core changes, and those do gate it.)*
 - **`ExPivot.MudBlazor`** draws every surface, including the toolbar, the Details tabs (in
   `MudTabs`) and the dialog's content.
 - **ExGrid's Change Highlight** (ADR-0068, DC-64 to DC-66).
-- **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
+- **The demo API server, `dotnet/samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
   cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
   Since 2026-10-26 its source also answers Level Aggregates and Sibling Windows (ADR-0370 section 3).
 - **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
@@ -782,7 +782,7 @@ dotnet test ExGrid.slnx                 # 5,384 pass, 0 failed; 8 skipped: the e
                                         # ExGrid 838 + 1,095, ExGrid.MudBlazor 91, ExSheet 1,969 + 290,
                                         # ExGrid.Data 248, ExGrid.Data.Arrow 182, ExPivot.Engine 304,
                                         # ExPivot 178, ExPivot.MudBlazor 53, the demo API server 136
-tests/ExGrid.PackageSmoke/check.sh      # passed: the data packages and ExPivot's in .pivot-feed, none in .feed
+dotnet/tests/ExGrid.PackageSmoke/check.sh      # passed: the data packages and ExPivot's in .pivot-feed, none in .feed
                                         # (one feed for all ten since 2026-10-03, ADR-0042)
 npx playwright test pivot.spec.mjs pivot-csv.spec.mjs pivot-db.spec.mjs pivot-live.spec.mjs \
     pivot-risk.spec.mjs grid-live.spec.mjs navigation.spec.mjs   # 80 pass on each host

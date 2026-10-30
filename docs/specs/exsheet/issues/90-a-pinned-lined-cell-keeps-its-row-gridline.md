@@ -21,13 +21,13 @@ under the lines with `--ex-tint`. The gridline needs the same.
 ### What was built
 
 The gridline is named in a custom property and painted as a layer, as ticket 81 did for the tint.
-- **The core** (`src/ExGrid/wwwroot/ex-grid.css`). `.ex-cell.ex-lined` gains one last layer,
+- **The core** (`dotnet/src/ExGrid/wwwroot/ex-grid.css`). `.ex-cell.ex-lined` gains one last layer,
   `var(--ex-row-rule, none)`: the row's rule, where a cell whose own ground hides the row's names
   it. It lies beneath every other layer: the lines, the tint, the covers (a neighbour's Fill over a
   gridline this cell holds) and the column rule. So a line on the gridline still covers it, and a
   Fill still covers it, as Excel's does. The core names no `--ex-row-rule` itself, so a bare
   ExGrid's lined cells paint as before.
-- **ExSheet** (`src/ExSheet/wwwroot/ex-sheet.css`). A Pinned Column's cell without a Fill names its
+- **ExSheet** (`dotnet/src/ExSheet/wwwroot/ex-sheet.css`). A Pinned Column's cell without a Fill names its
   gridline in `--ex-row-rule`, and paints `background-image: var(--ex-row-rule)`. Where the core's
   `.ex-lined` replaces that image, it now paints the same gridline at the bottom of its layers.
 

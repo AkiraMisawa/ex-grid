@@ -13,9 +13,9 @@ Status: done
 
 **Blocked by:** 01.
 
-**Settled while building (2026-10-21):** the package is `src/ExSheet.Xlsx`, net10.0, referencing
+**Settled while building (2026-10-21):** the package is `dotnet/src/ExSheet.Xlsx`, net10.0, referencing
 `ExGrid.Data.Xlsx` and `ExSheet.Engine` at exactly its own version and no component; it is packed and
-checked by `tests/ExGrid.PackageSmoke/check.sh` into `.feed-unreleased`, held back from the release
+checked by `dotnet/tests/ExGrid.PackageSmoke/check.sh` into `.feed-unreleased`, held back from the release
 with `ExGrid.Data.Xlsx` until ADR-0042 names them, and the trimmed round trip opens the workbook it
 writes through it. `XlsxWorkbookReader.ReadAsync(stream, culture, options, token)` returns an
 `XlsxOpenResult`: the `WorkbookDocument` and its `OpenReport` (`NotCarried`, each a `NotCarriedKind`

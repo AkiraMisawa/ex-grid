@@ -52,7 +52,7 @@ The rule each correction takes, not only the case:
   correction to `TEXT`. And one fraction does not pin Excel's approximation: which denominator it searches, and
   how it breaks a tie.
 
-Layer-1 tests: `tests/ExSheet.Engine.Tests/ObservedDatesAndTextTests.cs` (59 cases, each named with its ADR), and
+Layer-1 tests: `dotnet/tests/ExSheet.Engine.Tests/ObservedDatesAndTextTests.cs` (59 cases, each named with its ADR), and
 the corpus theories over the changed files.
 
 ## For a run: the `uncertain` cases this area adds
@@ -130,7 +130,7 @@ Under **What differs from Excel, by decision**, after its paragraph:
 > `1234,5000`, because it reads `,` as its decimal separator and `.` as its grouping, so the invariant code is
 > another code to it. ExSheet shows `1.234,50`. The case records Excel's answer beside ExSheet's (TEXTFN-009).
 
-## `src/ExSheet.Engine/README.md`
+## `dotnet/src/ExSheet.Engine/README.md`
 
 In the bullet **`TEXT` reads its code in the invariant spelling**, replace its last sentence ("A code outside the
 cell formats' subset, an empty code, and `General` past 11 characters are `#VALUE!`.") with:
@@ -160,7 +160,7 @@ EOMONTH-009, WORKDAY-005), and add a bullet of its own beside the `YEARFRAC` and
 
 **No sentence on the site is made false.** `/exsheet/functions` lists each function's name, arguments and
 description, and none of those changes. `/exsheet/formulas#supported-functions` lists refusals, and names none
-of the ones this changes. One addition is proposed, to that list on `samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`,
+of the ones this changes. One addition is proposed, to that list on `dotnet/samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`,
 because `TEXT`'s refusal of fractions and conditions is now a known difference from Excel:
 
 > **`TEXT`** reads its code in the invariant spelling and shows what a cell in that format would show, under the

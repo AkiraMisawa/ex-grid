@@ -1,5 +1,5 @@
 {
-  "about": "A Chart Spec of a 3D surface, on a grid or a mesh, and a series' intervals (ADR-0320, ADR-0274, ADR-0303, ADR-0304, ADR-0310, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/ChartSpecSurfaceTests.cs.",
+  "about": "A Chart Spec of a 3D surface, on a grid or a mesh, and a series' intervals (ADR-0320, ADR-0274, ADR-0303, ADR-0304, ADR-0310, ADR-0311, ADR-0312), from dotnet/tests/ExChart.Engine.Tests/ChartSpecSurfaceTests.cs.",
   "kind": "chart",
   "tables": {
     "vols": {

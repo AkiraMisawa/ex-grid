@@ -5,7 +5,7 @@ are on the branch. What follows is the text this area would put into files a bac
 ADR-0047, the Definition of Done, the engine's README, the function catalogue (`spec.md`) and the Docs
 Site. Each block is written to be pasted; the sentence it replaces is quoted where there is one.
 
-Evidence: E1 = `tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-11-run17-update-en-US.json`,
+Evidence: E1 = `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/results-2026-10-11-run17-update-en-US.json`,
 E2 = `…-run17-update-revision-en-US.json`, E3 = `…-run17-update-aggregate-new.json`, and
 `verification/2026-10-11-windows-17/report.md` (Part A's "Every disagreement", Part B's b4).
 
@@ -82,7 +82,7 @@ does not support." with:
 and append to the dated italic note: *"(2026-10-12: the seventeenth run read it — 6, counted — and the
 engine follows Excel, ADR-0047's note of that date.)"*
 
-## 3. The engine's README (`src/ExSheet.Engine/README.md`)
+## 3. The engine's README (`dotnet/src/ExSheet.Engine/README.md`)
 
 - In "**Asked of Excel before they are answered**", remove "`MOD` whose quotient is 2^27 or more (`#NUM!`,
   as older versions of Excel gave);" and replace "`LARGE` and `SMALL` with a `k` that is not a whole

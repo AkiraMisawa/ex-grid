@@ -1,5 +1,5 @@
 {
-  "about": "The per-character-class estimate (ADR-0016), its bold widths (ADR-0050 item 15) and the other class and glyph table (ticket 83). From tests/ExGrid.Tests/CellTextMetricsClassTests.cs, BoldWidthTests.cs, OtherClassTests.cs and GlyphWidthTableTests.cs; what needs the resolved Grid Metrics stays there until they are shared.",
+  "about": "The per-character-class estimate (ADR-0016), its bold widths (ADR-0050 item 15) and the other class and glyph table (ticket 83). From dotnet/tests/ExGrid.Tests/CellTextMetricsClassTests.cs, BoldWidthTests.cs, OtherClassTests.cs and GlyphWidthTableTests.cs; what needs the resolved Grid Metrics stays there until they are shared.",
   "kind": "calls",
   "subject": "CellTextMetrics",
   "cases": [

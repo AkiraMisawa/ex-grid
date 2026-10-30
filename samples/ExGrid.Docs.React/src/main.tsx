@@ -4,15 +4,15 @@
 // component; the site shows the same file as the Example's code.
 import { StrictMode, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
-import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
-import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
-import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
-import '../../../src/ExChart/wwwroot/ex-chart.min.css';
+import '../../../dotnet/src/ExGrid/wwwroot/ex-grid.min.css';
+import '../../../dotnet/src/ExSheet/wwwroot/ex-sheet.min.css';
+import '../../../dotnet/src/ExPivot/wwwroot/ex-pivot.min.css';
+import '../../../dotnet/src/ExChart/wwwroot/ex-chart.min.css';
 import './frame.css';
 import { chromeFrame, chromeOf } from './chrome-frame';
 
-const examples = import.meta.glob<{ readonly default: ComponentType }>('../../ExGrid.Docs/Examples/**/*.tsx');
-const prefix = '../../ExGrid.Docs/Examples/';
+const examples = import.meta.glob<{ readonly default: ComponentType }>('../../../dotnet/samples/ExGrid.Docs/Examples/**/*.tsx');
+const prefix = '../../../dotnet/samples/ExGrid.Docs/Examples/';
 
 const query = new URLSearchParams(location.search);
 const name = query.get('example');

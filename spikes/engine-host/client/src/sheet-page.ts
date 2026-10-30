@@ -8,7 +8,7 @@
 // What is timed is what a Consumer of ExSheet's Script Core would see: the keystroke, the edit crossing to
 // the Worker, its recalculation, the Window of Values crossing back, and the grid's paint.
 
-import { createGrid, type GridColumn } from '../../../../src/npm/core/src/index';
+import { createGrid, type GridColumn } from '../../../../packages/core/src/index';
 import { EngineClient } from './engine-client';
 import { EngineWindowSource, type WindowAnswer } from './engine-window-source';
 import { recordBoot, waitForPaint } from './boot';

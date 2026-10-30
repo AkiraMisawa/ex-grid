@@ -2,7 +2,7 @@
 
 Branch `claude/run17-records-and-widths`. The corpus, the engine's width rule and their tests are
 changed on the branch; nothing here is. Each item below is text for a file a background agent does
-not change (an ADR, the Definition of Done, `src/ExSheet/README.md`, the Docs Site), written in the
+not change (an ADR, the Definition of Done, `dotnet/src/ExSheet/README.md`, the Docs Site), written in the
 repository's voice, with where it goes.
 
 There were no research-then-follow cases in this area: every case was a record, a carried difference
@@ -72,7 +72,7 @@ SH-26's requirement, after "a user's width replaces an entry's, never the revers
 SH-26's verification column: "Layer 1 against the case corpus (CW-018, 021 to 029); Layer 2". Once the
 next keys run has asked CW-030 to 032, add them.
 
-## 4. `src/ExSheet/README.md`, the column-widths paragraph
+## 4. `dotnet/src/ExSheet/README.md`, the column-widths paragraph
 
 Replace its last sentence ("A width an entry or a Number Format widened … nothing widens that
 column.") with:
@@ -99,7 +99,7 @@ CW-030, CW-031 and CW-032 are `uncertain`, typed cases that ask whether each kin
 says after an insertion or a deletion. ADR-0208 needs them asked before a version without a suffix:
 
 ```powershell
-pwsh tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1 -Keys -Area column-widths -Update
+pwsh dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1 -Keys -Area column-widths -Update
 ```
 
 under en-US, with nothing else taking the foreground. The same call asks CW-021 to 025 again by keys,
@@ -115,6 +115,6 @@ which agreed by hand in b10. CW-026 is blocked by its undo, and stays observed f
   "the check column's width after every typed entry"; the harness and `oracle.ps1` read it once, when the case is
   read, as `column-widths.json`'s `about` says, and the comments now say so.
 - **Two files outside the area's list**, doc comments only, because the rule change made them false:
-  `src/ExSheet.Engine/Sheet.Structure.cs` (`InsertColumns`' summary said an inserted column takes the
-  width "automatic or custom as it is") and `src/ExSheet.Engine/SheetColumnWidth.cs`
+  `dotnet/src/ExSheet.Engine/Sheet.Structure.cs` (`InsertColumns`' summary said an inserted column takes the
+  width "automatic or custom as it is") and `dotnet/src/ExSheet.Engine/SheetColumnWidth.cs`
   (`SheetColumnWidthKind.SetByUser` now names the inserted column).

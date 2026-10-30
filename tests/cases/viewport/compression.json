@@ -1,5 +1,5 @@
 {
-  "about": "The one mapping between the scroll offset the browser holds and the content offset the rows are computed from, above the Layout Ceiling: by default a million rows of 28px in 572px under the 22,369,618px ceiling Chrome lays out at 150%. From tests/ExGrid.Tests/ViewportCompressionTests.cs; its properties over many offsets stay there and in viewport-compression.test.ts.",
+  "about": "The one mapping between the scroll offset the browser holds and the content offset the rows are computed from, above the Layout Ceiling: by default a million rows of 28px in 572px under the 22,369,618px ceiling Chrome lays out at 150%. From dotnet/tests/ExGrid.Tests/ViewportCompressionTests.cs; its properties over many offsets stay there and in viewport-compression.test.ts.",
   "kind": "calls",
   "subject": "ViewportGeometry",
   "defaults": {"rowHeightPx": 28, "viewportHeightPx": 572, "totalRowCount": 1000000, "scrollRoomPx": 22369618},

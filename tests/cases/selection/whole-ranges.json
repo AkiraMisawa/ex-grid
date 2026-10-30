@@ -1,5 +1,5 @@
 {
-  "about": "Whole columns stay whole and whole rows stay whole (ADR-0012, decided 2026-09-25), Shift+click on a header selects whole columns, and the whole columns resizing acts on (ADR-0016). From tests/ExGrid.Tests/WholeRangeSelectionTests.cs.",
+  "about": "Whole columns stay whole and whole rows stay whole (ADR-0012, decided 2026-09-25), Shift+click on a header selects whole columns, and the whole columns resizing acts on (ADR-0016). From dotnet/tests/ExGrid.Tests/WholeRangeSelectionTests.cs.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

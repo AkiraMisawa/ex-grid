@@ -1,5 +1,5 @@
 {
-  "about": "What a scrollbar takes out of the Viewport, and what it must not take. From tests/ExGrid.Tests/ViewportBoxTests.cs.",
+  "about": "What a scrollbar takes out of the Viewport, and what it must not take. From dotnet/tests/ExGrid.Tests/ViewportBoxTests.cs.",
   "kind": "scriptCalls",
   "subject": "ViewportBox",
   "cases": [

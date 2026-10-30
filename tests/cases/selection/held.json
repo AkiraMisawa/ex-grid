@@ -1,5 +1,5 @@
 {
-  "about": "A selection held with the Row Sequence Version it was made under: dropped, never remapped, when the version changes (ADR-0011). From tests/ExGrid.Tests/HeldSelectionTests.cs.",
+  "about": "A selection held with the Row Sequence Version it was made under: dropped, never remapped, when the version changes (ADR-0011). From dotnet/tests/ExGrid.Tests/HeldSelectionTests.cs.",
   "kind": "held",
   "extent": [10, 5],
   "cases": [

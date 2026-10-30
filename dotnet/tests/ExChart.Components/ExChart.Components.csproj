@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- The same shape as dotnet/tests/ExPivot.Components: net10.0 on xunit.v3 and
+         Microsoft.Testing.Platform, no apphost (dotnet/tests/Directory.Build.targets says why). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+    <AssemblyName>ExChart.Components.Tests</AssemblyName>
+    <RootNamespace>ExChart.Components.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageReference Include="bunit" Version="2.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
+    <!-- The Wrapper is tested here too, beside the core it must not change (ADR-0281). -->
+    <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The stream a held message crosses as, as the grid's paste tests stand it in. -->
+    <Compile Include="..\ExGrid.Components\Support\FakeJSStream.cs" Link="Support\FakeJSStream.cs" />
+  </ItemGroup>
+
+</Project>

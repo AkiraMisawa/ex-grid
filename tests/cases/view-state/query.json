@@ -1,5 +1,5 @@
 {
-  "about": "Reading a Query's JSON alone (ADR-0207, FN-13): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "about": "Reading a Query's JSON alone (ADR-0207, FN-13): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again. Transcribed from dotnet/tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
   "kind": "viewStateJson",
   "columns": [],
   "cases": [

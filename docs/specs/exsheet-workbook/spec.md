@@ -79,7 +79,7 @@ a Workbook of one Sheet.
 - **Seams**: the engine's `Workbook` (layer 1, xUnit) for computation, References across Sheets, Sheet operations and their undo, and the Workbook Document; the `ExSheet` component (layer 2, bUnit) for the tabs, view state, parameters and commands; layer 3 (Playwright) for keys, Input Order at machine speed, focus, pointing across tabs and both Chromes.
 - Tests assert behaviour through those public surfaces only, and name their ADR (`ADR-0331`).
 - Expected values come from Excel: the existing case corpus style for Formulas, and Windows-run readings for what Excel was asked (ticket 12).
-- Prior art: the engine's `Sheet` tests under `tests/ExSheet.Engine.Tests`, the component tests under `tests/ExSheet.Components`, and ExPivot's details tabs in layer 3.
+- Prior art: the engine's `Sheet` tests under `dotnet/tests/ExSheet.Engine.Tests`, the component tests under `dotnet/tests/ExSheet.Components`, and ExPivot's details tabs in layer 3.
 
 ## Out of Scope
 

@@ -1,5 +1,5 @@
 {
-  "about": "Enter and Tab cycling, transcribed from ADR-0012's diagram, whose range B2:D4 is rows 1 to 3 by columns 1 to 3. From tests/ExGrid.Tests/SelectionCyclingTests.cs.",
+  "about": "Enter and Tab cycling, transcribed from ADR-0012's diagram, whose range B2:D4 is rows 1 to 3 by columns 1 to 3. From dotnet/tests/ExGrid.Tests/SelectionCyclingTests.cs.",
   "kind": "selection",
   "extent": [10, 10],
   "cases": [

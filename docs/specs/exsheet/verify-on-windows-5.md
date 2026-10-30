@@ -17,7 +17,7 @@ first. Reuse the scripts in `verification/2026-09-29-windows-4/` and
   and record that tip as the verified commit of every part. If the tip moves during the run, do not
   merge it in.
 - Build, then run layers 1–2 in WSL. Record the counts.
-- Run `npm ci` afresh in the Windows copy of `tests/ExGrid.Browser`.
+- Run `npm ci` afresh in the Windows copy of `tests/browser`.
 - **The user has authorised this run in advance**, as for the fourth: real keys and mouse to Excel
   and the browsers, and `Set-Culture` for as long as the oracle needs. Restore the format afterwards
   and check it byte for byte against an export taken first. **Do not stop to ask.** Say "starting"

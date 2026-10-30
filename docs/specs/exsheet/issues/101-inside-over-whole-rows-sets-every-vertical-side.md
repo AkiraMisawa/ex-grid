@@ -21,7 +21,7 @@ ADR-0071, "What the fourteenth Windows run settled", ticket 57's model.
 *(2026-10-02, agent cf-100.)* Built in the engine.
 
 - **Where.**
-  - `BorderChange.On(CellRange)` is new and internal (`src/ExSheet.Engine/CellFormatChange.cs`).
+  - `BorderChange.On(CellRange)` is new and internal (`dotnet/src/ExSheet.Engine/CellFormatChange.cs`).
     Over whole rows short of the whole Sheet, a change that sets no left edge takes the inside
     vertical line as its left edge.
   - `Sheet.ApplyCellFormat` sets every change through it.

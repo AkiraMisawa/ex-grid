@@ -221,7 +221,7 @@ It is the same observer, on the layer's own attributes, and reads no layout. DC-
       and dispose;
     - the pointed shades as layer properties (DC-56);
     - a new test for the forced-colours block.
-  - The layer-2 tests that read a layer's markup now read it through `tests/ReferenceText/ColouredText.cs`,
+  - The layer-2 tests that read a layer's markup now read it through `dotnet/tests/ReferenceText/ColouredText.cs`,
     linked into the three test projects. It writes the layer's colouring back as the markup the
     tests already expected. It also checks the colouring is consistent: one run, a pointed shade
     exactly on the grey, and every name the grid's own. Every expected string is unchanged.

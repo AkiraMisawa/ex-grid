@@ -33,7 +33,7 @@ The ticket's "`@` belongs in the fourth section" is not the record's. It is the 
 
 ### What was built
 
-`NumberFormat` (`src/ExSheet.Engine/NumberFormat.cs`):
+`NumberFormat` (`dotnet/src/ExSheet.Engine/NumberFormat.cs`):
 - **A text section may end a format of two or three sections**, as it may end a format of one or
   four. `@` in any other section is still refused, now as "@ belongs in the last section."
 - **Such a section is the format's text section and shows no number.** The sections before it are

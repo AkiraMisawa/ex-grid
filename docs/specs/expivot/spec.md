@@ -200,16 +200,16 @@ All of these are recorded in the ADRs; they are summarised here.
 ## Testing Decisions
 
 - **Layer 1** holds the engine and the bundled source to Excel and to themselves, in
-  `tests/ExPivot.Engine.Tests`, with one named test per rule.
+  `dotnet/tests/ExPivot.Engine.Tests`, with one named test per rule.
   - A property test holds live folding to a fresh aggregation.
   - The Pivot Source's answers are held equal across `From`, `Fetch` and the demo's SQL source.
-- **Layer 2** holds the component, in `tests/ExPivot.Components`, through the built-in markup and a
+- **Layer 2** holds the component, in `dotnet/tests/ExPivot.Components`, through the built-in markup and a
   substituted Chrome.
   - It drives the asking with a source that answers on demand, and the time with a fake
     `TimeProvider`.
-  - `tests/ExPivot.MudBlazor.Tests` runs the same through MudBlazor's controls.
+  - `dotnet/tests/ExPivot.MudBlazor.Tests` runs the same through MudBlazor's controls.
   - Render counts hold PV-15.
-- **Layer 3** (`tests/ExGrid.Browser`) drags in a real browser and runs the six pages under both
+- **Layer 3** (`tests/browser`) drags in a real browser and runs the six pages under both
   Chromes on both hosts, with the demo API server started by the run.
 - **Excel's behaviour was read, not yet observed.** `excel-behaviours.md` lists every reading, to be
   run beside Excel on Windows, as ExSheet's readings were.

@@ -1,5 +1,5 @@
 {
-  "about": "What a surface's 3D entry is handed to draw: the nodes placed on each scale, the faces and their colour bands, the floor's lines, the vertical scale and the colour bar (ADR-0255, ADR-0274, ADR-0310, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
+  "about": "What a surface's 3D entry is handed to draw: the nodes placed on each scale, the faces and their colour bands, the floor's lines, the vertical scale and the colour bar (ADR-0255, ADR-0274, ADR-0310, ADR-0311, ADR-0312), from dotnet/tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
   "kind": "chart",
   "definitions": {
     "vol": {

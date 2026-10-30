@@ -1,5 +1,5 @@
 {
-  "about": "GridSource.from (ADR-0001, ADR-0007, ADR-0009, ADR-0011, ADR-0023): every row in hand, the Window the whole result, a Sort and a Filter applied by the source, an Edit Intent's replacement, and a column's value list. From tests/ExGrid.Tests/GridSourceFromTests.cs, GridSourceContractTests.cs, ReplaceRowTests.cs and DistinctValueTests.cs.",
+  "about": "GridSource.from (ADR-0001, ADR-0007, ADR-0009, ADR-0011, ADR-0023): every row in hand, the Window the whole result, a Sort and a Filter applied by the source, an Edit Intent's replacement, and a column's value list. From dotnet/tests/ExGrid.Tests/GridSourceFromTests.cs, GridSourceContractTests.cs, ReplaceRowTests.cs and DistinctValueTests.cs.",
   "kind": "source",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}],
   "cases": [

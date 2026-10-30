@@ -46,7 +46,7 @@ share of Excel's centred line from edges resolved once per row outside the rende
 
 ### What was built
 
-- **The declaration** (`src/ExGrid/Cells/CellAppearance.cs`; parameters on `ExGrid<TRow>`):
+- **The declaration** (`dotnet/src/ExGrid/Cells/CellAppearance.cs`; parameters on `ExGrid<TRow>`):
   - `CellAppearanceOf<TRow>`, `CellAppearance (TRow row, GridColumn<TRow> column)`, as the
     `CellAppearance` parameter. Null by default, and then nothing is painted for it (DC-1: no
     `<style>`, no class, every row's `Appearance` null).

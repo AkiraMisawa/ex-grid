@@ -1,9 +1,0 @@
-{
-  // The sources, the tests and the differential runs, for the editor and for `npm run typecheck`.
-  "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node"],
-    "resolveJsonModule": true
-  },
-  "include": ["src", "test", "differential", "*.config.ts"]
-}

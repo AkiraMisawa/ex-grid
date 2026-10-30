@@ -18,13 +18,13 @@ Branch: `claude/exsheet-start-8cx3v1`. Commit what you record there, in English,
 
 - `git clone` the repository and check out `claude/exsheet-start-8cx3v1`.
 - **.NET SDK 10** (`winget install Microsoft.DotNet.SDK.10`). `nix` is not used on Windows; run
-  `dotnet` directly wherever `AGENTS.md` writes `nix develop -c dotnet`.
-- **Node 26.12.1** (the security release of 2026-10-21; `.node-version` names it; 22.23.4 or 24.22.1 also work), then `npm ci` in `tests/ExGrid.Browser`.
+  `dotnet` directly, in `dotnet/`, wherever `AGENTS.md` writes `nix develop -c bash -c 'cd dotnet && dotnet …'`.
+- **Node 26.12.1** (the security release of 2026-10-21; `.node-version` names it; 22.23.4 or 24.22.1 also work), then `npm ci` at the repository's root, the npm workspace layer 3 is a member of.
 - **Google Chrome and Microsoft Edge**, installed normally: the suite drives the installed
   browsers, not downloaded ones (ADR-0026).
 - **Excel desktop (Microsoft 365)**. Record its version and build (File → Account → About Excel),
   and Windows' display language and regional format.
-- Sanity check: `dotnet build ExGrid.slnx` gives 0 warnings, and `dotnet test ExGrid.slnx` is green.
+- Sanity check: in `dotnet/`, `dotnet build ExGrid.slnx` gives 0 warnings, and `dotnet test ExGrid.slnx` is green.
 
 ## Part A — Excel as the oracle
 
@@ -32,15 +32,15 @@ ADR-0047 admits a function only when it gives Excel's answer, and the engine was
 Excel to ask. Part A asks.
 
 **How.** The engine's tests and Excel read **one corpus of cases**:
-`tests/ExSheet.Engine.Tests/ExcelCases/*.json`, one file per area (arithmetic, errors, each function,
+`dotnet/tests/ExSheet.Engine.Tests/ExcelCases/*.json`, one file per area (arithmetic, errors, each function,
 dates, number formats, typed constants, structure, fill, copy, Linked Tables, …). Each case says what
 is entered, what is done, which cell is checked, and what is expected there as Excel's `Value2`,
 `Text` or `Formula` would give it, with a `source`: `documented`, `observed` or `uncertain`.
-`ExcelCaseTests` runs every case against the engine; **`tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`
+`ExcelCaseTests` runs every case against the engine; **`dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`
 runs every case against Excel through COM.** Run the whole corpus with it, not only ticket 19:
 
 ```powershell
-pwsh tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1           # all cases; -Area / -Id narrow it
+pwsh dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1           # all cases; -Area / -Id narrow it
 ```
 
 - **The script has never been run.** It was written in a container without Excel. Expect to fix
@@ -66,7 +66,7 @@ pwsh tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1           # all cases; -A
   through COM's `AutoFill`, which selects nothing. Ask the user to do it by hand and describe
   what they see, and record it as observed by hand.
 
-**The results.** The script writes `tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>.json`:
+**The results.** The script writes `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>.json`:
 per case, Excel's answer, what was expected, and `agree`, `disagree`, `blocked` or `recorded`, with
 the Excel version and build and the machine's regional format. **Commit the results file.** Then
 run it again with `-Update`, which rewrites `source` to `observed` for the agreeing cases only, and
@@ -119,7 +119,7 @@ those, and the items below ask what the corpus cannot express.
 - Ticket 19's table, for its rows.
 - `verification/<date>-windows-excel/results.md` for items 2–10. Give one section per item, with
   the inputs, what Excel did, and what the engine does today. The engine's current behaviour is
-  in the tests under `tests/ExSheet.Engine.Tests`, and in the `## Comments` of tickets 13–16.
+  in the tests under `dotnet/tests/ExSheet.Engine.Tests`, and in the `## Comments` of tickets 13–16.
 
 **Do not change the engine.** Where Excel disagrees, say so in `results.md` under a heading
 "Disagreements", and name the ticket and the ADR it touches.
@@ -130,7 +130,7 @@ The Linux container ran the existing browser suite on Chromium only, with no Edg
 passed on the WebAssembly host and 204 on the Server host, 0 failed. ADR-0017 needs both
 browsers, and ADR-0026 runs them on the machine's own Windows scrollbars.
 
-- From `tests/ExGrid.Browser`, follow `docs/definition-of-done.md` §22 Step 4 as it is written:
+- From `tests/browser`, follow `docs/definition-of-done.md` §22 Step 4 as it is written:
   `npx playwright test`, then `EXGRID_HOSTING=server npx playwright test`. Tee each into
   `verification/<date>-windows/`.
 - Write `verification/<date>-windows/results.md` in the shape of

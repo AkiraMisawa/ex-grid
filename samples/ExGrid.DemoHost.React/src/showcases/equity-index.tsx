@@ -13,7 +13,7 @@ import { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
 import { indexDataBars, indexDataName, intervalDataCurve, intervalDataForecasts, intervalDataStrategies, type IndexBar } from './data';
 import { dayNumberOf, fixed, grouped, numberOf } from './format';
-import barsSource from '../../../ExChart.Showcases/IndexBarsView.razor?raw';
+import barsSource from '../../../../dotnet/samples/ExChart.Showcases/IndexBarsView.razor?raw';
 import { razorStyle, ShowcaseShell, Views } from './shell';
 
 const name = indexDataName;

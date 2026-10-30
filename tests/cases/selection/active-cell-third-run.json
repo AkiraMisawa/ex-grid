@@ -1,5 +1,5 @@
 {
-  "about": "ADR-0052's 'What the third run settled', key for key from Excel's sequences in verification/2026-09-28-windows-excel-3/active-cell.md, items 1 to 4 (SL-5, KB-43). A selection is compared with Excel's Selection.Address, range by range, in its order. From tests/ExGrid.Tests/ActiveCellThirdRunTests.cs.",
+  "about": "ADR-0052's 'What the third run settled', key for key from Excel's sequences in verification/2026-09-28-windows-excel-3/active-cell.md, items 1 to 4 (SL-5, KB-43). A selection is compared with Excel's Selection.Address, range by range, in its order. From dotnet/tests/ExGrid.Tests/ActiveCellThirdRunTests.cs.",
   "kind": "selection",
   "extent": [1000, 60],
   "cases": [

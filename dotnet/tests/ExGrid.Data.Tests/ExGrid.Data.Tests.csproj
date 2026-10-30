@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Mirrors dotnet/tests/ExPivot.Engine.Tests: net10.0 (ADR-0022), xunit v3 on Microsoft.Testing.Platform,
+         and no native apphost (dotnet/tests/Directory.Build.targets has the account). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shared Change Batch cases (ADR-0370 section 5): written once as data, run here against
+         ExGrid.Data and by Vitest against @ex-grid/data. tests/cases/README.md says what a file holds. -->
+    <None Include="..\..\..\tests\cases\data\**\*" Link="cases\data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

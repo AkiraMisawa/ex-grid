@@ -9,7 +9,7 @@ declared range is unchanged on the branch: each Wrapper still takes `[9.0.0,10.0
 > branch carries what (B) lists. ADR-0022's rule covers the Wrappers' floor, with a note that a `0.x`
 > prerelease line may raise it (§3, the first reading). The floor run goes into the Definition of Done
 > as §6(a) and §6(b) with F = 9.6.0, a record holding while `src/*.MudBlazor/` and
-> `samples/ExGrid.DemoPages/` are unchanged up to X (§6, the second reading), and §6(c)'s layer 2
+> `dotnet/samples/ExGrid.DemoPages/` are unchanged up to X (§6, the second reading), and §6(c)'s layer 2
 > across the range joins it. §7's layer-2 guard is added, with a test for §2.4. The ADR and Definition
 > of Done edits are in `docs/agents/proposals/mudblazor-range-floor-apply.md`. What follows is the
 > proposal as the user read it.
@@ -177,7 +177,7 @@ What it costs:
 
 What changes, all small and on this branch if the user decides it:
 
-- The three Wrapper projects: `[9.6.0,10.0.0)`. `tests/ExGrid.PackageSmoke/check.sh` asserts
+- The three Wrapper projects: `[9.6.0,10.0.0)`. `dotnet/tests/ExGrid.PackageSmoke/check.sh` asserts
   `[9.6.0, 10.0.0)` in each `.nuspec`.
 - The Wrappers' layer-2 suites then run at 9.6.0, since NuGet resolves the lowest version a range allows
   (§7): the floor is exercised by every layer-2 run, not only by the floor run.
@@ -195,9 +195,9 @@ What changes, all small and on this branch if the user decides it:
   `[9.6.0,10.0.0)`" and "the floor is run … pinned to the floor every Wrapper declares", with a note of
   what changed and why: the floor run of 2026-10-12 failed at 9.0.0, the lowest passing 9.x was 9.6.0,
   and the record names the MudBlazor changes.
-- **Two comments that name the floor** say 9.6.0: `samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj`
+- **Two comments that name the floor** say 9.6.0: `dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj`
   ("The latest MudBlazor, above the Wrapper's 9.0.0 floor on purpose") and
-  `tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj` ("It runs ExSheet.MudBlazor on
+  `dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj` ("It runs ExSheet.MudBlazor on
   MudBlazor's floor, 9.0.0, as the Wrapper's tests do (ADR-0022)").
 - **ADR-0022, a question for the user.** The Wrappers take their floor by ADR-0022's rule:
   `ExGrid.MudBlazor.csproj` calls its range "ADR-0022's rule applied to the one dependency this package
@@ -282,24 +282,24 @@ config and every project in it, like the rest of Step 4; nothing in it points at
 > built from clean, and the version each will load is read back before the run:
 >
 > ```sh
-> sed -i -E 's|(Include="MudBlazor" Version=")[^"]*"|\1F"|' samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
-> rm -rf samples/ExGrid.DemoHost/bin samples/ExGrid.DemoHost/obj/Debug \
->        samples/ExGrid.DemoHost.Server/bin samples/ExGrid.DemoHost.Server/obj/Debug
-> nix develop -c dotnet build samples/ExGrid.DemoHost
-> nix develop -c dotnet build samples/ExGrid.DemoHost.Server
-> nix develop -c dotnet build samples/ExGrid.DemoApi
+> sed -i -E 's|(Include="MudBlazor" Version=")[^"]*"|\1F"|' dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
+> rm -rf dotnet/samples/ExGrid.DemoHost/bin dotnet/samples/ExGrid.DemoHost/obj/Debug \
+>        dotnet/samples/ExGrid.DemoHost.Server/bin dotnet/samples/ExGrid.DemoHost.Server/obj/Debug
+> nix develop -c dotnet build dotnet/samples/ExGrid.DemoHost
+> nix develop -c dotnet build dotnet/samples/ExGrid.DemoHost.Server
+> nix develop -c dotnet build dotnet/samples/ExGrid.DemoApi
 > # both name F
-> strings -el samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot/_framework/MudBlazor.*.wasm | grep -A1 '^FileVersion'
-> strings -el samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'
+> strings -el dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot/_framework/MudBlazor.*.wasm | grep -A1 '^FileVersion'
+> strings -el dotnet/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'
 >
-> cd tests/ExGrid.Browser
+> cd tests/browser
 > G="[Mm]ud|is not the grid's \(KB-35|apply the condition \(KB-31, SRV-5\)|Escape, Escape straight after an Inner Popup|a menu taking the keyboard a round trip late|with and without a Wrapper|SH-46/DC-59: the Selection's outline|the palette reaches the pane|RI-3: every page opens|inspectors\.spec\.mjs|WR-7a|DC-58: a bold number that fits"
 > # every project: chrome, msedge, and chrome-150's Wrapper tests
 > npx playwright test --grep "$G" 2>&1 | tee ../../verification/<date>/mudblazor-floor.log
 > EXGRID_HOSTING=server npx playwright test --grep "$G" 2>&1 \
 >   | tee ../../verification/<date>/mudblazor-floor-server.log
 > cd ../..
-> git checkout -- samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
+> git checkout -- dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
 > ```
 >
 > `G` is the tests that run under a Wrapper: those whose file, `describe` or title names MudBlazor or
@@ -333,7 +333,7 @@ the Wrappers change after it. Two readings:
   written against an API MudBlazor added after the floor, which is what a floor run is for.
 - **At X, or on a commit whose Wrappers and demo pages are unchanged by X** — the ADR-0208 shape
   (a record holds while its code is unchanged), with the paths `src/*.MudBlazor/` and
-  `samples/ExGrid.DemoPages/`. It would need ADR-0205 noted, since it narrows "once".
+  `dotnet/samples/ExGrid.DemoPages/`. It would need ADR-0205 noted, since it narrows "once".
 
 **This record does not discharge the step under either reading, at 9.6.0 or at any version.** It is a
 bisection on Playwright's bundled Chromium 141, run as the one `chrome` project through a config that is
@@ -367,7 +367,7 @@ ADR-0205's "the floor is run once", so it is the user's to decide, and ADR-0205 
 - **The Wrappers' layer-2 suites already run at the floor.** `ExGrid.MudBlazor.Tests`,
   `ExSheet.MudBlazor.Tests` and `ExPivot.MudBlazor.Tests` reference the Wrapper projects and nothing
   else that brings MudBlazor, so NuGet resolves the lowest version the range allows, as it did for the
-  old `9.0.0` reference. The same holds for `tests/ExGrid.PackageSmoke`. Only the DemoPages (and the
+  old `9.0.0` reference. The same holds for `dotnet/tests/ExGrid.PackageSmoke`. Only the DemoPages (and the
   Docs Site) pin a later 9.x.
 - **bUnit cannot see §2.2's focus loss, but it can see §2.1's missing role and name, and it saw §2.4.**
   *(Corrected after the review: this said bUnit could see neither failure of §2.)* Which element holds
@@ -394,7 +394,7 @@ ADR-0205's "the floor is run once", so it is the user's to decide, and ADR-0205 
   (its two DevTools commands sent at once), and the fix that makes the outcome deterministic. `main` has
   changed the grid's script and ExSheet since `0c0ab368` (#81, #86's "a scripted focus asks first"),
   and after this branch merged it the test still failed once in 30 runs at 9.8.0.
-- **`src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj` says the same thing NU1608 does not do.** Its
+- **`dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj` says the same thing NU1608 does not do.** Its
   comment says a Consumer who moves Apache.Arrow to 24 "is told so at restore (NU1608) instead of meeting
   a break at run time". NU1608 is a warning: restore succeeds, and the package runs on 24 unless the
   application treats the warning as an error. This branch corrected the same claim in its Change Notes

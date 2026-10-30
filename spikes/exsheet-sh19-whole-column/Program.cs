@@ -10,7 +10,7 @@ using ExSheet.Engine;
 // <rows> is the block's height, 10,000 by default, which is SH-19's. A smaller one proves the spike
 // works in seconds; its times say nothing about SH-19's size, since the variant's cost grows with
 // the square of the rows. Every timed run is checked after it, outside the clock, as
-// tests/ExSheet.Engine.Tests' Measurements checks SH-19's case; a check that fails ends the run with
+// dotnet/tests/ExSheet.Engine.Tests' Measurements checks SH-19's case; a check that fails ends the run with
 // exit code 1 and no time for it.
 
 var rows = args.Length > 0 ? int.Parse(args[0], NumberStyles.AllowThousands, CultureInfo.InvariantCulture) : 10_000;

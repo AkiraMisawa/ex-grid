@@ -68,7 +68,7 @@ details tab is selected the covered report is now left unpainted (`ex-pivot-shee
 keeps its place and state, takes no keyboard and is not read out.
 
 Layer 2: `MudPivotToolbarTests`, `MudPivotDetailsTests`, `MudPivotLiveItemsTests`,
-`MudPivotStaleReportTests` and `MudPivotJapaneseWordsTests` in `tests/ExPivot.MudBlazor.Tests`
+`MudPivotStaleReportTests` and `MudPivotJapaneseWordsTests` in `dotnet/tests/ExPivot.MudBlazor.Tests`
 (53); `AskingTests`, `ToolbarAndDeferTests`, `LiveDataTests` and `DetailsAndVersionTests` in
-`tests/ExPivot.Components` (176). Layer 3: `pivot.spec.mjs` on the WebAssembly host in Chromium,
+`dotnet/tests/ExPivot.Components` (176). Layer 3: `pivot.spec.mjs` on the WebAssembly host in Chromium,
 under both Chromes, 34 passed; it now also holds the records' heading to being what paints there.
