@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/30/2026 - 03:53:11 |
+| Generated on: | 10/30/2026 - 04:23:33 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1104 |
@@ -24,8 +24,8 @@
 | Uncovered lines: | 9032 |
 | Coverable lines: | 69158 |
 | Total lines: | 105324 |
-| **Branch coverage:** | 82.8% (36290 of 43779) |
-| Covered branches: | 36290 |
+| **Branch coverage:** | 82.8% (36291 of 43779) |
+| Covered branches: | 36291 |
 | Total branches: | 43779 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -937,8 +937,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.3%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
