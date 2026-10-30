@@ -1,6 +1,7 @@
 import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { expectCovers } from './sheet-helpers.mjs';
+import { journalPress, pressFirstCell } from './press-journal.mjs';
 
 test.use({ viewport: { width: 1280, height: 1100 } });
 
@@ -38,69 +39,6 @@ async function expectPreservedFocus(grid) {
         return Object.keys(want).every(edge => Math.abs(want[edge] - actual[edge]) <= 1.5)
             ? 'covers the visible cell' : JSON.stringify({ actual, want });
     })).toBe('covers the visible cell');
-}
-
-// The press on the first cell put the Focus there. Twice on CI's Edge (the MudBlazor Sheet on WebAssembly, PR #497;
-// the built-in Sheet on the Server host, PR #500) it left the active descendant empty for good, the Focus still on the
-// cell pressed before and the keyboard on the page's body; over a hundred local runs did not repeat it. So a failure
-// says which round it was, what the grid held then, and what the root heard from the press on: each press, and where
-// DOM focus went in and out (journalPress).
-async function journalPress(grid) {
-    await grid.evaluate(root => {
-        const name = element => (element instanceof Element
-            ? `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}` : String(element));
-        const journal = [];
-        root.exPressJournal = journal;
-        const note = entry => { journal.push({ at: Math.round(performance.now()), ...entry }); };
-        root.addEventListener('mousedown', event => {
-            note({ heard: 'mousedown', target: name(event.target), x: event.clientX, y: event.clientY });
-        }, true);
-        // Heard last, on the way back up: whether the grid kept the press's own focusing.
-        root.addEventListener('mousedown', event => {
-            note({ heard: 'mousedown done', prevented: event.defaultPrevented, active: name(document.activeElement) });
-        });
-        root.addEventListener('focusin', event => { note({ heard: 'focusin', target: name(event.target) }); });
-        root.addEventListener('focusout', event => {
-            note({ heard: 'focusout', target: name(event.target), to: name(event.relatedTarget) });
-        });
-    });
-}
-
-async function pressFirstCell(grid, cell, round) {
-    const before = await grid.evaluate(root => {
-        const name = element => (element === null ? null : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`);
-        root.exPressJournal.length = 0;
-        const box = root.querySelector('[id$="-r0c0"]')?.getBoundingClientRect();
-        return {
-            active: name(document.activeElement),
-            cell: box === undefined ? null : { left: box.left, top: box.top },
-            at: box === undefined ? null : name(document.elementFromPoint(box.left + 8, box.top + 8)),
-        };
-    });
-    await cell.click({ position: { x: 8, y: 8 }, force: true });
-    try {
-        await expectActiveDescendant(grid, /-r0c0$/);
-    } catch (error) {
-        const held = await grid.evaluate(root => {
-            const cell = root.querySelector('[id$="-r0c0"]');
-            const box = cell?.getBoundingClientRect();
-            const at = box === undefined ? null : document.elementFromPoint(box.left + 8, box.top + 8);
-            const name = element => (element === null ? null : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`);
-            return {
-                focus: root.getAttribute('data-ex-follow-focus'),
-                scrollLeft: root.querySelector('.ex-scroller').scrollLeft,
-                settled: root.hasAttribute('data-ex-settled'),
-                busy: root.getAttribute('aria-busy'),
-                pinned: root.querySelector('.ex-row').querySelectorAll('.ex-pinned').length,
-                cell: box === undefined ? null : { left: box.left, top: box.top },
-                atPress: name(at),
-                active: name(document.activeElement),
-                heard: root.exPressJournal,
-            };
-        }).catch(reading => ({ unread: String(reading) }));
-        throw new Error(`${error.message}\nIn round ${round}, before the press: ${JSON.stringify(before)}\n`
-            + `The grid then held: ${JSON.stringify(held)}`, { cause: error });
-    }
 }
 
 // Public consumer fixture: no breakpoint changes product parameters. Only the enclosing box

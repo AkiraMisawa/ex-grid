@@ -1,5 +1,6 @@
 import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant, expectTabStopTaken } from './keyboard.mjs';
+import { journalPress, pressFirstCell } from './press-journal.mjs';
 
 // The page follows what a move reveals, and a scripted focus asks whether the keyboard is still here
 // (ADR-0204, KB-45; SRV-5's popover and Template cases).
@@ -247,7 +248,8 @@ test('KB-23/ADR-0204: with nothing pressed meanwhile, Space still gives a Templa
     await page.goto('/cells?second=1');
     const cells = page.locator('.ex-grid').first();
     await expectTabStopTaken(cells);
-    await cells.locator("[id$='-r0c0']").click({ force: true });
+    await journalPress(cells);
+    await pressFirstCell(cells, cells.locator("[id$='-r0c0']"), 'KB-23');
     for (let i = 0; i < 4; i++) {
         await page.keyboard.press('ArrowRight');
     }
