@@ -1869,7 +1869,15 @@ section 3 ends the server report Windows when ExPivot.Engine is removed, and a s
 Aggregates again. LV-24, LV-25 and LV-28, and PV-2's server clause, judge the C# path as written until
 then. They are rewritten for the Leaf Aggregate boundary, with live server data's form, before
 ExPivot's step 1 is called done, not relaxed to fit it. That form was settled with the user on 2026-10-26,
-in the same section: a notice, or a Change Batch of records the engine folds.)* Without a Row Key declared, the Row Key's criteria change nothing
+in the same section: a notice, or a Change Batch of records the engine folds.)* *(2026-10-30, ADR-0370 section 6,
+step 3, under the user's go-ahead of 2026-10-29 to remove the C# core: the Razor ExPivot, the only component that drew
+a server's report Window, is removed, and with it every check that ran one in a component or a browser:
+`pivot-db.spec.mjs`'s LV-24 and LV-34 tests, `pivot-live.spec.mjs`'s LV-27 test, and the component's bUnit tests of
+report Windows, their shrink and their read-ahead. Until ExPivot.Engine leaves, LV-24 to LV-31 and LV-34 judge its
+`PivotReportSource` at layer 1 alone (`ExPivot.Engine.Tests`, `ExGrid.DemoApi.Tests`); their component and browser
+clauses have nothing left to run against, and are not met by anything else. LV-28's browser test runs on the Leaf
+Aggregate path instead. The rewrite above, for the Leaf Aggregate boundary, is still owed, and is made with the
+Engine's removal.)* Without a Row Key declared, the Row Key's criteria change nothing
 (DC-1); the rules for a write over live data hold for every grid.
 
 | ID | Level | Statement | Verification | Pass |

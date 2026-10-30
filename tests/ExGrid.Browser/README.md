@@ -1021,26 +1021,14 @@ nobody had asked for. What that means when writing a test:
   declared Schema and one under a suggested Schema, reading the same trades to the same total — a
   second file read while a report stands; and, once, the code shown under "The code" equal to its
   source.
-- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
-  from either host. A server report scrolls beyond its first Window with a bounded number of rendered
-  rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
-  and on the server alike, shows the new report's last rows, breaks nothing, and scrolls back to its
-  top (LV-24, ADR-0151); a server report scrolled five rows at a time within the Window it read ahead
-  asks the server nothing, and asks once, for the rows on screen and 60 either side, as the tenth row
-  below the rows on screen leaves the Window while every row on screen is still held — counted in the
-  page's own tally of questions, never timed, behind the latency proxy on the Server host, and with the
-  Window each question names read from the request on WebAssembly (LV-34, FN-3a, ADR-0182/0183); on
-  both hosts, the question asked early, its answer held at the demo API's Window gate
-  (`/api/pivot/window-gate`, which the test opens, never a timer, and which records the Window each
-  question names — the gate is where both hosts' questions arrive, since the Server host asks the demo
-  API from the server, where no browser route reaches), stays in flight while the report scrolls past
-  the Window held and within the question's, the report undimmed until rows on screen wait for it, and
-  once it lands one question more is asked, ten rows before the new Window runs out; and a
-  whole-column Copy and Selection Summary of a remote report include the rows
-  outside the Window and equal the local report's (LV-28). **Run once per Chrome**: its trades read over
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0370 section 3), against the demo API server
+  from either host. A whole-column Copy and Selection Summary of the server's report, built in the browser
+  from its Leaf Aggregates, include the rows the grid does not paint and equal the local report's (LV-28).
+  The report Windows a server computed (LV-24, LV-34) went with the Razor ExPivot, which alone drew them
+  (ADR-0370 section 6, step 3). **Run once per Chrome**: its trades read over
   Arrow into a Snapshot the page pivots in its own process, at the version `/api/status` names, and
-  asked of the server through `PivotReportSource.Fetch`, whose server computes the report and returns
-  the requested Window, show the same numbers painted row for row — and
+  asked of the server through `PivotSource.Fetch`, whose server answers the Leaf Aggregates the page
+  builds the report from, show the same numbers painted row for row — and
   again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
   server's source alone, and asks again; Show Details opens the same records behind a cell in
   both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);

@@ -1,5 +1,5 @@
 @page "/pivot-db"
-@implements IAsyncDisposable
+@implements IDisposable
 @inject DemoApiClient Api
 @using System.Diagnostics
 @using System.Globalization
@@ -261,9 +261,5 @@
         _serverLayout = FirstLayout();
     }
 
-    public ValueTask DisposeAsync()
-    {
-        _leaving.Cancel();
-        return ValueTask.CompletedTask;
-    }
+    public void Dispose() => _leaving.Cancel();
 }

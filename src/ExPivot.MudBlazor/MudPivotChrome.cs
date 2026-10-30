@@ -17,8 +17,8 @@ namespace ExPivot.MudBlazor;
 /// means, the drafts, which tab is selected, and where a menu, panel or dialog opens and what
 /// closes it are ExPivot's; swapping this Chrome for the Script Core's own parts changes no behaviour
 /// (ADR-0061). Every frame is ExPivot's — the dialog's too, which is never a <c>MudDialog</c> — and
-/// the Chrome draws inside it. A <c>MudSelect</c>'s list is an Inner Popup of its panel, reported
-/// so that Escape closes the list first (ADR-0039). The words are ExPivot's, by id: one
+/// the Chrome draws inside it. A panel's choices are native selects in MudBlazor's outline, whose lists are the
+/// browser's (ADR-0410). The words are ExPivot's, by id: one
 /// <c>Label</c> written on ExPivot words the pane, its panels, the Pivot Toolbar, the tabs and the
 /// report's Context Menu alike.</para>
 /// </summary>
