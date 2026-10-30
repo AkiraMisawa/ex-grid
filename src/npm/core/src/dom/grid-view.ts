@@ -1869,6 +1869,13 @@ export class GridView<Row> {
     #retaking: HeldInput | undefined;
     // An Escape cancelled a commit, and its repeats are its own.
     #escapeCancelled = false;
+    // Presses let through behind a pending input for the drag the browser starts from them (ADR-0362), each with the
+    // control its default focuses and whether the product was kept from hearing that focus, until its turn.
+    readonly #letThrough = new WeakMap<Event, LetThroughPress>();
+    // The latest of them while its release has not come: the focus its default makes is kept from the product.
+    #pressFocusing: LetThroughPress | undefined;
+    // Those whose turn has not come, in their order.
+    readonly #pressesWaiting: LetThroughPress[] = [];
     #findCurrent: { readonly cell: CellPosition; readonly version: number } | undefined;
     #findCurrentHeader: {
         readonly id: string; readonly selection: Selection; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
@@ -2108,6 +2115,8 @@ export class GridView<Row> {
             // (ADR-0380 section 3), and holds what is made on the product's surfaces around the grid too (ADR-0240).
             const inputRoot = this.#inputRoot;
             for (const type of heldEventTypes) inputRoot.addEventListener(type, this.#onInput, true);
+            inputRoot.addEventListener('focusin', this.#onPressFocused, true);
+            inputRoot.addEventListener('dragstart', this.#onDragStarted, true);
             // The keys, heard on the root in the capture phase, ahead of anything inside it (ADR-0018).
             root.addEventListener('keydown', this.#onKeyDown, true);
             this.#viewport.addEventListener('mousedown', this.#onPress);
@@ -2136,6 +2145,8 @@ export class GridView<Row> {
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
                 () => { for (const type of heldEventTypes) inputRoot.removeEventListener(type, this.#onInput, true); },
+                () => { inputRoot.removeEventListener('focusin', this.#onPressFocused, true); },
+                () => { inputRoot.removeEventListener('dragstart', this.#onDragStarted, true); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
                 () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
@@ -5138,6 +5149,14 @@ export class GridView<Row> {
         // A press lands where it was made. A pass may have painted that control anew since: it lands then on what stands
         // at the same point, and on nothing where nothing of the grid's does.
         let target = event.target;
+        const letThrough = this.#letThrough.get(event);
+        if (letThrough !== undefined) {
+            this.#pressesWaiting.splice(this.#pressesWaiting.indexOf(letThrough), 1);
+            if (this.#pressFocusing === letThrough) this.#pressFocusing = undefined;
+            // Its drag has run, and may have taken what it pressed away: the press is not made again on what stands there
+            // since.
+            if (!(target instanceof Element) || !target.isConnected) return true;
+        }
         if (!(target instanceof Element) || !target.isConnected) {
             const doc = this.#root.ownerDocument;
             const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
@@ -5145,17 +5164,33 @@ export class GridView<Row> {
         }
         if (!(target instanceof Element)) return false;
         target.dispatchEvent(again);
-        if (event.type === 'mousedown' && !again.defaultPrevented) {
-            const focusable = target.closest<HTMLElement>('input, textarea, select, button, [tabindex]');
-            focusable?.focus({ preventScroll: true });
+        if (event.type !== 'mousedown' || again.defaultPrevented) return true;
+        if (letThrough === undefined) {
+            pressedControl(target)?.focus({ preventScroll: true });
+            return true;
         }
+        // A press let through for its drag gives the keyboard back to what it pressed, only while the keyboard is still
+        // the instance's or on nothing: a click elsewhere since put it where the user wanted it. Where its default left
+        // the keyboard there already, the product hears now the focus it was kept from (ADR-0362).
+        const doc = this.#root.ownerDocument;
+        const active = doc.activeElement;
+        if (active !== null && active !== doc.body && !this.#inputRoot.contains(active)) return true;
+        const control = labelledControl(target);
+        if (control === undefined) return true;
+        const told = letThrough.kept && control === active;
+        control.focus({ preventScroll: true });
+        if (told) control.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
         return true;
     }
 
     // What holds the keyboard in the grid now: what has DOM focus inside the Input Root, the grid or a surface of the
     // product's around it, or, where the keyboard has left it, what the grid would hand it to (ADR-0080).
     #keyboardHolder(): HTMLElement {
-        const active = this.#root.ownerDocument.activeElement;
+        let active = this.#root.ownerDocument.activeElement;
+        // A press let through for its drag moved DOM focus ahead of its turn: until that turn, the keyboard is where it
+        // was pressed from, unless an answer since moved it on (ADR-0362).
+        const waiting = this.#pressesWaiting[0];
+        if (waiting !== undefined && active === waiting.control && waiting.from !== null && waiting.from.isConnected) active = waiting.from;
         if (active instanceof HTMLElement && (this.#root.contains(active) || this.#inProductSurface(active))) return active;
         const edit = this.#edit;
         if (edit !== undefined && edit.element.isConnected) return this.#editorField(edit) ?? edit.element;
@@ -5204,6 +5239,8 @@ export class GridView<Row> {
         }
         if (event instanceof MouseEvent && event.type === 'mousemove' && event.buttons === 0) return;
         event.stopImmediatePropagation();
+        // The release of a press let through for its drag: the focus its default made is the product's again to hear.
+        if (event.type === 'mouseup') this.#pressFocusing = undefined;
         // Cancellable work placed is what the stamp names, so an Escape cancels it first, behind a commit too (ADR-0240
         // section 12); with none, a commit's Escape cancels the commit, and work no Escape cancels holds it as a key.
         const workPlaced = this.#works.some(work => work.tooLate !== undefined);
@@ -5213,9 +5250,34 @@ export class GridView<Row> {
             else this.#cancelPending(pending);
             return;
         }
-        if (event.cancelable && !isClipboardKey(event)) event.preventDefault();
+        // A press the browser may drag from keeps its default, from which the browser starts the drag: a press whose
+        // default is prevented starts none. The product hears it, and the focus its default made, only at its turn
+        // (ADR-0362 and its note of 2026-10-26).
+        if (startsDrag(event, this.#inputRoot)) {
+            const press: LetThroughPress = { from: this.#root.ownerDocument.activeElement, control: pressedControl(event.target), kept: false };
+            this.#letThrough.set(event, press);
+            this.#pressesWaiting.push(press);
+            this.#pressFocusing = press;
+        } else if (event.cancelable && !isClipboardKey(event)) {
+            event.preventDefault();
+        }
         if (event instanceof MouseEvent && this.#holdRowCommand(event, pending)) return;
         pending.held.push(heldInputOf(event));
+    };
+
+    // The focus the default of a press let through for its drag gave the control it pressed, kept from the product until
+    // the press's turn, behind the inputs held before it (ADR-0362's note of 2026-10-26).
+    readonly #onPressFocused = (event: FocusEvent): void => {
+        const press = this.#pressFocusing;
+        if (press === undefined || press.control === undefined || event.target !== press.control) return;
+        event.stopImmediatePropagation();
+        press.kept = true;
+    };
+
+    // A drag started: the default of the press it started from has done its focusing, and a focus an earlier answer
+    // moves during the drag is the product's to hear.
+    readonly #onDragStarted = (): void => {
+        this.#pressFocusing = undefined;
     };
 
     // A row Action or row Mark click held behind earlier input (ADR-0240's note of 2026-10-19): its row is noted now,
@@ -11927,6 +11989,38 @@ export class GridView<Row> {
 }
 
 const columnTypes: ReadonlySet<string> = new Set(['text', 'number', 'date', 'boolean']);
+
+/** A press let through for the drag the browser starts from it (ADR-0362): the control its default focuses, and whether
+ * the focus that default made was kept from the product. */
+interface LetThroughPress {
+    /** What held the keyboard as it was pressed: the keys held before it are taken there, not on the control. */
+    readonly from: Element | null;
+    readonly control: HTMLElement | undefined;
+    kept: boolean;
+}
+
+/** Whether `event` is a press the browser may start a drag from: the primary button's, on an element of the Input Root
+ * marked draggable (ADR-0362). */
+function startsDrag(event: Event, inputRoot: HTMLElement): boolean {
+    if (!(event instanceof MouseEvent) || event.type !== 'mousedown' || event.button !== 0) return false;
+    const element = event.target instanceof Element ? event.target : null;
+    const draggable = element?.closest<HTMLElement>('[draggable="true"]');
+    return draggable !== null && draggable !== undefined && inputRoot.contains(draggable);
+}
+
+/** The control a press on `target` focuses by its default: the nearest focusable element around it. */
+function pressedControl(target: EventTarget | null): HTMLElement | undefined {
+    if (!(target instanceof Element)) return undefined;
+    const control = target.closest<HTMLElement>('input, textarea, select, button, [tabindex]');
+    return control === null ? undefined : control;
+}
+
+/** The control a press let through for its drag gives the keyboard back to at its turn: the one the pressed label names,
+ * as a Field List field's caption names its tick, before a focusable box around the press (ADR-0362). */
+function labelledControl(target: Element): HTMLElement | undefined {
+    const label = target.closest('label');
+    return label?.control instanceof HTMLElement ? label.control : pressedControl(target);
+}
 
 /** A cell's kind as `cellType` answered it, checked where it arrives: one that is not a kind is refused by name
  * rather than painted as some other (ADR-0050, item 6). */
