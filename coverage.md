@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/29/2026 - 23:07:56 |
+| Generated on: | 10/30/2026 - 02:16:47 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1399 |
 | Files: | 683 |
-| **Line coverage:** | 89.9% (94686 of 105255) |
-| Covered lines: | 94686 |
-| Uncovered lines: | 10569 |
-| Coverable lines: | 105255 |
-| Total lines: | 159130 |
-| **Branch coverage:** | 84.9% (54991 of 64745) |
-| Covered branches: | 54991 |
-| Total branches: | 64745 |
+| **Line coverage:** | 89.9% (94693 of 105261) |
+| Covered lines: | 94693 |
+| Uncovered lines: | 10568 |
+| Coverable lines: | 105261 |
+| Total lines: | 159149 |
+| **Branch coverage:** | 84.9% (54994 of 64747) |
+| Covered branches: | 54994 |
+| Total branches: | 64747 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -1143,8 +1143,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1256,7 +1256,7 @@
 |ExSheet.PointingScope.GridMember<TRow>|100%|100%|
 |ExSheet.PointingScope.PointDashes|100%||
 |ExSheet.PointingScope.Step|100%||
-|ExSheet.Script.ExSheet|84.9%|77.4%|
+|ExSheet.Script.ExSheet|85.1%|77.8%|
 |ExSheet.Script.ExSheet.Opening|100%||
 |ExSheet.Script.ExSheet.Press|100%||
 |ExSheet.Script.ExSheet.Saving|100%||
