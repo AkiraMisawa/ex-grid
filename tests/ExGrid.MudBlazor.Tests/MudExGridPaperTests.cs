@@ -152,7 +152,9 @@ public class MudExGridPaperTests : MudTestContext
         var toolbar = paper.QuerySelector(".mud-ex-grid-toolbar");
         Assert.NotNull(toolbar);
         Assert.NotNull(toolbar!.QuerySelector("#title"));
-        var root = cut.FindComponent<Grid>().Find("div");
+        // The grid's markup is read from its own fragment, so its root is found in the paper's by what it is.
+        var drawn = cut.FindComponent<Grid>().Find("div").OuterHtml;
+        var root = Assert.Single(paper.Children, child => child.OuterHtml == drawn);
         Assert.Null(root.QuerySelector("#title"));
         Assert.True(toolbar.CompareDocumentPosition(root).HasFlag(AngleSharp.Dom.DocumentPositions.Following));
     }
