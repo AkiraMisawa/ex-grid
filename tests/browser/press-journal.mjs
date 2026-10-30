@@ -1,3 +1,4 @@
+import { alterPage } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 
 // A press on a cell that the grid did not hear, journalled so that its failure says what happened. Twice on CI's Edge
@@ -6,8 +7,23 @@ import { expectActiveDescendant } from './keyboard.mjs';
 // the page's body; twice on CI's Chrome on the Server host (KB-23, PR #500) the first press on /cells left the grid with
 // no Focus at all. Over a hundred local runs, throttled and behind a round trip too, did not repeat either. So a
 // failure says which round it was, what the grid held then, and what the root heard from the press on: each press,
-// and where DOM focus went in and out (journalPress).
+// and where DOM focus went in and out (journalPress). The press is heard on the document too, ahead of the grid's own
+// listener on its Input Root, which stops a press it holds behind a pending input before the root's journal hears it:
+// a press heard there alone was held, or landed outside the grid (RT-1 on PR #505's run, 2026-10-30, heard no press
+// at the root).
 export async function journalPress(grid) {
+    await alterPage(grid.page(), root => {
+        const name = element => (element instanceof Element
+            ? `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}` : String(element));
+        const heard = event => {
+            root.exPressJournal?.push({
+                at: Math.round(performance.now()), heard: `${event.type} at the document`, target: name(event.target),
+                inGrid: event.target instanceof Node && root.contains(event.target), x: event.clientX, y: event.clientY,
+            });
+        };
+        for (const type of ['pointerdown', 'mousedown']) document.addEventListener(type, heard, true);
+        return () => { for (const type of ['pointerdown', 'mousedown']) document.removeEventListener(type, heard, true); };
+    }, await grid.elementHandle());
     await grid.evaluate(root => {
         const name = element => (element instanceof Element
             ? `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}` : String(element));
@@ -52,6 +68,11 @@ export async function pressFirstCell(grid, cell, round) {
                 focus: root.getAttribute('data-ex-follow-focus'),
                 scrollLeft: root.querySelector('.ex-scroller').scrollLeft,
                 settled: root.hasAttribute('data-ex-settled'),
+                // Whether an input was still out, which holds every press made in the grid behind it: a Pending Commit,
+                // or work placed in the Input Order, and how many inputs the grid has answered.
+                pendingCommit: root.getAttribute('data-ex-pending-commit'),
+                workPlaced: root.querySelector('[data-ex-answered]')?.getAttribute('data-ex-work-placed') ?? null,
+                answered: root.querySelector('[data-ex-answered]')?.getAttribute('data-ex-answered') ?? null,
                 busy: root.getAttribute('aria-busy'),
                 pinned: root.querySelector('.ex-row').querySelectorAll('.ex-pinned').length,
                 cell: box === undefined ? null : { left: box.left, top: box.top },

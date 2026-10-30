@@ -460,4 +460,49 @@ describe('work of the Consumer\'s in the Input Order', () => {
             box.remove();
         }
     });
+
+    it('ADR-0362: behind the work, a press on a draggable entry of a surface keeps its default, from which the browser drags, and the product hears it and the focus it made only at its turn', async () => {
+        const box = document.createElement('div');
+        box.setAttribute('data-ex-input-root', '');
+        document.body.append(box);
+        // A Field List entry as a Chrome draws it: draggable, round a button that claims its click.
+        const entry = document.createElement('div');
+        entry.setAttribute('draggable', 'true');
+        const button = document.createElement('button');
+        button.setAttribute('data-ex-claims', 'click');
+        const caption = document.createElement('span');
+        button.append(caption);
+        entry.append(button);
+        const still = document.createElement('button');
+        still.setAttribute('data-ex-claims', 'click');
+        box.append(entry, still);
+        const heard: string[] = [];
+        box.addEventListener('mousedown', event => { heard.push(`mousedown ${event.target === caption ? 'caption' : 'still'}`); });
+        box.addEventListener('focusin', event => { heard.push(`focusin ${event.target === button ? 'button' : 'still'}`); });
+        const { view } = mount<Trade>({
+            columns: [{ name: 'Book', type: 'text', value: trade => trade.book, width: 120 }],
+            rows: trades(5), rowHeight: 24, viewportHeight: 240,
+        }, {}, box);
+        try {
+            const works: Held[] = [];
+            const placed = view.cancellableInOrder(heldWork(works), () => undefined);
+            const press = new MouseEvent('mousedown', { button: 0, buttons: 1, bubbles: true, cancelable: true });
+            caption.dispatchEvent(press);
+            // The browser's default for the press: the button it stands in takes the keyboard.
+            button.focus();
+            // A press on a control that cannot be dragged is held with its default, as before.
+            const held = new MouseEvent('mousedown', { button: 0, buttons: 1, bubbles: true, cancelable: true });
+            still.dispatchEvent(held);
+            expect([press.defaultPrevented, held.defaultPrevented, heard]).toEqual([false, true, []]);
+            expect(document.activeElement).toBe(button);
+            defined(works[0], 'the work').land();
+            expect(await placed).toBe(true);
+            // At its turn the product hears the press, then the focus it made, then the press after it, which takes the
+            // keyboard in its own turn.
+            expect(heard).toEqual(['mousedown caption', 'focusin button', 'mousedown still', 'focusin still']);
+            expect(document.activeElement).toBe(still);
+        } finally {
+            box.remove();
+        }
+    });
 });

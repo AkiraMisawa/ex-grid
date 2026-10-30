@@ -75,7 +75,9 @@
             so an OK pressed straight after a choice applies that choice on Blazor Server too. In the Fields pane a
             field's box, the Defer Layout Update box and a drag between Areas are the browser's, read where they
             happen, and a press or a drop made against Areas that have changed since they were drawn is refused, not
-            applied to the entry now in its place. A Chrome of your
+            applied to the entry now in its place. An entry pressed while an input before it is still being answered
+            drags at once: the browser starts the drag from the press, and the pivot hears the press itself in its turn.
+            A Chrome of your
             own names its parts in <code>IPivotChrome.ScriptSlots</code> and marks its controls with
             <code>PivotScriptSlotAttributes</code>. Its <code>CellMetrics</code>, and inside
             <code>MudExGridPaper</code> the paper's Roboto widths and Density, size the report's grids and its label
