@@ -61,7 +61,7 @@ interface Heard {
     readonly selections: GridSelection[];
 }
 
-function grid(options: Partial<GridOptions<Trade>>, asked: Asked<EditVerdict>[] = []): {
+function grid(options: Partial<GridOptions<Trade>>, asked: Asked<EditVerdict>[] = [], parent: HTMLElement = document.body): {
     readonly root: HTMLElement; readonly heard: Heard; readonly told: Told;
 } {
     const heard: Heard = { edits: [], refusals: [], selections: [] };
@@ -71,7 +71,7 @@ function grid(options: Partial<GridOptions<Trade>>, asked: Asked<EditVerdict>[] 
         onRefused: refusal => { heard.refusals.push(refusal); },
         onSelectionChanged: selection => { heard.selections.push(selection); },
         ...options,
-    });
+    }, {}, parent);
     return { root, heard, told };
 }
 
@@ -500,5 +500,150 @@ describe('a held key done again on a control', () => {
         form.append(box);
         expect(elementDefault(box, enter)).toBe('none');
         form.remove();
+    });
+});
+
+/** A surface of the product's around the grid, holding a text field whose owner commits on `change`, as Blazor's
+ * `@bind` and a MudBlazor text field do; the grid stands in it with a commit pending. */
+async function pendingBeside(withForm = false, multiline = false): Promise<{
+    readonly root: HTMLElement; readonly field: HTMLInputElement | HTMLTextAreaElement; readonly changes: string[];
+    readonly asked: Asked<EditVerdict>[]; readonly surface: HTMLElement;
+}> {
+    const surface = document.createElement('div');
+    surface.setAttribute('data-ex-input-root', '');
+    const field = document.createElement(multiline ? 'textarea' : 'input');
+    if (withForm) {
+        const form = document.createElement('form');
+        form.addEventListener('submit', event => { event.preventDefault(); });
+        form.append(field);
+        surface.append(form);
+    } else {
+        surface.append(field);
+    }
+    document.body.append(surface);
+    const changes: string[] = [];
+    field.addEventListener('change', () => { changes.push(field.value); });
+    const asked: Asked<EditVerdict>[] = [];
+    const { root } = grid({}, asked, surface);
+    await painted();
+    press(root, notional, rowY(0));
+    keys('1500');
+    key('Enter');
+    // The keyboard moves to the field while the verdict is out, and what is typed there waits for it.
+    field.focus();
+    return { root, field, changes, asked, surface };
+}
+
+describe('held text in a field that commits on change', () => {
+    afterEach(() => {
+        for (const surface of document.querySelectorAll('[data-ex-input-root]')) surface.remove();
+    });
+
+    it('ADR-0210: leaving the field commits the text held typing put there, once', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        keys('abc');
+        expect(field.value).toBe('');
+        await answerAll(asked, domain);
+        expect([field.value, changes]).toEqual(['abc', []]);
+        field.blur();
+        field.focus();
+        field.blur();
+        expect(changes).toEqual(['abc']);
+    });
+
+    it('ADR-0210: a change of the field\'s own first is not sent again, and held keys that change nothing commit nothing', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        keys('ab');
+        await answerAll(asked, domain);
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+        field.blur();
+        expect(changes).toEqual(['ab']);
+
+        const again = await pendingBeside();
+        key('ArrowLeft');
+        await answerAll(again.asked, domain);
+        again.field.blur();
+        expect(again.changes).toEqual([]);
+    });
+
+    it('ADR-0210: an Enter typed once the hold is over commits the held text before the field\'s own handlers hear it', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        const heard: string[] = [];
+        field.addEventListener('keydown', event => {
+            if (event instanceof KeyboardEvent) heard.push(`${event.key} after ${String(changes.length)} change`);
+        });
+        keys('abc');
+        await answerAll(asked, domain);
+        key('Enter');
+        field.blur();
+        expect([changes, heard.at(-1)]).toEqual([['abc'], 'Enter after 1 change']);
+    });
+
+    it('ADR-0210: where typing since the hold changed the value, the browser commits it and the grid does not', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        keys('abc');
+        await answerAll(asked, domain);
+        keys('d');
+        key('Enter');
+        expect(changes).toEqual([]);
+        // The browser's own commit, which a native Enter on text the user typed makes.
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+        field.blur();
+        expect(changes).toEqual(['abcd']);
+    });
+
+    it('ADR-0210: a held Enter commits the held text before its form is submitted', async () => {
+        const { field, changes, asked } = await pendingBeside(true);
+        const submitted: number[] = [];
+        const { form } = field;
+        if (form === null) throw new Error('The field stands in no form.');
+        form.addEventListener('submit', () => { submitted.push(changes.length); });
+        keys('abc');
+        key('Enter');
+        await answerAll(asked, domain);
+        expect([changes, submitted.at(-1)]).toEqual([['abc'], 1]);
+    });
+
+    it('ADR-0210: an Enter in a textarea is a line, and commits nothing until the field is left', async () => {
+        const { field, changes, asked } = await pendingBeside(false, true);
+        keys('abc');
+        key('Enter');
+        await answerAll(asked, domain);
+        key('Enter');
+        expect(changes).toEqual([]);
+        field.blur();
+        expect(changes).toEqual([field.value]);
+    });
+
+    it('ADR-0210: text put in with no key commits on the field it was put in, wherever the keyboard was', async () => {
+        const { field, asked, surface } = await pendingBeside();
+        const other = document.createElement('input');
+        surface.prepend(other);
+        const changes: string[] = [];
+        other.addEventListener('change', () => { changes.push(other.value); });
+        other.dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, data: 'z', inputType: 'insertText' }));
+        await answerAll(asked, domain);
+        expect([other.value, field.value, changes]).toEqual(['z', '', []]);
+        other.focus();
+        other.blur();
+        expect(changes).toEqual(['z']);
+    });
+
+    it('ADR-0210: a value the field\'s owner wrote since is the owner\'s, and is not sent back as a change', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        keys('abc');
+        await answerAll(asked, domain);
+        field.value = 'reset';
+        field.blur();
+        expect(changes).toEqual([]);
+    });
+
+    it('ADR-0210: a grid that goes forgets the field, and leaving it then commits nothing', async () => {
+        const { field, changes, asked } = await pendingBeside();
+        keys('abc');
+        await answerAll(asked, domain);
+        unmountAll();
+        field.blur();
+        expect(changes).toEqual([]);
     });
 });

@@ -51,6 +51,29 @@ input, but the field's own handlers commit on the browser's `change`, and a valu
 held typing typed into the field at its turn — still gets none. The order makes the core hear the
 text; this note is still what makes the design system's field commit it.
 
+### Over the Script Core (2026-10-30)
+
+The opening key hold this decision mended was `ex-grid.js`'s, and went with it when pull request #501 removed the
+Razor components. The defect did not go. The Script Core holds input while a commit's answer is out
+([ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md) section 3) and
+types the held text at its turn into whatever field then holds the keyboard, from script, with an `input` event and
+no `change`. In a field whose owner commits on `change`, such as one a Wrapper draws in a slot with Blazor's
+`@bind`, the text would show uncommitted. Checked in Chromium on 2026-10-30: a field given text by `setRangeText` and
+an `input` event, then left, hears `blur` and no `change`.
+
+So the decision is carried over (`HeldTextCommit`, `src/npm/core/src/dom/held-text-commit.ts`): one record per grid,
+made when a held input changes a field that is not the grid's own (the Keyboard Field and the built-in Cell Editor,
+whose text the core hears as it is typed), the field the keyboard holds or, for text put in with no key, the field it
+was put in; `blur`, `change` and a capture-phase `keydown` heard on that field alone while it stands; a held Enter
+commits after the field's handlers have heard the key and before its form is submitted; an Enter typed once the hold
+is over commits first; the record is retired by a `change` of the field's own, by held typing into another field, and
+when the grid goes. Two points are made explicit that `ex-grid.js` left implicit. **Enter commits a single-line field
+only**: a textarea takes Enter as a line, and the browser commits nothing there. **The supplement carries only what
+the grid wrote**: where the field no longer holds it, typing since is the browser's to commit, and a value the field's
+owner wrote since is the owner's, so no `change` is sent for either. ADR-0021, which listed this as its tenth entry, is
+superseded, and the rules this note keeps are ADR-0350 section 6's. Layer 2 holds it (`grid-pending-commit.test.ts`,
+"held text in a field that commits on change").
+
 ## Alternatives
 
 Keeping MudBlazor's existing inputs was chosen over replacing its colour entry and modes in
