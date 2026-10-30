@@ -32,7 +32,7 @@ async function open(page, query, rows) {
     await expect(toggle(page)).toBeEnabled();
 }
 
-test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reaches the screen and marks what changed, and a pause stops it', async ({ page }) => {
+test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reaches the screen and marks what changed, and a pause stops it @behaviour', async ({ page }) => {
     test.setTimeout(240_000);
     await open(page, '', 1_000_000);
     expect(await dataRowCount(grid(page))).toBe(1_000_000);
@@ -62,7 +62,7 @@ test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reache
     await expect.poll(() => marked(page).count(), { message: 'a mark in view again', timeout: 60_000 }).toBeGreaterThan(0);
 });
 
-test('ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as batches move the values', async ({ page }) => {
+test('ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as batches move the values @behaviour', async ({ page }) => {
     test.setTimeout(120_000);
     // 2,000 trades and a thousand amended a batch, so every batch moves rows on screen.
     await open(page, '?rows=2000&batch=1000', 2_000);
@@ -91,7 +91,7 @@ test('ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as
     }
 });
 
-test('ADR-0141/0069: the code the page shows is the code it runs: GridSource.From by Row Key, a Change Batch, and CellChangedAt', async ({ page }) => {
+test('ADR-0141/0069: the code the page shows is the code it runs: GridSource.From by Row Key, a Change Batch, and CellChangedAt @blazor', async ({ page }) => {
     await open(page, '?rows=2000', 2_000);
     const code = await expectCodeIsSource(page);
     expect(code['GridLiveLocalPage.razor#trades']).toContain('GridSource.From(trades, t => t.Id)');

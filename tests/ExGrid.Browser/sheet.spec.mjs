@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet, scrollRowToTop, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, scrollRowToTop, settled, chromeHost, roundTripHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant, keyField } from './keyboard.mjs';
 import {
@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
     await openSheet(page);
 });
 
-test('SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down', async ({ page }) => {
+test('SH-18: an Entry and a Formula typed into cells commit, compute and move the Focus down @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await enter(page, grid, 'E2', '=D2*2');
     await expect(cell(grid, 'E2')).toHaveText('12');
@@ -49,7 +49,7 @@ test('SH-18: an Entry and a Formula typed into cells commit, compute and move th
     await expect(cell(grid, 'D2')).toHaveText('6');
 });
 
-test('SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it', async ({ page }) => {
+test('SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow extends to it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'A1');
     await expectFocusAt(grid, 'A1');
@@ -74,7 +74,7 @@ test('SH-18/DC-7: Ctrl+arrow stops at the end of each block, Ctrl+Shift+arrow ex
     await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B2', 'B5');
 });
 
-test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts', async ({ page }) => {
+test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, and nothing sorts @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const header = (letter) => grid.locator('.ex-header-cell', { hasText: new RegExp(`^${letter}$`) });
 
@@ -131,7 +131,7 @@ test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, an
     await expect(grid.locator('.ex-announce')).not.toBeEmpty();
 });
 
-test('DC-3: the Row Headings stay at the left edge while the Sheet scrolls sideways', async ({ page }) => {
+test('DC-3: the Row Headings stay at the left edge while the Sheet scrolls sideways @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const scroller = grid.locator('.ex-scroller');
     const heading = grid.locator('.ex-row .ex-row-heading').first();
@@ -171,7 +171,7 @@ test('DC-3: the Row Headings stay at the left edge while the Sheet scrolls sidew
     }
 });
 
-test('SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into view', async ({ page }) => {
+test('SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into view @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // The Linked Table's first snapshot is waited for: every change to the Sheet clears
     // ExSheet's notice, a Consumer's push included (ExSheet.ChangedAsync), and on a slow host
@@ -211,7 +211,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test('ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret', async ({ page }) => {
+        test(`ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');
 
@@ -240,7 +240,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B2');
         });
 
-        test('ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back', async ({ page }) => {
+        test(`ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'F2');
             await page.keyboard.type('=1+');
@@ -278,7 +278,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // On a circuit the Name Box's press is not held among the keys, so the render answering the
         // row press before it lands after the press and writes its name over the selection.
-        test('ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name', async ({ page }) => {
+        test('ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name @blazor', async ({ page }) => {
             test.skip(!SERVER, 'WebAssembly has no round trip: the row press is answered before the Name Box is pressed');
             const grid = sheet(page);
             await pressCell(grid, 'F2');
@@ -324,7 +324,7 @@ const whereTheEditIs = (field) => field.evaluate((input) => {
 });
 
 for (const surface of ['cell', 'bar']) {
-    test(`ticket 32/ADR-0010: in Caret in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'}, Home and End move the caret, with Shift extend the selection, and nothing scrolls the grid away`, async ({ page }) => {
+    test(`ticket 32/ADR-0010: in Caret in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'}, Home and End move the caret, with Shift extend the selection, and nothing scrolls the grid away @behaviour`, async ({ page }) => {
         const grid = sheet(page);
         // A long text far down the Sheet, where the grid has room to scroll either way.
         await goTo(grid, 'F200');
@@ -393,7 +393,7 @@ for (const surface of ['cell', 'bar']) {
     });
 }
 
-test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once', async ({ page }) => {
+test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commits and cancels once @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'E3');
     await expect(bar(grid)).toHaveValue('');
@@ -436,7 +436,7 @@ test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commit
     await expectKeyboardOn(grid);
 });
 
-test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl+Z restores it', async ({ page }) => {
+test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl+Z restores it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'B5');
     await expect(bar(grid)).toHaveValue('=SUM(B2:B4)');
@@ -472,7 +472,7 @@ test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl
 // the structure and every Reference. The menu hands the keyboard back to the grid, so the
 // Ctrl+Z is pressed straight after the command, with no press on a cell between.
 
-test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted target is #REF!, and one Ctrl+Z restores it', async ({ page }) => {
+test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted target is #REF!, and one Ctrl+Z restores it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // A Formula naming a cell of the row about to go.
     await enter(page, grid, 'F1', '=A3');
@@ -511,7 +511,7 @@ test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted tar
     await expect(bar(grid)).toHaveValue('=SUM(B2:B3)');
 });
 
-test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one Ctrl+Z restores it', async ({ page }) => {
+test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one Ctrl+Z restores it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // Two rows of column C: the command acts on the columns the Selection spans, one here.
     await clickCell(grid, 'C2');
@@ -543,7 +543,7 @@ test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one
     await expect(bar(grid)).toHaveValue('=SUM(E2:E4)');
 });
 
-test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+Z restores it', async ({ page }) => {
+test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+Z restores it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'C2');
     await pressAt(cell(grid, 'C2'), { button: 'right' });
@@ -571,7 +571,7 @@ test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+
     await expect(bar(grid)).toHaveValue('=B2*#REF!');
 });
 
-test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot, then the values', async ({ page }) => {
+test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot, then the values @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // The page pushes the first snapshot 1.5 s after the Sheet opens (SheetPage.razor).
     await page.goto('/sheet');
@@ -591,7 +591,7 @@ test('SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot
 // page: 99 typed over C4 (Plums), "Insert a row above row 2" pressed while the edit was open, and
 // Enter wrote 99 into Pears' price — the Cell Editor had stayed on row 4 as Plums moved to row 5.
 
-test('SH-29 (ADR-0048): the commands grey out while 99 is typed over C4, and Enter puts 99 in Plums\' row', async ({ page }) => {
+test('SH-29 (ADR-0048): the commands grey out while 99 is typed over C4, and Enter puts 99 in Plums\' row @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await expectCommandsOffered(page);
 
@@ -612,7 +612,7 @@ test('SH-29 (ADR-0048): the commands grey out while 99 is typed over C4, and Ent
 // The press that reaches the refusal: on a circuit the button greys out a round trip after the
 // first key, and a press inside that round trip lands on a button still offered. ExSheet refuses
 // the insertion by name (the page shows the refusal) and nothing moves under the editor.
-test('SH-29 (ADR-0048): the insert pressed on a 150 ms circuit before the button greys out is refused, and 99 lands in Plums\' row', async ({ page }) => {
+test('SH-29 (ADR-0048): the insert pressed on a 150 ms circuit before the button greys out is refused, and 99 lands in Plums\' row @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no round trip: the button greys out before a press can reach it');
     const grid = sheet(page);
     await pressCell(grid, 'C4');
@@ -641,7 +641,7 @@ test('SH-29 (ADR-0048): the insert pressed on a 150 ms circuit before the button
     await setRoundTrip(0);
 });
 
-test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends, and a Linked Table push is taken meanwhile', async ({ page }) => {
+test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends, and a Linked Table push is taken meanwhile @behaviour', async ({ page }) => {
     const grid = sheet(page);
 
     // Opened by typing. A snapshot pushed meanwhile recalculates its readers and leaves the typing.
@@ -695,7 +695,7 @@ test('SH-29 (ADR-0048/0049): the buttons follow each way an edit opens and ends,
 // written.
 for (const surface of ['cell', 'bar']) {
     for (const rtt of [0, 150]) {
-        test(`ST-2 (ADR-0007): an edit opened ${surface === 'cell' ? 'with F2' : 'by a press into the Formula Bar'} and not typed into closes when its row leaves the Window, and the next key is the grid's (${rtt} ms)`, async ({ page }) => {
+        test(`ST-2 (ADR-0007): an edit opened ${surface === 'cell' ? 'with F2' : 'by a press into the Formula Bar'} and not typed into closes when its row leaves the Window, and the next key is the grid's (${rtt} ms) ${roundTripHost(rtt)}`, async ({ page }) => {
             test.skip(rtt > 0 && !SERVER, 'WebAssembly has no round trip: the 0 ms case is the one there is');
             const grid = sheet(page);
             const before = await cell(grid, 'C4').textContent();
@@ -740,7 +740,7 @@ for (const surface of ['cell', 'bar']) {
 // text the edit opened with, so the browser answers that something was typed, and the edit stays with
 // it, as ADR-0142 has it — the core's own copy of the text, a round trip behind, took it for untyped
 // and lost the character. Brought back into view, Enter writes it.
-test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 edit, on a 150 ms circuit, keeps the edit with it, and Enter writes it', async ({ page }) => {
+test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 edit, on a 150 ms circuit, keeps the edit with it, and Enter writes it @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly has no round trip: the core holds the text as it is typed');
     const grid = sheet(page);
     const before = await cell(grid, 'C4').textContent();
@@ -781,7 +781,7 @@ test('ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 
     await setRoundTrip(0);
 });
 
-test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent', async ({ page }) => {
+test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the extent @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // A count is read once the grid says it has settled (ADR-0220): read straight after the press,
     // it could miss the press's own render (the Focus, the Selection, the fill handle and the
@@ -817,7 +817,7 @@ test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the exte
 // Escape, Escape, and the second sent the keyboard to body while D10 still looked selected. Under
 // both Chromes: the Chrome draws the Cell Editor, the core decides the keys (ADR-0010).
 for (const chrome of ['builtin', 'mud']) {
-    test(`KB-8 under the ${chrome} Chrome: a character, Escape, Escape, a character opens an edit in the selected cell`, async ({ page }) => {
+    test(`KB-8 under the ${chrome} Chrome: a character, Escape, Escape, a character opens an edit in the selected cell ${chromeHost(chrome)}`, async ({ page }) => {
         if (chrome !== 'builtin') {
             await openSheet(page, chrome);
         }
@@ -845,7 +845,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expectFocusAt(grid, 'D10');
     });
 
-    test(`KB-8 under the ${chrome} Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet`, async ({ page }) => {
+    test(`KB-8 under the ${chrome} Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet ${chromeHost(chrome)}`, async ({ page }) => {
         if (chrome !== 'builtin') {
             await openSheet(page, chrome);
         }

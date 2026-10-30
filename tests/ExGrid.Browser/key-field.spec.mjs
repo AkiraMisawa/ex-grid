@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, holdAnswers, alterPage, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, holdAnswers, alterPage, circuitQuiet, settled, chromeHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, editor, nameBox, at,
@@ -157,7 +157,7 @@ for (const chrome of ['builtin', 'mud']) {
             await openSheet(page, chrome);
         });
 
-        test('ADR-0080: with a cell selected and no edit open, the keyboard is the Keyboard Field\'s, inside the root, unseen, over the Focus cell', async ({ page }) => {
+        test(`ADR-0080: with a cell selected and no edit open, the keyboard is the Keyboard Field's, inside the root, unseen, over the Focus cell ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
 
@@ -184,7 +184,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(keyField(grid)).toBeFocused();
         });
 
-        test('ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves', async ({ page }) => {
+        test(`ED-30 (i1): a composition on a selected cell is drawn over the cell, nothing moves while it lasts, and its end opens the Cell Editor holding it; Enter commits and moves ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -222,7 +222,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel\'s does; Escape then cancels it', async ({ page }) => {
+        test(`ED-30 (i2): a composition the IME cancels leaves an edit open and empty, as Excel's does; Escape then cancels it ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -246,7 +246,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFieldFocusAt(grid, 'D10');
         });
 
-        test('ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell', async ({ page }) => {
+        test(`ED-30: a press on another cell while composing puts the composition in the cell it was composed on, commits it there and selects the pressed cell ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -272,7 +272,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0010 (the hold): a second composition ended before the first one\'s editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host)', async ({ page }) => {
+        test('ED-30 / ADR-0010 (the hold): a second composition ended before the first one\'s editor has the keyboard is appended to it, and a key typed at once waits for both (150 ms on the Server host) @blazor', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -302,7 +302,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0080: a composition begun and ended on a cell just pressed, before the core has answered the press, is typed into that cell', async ({ page }) => {
+        test('ED-30 / ADR-0080: a composition begun and ended on a cell just pressed, before the core has answered the press, is typed into that cell @blazor', async ({ page }) => {
             const grid = sheet(page);
             // spec-lint: early-read: nothing has been typed on the page since it opened
             const before = await cell(grid, 'D10').textContent();
@@ -334,7 +334,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0080 (the sixteenth run\'s k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host)', async ({ page }) => {
+        test('ED-30 / ADR-0080 (the sixteenth run\'s k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host) @blazor', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -383,7 +383,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0080: with the editor\'s request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host)', async ({ page }) => {
+        test('ED-30 / ADR-0080: with the editor\'s request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host) @blazor', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -428,7 +428,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host)', async ({ page }) => {
+        test('ED-30 / ADR-0080 / ADR-0010: a composition that ends with no key the IME took being told gives the waiting editor the keyboard at its end, and one composed there at once comes after the text held for the edit (150 ms on the Server host) @blazor', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -472,7 +472,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ED-30 / ADR-0080 (the sixteenth run\'s k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host)', async ({ page }) => {
+        test('ED-30 / ADR-0080 (the sixteenth run\'s k15): a key the IME took whose keyup never comes — Alt+Tab mid-composition — ends as the keyboard leaves the field, and the editor the composition opened takes the keyboard holding its text (150 ms on the Server host) @blazor', async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             // spec-lint: early-read: a press selects D10 and cannot change its text, and this file's pressAt has waited for the Focus there
@@ -523,7 +523,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText(before ?? '');
         });
 
-        test('ADR-0080 / CP-6: Ctrl+C and Ctrl+V from the Keyboard Field are the grid\'s copy and paste, and type nothing into it', async ({ page, context }) => {
+        test(`ADR-0080 / CP-6: Ctrl+C and Ctrl+V from the Keyboard Field are the grid's copy and paste, and type nothing into it ${chromeHost(chrome)}`, async ({ page, context }) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write']);
             const grid = sheet(page);
             await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
@@ -546,7 +546,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'E8')).toHaveText(before ?? '');
         });
 
-        test('A11Y-4 / ADR-0080: the Keyboard Field is the Sheet\'s one tab stop — Tab in from before it and out, Shift+Tab in from after it and out', async ({ page }) => {
+        test(`A11Y-4 / ADR-0080: the Keyboard Field is the Sheet's one tab stop — Tab in from before it and out, Shift+Tab in from after it and out ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
             await expect(grid).toHaveAttribute('tabindex', '-1');
@@ -571,7 +571,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await holdsFocus(grid)).toBe(false);
         });
 
-        test('KB-8 / ADR-0012 / ADR-0080: Escape, Escape, a press on a control elsewhere on the page, then Tab back into the Sheet — the release has ended, and Tab cycles inside the selection', async ({ page }) => {
+        test(`KB-8 / ADR-0012 / ADR-0080: Escape, Escape, a press on a control elsewhere on the page, then Tab back into the Sheet — the release has ended, and Tab cycles inside the selection ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
             await pressAt(grid, 'D10');
@@ -595,7 +595,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(keyField(grid)).toBeFocused();
         });
 
-        test('KB-8 / ADR-0012 / ADR-0080: Escape, the released Tab out of the Sheet, Shift+Tab back in — Tab cycles inside the selection again', async ({ page }) => {
+        test(`KB-8 / ADR-0012 / ADR-0080: Escape, the released Tab out of the Sheet, Shift+Tab back in — Tab cycles inside the selection again ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
             await pressAt(grid, 'D10');
@@ -613,7 +613,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(keyField(grid)).toBeFocused();
         });
 
-        test('KB-12 / ADR-0080: the root\'s ring shows when the keyboard arrives by Tab, and not after a click', async ({ page }) => {
+        test(`KB-12 / ADR-0080: the root's ring shows when the keyboard arrives by Tab, and not after a click ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await surround(page, '.ex-grid:has(> .ex-formula-bar)');
 
@@ -647,7 +647,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => ring(grid)).toEqual({ outline: true, marked: true });
         });
 
-        test('A11Y-21 / ADR-0080: over the DevTools protocol, the focused node is the Keyboard Field and its active descendant resolves to the Focus cell', async ({ page }) => {
+        test(`A11Y-21 / ADR-0080: over the DevTools protocol, the focused node is the Keyboard Field and its active descendant resolves to the Focus cell ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressAt(grid, 'D10');
             await expect(keyField(grid)).toBeFocused();
@@ -659,7 +659,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0080 / ADR-0018: on /sheets each Sheet has a Keyboard Field of its own, and a composition in one opens an edit in that one only', async ({ page }) => {
+test('ADR-0080 / ADR-0018: on /sheets each Sheet has a Keyboard Field of its own, and a composition in one opens an edit in that one only @behaviour', async ({ page }) => {
     await page.goto('/sheets');
     const left = sheet(page, 0);
     const right = sheet(page, 1);
@@ -699,7 +699,7 @@ test('ADR-0080 / ADR-0018: on /sheets each Sheet has a Keyboard Field of its own
     await expect(keyField(left)).toBeFocused();
 });
 
-test('ADR-0080: focus put on the root itself goes on to the Keyboard Field', async ({ page }) => {
+test('ADR-0080: focus put on the root itself goes on to the Keyboard Field @behaviour', async ({ page }) => {
     await openSheet(page);
     const grid = sheet(page);
     await pressAt(grid, 'C3');
@@ -708,7 +708,7 @@ test('ADR-0080: focus put on the root itself goes on to the Keyboard Field', asy
     await expect(keyField(grid)).toBeFocused();
 });
 
-test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard Field is read-only, and no composition starts there', async ({ page }) => {
+test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard Field is read-only, and no composition starts there @behaviour', async ({ page }) => {
     await page.goto('/features');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -752,7 +752,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grids(page).first().locator('.ex-row').first()).toBeVisible();
         });
 
-        test('A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise', async ({ page }) => {
+        test(`A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = grids(page).first();
             const menus = grid.locator('.ex-header .ex-menu-button');
             expect(await menus.count()).toBeGreaterThan(0);
@@ -783,7 +783,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid.locator('.ex-popover')).toHaveCount(0);
         });
 
-        test('A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out', async ({ page }) => {
+        test(`A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = grids(page).nth(1);
             await expect(grid.locator('.ex-header .ex-menu-button').first()).toBeAttached();
             await expect(keyField(grid)).toHaveCount(0);
@@ -818,7 +818,7 @@ test.describe('/wide, a display-only grid', () => {
         await expect(wide(page).locator('.ex-menu-button')).toHaveCount(0);
     });
 
-    test('ADR-0080 / A11Y-5: a display-only grid has no Keyboard Field and keeps the keyboard and aria-activedescendant on its root', async ({ page }) => {
+    test('ADR-0080 / A11Y-5: a display-only grid has no Keyboard Field and keeps the keyboard and aria-activedescendant on its root @behaviour', async ({ page }) => {
         const grid = wide(page);
         await expect(grid.locator('input.ex-key-field')).toHaveCount(0);
         await expect(grid).toHaveAttribute('tabindex', '0');
@@ -827,7 +827,7 @@ test.describe('/wide, a display-only grid', () => {
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c3$/);
     });
 
-    test('A11Y-4 / ADR-0080: the root is the one tab stop of a display-only grid — Tab in from before it and out, Shift+Tab in from after it and out', async ({ page }) => {
+    test('A11Y-4 / ADR-0080: the root is the one tab stop of a display-only grid — Tab in from before it and out, Shift+Tab in from after it and out @behaviour', async ({ page }) => {
         const grid = wide(page);
         await surround(page, '.ex-grid');
 
@@ -845,7 +845,7 @@ test.describe('/wide, a display-only grid', () => {
         await expect(page.locator('#before-grid')).toBeFocused();
     });
 
-    test('KB-8 / ADR-0012 / ADR-0080: on a grid without a field too, a press elsewhere on the page ends the release, and Tab back in cycles inside the selection', async ({ page }) => {
+    test('KB-8 / ADR-0012 / ADR-0080: on a grid without a field too, a press elsewhere on the page ends the release, and Tab back in cycles inside the selection @behaviour', async ({ page }) => {
         const grid = wide(page);
         await surround(page, '.ex-grid');
         await grid.locator("[id$='r1c3']").click({ force: true });
@@ -862,7 +862,7 @@ test.describe('/wide, a display-only grid', () => {
         await expect(grid).toBeFocused();
     });
 
-    test('KB-12 / ADR-0080: a display-only grid keeps :focus-visible on its root — the ring after Tab, none after a click, and no mark', async ({ page }) => {
+    test('KB-12 / ADR-0080: a display-only grid keeps :focus-visible on its root — the ring after Tab, none after a click, and no mark @behaviour', async ({ page }) => {
         const grid = wide(page);
         await surround(page, '.ex-grid');
 
@@ -882,7 +882,7 @@ test.describe('/wide, a display-only grid', () => {
 // (?editable=1), so the grid holds the keyboard in its Keyboard Field beside the Review column's
 // Interactive cells.
 for (const chrome of ['builtin', 'mud']) {
-    test(`A11Y-21 / ADR-0080 / ADR-0037 under the ${chrome} Chrome: on /cells, while Interactive, the field's active descendant resolves to the chosen action's button`, async ({ page }) => {
+    test(`A11Y-21 / ADR-0080 / ADR-0037 under the ${chrome} Chrome: on /cells, while Interactive, the field's active descendant resolves to the chosen action's button ${chromeHost(chrome)}`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/cells?editable=1' : `/cells?editable=1&chrome=${chrome}`);
         const grid = page.locator('.ex-grid').first();
         await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -916,7 +916,7 @@ for (const chrome of ['builtin', 'mud']) {
 test.describe('the Server host only', () => {
     test.skip(!SERVER, 'a round trip exists only on a circuit');
 
-    test('ED-30 / ADR-0010 (the hold): Enter typed straight after a composition ends waits for the editor it opens, and commits it (150 ms)', async ({ page }) => {
+    test('ED-30 / ADR-0010 (the hold): Enter typed straight after a composition ends waits for the editor it opens, and commits it (150 ms) @blazor', async ({ page }) => {
         await openSheet(page);
         const grid = sheet(page);
         await pressAt(grid, 'D10');

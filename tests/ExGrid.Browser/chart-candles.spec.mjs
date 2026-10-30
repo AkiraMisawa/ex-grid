@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
     await page.mouse.move(0, 0);
 });
 
-test('ADR-0300, ADR-0302: ten years merge into months, rising hollow and falling filled, with volume below', async ({ page }) => {
+test('ADR-0300, ADR-0302: ten years merge into months, rising hollow and falling filled, with volume below @behaviour', async ({ page }) => {
     const chart = index(page);
     await expect(chart.locator('.ex-chart-notes')).toContainText('Index: monthly candles, merged from rows to fit.');
     // Candles and volume bars: one path each for rising and falling, in each of the two panels.
@@ -26,7 +26,7 @@ test('ADR-0300, ADR-0302: ten years merge into months, rising hollow and falling
     expect(new Set(fills.slice(0, 2)).size, 'rising and falling bodies differ').toBe(2);
 });
 
-test('ADR-0304: a scatter\'s intervals run both ways through each mark, and the tooltip names both', async ({ page }) => {
+test('ADR-0304: a scatter\'s intervals run both ways through each mark, and the tooltip names both @behaviour', async ({ page }) => {
     const chart = page.locator('#estimates .ex-chart');
     await chart.scrollIntoViewIfNeeded();
     const whiskers = await chart.locator('path.ex-chart-whiskers').getAttribute('d');

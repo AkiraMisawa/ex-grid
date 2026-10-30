@@ -27,7 +27,7 @@ async function countMarkChanges(grid) {
 const focusNow = (grid) => grid.evaluate((root) => root.querySelector('.ex-cell.ex-focus-cell, [aria-selected="true"].ex-focus-cell')?.id
     ?? root.getAttribute('aria-activedescendant') ?? root.querySelector('.ex-key-field')?.getAttribute('aria-activedescendant'));
 
-test('ADR-0220: a key takes the mark off at once, and it comes back once the key\'s move is painted', async ({ page }) => {
+test('ADR-0220: a key takes the mark off at once, and it comes back once the key\'s move is painted @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A2');
     await settled(grid);
@@ -42,7 +42,7 @@ test('ADR-0220: a key takes the mark off at once, and it comes back once the key
     expect(await changes()).toBe(2);
 });
 
-test('ADR-0220: twenty arrows typed at once, read once after the mark, find the Focus where the last one left it', async ({ page }) => {
+test('ADR-0220: twenty arrows typed at once, read once after the mark, find the Focus where the last one left it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B2');
     await settled(grid);
@@ -60,7 +60,7 @@ test('ADR-0220: twenty arrows typed at once, read once after the mark, find the 
     expect(await changes()).toBeLessThanOrEqual(40);
 });
 
-test('ADR-0220: after Ctrl+Down twice reveals a far cell, the offset read once after the mark is the reveal\'s, never the repaint\'s pixel', async ({ page }) => {
+test('ADR-0220: after Ctrl+Down twice reveals a far cell, the offset read once after the mark is the reveal\'s, never the repaint\'s pixel @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A1');
     await settled(grid);
@@ -73,7 +73,7 @@ test('ADR-0220: after Ctrl+Down twice reveals a far cell, the offset read once a
     expect(first, 'the offset does not move after the mark').toBe(later);
 });
 
-test('ADR-0220: an edit opened by a key and committed by Enter is read once after the mark', async ({ page }) => {
+test('ADR-0220: an edit opened by a key and committed by Enter is read once after the mark @blazor', async ({ page }) => {
     const grid = sheet(page);
     await setRoundTrip(150);
     await pressCell(grid, 'D10');
@@ -92,7 +92,7 @@ test('ADR-0220: an edit opened by a key and committed by Enter is read once afte
 // ASY-7's other inputs: a press on the rows, a paste, a copy in flight, a composition, and a render
 // owed on one of the grid's own timers. Each is read once, straight after the mark.
 
-test('ASY-7 / ADR-0220: a press on the rows is read once after the mark', async ({ page }) => {
+test('ASY-7 / ADR-0220: a press on the rows is read once after the mark @blazor', async ({ page }) => {
     const grid = sheet(page);
     await setRoundTrip(150);
     await pressCell(grid, 'A2');
@@ -104,7 +104,7 @@ test('ASY-7 / ADR-0220: a press on the rows is read once after the mark', async 
     await setRoundTrip(0);
 });
 
-test('ASY-7 / ADR-0220: a paste, and the copy of what it wrote, are each read once after the mark', async ({ page, context }) => {
+test('ASY-7 / ADR-0220: a paste, and the copy of what it wrote, are each read once after the mark @blazor', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const grid = sheet(page);
     await setRoundTrip(150);
@@ -130,7 +130,7 @@ test('ASY-7 / ADR-0220: a paste, and the copy of what it wrote, are each read on
     await setRoundTrip(0);
 });
 
-test('ASY-7 / ADR-0220/0080: a composition on a selected cell is read once after the mark, and so is its commit', async ({ page }) => {
+test('ASY-7 / ADR-0220/0080: a composition on a selected cell is read once after the mark, and so is its commit @blazor', async ({ page }) => {
     const grid = sheet(page);
     await setRoundTrip(150);
     await pressCell(grid, 'D12');
@@ -150,7 +150,7 @@ test('ASY-7 / ADR-0220/0080: a composition on a selected cell is read once after
     await setRoundTrip(0);
 });
 
-test('ASY-7 / ADR-0220/0033: the description of a selection, owed on the grid\'s timer, is read once after the mark', async ({ page }) => {
+test('ASY-7 / ADR-0220/0033: the description of a selection, owed on the grid\'s timer, is read once after the mark @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B3');
     await settled(grid);

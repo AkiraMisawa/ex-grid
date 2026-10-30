@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames, holdReplies, setRoundTrip } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames, holdReplies, setRoundTrip, chromeHost } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 import { acrossEdges, blend, onDevicePixels, paints } from './pixels.mjs';
 
@@ -41,7 +41,7 @@ for (const chrome of ['builtin', 'mud']) {
             await grid(page).locator("[id$='r0c0']").click({ force: true });
         });
 
-        test('Ctrl+F opens the grid\'s panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055)', async ({ page }) => {
+        test(`Ctrl+F opens the grid's panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             await watchNextKey(page, ['f', 'F']);
             // Typed together: the panel takes DOM focus a render later, and the letters are
             // held until it has (ADR-0010/0039).
@@ -71,7 +71,7 @@ for (const chrome of ['builtin', 'mud']) {
         // but before that frame was held, and a held Tab cannot be handed on from script, so it was refused
         // and the field kept the keyboard. On main it did so whenever no frame fell between the two. Here
         // no frame falls until the Tab is typed, so that is the case every time.
-        test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before any frame has looked', async ({ page }) => {
+        test(`FD-1/ADR-0240: a Tab typed once Find's field holds the keyboard moves on in the panel, before any frame has looked ${chromeHost(chrome)}`, async ({ page }) => {
             await settled(grid(page));
             const letGo = await holdFrames(page);
             await page.keyboard.press('ControlOrMeta+f');
@@ -95,7 +95,7 @@ for (const chrome of ['builtin', 'mud']) {
         // the keyboard, once the core's focus call has come back, and a Tab typed in between was refused (CI
         // on PR #322, Chrome). The round trip is widened there, and the Tab typed as the field takes the
         // keyboard, so that is the case every time too.
-        test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before Ctrl+F\'s reply has come', async ({ page }) => {
+        test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before Ctrl+F\'s reply has come @blazor', async ({ page }) => {
             const letGo = await holdReplies(page, 'OnKeyAsync');
             await page.goto(`/features?chrome=${chrome}`);
             await grid(page).locator("[id$='r0c0']").click({ force: true });
@@ -119,7 +119,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await panel.evaluate((p) => p.contains(document.activeElement)), 'the keyboard is still the panel\'s').toBe(true);
         });
 
-        test('a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22)', async ({ page }) => {
+        test(`a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22) ${chromeHost(chrome)}`, async ({ page }) => {
             // All of it before the panel can have taken DOM focus on a circuit: the keys are
             // held and handed to the field. A Shift pressed for the capital, and for the
             // Shift+Enter, is a keydown of its own and must not stop the replay there. Backward
@@ -132,7 +132,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('Novak');
         });
 
-        test('a match beyond the painted rows is reached and revealed (FD-5, ADR-0055)', async ({ page }) => {
+        test(`a match beyond the painted rows is reached and revealed (FD-5, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             // Row 350's notional: 1,000,000 + 350 × 12,345.67, shown without separators.
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
@@ -144,7 +144,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator("[id$='r350c2']")).toBeInViewport();
         });
 
-        test('ADR-0240: a tick of Match case or Match entire cell contents and the step clicked straight after it are taken in the order they were made (find ticket 06)', async ({ page }) => {
+        test(`ADR-0240: a tick of Match case or Match entire cell contents and the step clicked straight after it are taken in the order they were made (find ticket 06) ${chromeHost(chrome)}`, async ({ page }) => {
             // Each phase is driven at machine speed, nothing awaited between the step, the tick and the
             // step after it: a tick is a click in the Input Order, so the step clicked before it searches
             // with the option as it stood and the one clicked after it with the option ticked, on every
@@ -181,7 +181,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(box('whole-cell')).toBeChecked();
         });
 
-        test('Ctrl+F in the find field selects its text, and the browser\'s find stays shut (FD-1, ADR-0055)', async ({ page }) => {
+        test(`Ctrl+F in the find field selects its text, and the browser's find stays shut (FD-1, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
             await expect(field).toBeFocused();
@@ -196,7 +196,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => field.evaluate((el) => [el.selectionStart, el.selectionEnd])).toEqual([0, 5]);
         });
 
-        test('Ctrl+F in a column\'s popover opens Find in its place (FD-1, ADR-0055)', async ({ page }) => {
+        test(`Ctrl+F in a column's popover opens Find in its place (FD-1, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('Alt+ArrowDown');
             const menu = grid(page).locator('.ex-popover [role=menu]').first();
             await expect(menu).toBeVisible();
@@ -210,7 +210,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
         });
 
-        test('Ctrl+F in the Context Menu, and in the filter\'s text field, opens Find in its place (FD-1, ADR-0055)', async ({ page }) => {
+        test(`Ctrl+F in the Context Menu, and in the filter's text field, opens Find in its place (FD-1, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('Shift+F10');
             await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             await page.keyboard.press('ControlOrMeta+f');
@@ -234,7 +234,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
         });
 
-        test('a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055)', async ({ page }) => {
+        test(`a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             // Typed together: on a circuit the column's popover takes DOM focus a round trip
             // later, so the Ctrl+F and the letters are held, and the Ctrl+F must reach the core
             // rather than the menu, which would take a letter as a command.
@@ -248,7 +248,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
         });
 
-        test('Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055)', async ({ page }) => {
+        test(`Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
             await page.keyboard.press('Escape');
@@ -261,7 +261,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // The Match Mark (ADR-0332 §4): /features is bound to GridSource.From, so the reference rule
         // marks every painted match, and the current match apart, under either Chrome.
-        test('every painted match is marked as it is typed, and the current match apart (ADR-0332)', async ({ page }) => {
+        test(`every painted match is marked as it is typed, and the current match apart (ADR-0332) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await page.keyboard.type('novak');
             const field = grid(page).locator('.ex-popover-find input').first();
@@ -293,7 +293,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
         });
 
-        test('a match scrolled into view is marked as it is painted, with no step asked (ADR-0332)', async ({ page }) => {
+        test(`a match scrolled into view is marked as it is painted, with no step asked (ADR-0332) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await page.keyboard.type('novak');
             await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
@@ -334,7 +334,7 @@ for (const chrome of ['builtin', 'mud']) {
             return panel;
         }
 
-        test('Ctrl+H opens the panel with Replace, and Replace All replaces every match as one undo step (ADR-0332)', async ({ page }) => {
+        test(`Ctrl+H opens the panel with Replace, and Replace All replaces every match as one undo step (ADR-0332) ${chromeHost(chrome)}`, async ({ page }) => {
             const panel = await openReplace(page, 'novak', 'Rossi');
 
             await panel.locator(replaceParts.all).click();
@@ -359,7 +359,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test('with Replace shown, Enter in either field finds the next match (ADR-0332, ADR-0055)', async ({ page }) => {
+        test(`with Replace shown, Enter in either field finds the next match (ADR-0332, ADR-0055) ${chromeHost(chrome)}`, async ({ page }) => {
             const panel = await openReplace(page, 'novak', 'Rossi');
 
             // The keyboard is in the Replace field: the form's second field must not stop the step.
@@ -372,7 +372,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator("[id$='r3c1']")).toHaveText('Novak');
         });
 
-        test('Ctrl+F in a field of the panel with Replace turns it back into Find alone (ADR-0332)', async ({ page }) => {
+        test(`Ctrl+F in a field of the panel with Replace turns it back into Find alone (ADR-0332) ${chromeHost(chrome)}`, async ({ page }) => {
             const panel = await openReplace(page, 'novak', 'Rossi');
 
             await page.keyboard.press('ControlOrMeta+f');
@@ -389,7 +389,7 @@ for (const chrome of ['builtin', 'mud']) {
         // before the first row; the Focus stays where it is.
         const header = (page, text) => grid(page).locator('.ex-header-cell, .ex-header-group').filter({ hasText: new RegExp(`^${text}$`) });
 
-        test('ADR-0333: a column header Find reaches is the current match, marked over its own box, said in the panel, and the Focus stays', async ({ page }) => {
+        test(`ADR-0333: a column header Find reaches is the current match, marked over its own box, said in the panel, and the Focus stays ${chromeHost(chrome)}`, async ({ page }) => {
             const trader = header(page, 'Trader');
             await circuitQuiet();
             // Its edges on Device Pixels (ADR-0090), read before the mark and after it.
@@ -438,7 +438,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('Tab stays inside the find panel (FD-8, ADR-0055/0039)', async ({ page }) => {
+test('Tab stays inside the find panel (FD-8, ADR-0055/0039) @behaviour', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c0']").click({ force: true });
@@ -452,7 +452,7 @@ test('Tab stays inside the find panel (FD-8, ADR-0055/0039)', async ({ page }) =
     }
 });
 
-test('the find panel stands inside the grid\'s box (FD-8, ADR-0055/0040)', async ({ page }) => {
+test('the find panel stands inside the grid\'s box (FD-8, ADR-0055/0040) @behaviour', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c0']").click({ force: true });
@@ -469,7 +469,7 @@ test('the find panel stands inside the grid\'s box (FD-8, ADR-0055/0040)', async
     await expect(page.locator('.ex-popover-find')).toHaveCount(1);
 });
 
-test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, ADR-0055)', async ({ page }) => {
+test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, ADR-0055) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -485,7 +485,7 @@ test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, A
     await expect.poll(() => cells.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
 });
 
-test('in the Cell Editor Ctrl+F and Ctrl+H are taken from the browser and do nothing (FD-1, ADR-0055, ADR-0332)', async ({ page }) => {
+test('in the Cell Editor Ctrl+F and Ctrl+H are taken from the browser and do nothing (FD-1, ADR-0055, ADR-0332) @behaviour', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c1']").click({ force: true });
@@ -502,7 +502,7 @@ test('in the Cell Editor Ctrl+F and Ctrl+H are taken from the browser and do not
     }
 });
 
-test('a grid with nothing to replace takes Ctrl+H and opens nothing (ADR-0332)', async ({ page }) => {
+test('a grid with nothing to replace takes Ctrl+H and opens nothing (ADR-0332) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();

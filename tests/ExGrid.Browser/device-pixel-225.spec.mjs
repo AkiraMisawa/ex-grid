@@ -34,7 +34,7 @@ async function runAcross(page, at, along, axis) {
     return pixels.filter((pixel) => !sameColour(pixel, WHITE, 2));
 }
 
-test('VZ-16: at a ratio of 2.25 a gridline is two whole Device Pixels, not the step\'s 2.25 blended over three (ADR-0090)', async ({ page }) => {
+test('VZ-16: at a ratio of 2.25 a gridline is two whole Device Pixels, not the step\'s 2.25 blended over three (ADR-0090) @behaviour', async ({ page }) => {
     await page.goto('/sheet?case=11');
     const grid = sheet(page);
     await expect(grid.locator('.ex-row').first()).toBeVisible();

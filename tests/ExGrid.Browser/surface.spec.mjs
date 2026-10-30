@@ -24,13 +24,13 @@ async function dot(page, index) {
     return [frame.x + cx, frame.y + cy];
 }
 
-test('CH-7, ADR-0274: a missing value is a hole: its point is not drawn, nor the four faces round it', async ({ page }) => {
+test('CH-7, ADR-0274: a missing value is a hole: its point is not drawn, nor the four faces round it @behaviour', async ({ page }) => {
     await expect(box(page).locator('circle.ex-chart-surface-point')).toHaveCount(5 * 8 - 1);
     await expect(box(page).locator('polygon.ex-chart-surface-face')).toHaveCount(4 * 7 - 4);
     await expect(box(page)).toHaveAttribute('aria-label', /with 1 hole where the data has no value\.$/);
 });
 
-test('ADR-0274: the tooltip names the grid point nearest the pointer, each value through its format', async ({ page }) => {
+test('ADR-0274: the tooltip names the grid point nearest the pointer, each value through its format @behaviour', async ({ page }) => {
     const [x, y] = await dot(page, 0);
     await page.mouse.move(x + 2, y + 1);
     const tooltip = surface(page).locator('.ex-chart-surface-tooltip');
@@ -53,7 +53,7 @@ async function walls(page) {
     return all;
 }
 
-test('ADR-0274, ADR-0272: a drag turns the surface, a turn for the box\'s height, and the view is raised when it ends', async ({ page }) => {
+test('ADR-0274, ADR-0272: a drag turns the surface, a turn for the box\'s height, and the view is raised when it ends @behaviour', async ({ page }) => {
     const before = await box(page).locator('polygon.ex-chart-surface-face').first().getAttribute('points');
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + 40, frame.y + 40);
@@ -67,7 +67,7 @@ test('ADR-0274, ADR-0272: a drag turns the surface, a turn for the box\'s height
     expect(await box(page).locator('polygon.ex-chart-surface-face').first().getAttribute('points')).not.toBe(before);
 });
 
-test('ADR-0274: the surface is seen from above, so the walls behind it meet at the floor\'s far corner', async ({ page }) => {
+test('ADR-0274: the surface is seen from above, so the walls behind it meet at the floor\'s far corner @behaviour', async ({ page }) => {
     const [floor, wallY, wallX] = await walls(page);
     // The far corner is the floor's highest on screen; both walls stand on it.
     const far = floor.reduce((best, p) => (p[1] < best[1] ? p : best));
@@ -76,7 +76,7 @@ test('ADR-0274: the surface is seen from above, so the walls behind it meet at t
     expect(on(wallX)).toBe(true);
 });
 
-test('ADR-0274: a drag to the right brings the near side of the surface to the right, and a drag down tips its top toward the viewer', async ({ page }) => {
+test('ADR-0274: a drag to the right brings the near side of the surface to the right, and a drag down tips its top toward the viewer @behaviour', async ({ page }) => {
     // 10P at 1W is the corner nearest the viewer at the first view.
     const [x0] = await dot(page, 0);
     const frame = await box(page).boundingBox();
@@ -99,7 +99,7 @@ test('ADR-0274: a drag to the right brings the near side of the surface to the r
     await expect.poll(async () => span((await walls(page))[0])).toBeGreaterThan(open + 5);
 });
 
-test('ADR-0274: the surface turns below its floor, to a pitch of -90, and seen from below its top is behind it', async ({ page }) => {
+test('ADR-0274: the surface turns below its floor, to a pitch of -90, and seen from below its top is behind it @behaviour', async ({ page }) => {
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + 40, frame.y + frame.height - 5);
     await page.mouse.down();
@@ -119,7 +119,7 @@ test('ADR-0274: the surface turns below its floor, to a pitch of -90, and seen f
     expect(on(wallX)).toBe(true);
 });
 
-test('ADR-0274: a drag with the right button pans and opens no menu, and draws no slice', async ({ page }) => {
+test('ADR-0274: a drag with the right button pans and opens no menu, and draws no slice @behaviour', async ({ page }) => {
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + 40, frame.y + 40);
     await page.mouse.down({ button: 'right' });
@@ -132,7 +132,7 @@ test('ADR-0274: a drag with the right button pans and opens no menu, and draws n
     await expect(surface(page).locator('.ex-chart-surface-slice-chart')).toHaveCount(0);
 });
 
-test('ADR-0274: the arrow keys turn the surface, + zooms and Shift with an arrow pans', async ({ page }) => {
+test('ADR-0274: the arrow keys turn the surface, + zooms and Shift with an arrow pans @behaviour', async ({ page }) => {
     await box(page).focus();
     await page.keyboard.press('ArrowRight');
     await expect(events(page)).toHaveText('View: yaw -30, pitch 28, zoom 1, pan 0 0');
@@ -147,7 +147,7 @@ test('ADR-0274: the arrow keys turn the surface, + zooms and Shift with an arrow
     await expect(events(page)).toHaveText('View: yaw -35, pitch 28, zoom 1, pan 0 0');
 });
 
-test('ADR-0274: the wheel zooms the surface by how far it moved', async ({ page }) => {
+test('ADR-0274: the wheel zooms the surface by how far it moved @behaviour', async ({ page }) => {
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
     await page.mouse.wheel(0, -100);
@@ -157,7 +157,7 @@ test('ADR-0274: the wheel zooms the surface by how far it moved', async ({ page 
     await expect(events(page)).toHaveText('View: yaw -35, pitch 28, zoom 1.21, pan 0 0');
 });
 
-test('ADR-0274: a click on a grid point draws its slice beside the surface, and new data keeps it', async ({ page }) => {
+test('ADR-0274: a click on a grid point draws its slice beside the surface, and new data keeps it @behaviour', async ({ page }) => {
     const [x, y] = await dot(page, 0);
     await page.mouse.click(x, y);
     await expect(events(page)).toHaveText(/^Slice: [XY] (10P|1W)$/);
@@ -172,7 +172,7 @@ test('ADR-0274: a click on a grid point draws its slice beside the surface, and 
     await expect(box(page).locator('.ex-chart-surface-slice polyline')).toHaveCount(1);
 });
 
-test('ADR-0274: the slice through the hole breaks there, and the 2D chart has a gap', async ({ page }) => {
+test('ADR-0274: the slice through the hole breaks there, and the 2D chart has a gap @behaviour', async ({ page }) => {
     // Turned square and seen from above, the 5Y line runs left to right; a click just right of its
     // first point falls on it.
     await box(page).focus();
@@ -185,12 +185,12 @@ test('ADR-0274: the slice through the hole breaks there, and the 2D chart has a 
     await expect(box(page).locator('.ex-chart-surface-slice polyline')).toHaveCount(2);
 });
 
-test('ADR-0282: the drawing is handed over as SVG text with its colours resolved', async ({ page }) => {
+test('ADR-0282: the drawing is handed over as SVG text with its colours resolved @behaviour', async ({ page }) => {
     await page.locator('#svg-text').click();
     await expect(page.locator('#surface-svg')).toHaveText(/^SVG: \d+ characters, without classes$/);
 });
 
-test('ADR-0257: a surface the page interpolated names its method, draws no dot between the quotes, and keeps its hole', async ({ page }) => {
+test('ADR-0257: a surface the page interpolated names its method, draws no dot between the quotes, and keeps its hole @behaviour', async ({ page }) => {
     const other = page.locator('#interpolated .ex-chart-surface');
     const otherBox = other.locator('.ex-chart-surface-box');
     await expect(otherBox.locator('polygon.ex-chart-surface-face')).not.toHaveCount(0);
@@ -208,13 +208,13 @@ test('ADR-0257: a surface the page interpolated names its method, draws no dot b
 
 const boxIn = (page, id) => page.locator(`#${id} .ex-chart-surface-box`);
 
-test('ADR-0310: a surface carries its colour bar, nine bands with their values beside them', async ({ page }) => {
+test('ADR-0310: a surface carries its colour bar, nine bands with their values beside them @behaviour', async ({ page }) => {
     await expect(box(page).locator('rect.ex-chart-surface-bar-band')).toHaveCount(9);
     await expect(box(page).locator('.ex-chart-surface-bar text')).not.toHaveCount(0);
     await expect(box(page).locator('polygon.ex-chart-surface-face.ex-chart-heat-0')).not.toHaveCount(0);
 });
 
-test('ADR-0310: colours that diverge from zero paint below it red and above it blue, and the bar marks zero', async ({ page }) => {
+test('ADR-0310: colours that diverge from zero paint below it red and above it blue, and the bar marks zero @behaviour', async ({ page }) => {
     const pnl = boxIn(page, 'pnl');
     await expect(pnl.locator('polygon.ex-chart-surface-face')).toHaveCount(6 * 4);
     await expect(pnl.locator('polygon.ex-chart-surface-face[class*="ex-chart-heat-"]')).toHaveCount(0);
@@ -225,7 +225,7 @@ test('ADR-0310: colours that diverge from zero paint below it red and above it b
     await expect.poll(() => fill(8)).toBe('rgb(33, 102, 172)');
 });
 
-test('ADR-0311: a mesh is drawn as its own triangles, with a dot at each node and none where the domain has a hole', async ({ page }) => {
+test('ADR-0311: a mesh is drawn as its own triangles, with a dot at each node and none where the domain has a hole @behaviour', async ({ page }) => {
     const mesh = boxIn(page, 'mesh');
     await expect(mesh.locator('polygon.ex-chart-surface-face')).toHaveCount(2 * 15);
     await expect(mesh.locator('circle.ex-chart-surface-point')).toHaveCount(25);
@@ -233,7 +233,7 @@ test('ADR-0311: a mesh is drawn as its own triangles, with a dot at each node an
     expect(corners.trim().split(/\s+/)).toHaveLength(3);
 });
 
-test('ADR-0311: a node is read in the tooltip, and a click on it slices through its position, cutting the triangles', async ({ page }) => {
+test('ADR-0311: a node is read in the tooltip, and a click on it slices through its position, cutting the triangles @behaviour', async ({ page }) => {
     const section = page.locator('#mesh .ex-chart-surface');
     const mesh = boxIn(page, 'mesh');
     await expect(section).not.toHaveAttribute('aria-busy', 'true');
@@ -249,7 +249,7 @@ test('ADR-0311: a node is read in the tooltip, and a click on it slices through 
     await expect(section.locator('.ex-chart-surface-slice-chart')).toContainText("linear on the Consumer's triangles (P1)");
 });
 
-test('ADR-0312: an axis and the vertical scale placed by their logarithm are labelled at round values', async ({ page }) => {
+test('ADR-0312: an axis and the vertical scale placed by their logarithm are labelled at round values @behaviour', async ({ page }) => {
     const log = boxIn(page, 'log');
     await expect(log.locator('.ex-chart-surface-labels text').filter({ hasText: /^10Y$/ })).toHaveCount(1);
     await expect(log.locator('.ex-chart-surface-walls text').filter({ hasText: /^10$/ })).toHaveCount(1);

@@ -28,7 +28,7 @@ async function hover(page, chart, panel, fx, fy = 0.5) {
     await expect(chart.locator('.ex-chart-tooltip')).toBeVisible();
 }
 
-test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, and the guide crosses every panel', async ({ page }) => {
+test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, and the guide crosses every panel @behaviour', async ({ page }) => {
     const chart = exposure(page);
     await hover(page, chart, 0, 0.3);
     const tooltip = chart.locator('.ex-chart-tooltip');
@@ -51,7 +51,7 @@ test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, an
     await expect(guide).toHaveCount(0);
 });
 
-test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a second shows it', async ({ page }) => {
+test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a second shows it @behaviour', async ({ page }) => {
     const chart = exposure(page);
     const entry = chart.locator('g.ex-chart-legend-entry[data-series="ene-before"]');
     await entry.click();
@@ -63,7 +63,7 @@ test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a se
     await expect(chart.locator('g.ex-chart-series[data-series="ene-before"]')).toHaveCount(1);
 });
 
-test('ADR-0273, ADR-0272: a drag across the plot narrows the range; a double-click returns it', async ({ page }) => {
+test('ADR-0273, ADR-0272: a drag across the plot narrows the range; a double-click returns it @behaviour', async ({ page }) => {
     const chart = exposure(page);
     const plot = layer(chart, 0);
     const [x1, y] = await pointIn(plot, 0.2);
@@ -80,7 +80,7 @@ test('ADR-0273, ADR-0272: a drag across the plot narrows the range; a double-cli
     await expect(chart.locator('.ex-chart-reset')).toBeDisabled();
 });
 
-test('ADR-0272, CH-5: a drag begun before the data is replaced is refused when it ends', async ({ page }) => {
+test('ADR-0272, CH-5: a drag begun before the data is replaced is refused when it ends @behaviour', async ({ page }) => {
     const chart = exposure(page);
     const plot = layer(chart, 0);
     const [x1, y] = await pointIn(plot, 0.2);
@@ -101,7 +101,7 @@ test('ADR-0272, CH-5: a drag begun before the data is replaced is refused when i
     await expect(chart.locator('rect.ex-chart-band')).toHaveCount(0);
 });
 
-test('ADR-0275, CH-8: the chart is an image named by its summary, and View as table holds its data', async ({ page }) => {
+test('ADR-0275, CH-8: the chart is an image named by its summary, and View as table holds its data @behaviour', async ({ page }) => {
     const chart = exposure(page);
     await expect(chart.getByRole('img', { name: /^Exposure profile\. Date, 2026-10-30 to 2036-10-30\./ })).toHaveCount(1);
     await expect(chart.getByRole('img', { name: /EPE · After: maximum [\d,.]+ at \d{4}-\d{2}-\d{2}\./ })).toHaveCount(1);

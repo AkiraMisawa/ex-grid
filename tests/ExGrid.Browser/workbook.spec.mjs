@@ -1,4 +1,4 @@
-import { test, expect, settled, alterPage } from './fixtures.mjs';
+import { test, expect, settled, alterPage, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, pressCell, goTo, expectFocusAt, editor, bar, typeIntoNameBox, nameBox } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -21,7 +21,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         const tab = (page, name) => page.locator('.ex-sheet-tab', { hasText: name });
 
-        test('WB-1: Ctrl+PageDown and Ctrl+PageUp show the Sheet after and before, and stop at the last and the first', async ({ page }) => {
+        test(`WB-1: Ctrl+PageDown and Ctrl+PageUp show the Sheet after and before, and stop at the last and the first ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -39,7 +39,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B2');
         });
 
-        test('WB-2: keys typed at once after Ctrl+PageDown land on the Sheet shown, at its own Focus, and nothing on the Sheet left', async ({ page }) => {
+        test(`WB-2: keys typed at once after Ctrl+PageDown land on the Sheet shown, at its own Focus, and nothing on the Sheet left ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'A1');
@@ -63,7 +63,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'C3')).toHaveText('289.5');
         });
 
-        test('WB-3: each Sheet keeps where it was scrolled', async ({ page }) => {
+        test(`WB-3: each Sheet keeps where it was scrolled ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await goTo(grid, 'A150');
@@ -79,7 +79,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'A150');
         });
 
-        test('WB-4: a press on a tab shows its Sheet and leaves the keyboard in the grid', async ({ page }) => {
+        test(`WB-4: a press on a tab shows its Sheet and leaves the keyboard in the grid ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -94,7 +94,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // Input-order ticket 04: a press on a tab is numbered as it happens (data-ex-claims), so the keys
         // typed straight after it are taken once the Sheet it shows is shown, at that Sheet's own Focus.
-        test('WB-5/ADR-0240: keys typed at once after a press on a tab land on the Sheet shown, at its own Focus', async ({ page }) => {
+        test(`WB-5/ADR-0240: keys typed at once after a press on a tab land on the Sheet shown, at its own Focus ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'A1');
@@ -121,7 +121,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // Input-order ticket 04: a key on the tab list is in the Sheet's order. Escape gives the keyboard
         // back to the grid, and the arrow typed straight after it is taken there, once Escape is answered.
-        test('WB-6/ADR-0240: Escape on the tab list, then ↓ at once, moves the Focus in the grid', async ({ page }) => {
+        test(`WB-6/ADR-0240: Escape on the tab list, then ↓ at once, moves the Focus in the grid ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -141,7 +141,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Input-order ticket 04's review: the arrow keys on the tab list give the keyboard to the tab they
         // select through the grid, in the Input Order, and the tab takes it where it stands, as its own focus
         // did before: the page does not scroll to bring it into view.
-        test('WB-6/ADR-0240: → on the tab list selects the next tab without scrolling the page', async ({ page }) => {
+        test(`WB-6/ADR-0240: → on the tab list selects the next tab without scrolling the page ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -172,7 +172,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
         });
 
-        test('WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view', async ({ page }) => {
+        test(`WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await tab(page, 'Summary').click();
@@ -188,7 +188,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#workbook-shown')).toHaveText('Claim');
         });
 
-        test('WB-6: a Formula typed at once across Ctrl+PageUp points at the Sheet before, and Enter commits it on its own Sheet', async ({ page }) => {
+        test(`WB-6: a Formula typed at once across Ctrl+PageUp points at the Sheet before, and Enter commits it on its own Sheet ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await pressCell(grid, 'B2');
@@ -212,7 +212,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(bar(grid)).toHaveValue('=Claim!B3');
         });
 
-        test('WB-7: a press on a tab while a Formula is typed keeps the edit, and a press on a cell there writes its Reference', async ({ page }) => {
+        test(`WB-7: a press on a tab while a Formula is typed keeps the edit, and a press on a cell there writes its Reference ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await tab(page, 'Summary').click();
@@ -239,7 +239,7 @@ for (const chrome of ['builtin', 'mud']) {
         const tabNames = (page) => page.locator('.ex-sheet-tabs [role=tab]');
         const command = (page, label) => page.locator('.ex-sheet-tab-menu [role=menuitem]', { hasText: label });
 
-        test('WB-8/ADR-0331: + adds a Sheet after the one shown and shows it, and Ctrl+PageDown typed at once steps from it', async ({ page }) => {
+        test(`WB-8/ADR-0331: + adds a Sheet after the one shown and shows it, and Ctrl+PageDown typed at once steps from it ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -255,7 +255,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('WB-8/ADR-0331: Shift+F11 adds a Sheet before the one shown, and Ctrl+PageDown typed at once steps from it', async ({ page }) => {
+        test(`WB-8/ADR-0331: Shift+F11 adds a Sheet before the one shown, and Ctrl+PageDown typed at once steps from it ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -270,7 +270,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'A1')).toHaveText('Item');
         });
 
-        test('WB-9/ADR-0331: a double click renames on the tab, typed and committed at machine speed, and the Formulas follow', async ({ page }) => {
+        test(`WB-9/ADR-0331: a double click renames on the tab, typed and committed at machine speed, and the Formulas follow ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -290,7 +290,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(bar(grid)).toHaveValue('=Costs!D5');
         });
 
-        test('WB-9/ADR-0331: a name Excel refuses is refused by name and stays open; Escape keeps the old name and ↓ typed at once moves in the grid', async ({ page }) => {
+        test(`WB-9/ADR-0331: a name Excel refuses is refused by name and stays open; Escape keeps the old name and ↓ typed at once moves in the grid ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -314,7 +314,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('WB-10/ADR-0331: Delete on the tab\'s menu, from the keys, and Ctrl+Z typed at once gives the Sheet back', async ({ page }) => {
+        test(`WB-10/ADR-0331: Delete on the tab's menu, from the keys, and Ctrl+Z typed at once gives the Sheet back ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -340,7 +340,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'A1')).toHaveText('Item');
         });
 
-        test('WB-11/ADR-0331: Shift+F10 on a tab opens its menu, Move Right moves it, and Ctrl+PageUp typed at once steps from it', async ({ page }) => {
+        test(`WB-11/ADR-0331: Shift+F10 on a tab opens its menu, Move Right moves it, and Ctrl+PageUp typed at once steps from it ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -361,7 +361,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('WB-12/ADR-0331: Copy on the tab\'s menu places the copy after the Sheet and shows it, and Ctrl+PageUp typed at once steps from it', async ({ page }) => {
+        test(`WB-12/ADR-0331: Copy on the tab's menu places the copy after the Sheet and shows it, and Ctrl+PageUp typed at once steps from it ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -379,7 +379,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D5')).toHaveText('4561.25');
         });
 
-        test('WB-13/ADR-0331: a tab dragged onto another takes its place, and Ctrl+PageUp typed at once steps from it', async ({ page }) => {
+        test(`WB-13/ADR-0331: a tab dragged onto another takes its place, and Ctrl+PageUp typed at once steps from it ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -399,7 +399,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('WB-13/ADR-0331: a press on a tab that leaves the strip at once ends the drag, and a release on a tab from a press elsewhere moves nothing', async ({ page }) => {
+        test(`WB-13/ADR-0331: a press on a tab that leaves the strip at once ends the drag, and a release on a tab from a press elsewhere moves nothing ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -427,7 +427,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('.ex-sheet-tab-area')).not.toHaveAttribute('data-ex-dragging', /.*/);
         });
 
-        test('WB-14/ADR-0331: a rename begun from the keys on a tab gives the keyboard back to the tab, so → typed at once selects the next', async ({ page }) => {
+        test(`WB-14/ADR-0331: a rename begun from the keys on a tab gives the keyboard back to the tab, so → typed at once selects the next ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -447,7 +447,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tab(page, 'Summary')).toBeFocused();
         });
 
-        test('WB-15/ADR-0331: a press on another tab while a name is edited commits it, and ↓ typed at once moves in the grid', async ({ page }) => {
+        test(`WB-15/ADR-0331: a press on another tab while a name is edited commits it, and ↓ typed at once moves in the grid ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -466,7 +466,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'B1')).toHaveText('4561.25');
         });
 
-        test('WB-16/ADR-0331: + pressed while a name is edited commits it and gives the keyboard to the grid, so Ctrl+PageDown typed at once steps from the Sheet added', async ({ page }) => {
+        test(`WB-16/ADR-0331: + pressed while a name is edited commits it and gives the keyboard to the grid, so Ctrl+PageDown typed at once steps from the Sheet added ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');
@@ -485,7 +485,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // Exsheet-workbook ticket 08: an undo or a redo shows the Sheet its step was taken on, with the
         // range it changed selected, as Excel's do.
-        test('WB-17/ADR-0331: Ctrl+Z typed at once after a press on another tab shows the Sheet of the step and selects its cell; Ctrl+Y does again', async ({ page }) => {
+        test(`WB-17/ADR-0331: Ctrl+Z typed at once after a press on another tab shows the Sheet of the step and selects its cell; Ctrl+Y does again ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'C3');
@@ -516,7 +516,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('WB-18/ADR-0331: Ctrl+Z typed at once after a press on another tab takes a Sheet added away and shows the Sheet it was added beside', async ({ page }) => {
+        test(`WB-18/ADR-0331: Ctrl+Z typed at once after a press on another tab takes a Sheet added away and shows the Sheet it was added beside ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await clickCell(grid, 'B2');

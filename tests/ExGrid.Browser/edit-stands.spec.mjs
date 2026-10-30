@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, settled, chromeHost, roundTripHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -57,7 +57,7 @@ for (const chrome of ['builtin', 'mud']) {
             await openSheet(page, chrome);
         });
 
-        test('ADR-0018/ED-26: an edit left for another grid stands, that grid\'s keys are its own, and a press back points with the keyboard in the edit', async ({ page }) => {
+        test(`ADR-0018/ED-26: an edit left for another grid stands, that grid's keys are its own, and a press back points with the keyboard in the edit ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C4');
             await page.keyboard.type('=');
@@ -93,7 +93,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
         });
 
-        test('ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar', async ({ page }) => {
+        test(`ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -111,7 +111,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
         });
 
-        test('ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar', async ({ page }) => {
+        test(`ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -133,7 +133,7 @@ for (const chrome of ['builtin', 'mud']) {
         // hand-back left it there — typing went into a bar with no edit open, and nowhere else.
         // The bar's focus was left standing by the press, and the hand-back takes it (ADR-0021),
         // into the grid's Keyboard Field (ADR-0080).
-        test('ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard', async ({ page }) => {
+        test(`ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -149,7 +149,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'B2')).toHaveText('7');
         });
 
-        test('ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it', async ({ page }) => {
+        test(`ADR-0018/ED-26: an edit left for a control on the page stands, and a press back commits it ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             // A control the open edit leaves enabled: the page greys out its commands that
             // change the Sheet while an edit is open (ADR-0048, SH-29), and a Linked Table's
@@ -176,7 +176,7 @@ for (const chrome of ['builtin', 'mud']) {
 // from C#, the key typed straight after the press would still reach the positions grid, and the
 // Sheet's edit would stand with nothing able to reach it (ADR-0018 section 6). On WebAssembly
 // there is no round trip, and this is the case without one.
-test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is the Sheet\'s', async ({ page }) => {
+test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is the Sheet\'s @blazor', async ({ page }) => {
     await openSheet(page);
     const grid = sheet(page);
     await pressCell(grid, 'C4');
@@ -228,7 +228,7 @@ async function addNestedGrid(grid) {
     return nested;
 }
 
-test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet\'s', async ({ page }) => {
+test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet starts no hold of the Sheet\'s @blazor', async ({ page }) => {
     await openSheet(page);
     const grid = sheet(page);
     await pressCell(grid, 'C4');
@@ -257,7 +257,7 @@ test('ADR-0010/ADR-0018/ED-22: a press on the rows of a grid nested in the Sheet
 // the keyboard lands a round trip after the `=`, after the press: it is not granted, for the keyboard
 // is the nested grid's now (ADR-0018), and the `x` held behind the `=` is handed on there, not into the
 // Sheet's edit (ED-22 under the hunt, 2026-10-19: the edit took the keyboard back from the nested grid).
-test('ADR-0010/ADR-0018/ED-22: a press on a nested grid made before the edit\'s answer keeps the keyboard, and the key typed after it reaches that grid', async ({ page }) => {
+test('ADR-0010/ADR-0018/ED-22: a press on a nested grid made before the edit\'s answer keeps the keyboard, and the key typed after it reaches that grid @blazor', async ({ page }) => {
     await openSheet(page);
     const grid = sheet(page);
     await pressCell(grid, 'C4');
@@ -283,7 +283,7 @@ test.describe('/sheets', () => {
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
     });
 
-    test('ADR-0018/ED-26: two Sheets each hold an edit, and a press back on the rows gives each its keyboard', async ({ page }) => {
+    test('ADR-0018/ED-26: two Sheets each hold an edit, and a press back on the rows gives each its keyboard @behaviour', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D1');
@@ -319,7 +319,7 @@ test.describe('/sheets', () => {
         await expect(cell(left, 'E3')).toHaveText('');
     });
 
-    test('ADR-0018/ADR-0080/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the Sheet has the keyboard', async ({ page }) => {
+    test('ADR-0018/ADR-0080/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the Sheet has the keyboard @behaviour', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D3');
@@ -346,7 +346,7 @@ test.describe('/sheets', () => {
         await expectKeyboardOn(left);
     });
 
-    test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is that Sheet\'s', async ({ page }) => {
+    test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is that Sheet\'s @blazor', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D1');
@@ -376,7 +376,7 @@ test.describe('/sheets', () => {
 // after run 18a): the two states are no outline and 1px. The stylesheet alone does it (`:focus-within`
 // on the root). The core grid's own two states, the token's width and 1px, are read on /features below.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0018/ED-27: on a Sheet an edit whose keyboard is elsewhere is outlined 1px wide, and draws no outline once it returns (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0018/ED-27: on a Sheet an edit whose keyboard is elsewhere is outlined 1px wide, and draws no outline once it returns (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
         const left = sheet(page, 0);
         const right = sheet(page, 1);
@@ -439,7 +439,7 @@ for (const chrome of ['builtin', 'mud']) {
 // Cell Editor is outlined at --ex-editor-outline's width, 2px, while the keyboard is in its root, and
 // 1px once the keyboard has gone to the page; the edit stands meanwhile (ED-26). A Sheet's editor draws
 // none while the keyboard is in it (2026-10-16, above); the core grid keeps its outline.
-test('ADR-0018/ED-27: on the core grid an edit whose keyboard is elsewhere is outlined 1px wide, and at the token\'s 2px while the keyboard is in it', async ({ page }) => {
+test('ADR-0018/ED-27: on the core grid an edit whose keyboard is elsewhere is outlined 1px wide, and at the token\'s 2px while the keyboard is in it @behaviour', async ({ page }) => {
     await page.goto('/features');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -483,7 +483,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test('= typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands', async ({ page }) => {
+        test('= typed on the left and the right pressed at once, thirty times: the right keeps the keyboard, and the left edit stands @blazor', async ({ page }) => {
             const left = sheet(page, 0);
             const right = sheet(page, 1);
             await setRoundTrip(40);
@@ -509,7 +509,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test('=1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right', async ({ page }) => {
+        test('=1 typed at full speed and the right pressed at once: the 1 held behind the = goes into the left edit, not the right @blazor', async ({ page }) => {
             const left = sheet(page, 0);
             const right = sheet(page, 1);
             await setRoundTrip(40);
@@ -546,7 +546,7 @@ for (const rtt of [0, 150]) {
             test.skip(rtt > 0 && !SERVER, 'a round trip is injected on the Server host only; the case without one runs here');
         });
 
-        test('ADR-0010/ED-22: on a plain editable grid, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+        test(`ADR-0010/ED-22: on a plain editable grid, the key after a press that commits opens an edit on the pressed cell ${roundTripHost(rtt)}`, async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
@@ -569,7 +569,7 @@ for (const rtt of [0, 150]) {
             await expect(at(2, 1)).toHaveText('7');
         });
 
-        test('ADR-0010/ADR-0021/ED-22: on a Sheet, the key after a press that commits opens an edit on the pressed cell', async ({ page }) => {
+        test(`ADR-0010/ADR-0021/ED-22: on a Sheet, the key after a press that commits opens an edit on the pressed cell ${roundTripHost(rtt)}`, async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
@@ -588,7 +588,7 @@ for (const rtt of [0, 150]) {
             await expectFocusAt(grid, 'B3');
         });
 
-        test('ADR-0010/ADR-0051/ED-22: on a Sheet, the keys after a press that points are typed after the Reference it wrote', async ({ page }) => {
+        test(`ADR-0010/ADR-0051/ED-22: on a Sheet, the keys after a press that points are typed after the Reference it wrote ${roundTripHost(rtt)}`, async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
@@ -612,7 +612,7 @@ for (const rtt of [0, 150]) {
         // (ADR-0010: plain navigation is never paced to one round trip). What the grid holds never
         // reaches the page, so the page's own listener tells: a key the grid leaves to the browser
         // (Shift) typed straight after them arrives at once.
-        test('ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing', async ({ page }) => {
+        test(`ADR-0010/ED-22: outside an edit, a press on the rows and an arrow hold nothing ${roundTripHost(rtt)}`, async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
@@ -658,7 +658,7 @@ for (const rtt of [0, 150]) {
         // The same double click on a plain grid, whose press on the rows keeps its default: DOM
         // focus goes to the rows, and on through the root to its Keyboard Field (ADR-0080), while
         // the hold stands.
-        test('ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
+        test(`ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell's text ${roundTripHost(rtt)}`, async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
@@ -696,7 +696,7 @@ for (const rtt of [0, 150]) {
             await expect(at(2, 1)).toHaveText(trader);
         });
 
-        test('ADR-0010/ED-22: on a Sheet, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
+        test(`ADR-0010/ED-22: on a Sheet, a double click on another cell commits the edit and opens that cell's text ${roundTripHost(rtt)}`, async ({ page }) => {
             await openSheet(page);
             const grid = sheet(page);
             await pressCell(grid, 'C4');
@@ -737,7 +737,7 @@ for (const rtt of [0, 150]) {
         });
 
         for (const chrome of ['builtin', 'mud']) {
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (${chrome} Chrome)`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that points go into the edit after its Reference, in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');
@@ -761,7 +761,7 @@ for (const rtt of [0, 150]) {
                 await expect(bar(grid)).toHaveValue('=B2*3-4');
             });
 
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (${chrome} Chrome)`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, keys typed straight after a press back that commits open an edit on the pressed cell and go into it in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');
@@ -782,7 +782,7 @@ for (const rtt of [0, 150]) {
                 await expectKeyboardOn(grid);
             });
 
-            test(`ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (${chrome} Chrome)`, async ({ page }) => {
+            test(`ADR-0010/ADR-0018/ED-22: on /sheet, a key, a second press and keys after it, straight after a press back, are answered in order (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
                 await openSheet(page, chrome);
                 const grid = sheet(page);
                 await pressCell(grid, 'C4');
@@ -809,7 +809,7 @@ for (const rtt of [0, 150]) {
             });
         }
 
-        test('ADR-0010/ADR-0018/ED-22: on /sheets, a press back on the left while the right holds an edit of its own: a key, a second press and keys after it go into the left edit in order, and the right edit stands', async ({ page }) => {
+        test(`ADR-0010/ADR-0018/ED-22: on /sheets, a press back on the left while the right holds an edit of its own: a key, a second press and keys after it go into the left edit in order, and the right edit stands ${roundTripHost(rtt)}`, async ({ page }) => {
             await page.goto('/sheets');
             const left = sheet(page, 0);
             const right = sheet(page, 1);

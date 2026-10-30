@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect, circuitQuiet, chromeHost } from './fixtures.mjs';
 
 // ExChart's Showcases (ADR-0280) on the DemoHost, the components the Docs Site shows at /showcase/exposure,
 // /showcase/curves, /showcase/fx-volatility, /showcase/cds-spread and /showcase/equity-index: each opens with its charts drawn and a clean console (the fixture fails a test on
@@ -67,14 +67,14 @@ async function matchesRecord(page, name) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`ADR-0280, CH-9: Exposure profile opens on EPE before and after, its summary and table as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, CH-9: Exposure profile opens on EPE before and after, its summary and table as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/exposure${query}`);
         await expect(chartTabs(page)).toHaveText(['Chart 1']);
         await expect(shownChart(page).locator('g.ex-chart-series')).toHaveCount(2);
         await matchesRecord(page, 'exposure-epe');
     });
 
-    test(`ADR-0280, ADR-0258: Exposure profile charts a selection into a tab, and a recalculation redraws it (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0258: Exposure profile charts a selection into a tab, and a recalculation redraws it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/exposure${query}`);
         const grid = page.locator('.ex-grid').first();
         // Rows the Viewport shows whole under either Chrome: a click on a row the Viewport cuts off
@@ -95,7 +95,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(summary).not.toHaveText(before);
     });
 
-    test(`ADR-0280, CH-9: Curves switches between its three views, each chart's summary and table as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, CH-9: Curves switches between its three views, each chart's summary and table as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/curves${query}`);
 
         // The CDS curve: the spread and the hazard rate at every pillar, in a panel each.
@@ -154,7 +154,7 @@ async function fxView(page, name) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`ADR-0280, ADR-0274, ADR-0257, CH-9: FX volatility shows its quotes beside the surface, the filled quotes marked and the hole kept, as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0274, ADR-0257, CH-9: FX volatility shows its quotes beside the surface, the filled quotes marked and the hole kept, as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openFx(page, query);
         const grid = page.locator('.ex-grid').first();
         // The grid draws a column once it is in view, and beside the surface the last quotes lie past its right edge.
@@ -175,7 +175,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(fxSurface(page).locator('table.ex-chart-table')).toHaveCount(0);
     });
 
-    test(`ADR-0280, ADR-0274: a click on the FX volatility surface slices it beside the surface (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0274: a click on the FX volatility surface slices it beside the surface (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openFx(page, query);
         // Beside the grid on a wide screen, below it on a narrow one.
         await fxBox(page).scrollIntoViewIfNeeded();
@@ -190,7 +190,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(fxBox(page).locator('.ex-chart-surface-slice polyline')).toHaveCount(1);
     });
 
-    test(`ADR-0280, ADR-0282: the FX volatility surface saves its drawing as SVG and PNG under its name (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0282: the FX volatility surface saves its drawing as SVG and PNG under its name (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openFx(page, query);
         await expect(fxSurface(page).locator('.ex-chart-download-png')).toBeEnabled();
         const take = async (button) => {
@@ -207,7 +207,7 @@ for (const [chrome, query] of CHROMES) {
         expect(png.bytes.subarray(1, 4).toString('latin1')).toBe('PNG');
     });
 
-    test(`ADR-0280, ADR-0257, CH-9: FX volatility's term structure, smile and forwards, each chart's summary and table as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0257, CH-9: FX volatility's term structure, smile and forwards, each chart's summary and table as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openFx(page, query);
 
         // The term structure at the money: every tenor quoted, one series.
@@ -249,7 +249,7 @@ async function highestMark(chart, series) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`ADR-0280, ADR-0290, ADR-0291, CH-9: CDS spread vs leverage opens with the names beside both fits, as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0290, ADR-0291, CH-9: CDS spread vs leverage opens with the names beside both fits, as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/cds-spread${query}`);
         await expect(shownChart(page).locator('g.ex-chart-series')).toHaveCount(3);
         await expect(shownChart(page).locator('.ex-chart-notes')).toContainText(/OLS: y = [\d.]+x [+−] [\d.]+, R² = [\d.]+, n = 200/);
@@ -265,7 +265,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(chart.locator('table.ex-chart-table')).toHaveCount(0);
     });
 
-    test(`ADR-0280, ADR-0290, ADR-0258: on CDS spread vs leverage a click goes to the row, a rectangle narrows and the spread turns logarithmic (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0290, ADR-0258: on CDS spread vs leverage a click goes to the row, a rectangle narrows and the spread turns logarithmic (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/cds-spread${query}`);
         const chart = shownChart(page);
         const grid = page.locator('.ex-grid').first();
@@ -313,7 +313,7 @@ async function clickMiddleCandle(page) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`ADR-0280, ADR-0300, ADR-0302, CH-9: Equity index merges ten years into months beside its rows, as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0300, ADR-0302, CH-9: Equity index merges ten years into months beside its rows, as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/equity-index${query}`);
         const chart = shownChart(page);
         // The first session's High: the grid draws a column once it is in view, and beside the chart its Close lies past the edge.
@@ -324,7 +324,7 @@ for (const [chrome, query] of CHROMES) {
         await matchesSnapshot(chart.locator('svg.ex-chart-svg'), 'equity-index-summary.aria.yml');
     });
 
-    test(`ADR-0280, ADR-0302, ADR-0258: on Equity index a merged candle narrows to its rows, and a day's candle goes to its row (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0302, ADR-0258: on Equity index a merged candle narrows to its rows, and a day's candle goes to its row (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/equity-index${query}`);
         const chart = shownChart(page);
         // The average hidden, the candle is the only series a click can name.
@@ -348,7 +348,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(chart.locator('.ex-chart-notes')).toContainText('monthly candles, merged from rows to fit.');
     });
 
-    test(`ADR-0280, ADR-0301, ADR-0300: Equity index packs its sessions and takes the page's rise and fall colours (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0301, ADR-0300: Equity index packs its sessions and takes the page's rise and fall colours (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/equity-index${query}`);
         const chart = shownChart(page);
         await expect(chart.locator('.ex-chart-notes li', { hasText: 'packed' })).toHaveCount(0);
@@ -363,7 +363,7 @@ for (const [chrome, query] of CHROMES) {
         await expect.poll(() => rising.evaluate(p => getComputedStyle(p).stroke)).toBe('rgb(211, 47, 47)');
     });
 
-    test(`ADR-0280, ADR-0303, ADR-0304, CH-9: Equity index's intervals, a Bid–Ask band and 95% CI whiskers, as recorded (${chrome})`, async ({ page }) => {
+    test(`ADR-0280, ADR-0303, ADR-0304, CH-9: Equity index's intervals, a Bid–Ask band and 95% CI whiskers, as recorded (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, `/chart-showcase/equity-index${query}`);
         await page.locator('.xs-bar').locator('.xs-view, .mud-toggle-item').filter({ hasText: 'Intervals' }).click();
         const charts = page.locator('.ex-chart').filter({ visible: true });
@@ -400,7 +400,7 @@ async function openLattice(page, route) {
 const latticeCard = (page, label) => page.getByRole('group', { name: label, exact: true }).locator('.xs-bin-value');
 
 for (const [chrome, query] of CHROMES) {
-    test(`ADR-0280: Binomial lattice prices a European call on five steps beside Black–Scholes (${chrome})`, async ({ page }) => {
+    test(`ADR-0280: Binomial lattice prices a European call on five steps beside Black–Scholes (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
         await expect(latticeCard(page, 'Lattice price (N = 5)')).toHaveText('10.8059');
         await expect(latticeCard(page, 'Black–Scholes, European')).toHaveText('10.4506');
@@ -411,7 +411,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(page.locator('.ex-grid [role=gridcell]').filter({ hasText: /^Exercise$/ })).toHaveCount(0);
     });
 
-    test(`ADR-0280: Binomial lattice rings the nodes an American put is exercised at, and its rows say so (${chrome})`, async ({ page }) => {
+    test(`ADR-0280: Binomial lattice rings the nodes an American put is exercised at, and its rows say so (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
         await page.locator('[aria-label="Option type"]').getByText('Put', { exact: true }).click();
         await page.locator('[aria-label="Exercise"]').getByText('American', { exact: true }).click();
@@ -426,7 +426,7 @@ for (const [chrome, query] of CHROMES) {
         await expect(page.locator('.ex-grid [role=gridcell]').filter({ hasText: /^Exercise$/ }).first()).toBeAttached();
     });
 
-    test(`ADR-0280: Binomial lattice's switch puts the page in the dark scheme and back (${chrome})`, async ({ page }) => {
+    test(`ADR-0280: Binomial lattice's switch puts the page in the dark scheme and back (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openLattice(page, `/chart-showcase/binomial-lattice${query}`);
         await page.locator('[aria-label="Scheme"]').getByText('Dark', { exact: true }).click();
         await expect(page).toHaveURL(/[?&]scheme=dark/);

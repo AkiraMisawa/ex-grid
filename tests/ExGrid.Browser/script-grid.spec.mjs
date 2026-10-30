@@ -17,7 +17,7 @@ function grid(page) {
 
 const cell = (page, row, column) => grid(page).locator(`[id$='r${row}c${column}']`);
 
-test('ADR-0350 section 7: an edit reaches the Consumer in .NET, and the cell paints the row its source then holds', async ({ page }) => {
+test('ADR-0350 section 7: an edit reaches the Consumer in .NET, and the cell paints the row its source then holds @blazor', async ({ page }) => {
     await expect(cell(page, 0, 0)).toHaveText('Credit-001');
     await cell(page, 0, 0).click({ force: true });
     await page.keyboard.type('Zeta');
@@ -30,7 +30,7 @@ test('ADR-0350 section 7: an edit reaches the Consumer in .NET, and the cell pai
     await expect(page.locator('#script-selection')).toHaveText('Selection: 1 range(s), Focus at row 1, column 0');
 });
 
-test('ADR-0350 section 7, ADR-0001: a header click sorts through the source in .NET, and the rows come back in its order', async ({ page }) => {
+test('ADR-0350 section 7, ADR-0001: a header click sorts through the source in .NET, and the rows come back in its order @blazor', async ({ page }) => {
     const notional = grid(page).locator('.ex-header-cell').nth(2);
     await notional.click({ position: { x: 30, y: 14 }, force: true });
 
@@ -41,7 +41,7 @@ test('ADR-0350 section 7, ADR-0001: a header click sorts through the source in .
     expect(shown).toEqual(['-496956', '-494971', '-494956']);
 });
 
-test('DC-61, ADR-0070: the grid hands the keyboard on to a control of the page\'s, and takes it back from there, across the bridge', async ({ page }) => {
+test('DC-61, ADR-0070: the grid hands the keyboard on to a control of the page\'s, and takes it back from there, across the bridge @blazor', async ({ page }) => {
     await cell(page, 0, 1).dblclick({ force: true });
     await expect(page.locator('#script-note')).toBeFocused();
 
@@ -83,7 +83,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
     });
 
     for (const [first, second] of [['150', '200'], ['1500', '2000']]) {
-        test(`ED-33: ${first} Enter ${second} Enter typed at once ends as the same keys typed after each answer`, async ({ page }) => {
+        test(`ED-33: ${first} Enter ${second} Enter typed at once ends as the same keys typed after each answer @blazor`, async ({ page }) => {
             const before = [await notionals(page, 0), await notionals(page, 10)];
             await cell(page, 0, 2).click({ force: true });
             await page.keyboard.type(first);
@@ -109,7 +109,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         });
     }
 
-    test('ED-35 / ED-15: a Reject .NET answers holds the editor under Enter, Tab and a press, and Escape alone leaves', async ({ page }) => {
+    test('ED-35 / ED-15: a Reject .NET answers holds the editor under Enter, Tab and a press, and Escape alone leaves @blazor', async ({ page }) => {
         const before = await cell(page, 0, 2).textContent();
         await cell(page, 0, 2).click({ force: true });
         await page.keyboard.type('150');
@@ -130,7 +130,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         await expect(cell(page, 0, 2)).toHaveText(before);
     });
 
-    test('ED-35: a Flag .NET answers is booked painted as an error, and its reason opens when the Focus stands on it', async ({ page }) => {
+    test('ED-35: a Flag .NET answers is booked painted as an error, and its reason opens when the Focus stands on it @blazor', async ({ page }) => {
         await cell(page, 0, 2).click({ force: true });
         await page.keyboard.type('2000000');
         await page.keyboard.press('Enter');
@@ -142,7 +142,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         await expect(grid(page).locator('.ex-message')).toHaveText('A notional of 2000000 is above the desk\'s limit of 1,000,000: a second signature is needed.');
     });
 
-    test('ED-38 / ADR-0381: F8 asked of .NET brings the Focus to a flagged trade outside the Window, and Shift+F8 goes back', async ({ page }) => {
+    test('ED-38 / ADR-0381: F8 asked of .NET brings the Focus to a flagged trade outside the Window, and Shift+F8 goes back @blazor', async ({ page }) => {
         await cell(page, 0, 2).click({ force: true });
         await page.keyboard.type('2000000');
         await page.keyboard.press('Enter');
@@ -169,7 +169,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
         expect(await focusRow(page)).toBe(0);
     });
 
-    test('ED-35 / ED-20: a Ctrl+Enter fill is judged once, and a Reject holds the editor and pastes nothing', async ({ page }) => {
+    test('ED-35 / ED-20: a Ctrl+Enter fill is judged once, and a Reject holds the editor and pastes nothing @blazor', async ({ page }) => {
         await cell(page, 0, 2).click({ force: true });
         await cell(page, 2, 2).click({ force: true, modifiers: ['Shift'] });
         await page.keyboard.type('150');
@@ -188,7 +188,7 @@ test.describe('ADR-0380: a commit .NET answers, with 150 ms injected on the Serv
 
     // The verdict's text and the fill's three values are each larger than the 32 KB a Server hub takes in one message,
     // which closed the circuit with nothing on the page: each is held and taken as a stream, in its turn (ADR-0005).
-    test('CP-21, ADR-0005: a commit and a fill past a Server hub\'s message limit reach the Consumer in .NET', async ({ page }) => {
+    test('CP-21, ADR-0005: a commit and a fill past a Server hub\'s message limit reach the Consumer in .NET @blazor', async ({ page }) => {
         await cell(page, 0, 2).click({ force: true });
         await cell(page, 2, 2).click({ force: true, modifiers: ['Shift'] });
         await page.keyboard.type('5');

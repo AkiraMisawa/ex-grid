@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, twoFrames, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames, settled, chromeHost } from './fixtures.mjs';
 import { sheet, cell, pressCell, clickCell, expectFocusAt, editor, bar, stretchesOf } from './sheet-helpers.mjs';
 import { painted, sameColour, resolvedColour, contrast, blend, onDeviceGrid, wholePixelCentres, pixelsApart, stillPictures, edgePixels, onDevicePixels, acrossEdges, paints } from './pixels.mjs';
 
@@ -54,7 +54,7 @@ const luminance = (rgb) => contrast(rgb, BLACK) / 21;
 
 for (const [chrome, query] of CHROMES) {
     for (const scheme of SCHEMES) {
-        test(`SH-39/SH-40/DC-58 (${chrome} Chrome, ${scheme} scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48)`, async ({ page }) => {
+        test(`SH-39/SH-40/DC-58 (${chrome} Chrome, ${scheme} scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48) ${chromeHost(chrome)}`, async ({ page }) => {
             await openCase(page, 'paper', scheme, query);
             const grid = sheet(page);
             await expect(cell(grid, 'A1')).toHaveText('red');
@@ -118,7 +118,7 @@ async function selectionLook(page) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`SH-39 (${chrome} Chrome): on the Paper the Selection and the Cell Editor keep their light-scheme look in the dark scheme (ADR-0071, ticket 48)`, async ({ page }) => {
+    test(`SH-39 (${chrome} Chrome): on the Paper the Selection and the Cell Editor keep their light-scheme look in the dark scheme (ADR-0071, ticket 48) ${chromeHost(chrome)}`, async ({ page }) => {
         const looks = {};
         const editors = {};
         for (const scheme of SCHEMES) {
@@ -155,7 +155,7 @@ for (const [chrome, query] of CHROMES) {
         }
     });
 
-    test(`SH-39 (${chrome} Chrome): Reference Outlines and the pointed shade keep their light-scheme colours on the Paper, and the Formula Bar's References follow the scheme (ADR-0071, ADR-0057)`, async ({ page }) => {
+    test(`SH-39 (${chrome} Chrome): Reference Outlines and the pointed shade keep their light-scheme colours on the Paper, and the Formula Bar's References follow the scheme (ADR-0071, ADR-0057) ${chromeHost(chrome)}`, async ({ page }) => {
         const read = {};
         for (const scheme of SCHEMES) {
             await openCase(page, 'paper', scheme, query);
@@ -206,7 +206,7 @@ for (const [chrome, query] of CHROMES) {
 // under the chrome-150 project, as an OS sets it (Playwright's emulated scale is not read: its
 // pixels are the emulation's, device-pixel-225.spec.mjs's note).
 for (const [chrome, query] of CHROMES) {
-    test(`UX-19/SH-39 (${chrome} Chrome): on the Paper the Focus among several ranges is one Device Pixel inside its cell in the Focus outline's colour, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071)`, async ({ page }, testInfo) => {
+    test(`UX-19/SH-39 (${chrome} Chrome): on the Paper the Focus among several ranges is one Device Pixel inside its cell in the Focus outline's colour, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
         for (const scheme of SCHEMES) {
             await page.goto(`/sheet?case=paper&pin=1&scheme=${scheme}${query}`);
             const grid = sheet(page);
@@ -266,7 +266,7 @@ for (const [chrome, query] of CHROMES) {
 // (#E0E0E0), a difference no decision has taken up. The Headings beside A1, which R4 read as Excel's
 // two device pixels of #217346, are the Heading Mark (ADR-0008, 2026-10-13), read past A1's left and top
 // edges as R4 read them: the mark, then A1's own white Device Pixel, then the border.
-test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the active cell\'s border, the white line outside it and what lies past its gridline (ADR-0008, 2026-10-12; ADR-0071)', async ({ page }, testInfo) => {
+test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the active cell\'s border, the white line outside it and what lies past its gridline (ADR-0008, 2026-10-12; ADR-0071) @behaviour', async ({ page }, testInfo) => {
     await page.goto('/sheet?case=13');
     const grid = sheet(page);
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -336,7 +336,7 @@ test('UX-19/SH-54 (built-in Chrome): R4\'s three selections on the Paper: the ac
 // the edit, as Excel's cell showed no border once F2 was pressed (focus-among-ranges.md 3). Once the
 // keyboard has gone to the page the edit stands and is told apart (ED-27): the editor's outline, 1px
 // of --ex-editor-outline's colour, a whole device pixel inside the cell, over the Fill, on every side.
-test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several ranges: the border, a white line outside it on the top and the left, the Fill on the right and the bottom, and no outline round the Cell Editor until the keyboard leaves (ADR-0008, run 18a; ADR-0018 section 6, ED-27; ADR-0071)', async ({ page }, testInfo) => {
+test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several ranges: the border, a white line outside it on the top and the left, the Fill on the right and the bottom, and no outline round the Cell Editor until the keyboard leaves (ADR-0008, run 18a; ADR-0018 section 6, ED-27; ADR-0071) @behaviour', async ({ page }, testInfo) => {
     await page.goto('/sheet?case=18a-2');
     const grid = sheet(page);
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -454,7 +454,7 @@ test('UX-19/SH-54 (built-in Chrome): run 18a\'s D4 filled yellow among several r
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('SH-39: setting --ex-sheet-paper and --ex-sheet-ink changes the Paper and the Ink (ADR-0071, ADR-0027)', async ({ page }) => {
+test('SH-39: setting --ex-sheet-paper and --ex-sheet-ink changes the Paper and the Ink (ADR-0071, ADR-0027) @behaviour', async ({ page }) => {
     await openCase(page, 'paper', 'light', '');
     const grid = sheet(page);
     // On the Sheet's own element, which leaves with the page.
@@ -473,7 +473,7 @@ const GRIDLINE = [0xe0, 0xe0, 0xe0];
 const YELLOW = [255, 255, 0];
 
 for (const [chrome, query] of CHROMES) {
-    test(`SH-39 (${chrome} Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90)`, async ({ page }) => {
+    test(`SH-39 (${chrome} Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90) ${chromeHost(chrome)}`, async ({ page }) => {
         // Case 4 with column A pinned (?pin=1: a case's page pins nothing, as the run's workbook did
         // not). B2 is yellow, and its Fill covers its left gridline, which A2 holds: A2 paints that
         // cover as a layer (.ex-lined), as it would a line of its own.
@@ -521,7 +521,7 @@ const editorLayer = (grid) => grid.locator('.ex-viewport .ex-reference-text').fi
 
 for (const [chrome, query] of CHROMES) {
     for (const scheme of SCHEMES) {
-        test(`DC-58/SH-39 (${chrome} Chrome, ${scheme} scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88)`, async ({ page }) => {
+        test(`DC-58/SH-39 (${chrome} Chrome, ${scheme} scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88) ${chromeHost(chrome)}`, async ({ page }) => {
             await openCase(page, 'paper', scheme, query);
             const grid = sheet(page);
             const normal = { weight: '400', style: 'normal', decoration: 'none' };
@@ -560,7 +560,7 @@ for (const [chrome, query] of CHROMES) {
         });
     }
 
-    test(`DC-58/SH-39 (${chrome} Chrome): the Cell Editor keeps a Fill as its ground, and ADR-0057's coloured References read over it (ADR-0050 item 15, ADR-0071, ticket 88)`, async ({ page }) => {
+    test(`DC-58/SH-39 (${chrome} Chrome): the Cell Editor keeps a Fill as its ground, and ADR-0057's coloured References read over it (ADR-0050 item 15, ADR-0071, ticket 88) ${chromeHost(chrome)}`, async ({ page }) => {
         await openCase(page, 'paper', 'light', query);
         const grid = sheet(page);
         // C3 records a yellow Fill and an Automatic Font.
@@ -694,7 +694,7 @@ const paintsDejaVu = (page) => page.evaluate(() => {
 });
 
 for (const [chrome, query] of CHROMES) {
-    test(`SH-41 (${chrome} Chrome): a bold number is #### exactly when it does not fit at the bold widths (ADR-0071, ADR-0016)`, async ({ page }) => {
+    test(`SH-41 (${chrome} Chrome): a bold number is #### exactly when it does not fit at the bold widths (ADR-0071, ADR-0016) ${chromeHost(chrome)}`, async ({ page }) => {
         const grid = await openFit(page, 'bold', query);
         // A hundredth under the bold edge: plain, 12% fits, and is painted whole; bold, it is ####,
         // named by its value.
@@ -711,7 +711,7 @@ for (const [chrome, query] of CHROMES) {
         }
     });
 
-    test(`SH-41/VZ-19 (${chrome} Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090)`, async ({ page }, testInfo) => {
+    test(`SH-41/VZ-19 (${chrome} Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
         const grid = await openFit(page, 'bold', query);
         // The #### decision reads the declared width (ADR-0090), and a column is painted up to a Device
         // Pixel narrower than declared. In DejaVu Sans, which Linux paints system-ui in, the core's bold
@@ -733,7 +733,7 @@ for (const [chrome, query] of CHROMES) {
         expect(Math.max(...widths) - Math.min(...widths), `the eight columns' painted widths: ${widths.join(', ')}`).toBeLessThanOrEqual(1);
     });
 
-    test(`SH-41 (${chrome} Chrome): General fits a bold number to the bold widths, and both are painted whole (ADR-0071, ADR-0047)`, async ({ page }) => {
+    test(`SH-41 (${chrome} Chrome): General fits a bold number to the bold widths, and both are painted whole (ADR-0071, ADR-0047) ${chromeHost(chrome)}`, async ({ page }) => {
         const grid = await openFit(page, 'fit', query);
         // Between the widths the whole of its General text, 1.23457E+20, takes plain and bold, each cell
         // shows the widest General text its own widths fit, a digit fewer where they do not fit the
@@ -747,7 +747,7 @@ for (const [chrome, query] of CHROMES) {
         await expectPaintedWhole(page, cell(grid, 'B2'), 'B2, General, bold');
     });
 
-    test(`SH-41 (${chrome} Chrome): an italic number that fits is not cut at either edge (ADR-0071, ADR-0016)`, async ({ page }) => {
+    test(`SH-41 (${chrome} Chrome): an italic number that fits is not cut at either edge (ADR-0071, ADR-0016) ${chromeHost(chrome)}`, async ({ page }) => {
         const grid = await openFit(page, 'fit', query);
         // A hundredth over the width the regular widths give it, against the cell's right edge and its left.
         for (const [address, align] of [['A1', 'right'], ['A2', 'left']]) {

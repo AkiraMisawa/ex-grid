@@ -25,7 +25,7 @@ async function clickCell(page, row, column, modifiers = []) {
     await cell(page, row, column).click({ force: true, modifiers });
 }
 
-test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-39, ADR-0007)', async ({ page }) => {
+test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-39, ADR-0007) @behaviour', async ({ page }) => {
     const trader = cell(page, 0, 1);
     const before = await trader.textContent();
     await clickCell(page, 0, 1);
@@ -48,7 +48,7 @@ test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken 
     await expect(trader).toHaveText('Undone');
 });
 
-test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0007, ED-25)', async ({ page }) => {
+test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0007, ED-25) @behaviour', async ({ page }) => {
     const before = await cell(page, 0, 1).textContent();
     await clickCell(page, 0, 1);
     await page.keyboard.press('F2'); // Caret: the value stays, with the caret at its end
@@ -65,7 +65,7 @@ test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0
     await expect(page.locator('#history-status')).toContainText('—');
 });
 
-test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0054)', async ({ page }) => {
+test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0054) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await clickCell(page, 2, 1, ['Shift']);
     await watchNextKey(page, 'Delete');
@@ -83,7 +83,7 @@ test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24
     await expect(cell(page, 1, 1)).not.toHaveText('');
 });
 
-test('Backspace opens an empty editor, and Escape leaves the cell as it was (ED-23, ADR-0035)', async ({ page }) => {
+test('Backspace opens an empty editor, and Escape leaves the cell as it was (ED-23, ADR-0035) @behaviour', async ({ page }) => {
     const trader = cell(page, 3, 1);
     const before = await trader.textContent();
     await clickCell(page, 3, 1);
@@ -102,7 +102,7 @@ test('Backspace opens an empty editor, and Escape leaves the cell as it was (ED-
     await expect(page.locator('#edit-status')).toContainText('Trader=Novak');
 });
 
-test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither key (CP-24, ADR-0035)', async ({ page }) => {
+test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither key (CP-24, ADR-0035) @behaviour', async ({ page }) => {
     const top = await cell(page, 4, 1).textContent();
     await clickCell(page, 4, 1);
     await clickCell(page, 6, 1, ['Shift']);
@@ -123,7 +123,7 @@ test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither ke
     expect(await keySeenUntouched(page), 'the grid took Ctrl+R — the page did not reload').not.toBe(true);
 });
 
-test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007)', async ({ page }) => {
+test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();

@@ -105,7 +105,7 @@ async function measureKey(page, key, prefix) {
     });
 }
 
-test('SH-19: completion\'s keystroke-to-list time on the Server host, with 150 ms injected and with none', async ({ page }, testInfo) => {
+test('SH-19: completion\'s keystroke-to-list time on the Server host, with 150 ms injected and with none @blazor', async ({ page }, testInfo) => {
     test.setTimeout(1_800_000);
     await openSheet(page);
     const grid = sheet(page);

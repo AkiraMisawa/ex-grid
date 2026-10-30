@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, dataRowCount, setTicked } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount, setTicked, chromeHost } from './fixtures.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
@@ -91,7 +91,7 @@ async function reportShown(page, chrome) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`ADR-0064: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (${chrome})`, async ({ page }) => {
+        test(`ADR-0064: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await page.goto(`/pivot?chrome=${chrome}`);
             await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
             // Every row of the report is painted, so the two are compared whole.
@@ -115,7 +115,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await progress.getAttribute('value')).toBe(await progress.getAttribute('max'));
         });
 
-        test(`ADR-0064: a file with a malformed row is refused whole, by its row and column, and nothing is pivoted (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: a file with a malformed row is refused whole, by its row and column, and nothing is pivoted (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             const file = testInfo.outputPath('trades-malformed.csv');
             writeExport(file, 5, new Map([[3, '12.5']]));
             await open(page, chrome);
@@ -139,7 +139,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(pivot(page)).toHaveCount(0);
         });
 
-        test(`ADR-0064: a large file paints its progress while it is read, and Cancel stops it with nothing read (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: a large file paints its progress while it is read, and Cancel stops it with nothing read (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             test.setTimeout(120_000);
             const file = testInfo.outputPath('trades-large.csv');
             writeExport(file, 1_000_000);
@@ -170,7 +170,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-file')).toBeEnabled();
         });
 
-        test(`ADR-0064: an unknown file's suggested Schema is shown with what is not clear, and the file is read under it only once confirmed (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0064: an unknown file's suggested Schema is shown with what is not clear, and the file is read under it only once confirmed (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             // A spreadsheet set to German: semicolons, day-first dates, a decimal comma.
             const file = testInfo.outputPath('desk-export.csv');
             fs.writeFileSync(file, `${[
@@ -223,7 +223,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(rows(page).filter({ hasText: '00123' })).toHaveCount(1);
         });
 
-        test(`ADR-0060: a value in General paints at most eleven characters, as Excel's PivotTable showed the same file (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0060: a value in General paints at most eleven characters, as Excel's PivotTable showed the same file (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             // The seventeenth Windows run's e16.csv (verification/2026-10-11-windows-17, item 16),
             // given to this page there and opened in Excel beside it.
             const file = testInfo.outputPath('e16.csv');
@@ -255,7 +255,7 @@ for (const chrome of ['builtin', 'mud']) {
             ]);
         });
 
-        test(`ADR-0060: a number Item's label in General paints at most eleven characters, as Excel labelled the same file (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0060: a number Item's label in General paints at most eleven characters, as Excel labelled the same file (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             // The readings of 2026-10-12's e16b.csv (R3 (c)), given to this page there and opened in
             // Excel beside it: Excel labelled the Items 1.23456789 and 1.23457E+11, at the
             // PivotTable's width and at forty characters, in its English (UK) and English (US) editions.
@@ -288,7 +288,7 @@ for (const chrome of ['builtin', 'mud']) {
             ]);
         });
 
-        test(`PV-3 / ADR-0060: text Items are told apart ignoring case and labelled by the first spelling to arrive, dates by their clock value, a Blank as (blank), last in either direction (${chrome})`, async ({ page }, testInfo) => {
+        test(`PV-3 / ADR-0060: text Items are told apart ignoring case and labelled by the first spelling to arrive, dates by their clock value, a Blank as (blank), last in either direction (${chrome}) ${chromeHost(chrome)}`, async ({ page }, testInfo) => {
             const file = testInfo.outputPath('pv3.csv');
             fs.writeFileSync(file, `${[
                 'Name,When,Amount',
@@ -334,7 +334,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect((await paintedRows(page))[3][0]).toBe('(blank)');
         });
 
-        test(`PV-7 / ADR-0060: a value cell copied carries its full-precision number where it paints Excel's eleven characters (${chrome})`, async ({ page, context }, testInfo) => {
+        test(`PV-7 / ADR-0060: a value cell copied carries its full-precision number where it paints Excel's eleven characters (${chrome}) ${chromeHost(chrome)}`, async ({ page, context }, testInfo) => {
             await context.grantPermissions(['clipboard-read', 'clipboard-write']);
             const file = testInfo.outputPath('pv7.csv');
             fs.writeFileSync(file, `${['Group,Amount', 'B,123456789012.345678', 'C,1.23456789012345678'].join('\r\n')}\r\n`);
@@ -367,7 +367,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(clipboard['text/html']).toContain('<td>1.23456789012345678</td>');
         });
 
-        test(`ADR-0005/ADR-0060: a copy with headers takes a number column Item's header as painted into the text, and in full into the HTML Excel reads (${chrome})`, async ({ page, context }, testInfo) => {
+        test(`ADR-0005/ADR-0060: a copy with headers takes a number column Item's header as painted into the text, and in full into the HTML Excel reads (${chrome}) ${chromeHost(chrome)}`, async ({ page, context }, testInfo) => {
             // The readings of 2026-10-12's e16b.csv (R3 (c)), its Key in Columns: Excel holds each
             // Item whole, 123456789012.345 where it shows 1.23457E+11 (ADR-0005's note of 2026-10-13).
             await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -401,7 +401,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(clipboard['text/html']).not.toContain('1.23457E');
         });
 
-        test(`ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome})`, async ({ page }) => {
+        test(`ADR-0064: the page's two samples, one under the declared Schema and one under a suggested one, read the same trades to the same total (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await page.locator('#csv-sample').click();
             await expect(status(page)).toHaveText(/^trades-2000\.csv: 2,000 rows read/);
@@ -433,7 +433,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // The code blocks a page shows do not depend on the Chrome, so they are read once (ADR-0370 §11).
-test(`ADR-0069: the code the page shows is the code it runs`, async ({ page }) => {
+test(`ADR-0069: the code the page shows is the code it runs @blazor`, async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['DemoCsv.cs#schema']).toContain('public static readonly CsvSchema TradeExport = new(');

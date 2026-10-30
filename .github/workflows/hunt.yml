@@ -2,7 +2,9 @@
 # pull request waits on it, and it is not a required check. What it finds enters ADR-0220 §3's
 # list, a ticket each, until the change that fixes it merges.
 #
-# - The hunt: all of layer 3, every test ten times over, against both hosts in both browsers.
+# - The hunt: all of layer 3, every test ten times over, on the host its tag names (ADR-0370
+#   section 11: the behaviour specs on the React host, the Blazor specs on both Blazor hosts), in
+#   both browsers.
 # - The widened run: all of layer 3 once more, with the latency proxy's round trip raised and the
 #   browser's CPU throttled, so a race that needs a narrow window fails nearly every run.
 #
@@ -78,6 +80,20 @@ jobs:
       - name: Publish the demo API server
         run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
 
+      # The React DemoHost, which the behaviour specs run on (ADR-0370 section 11), as ci.yml builds it.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: samples/ExGrid.DemoHost.React/package-lock.json
+
+      - name: Build the React DemoHost
+        working-directory: samples/ExGrid.DemoHost.React
+        run: |
+          npm ci
+          npm run build
+          cp -r dist ../../hosts/react
+
       - uses: actions/upload-artifact@v7
         with:
           name: hunt-hosts
@@ -96,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [wasm, server]
+        hosting: [wasm, server, react]
         project: [chrome, msedge]
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
@@ -180,7 +196,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [wasm, server]
+        hosting: [wasm, server, react]
         project: [chrome, msedge]
         shard: [1, 2, 3, 4]
     steps:

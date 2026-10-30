@@ -27,7 +27,7 @@ async function headerBox(page) {
     return grid(page).locator('.ex-header').boundingBox();
 }
 
-test('a leaf drag reorders within its group and clamps at its edge (HG-14)', async ({ page }) => {
+test('a leaf drag reorders within its group and clamps at its edge (HG-14) @behaviour', async ({ page }) => {
     await open(page);
     const box = await headerBox(page);
     const leafY = box.y + 42; // the leaf tier of a 28px × 2 band
@@ -65,7 +65,7 @@ function drawnGroups(page) {
     });
 }
 
-test('HG-14/HG-15 / ADR-0032: grabbing a group moves the whole group, and HeaderGroups survives a reorder within a group and a whole-group move unchanged', async ({ page }) => {
+test('HG-14/HG-15 / ADR-0032: grabbing a group moves the whole group, and HeaderGroups survives a reorder within a group and a whole-group move unchanged @behaviour', async ({ page }) => {
     await open(page, '/features?groups=1');
     const groups = page.locator('#groups-status');
     const declared = 'Groups: Who [Book,Trader] tier 1 span 1; What [Notional,Narrow,TradeDate,Confirmed] tier 1 span 1';
@@ -103,7 +103,7 @@ test('HG-14/HG-15 / ADR-0032: grabbing a group moves the whole group, and Header
     });
 });
 
-test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ page }) => {
+test('a resize drag with a real mouse applies on release (ADR-0016) @behaviour', async ({ page }) => {
     await open(page);
     const cell = await traderHeaderBox(page);
 
@@ -119,7 +119,7 @@ test('a resize drag with a real mouse applies on release (ADR-0016)', async ({ p
     await expect(grid(page).locator('.ex-header-cell').nth(1)).toHaveAttribute('aria-sort', 'none');
 });
 
-test('a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12)', async ({ page }) => {
+test('a drag past MaxWidth is recorded as it came and painted at that width (ADR-0016, FN-12) @behaviour', async ({ page }) => {
     await open(page);
     const cell = await traderHeaderBox(page);
 
@@ -136,7 +136,7 @@ test('a drag past MaxWidth is recorded as it came and painted at that width (ADR
         .toBe(500);
 });
 
-test('pasting onto an off-screen selection works, and the indicator showed first (PST-3)', async ({ page, context }) => {
+test('pasting onto an off-screen selection works, and the indicator showed first (PST-3) @behaviour', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
@@ -157,7 +157,7 @@ test('pasting onto an off-screen selection works, and the indicator showed first
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
 });
 
-test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR-0052)', async ({ page, context }, testInfo) => {
+test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR-0052) @behaviour', async ({ page, context }, testInfo) => {
     test.setTimeout(120000);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
@@ -190,7 +190,7 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR
     });
 });
 
-test('the focus outline holds 3:1 against the cell ground under the default theme (UX-9)', async ({ page }) => {
+test('the focus outline holds 3:1 against the cell ground under the default theme (UX-9) @behaviour', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r1c1']").click({ force: true });
     // The Focus outline is painted by the render the click asked for — a round trip away
@@ -215,7 +215,7 @@ test('the focus outline holds 3:1 against the cell ground under the default them
     expect(contrast).toBeGreaterThanOrEqual(3);
 });
 
-test('narrowing the scrollbar by token changes the gutter and the geometry follows (UX-10)', async ({ page }) => {
+test('narrowing the scrollbar by token changes the gutter and the geometry follows (UX-10) @behaviour', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r1c1']").click({ force: true });
 
@@ -258,7 +258,7 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
     })).toMatchObject({ fits: true });
 });
 
-test('a composing IME keydown is never taken (ED-11, the listener guard)', async ({ page }) => {
+test('a composing IME keydown is never taken (ED-11, the listener guard) @behaviour', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
     await expectActiveDescendant(grid(page), /r0c1$/);

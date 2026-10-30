@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, expectFocusAt, expectCovers, pressAt } from './sheet-helpers.mjs';
 import { painted, runsOf, sameColour, resolvedColour, paints, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
 
@@ -73,7 +73,7 @@ async function groundOf(page, locator) {
 // ---- UX-17: the header's rule runs under every header cell -------------------------------------
 
 for (const [chrome, query] of CHROMES) {
-    test(`UX-17 (${chrome} Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other (ADR-0029/0050)`, async ({ page }) => {
+    test(`UX-17 (${chrome} Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other (ADR-0029/0050) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         const places = await grid.evaluate((root) => {
@@ -107,7 +107,7 @@ for (const [chrome, query] of CHROMES) {
 
 // ---- UX-18: the Focus outline is as wide on each of its four sides wherever it stands -------------
 
-test('UX-18: the Focus outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open (ADR-0008)', async ({ page }) => {
+test('UX-18: the Focus outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open (ADR-0008) @behaviour', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     // B4 beside the pinned A, A4 beside the Headings, C1 under the header, C4 away from all three.
@@ -128,7 +128,7 @@ test('UX-18: the Focus outline has four equal edges beside a Pinned Column, besi
     expect(new Set(Object.values(found).map((e) => e.left)).size, JSON.stringify(found)).toBe(1);
 });
 
-test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equal edges beside the pinned block, under the header and at the grid\'s left edge (ADR-0008)', async ({ page }) => {
+test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equal edges beside the pinned block, under the header and at the grid\'s left edge (ADR-0008) @behaviour', async ({ page }) => {
     await page.goto('/wide');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -148,7 +148,7 @@ test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equ
     }
 });
 
-test('UX-18: a single range\'s outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open, its sides outside the range where nothing covers them (ADR-0008, 2026-10-01)', async ({ page }) => {
+test('UX-18: a single range\'s outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open, its sides outside the range where nothing covers them (ADR-0008, 2026-10-01) @behaviour', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     const colour = await (async () => {
@@ -178,7 +178,7 @@ test('UX-18: a single range\'s outline has four equal edges beside a Pinned Colu
 // ---- UX-19: Excel's look for the Focus and a single range ------------------------------------------
 
 for (const [chrome, query] of CHROMES) {
-    test(`UX-19 (${chrome} Chrome): one cell selected is the Focus outline alone, with no selection tint (ADR-0008)`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): one cell selected is the Focus outline alone, with no selection tint (ADR-0008) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'C3');
@@ -191,7 +191,7 @@ for (const [chrome, query] of CHROMES) {
         expect([edges.across.length, edges.down.length], JSON.stringify(edges)).toEqual([2, 2]);
     });
 
-    test(`UX-19 (${chrome} Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline (ADR-0008/0029)`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline (ADR-0008/0029) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'C3');
@@ -223,7 +223,7 @@ for (const [chrome, query] of CHROMES) {
         expect(sameColour(edge, colour, 8), JSON.stringify({ edge, colour })).toBe(true);
     });
 
-    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline and no fill handle, and the Focus among them is untinted, with a thin border of one Device Pixel inside its cell in the Focus outline's colour (ADR-0008, 2026-10-12)`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): several ranges are each tinted with no outline and no fill handle, and the Focus among them is untinted, with a thin border of one Device Pixel inside its cell in the Focus outline's colour (ADR-0008, 2026-10-12) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'B3');
@@ -272,7 +272,7 @@ for (const [chrome, query] of CHROMES) {
         });
     });
 
-    test(`UX-19 (${chrome} Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004)`, async ({ page }) => {
+    test(`UX-19 (${chrome} Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await clickCell(grid, 'A3');
@@ -313,7 +313,7 @@ for (const [chrome, query] of CHROMES) {
     });
 }
 
-test('UX-19 at the display\'s scale: ExGrid\'s own Focus among several ranges is one Device Pixel inside its cell in the Focus outline\'s colour, and its own token recolours it (ADR-0008, 2026-10-12; ADR-0090)', async ({ page }, testInfo) => {
+test('UX-19 at the display\'s scale: ExGrid\'s own Focus among several ranges is one Device Pixel inside its cell in the Focus outline\'s colour, and its own token recolours it (ADR-0008, 2026-10-12; ADR-0090) @behaviour', async ({ page }, testInfo) => {
     // /wide: ExGrid with no Theme, Pinned Columns A and B and no Headings, read at the scale the
     // display gives: 100% here, and a real 150% under the chrome-150 project, as an OS sets it. A
     // scale emulated through the DevTools protocol is not read: the screenshot is not taken at it,
@@ -369,7 +369,7 @@ test('UX-19 at the display\'s scale: ExGrid\'s own Focus among several ranges is
     expect(own, JSON.stringify(own)).toEqual(expected);
 });
 
-test('UX-19: the range outline reads --ex-selection-outline, and a Theme that sets only the Focus outline colours both (ADR-0008/0029)', async ({ page }) => {
+test('UX-19: the range outline reads --ex-selection-outline, and a Theme that sets only the Focus outline colours both (ADR-0008/0029) @behaviour', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     await clickCell(grid, 'B3');
@@ -410,7 +410,7 @@ test('UX-19: the range outline reads --ex-selection-outline, and a Theme that se
     expect(await paintedEdge([0, 128, 0])).toHaveLength(1);
 });
 
-test('UX-19: under forced colors every range is outlined and the Focus inside a single range takes its outline back (ADR-0008/0029)', async ({ page }) => {
+test('UX-19: under forced colors every range is outlined and the Focus inside a single range takes its outline back (ADR-0008/0029) @behaviour', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     await clickCell(grid, 'B3');
@@ -473,7 +473,7 @@ async function handleShows(page, grid) {
 }
 
 for (const [chrome, query] of CHROMES) {
-    test(`DC-12 (${chrome} Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it, where Excel's straddles the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2))`, async ({ page }) => {
+    test(`DC-12 (${chrome} Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it, where Excel's straddles the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2)) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await columnHeading(grid, 'C').click({ force: true });
@@ -494,7 +494,7 @@ for (const [chrome, query] of CHROMES) {
         expect(seen.shows, JSON.stringify(seen)).toBe(true);
     });
 
-    test(`DC-12 (${chrome} Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it, where Excel's stands on the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2))`, async ({ page }) => {
+    test(`DC-12 (${chrome} Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it, where Excel's stands on the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2)) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await pressAt(rowHeading(grid, 3));
@@ -515,7 +515,7 @@ for (const [chrome, query] of CHROMES) {
         expect(seen.shows, JSON.stringify(seen)).toBe(true);
     });
 
-    test(`DC-12 (${chrome} Chrome): with row 1 scrolled away, a whole column's handle stays at the top-right of the part in view, beside the header and uncovered (ADR-0050; the readings of 2026-10-12, R5 (5))`, async ({ page }) => {
+    test(`DC-12 (${chrome} Chrome): with row 1 scrolled away, a whole column's handle stays at the top-right of the part in view, beside the header and uncovered (ADR-0050; the readings of 2026-10-12, R5 (5)) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, query);
         const grid = sheet(page);
         await columnHeading(grid, 'C').click({ force: true });
@@ -541,7 +541,7 @@ for (const [chrome, query] of CHROMES) {
     });
 }
 
-test('UX-19: under forced colors the Focus among several ranges takes its outline back in place of its thin border, and every range is outlined (ADR-0008, 2026-10-12)', async ({ page }) => {
+test('UX-19: under forced colors the Focus among several ranges takes its outline back in place of its thin border, and every range is outlined (ADR-0008, 2026-10-12) @behaviour', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);
     await clickCell(grid, 'B3');

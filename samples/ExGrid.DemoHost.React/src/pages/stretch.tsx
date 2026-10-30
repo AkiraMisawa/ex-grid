@@ -1,8 +1,9 @@
-import type { ReactElement } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
 import { Temporal } from 'temporal-polyfill';
+import type { GridColumn } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { DemoNav } from '../demo-nav';
-import { tradeColumns, tradeWindow } from '../demo-data';
+import { tradeColumns, tradeWindow, type DemoTrade } from '../demo-data';
 import { useQuery } from '../router';
 
 // Held once, never rebuilt per render (ADR-0003): DemoData.Window(500, seed: 3), as the Blazor page holds it.
@@ -12,6 +13,27 @@ const rows = tradeWindow(500, 3);
 function Stretched(): ReactElement {
     return <ExGrid columns={tradeColumns} rows={rows} rowHeight={24} viewportHeight="stretch" viewportWidth="stretch"
         temporal={Temporal} />;
+}
+
+// The window-box grid's columns, as the Blazor page's: Trader cannot be sorted or filtered, so its menu is the commands
+// alone, of which Hide is enabled (KB-30).
+const windowColumns: readonly GridColumn<DemoTrade>[] = Object.freeze(tradeColumns.map(column =>
+    (column.name === 'Trader' ? { ...column, queryable: false } : column)));
+
+/** The grid whose box follows the window; the page hides nothing, and says which column a Hide asked for. */
+function WindowBox(): ReactElement {
+    const [hidden, setHidden] = useState('none');
+    const onColumnHidden = useCallback((column: string) => { setHidden(column); }, []);
+    return (
+        <>
+            <p><span id="hidden-status">Hidden: {hidden}</span></p>
+            {/* The box follows the window's height, so a resize is a change of Viewport. */}
+            <section id="window-box" style={{ height: 'calc(100vh - 220px)', minHeight: 0 }}>
+                <ExGrid columns={windowColumns} rows={rows} rowHeight={24} viewportHeight="stretch" viewportWidth="stretch"
+                    temporal={Temporal} onColumnHidden={onColumnHidden} />
+            </section>
+        </>
+    );
 }
 
 /** The page /stretch of the Blazor hosts: a Viewport that takes its parent's box. The Material paper's two grids
@@ -35,10 +57,7 @@ export function Stretch(): ReactElement {
                     <Stretched />
                 </section>
             ) : parent === 'window' ? (
-                // The box follows the window's height, so a resize is a change of Viewport.
-                <section id="window-box" style={{ height: 'calc(100vh - 220px)', minHeight: 0 }}>
-                    <Stretched />
-                </section>
+                <WindowBox />
             ) : (
                 <>
                     <section id="fixed-box" style={{ height: 300 }}>

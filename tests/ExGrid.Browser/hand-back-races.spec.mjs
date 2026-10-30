@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
     await openSheet(page);
 });
 
-test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names the Focus open an edit on it', async ({ page }) => {
+test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names the Focus open an edit on it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
 
@@ -30,7 +30,7 @@ test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names t
     await expect(cell(grid, 'D10')).toHaveText('abc');
 });
 
-test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names another cell open an edit on that cell', async ({ page }) => {
+test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names another cell open an edit on that cell @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
 
@@ -47,7 +47,7 @@ test('ADR-0010/ADR-0051: keys typed straight after the Name Box\'s Enter names a
     await expect(cell(grid, 'D10')).toHaveText('');
 });
 
-test('ADR-0010: a press straight after the Enter that commits a Formula lands on the cell pressed', async ({ page }) => {
+test('ADR-0010: a press straight after the Enter that commits a Formula lands on the cell pressed @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
 
@@ -91,7 +91,7 @@ const selectionOf = (locator) => locator.evaluate((input) => [input.selectionSta
 // a 150 ms circuit, Enter, the press on D10 and the press into the bar then go in before the renders
 // they cause land, which rewrite the bar under the caret: the window ticket 202 needs, made wide on
 // purpose (ADR-0220, rule 5). WebAssembly runs it as the case without one.
-test('ADR-0051/ADR-0010: on a 150 ms circuit, a press into the Formula Bar\'s text straight after Enter and a press on the cell keeps its caret, and F4 cycles the Reference pressed', async ({ page }) => {
+test('ADR-0051/ADR-0010: on a 150 ms circuit, a press into the Formula Bar\'s text straight after Enter and a press on the cell keeps its caret, and F4 cycles the Reference pressed @blazor', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
     await setRoundTrip(150);

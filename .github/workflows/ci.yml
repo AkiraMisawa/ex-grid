@@ -275,15 +275,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # Layer 3 in ten parts: each project (both browsers, and chrome-150's Layout Ceiling
-  # selection, ADR-0053) in shards, each on a runner of its own — four for each browser,
-  # whose shards took 20 minutes at two, and two for chrome-150's few files. The suite is
-  # the one playwright.config.mjs defines, unchanged; --project and --shard only choose which
-  # files a runner takes, and a shard is a set of whole spec files, so what a run shares —
-  # the OS clipboard, the records, a spec file's booted app (ADR-0056) — is never split
-  # between runners (ADR-0041).
+  # Layer 3's Blazor specs on the WebAssembly host (ADR-0370 section 11: the behaviour specs are
+  # the React host's) in five parts: each project (both browsers, and chrome-150's Layout Ceiling
+  # selection, ADR-0053) in shards, each on a runner of its own — two for each browser and one for
+  # chrome-150's few tests. The suite is the one playwright.config.mjs defines, unchanged;
+  # --project and --shard only choose which files a runner takes, and a shard is a set of whole
+  # spec files, so what a run shares — the OS clipboard, the records, a spec file's booted app
+  # (ADR-0056) — is never split between runners (ADR-0041).
   browser:
-    name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
+    name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }} (Linux, headed)
     needs: hosts
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -291,10 +291,9 @@ jobs:
       fail-fast: false
       matrix:
         project: [chrome, msedge, chrome-150]
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
         exclude:
-          - { project: chrome-150, shard: 3 }
-          - { project: chrome-150, shard: 4 }
+          - { project: chrome-150, shard: 2 }
     steps:
       - uses: actions/checkout@v7
 
@@ -334,7 +333,7 @@ jobs:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }}
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }}
 
       - name: Keep the run's records
         if: always()
@@ -362,10 +361,10 @@ jobs:
           test "${{ needs.browser.result }}" = success ||
           { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser.result }}" = skipped; }
 
-  # The suite against the React DemoHost (ADR-0350 section 13): the Script Core under React, which
-  # step 1 carries until the whole suite passes there. Until then the run is the part of the suite
-  # the Script Core already does, which REACT_SUITE in playwright.config.mjs names, so a test it
-  # passed never quietly fails again. Not sharded: the part is small.
+  # Layer 3's behaviour specs against the React DemoHost (ADR-0350 section 13, ADR-0370 section
+  # 11): the Script Core under the built-in Chrome, with data the page holds, judged once for
+  # every adapter, and the React Wrappers' own specs. Both browsers, and chrome-150's Layout
+  # Ceiling selection (ADR-0053). Not sharded: each project's run takes about twenty minutes.
   browser-react:
     name: Layer 3 against the React host on ${{ matrix.project }} (Linux, headed)
     needs: hosts
@@ -374,7 +373,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chrome, msedge]
+        project: [chrome, msedge, chrome-150]
     steps:
       - uses: actions/checkout@v7
 
@@ -421,12 +420,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
-  # The same suite against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
+  # The Blazor specs against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
   # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's
   # own log read for CON-6. Split the same way, with a verdict job of its own, so the
   # WebAssembly run keeps its check name.
   browser-server:
-    name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
+    name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }} (Linux, headed)
     needs: hosts
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -434,10 +433,9 @@ jobs:
       fail-fast: false
       matrix:
         project: [chrome, msedge, chrome-150]
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
         exclude:
-          - { project: chrome-150, shard: 3 }
-          - { project: chrome-150, shard: 4 }
+          - { project: chrome-150, shard: 2 }
     steps:
       - uses: actions/checkout@v7
 
@@ -473,7 +471,7 @@ jobs:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }}
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }}
 
       - name: Keep the run's records
         if: always()
@@ -515,7 +513,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [wasm, server]
+        hosting: [wasm, server, react]
         project: [chrome, msedge]
     steps:
       - uses: actions/checkout@v7

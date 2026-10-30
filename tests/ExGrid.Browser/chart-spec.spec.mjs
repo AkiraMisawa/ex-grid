@@ -27,7 +27,7 @@ async function markers(page) {
     return found;
 }
 
-test('ADR-0320: the spec\'s colour paints the nodes in heat bands, its size scales them, and both keys are drawn', async ({ page }) => {
+test('ADR-0320: the spec\'s colour paints the nodes in heat bands, its size scales them, and both keys are drawn @behaviour', async ({ page }) => {
     const marks = await markers(page);
     expect(marks).toHaveLength(15);
     // The put is worth most at the lowest spot and nothing at the highest: both ends of the run are painted.
@@ -45,13 +45,13 @@ test('ADR-0320: the spec\'s colour paints the nodes in heat bands, its size scal
     await expect(answer(page)).toContainText('Nodes: colour is Value');
 });
 
-test('ADR-0321: the branch table is drawn as edges between the nodes', async ({ page }) => {
+test('ADR-0321: the branch table is drawn as edges between the nodes @behaviour', async ({ page }) => {
     const d = await chart(page).locator('g.ex-chart-series[data-series="nodes"] path.ex-chart-edges').getAttribute('d');
     expect([...d.matchAll(/M/g)]).toHaveLength(20);
     await expect(answer(page)).toContainText('15 nodes and 20 edges');
 });
 
-test('ADR-0320: the tooltip on a node reads its colour\'s and its size\'s values', async ({ page }) => {
+test('ADR-0320: the tooltip on a node reads its colour\'s and its size\'s values @behaviour', async ({ page }) => {
     const root = (await markers(page)).reduce((a, b) => (b.x < a.x ? b : a));
     await chart(page).scrollIntoViewIfNeeded();
     const box = await chart(page).locator('svg').first().boundingBox();
@@ -65,7 +65,7 @@ test('ADR-0320: the tooltip on a node reads its colour\'s and its size\'s values
     await expect(tooltip).not.toContainText('not named');
 });
 
-test('ADR-0321: the tooltip over an edge, away from any node, says its two keys', async ({ page }) => {
+test('ADR-0321: the tooltip over an edge, away from any node, says its two keys @behaviour', async ({ page }) => {
     const marks = await markers(page);
     const root = marks.reduce((a, b) => (b.x < a.x ? b : a));
     // The root's upper branch runs to the node of step 1 with the higher spot (drawn higher, so a smaller y).
@@ -78,7 +78,7 @@ test('ADR-0321: the tooltip over an edge, away from any node, says its two keys'
     await expect(tooltip).toContainText('edge from 0:0 to 1:1');
 });
 
-test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing value a hole', async ({ page }) => {
+test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing value a hole @behaviour', async ({ page }) => {
     await page.locator('#load-surface').click();
     const box = page.locator('.ex-chart-surface .ex-chart-surface-box');
     await expect(box.locator('circle.ex-chart-surface-point')).toHaveCount(3 * 3 - 1);
@@ -87,7 +87,7 @@ test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing
     await expect(page.locator('.ex-chart:not(.ex-chart-surface)')).toHaveCount(0);
 });
 
-test('ADR-0320: a spec edited in the field is read again when the field is left', async ({ page }) => {
+test('ADR-0320: a spec edited in the field is read again when the field is left @behaviour', async ({ page }) => {
     const field = page.locator('#spec');
     const text = await field.inputValue();
     await field.fill(text.replace('"scale": "sequential"', '"scale": "diverging"'));

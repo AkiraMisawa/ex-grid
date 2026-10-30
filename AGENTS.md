@@ -255,7 +255,8 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
     pull request** — that test alone, picked with `--grep` (or `file:line`), never the whole file,
     on one host it runs on, `--project=chrome`, `--repeat-each=3`. Its first run is never CI's.
     The rest of its file, the other host and Edge are CI's: `browser-repeat` runs every spec file
-    the push changed three times, on both hosts in both browsers, and the full run takes the rest.
+    the push changed three times, on each host its tests' tags name, in both browsers, and the full
+    run takes the rest.
     *(Decided with the user, 2026-10-06: the first CI run of #64 failed seventeen specs that had
     never run anywhere, on causes one local run shows at once — a page that threw on render, a
     click on a cell that does not take presses. Narrowed with the user, 2026-10-17: running whole
@@ -266,8 +267,10 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
     worktree, another pair in the next; `hosting.mjs` derives the rest — because a runner reuses a
     host already on its port, and would test the other checkout's code and pass. Run headless on a
     Mac (`EXGRID_HEADLESS=1`).
-  - **The full run, both hosts and both browsers, is CI's.** CI runs it sharded on Linux in
-    about ten minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
+  - **The full run, every host and both browsers, is CI's.** A test runs on the hosts its title's
+    tag names: `@behaviour` on the React host, `@blazor` on both Blazor hosts (ADR-0370 section 11,
+    `tests/ExGrid.Browser/README.md`), and a new test names one. CI runs it sharded on Linux in
+    about twenty minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
     rebuilt meanwhile, because a rebuild under a running DemoHost breaks it.
   - **CI is also the judge of a failure seen only locally.** A Mac has failures of its own, so a
     local failure in a spec the change does not touch is left to CI, not settled by a full run

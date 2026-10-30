@@ -19,7 +19,7 @@ async function openSheet(page) {
     await expect(scopeSwitch(page)).toHaveText('Leave the Pointing Scope');
 }
 
-test('circuitQuiet returns once the Server host has answered, so what it decided is there to read at once', async ({ page }) => {
+test('circuitQuiet returns once the Server host has answered, so what it decided is there to read at once @blazor', async ({ page }) => {
     await openSheet(page);
     await setRoundTrip(300);
 
@@ -43,12 +43,12 @@ test('circuitQuiet returns once the Server host has answered, so what it decided
     await setRoundTrip(0);
 });
 
-test('circuitQuiet refuses a window the keep-alive pings could keep from ever being met', async () => {
+test('circuitQuiet refuses a window the keep-alive pings could keep from ever being met @blazor', async () => {
     test.skip(!SERVER, 'there is no circuit on WebAssembly');
     await expect(circuitQuiet({ quietFor: 5_000 })).rejects.toThrow(/keep-alive pings/);
 });
 
-test('circuitQuiet says what kept the wire busy rather than waiting for ever', async ({ page }) => {
+test('circuitQuiet says what kept the wire busy rather than waiting for ever @blazor', async ({ page }) => {
     test.skip(!SERVER, 'there is no circuit on WebAssembly');
     await openSheet(page);
     // Something on the page that never stops asking the host: here, a stylesheet every 50 ms.
@@ -89,7 +89,7 @@ async function openStill(page) {
 
 const retakes = () => test.info().annotations.filter((note) => note.type === 'stillPictures: taken again');
 
-test('stillPictures takes every picture again when the page changed between them', async ({ page }) => {
+test('stillPictures takes every picture again when the page changed between them @behaviour', async ({ page }) => {
     const { box } = await openStill(page);
     let shots = 0;
 
@@ -114,7 +114,7 @@ test('stillPictures takes every picture again when the page changed between them
     await expect(box, 'the mark is taken off').not.toHaveAttribute('data-harness-way');
 });
 
-test('stillPictures fails, naming the change, when the page never holds still', async ({ page }) => {
+test('stillPictures fails, naming the change, when the page never holds still @behaviour', async ({ page }) => {
     const { box } = await openStill(page);
     let shots = 0;
 
@@ -130,7 +130,7 @@ test('stillPictures fails, naming the change, when the page never holds still', 
     })).rejects.toThrow(/did not hold still while it was pictured dark and light, in 2 attempts:\nattempt 1: data-harness-late on div#harness-box.*\nattempt 2: data-harness-late on div#harness-box/);
 });
 
-test('stillPictures does not count Playwright\'s own preparation of the fields for a picture', async ({ page }) => {
+test('stillPictures does not count Playwright\'s own preparation of the fields for a picture @behaviour', async ({ page }) => {
     const { field } = await openStill(page);
     expect(await field.getAttribute('style'), 'the field has no inline style').toBeNull();
 
@@ -142,7 +142,7 @@ test('stillPictures does not count Playwright\'s own preparation of the fields f
     expect(retakes(), 'no picture taken again').toEqual([]);
 });
 
-test('a colour between two bytes is painted as either, and a whole one only as itself', () => {
+test('a colour between two bytes is painted as either, and a whole one only as itself @behaviour', () => {
     // Ticket 92: MudBlazor's dark row rule, white at 30/255 on #373740, is 78.53 in red and
     // green and 86.47 in blue; Chrome on Linux painted 79 on a pinned cell and 78 beside it.
     const rule = blend([255, 255, 255], 30 / 255, [0x37, 0x37, 0x40]);
@@ -159,7 +159,7 @@ test('a colour between two bytes is painted as either, and a whole one only as i
     expect(paints([0, 0, 1], blend([0, 0, 0], 1, [255, 255, 255]))).toBe(false);
 });
 
-test('where to read: the edges off the device pixels, the pixels a box covers whole, a region on the grid', () => {
+test('where to read: the edges off the device pixels, the pixels a box covers whole, a region on the grid @behaviour', () => {
     expect(offDevicePixels({ x: 10, y: 10.5, width: 20, height: 20 }, 2)).toEqual([]);
     expect(offDevicePixels({ x: 10, y: 10.5, width: 20, height: 20 }, 1)).toEqual([
         'top at 10.5 CSS px, 10.5 device px', 'bottom at 30.5 CSS px, 30.5 device px']);

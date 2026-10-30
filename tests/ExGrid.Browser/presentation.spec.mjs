@@ -17,7 +17,7 @@ async function open(page) {
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
-test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2)', async ({ page }) => {
+test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2) @behaviour', async ({ page }) => {
     await open(page);
     const before = await grid(page).locator('.ex-row').first()
         .evaluate((el) => getComputedStyle(el).height);
@@ -85,7 +85,7 @@ function paintedGeometry(page) {
     });
 }
 
-test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, header band and Selection are painted at the resolved Grid Metrics, at every preset', async ({ page }) => {
+test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, header band and Selection are painted at the resolved Grid Metrics, at every preset @behaviour', async ({ page }) => {
     await page.goto('/density');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     // A range over rows 1-3 of Book and Trader, the Focus at its top left.
@@ -137,7 +137,7 @@ test('UX-3 / ST-3 / ADR-0027 P6, ADR-0028: after each density change the rows, h
 // resizes stay in this test's own context.
 test.describe(() => {
     test.use({ freshDocument: true });
-    test('CON-4 / ADR-0013: no ResizeObserver loop error from attach through density changes and window resizes', async ({ page }) => {
+    test('CON-4 / ADR-0013: no ResizeObserver loop error from attach through density changes and window resizes @behaviour', async ({ page }) => {
         await page.addInitScript(() => {
             window.__exgridErrorEvents = [];
             window.addEventListener('error', (e) => window.__exgridErrorEvents.push(String(e.message)));
@@ -165,7 +165,7 @@ test.describe(() => {
     });
 });
 
-test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half)', async ({ page }) => {
+test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint half) @behaviour', async ({ page }) => {
     await open(page);
     const before = await grid(page).locator('.ex-header')
         .evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -181,7 +181,7 @@ test('a Visual Token set on an ancestor recolours the paint (UX-5, the paint hal
     expect(after).not.toBe(before);
 });
 
-test('nothing inside the Viewport transitions or animates (UX-6)', async ({ page }) => {
+test('nothing inside the Viewport transitions or animates (UX-6) @behaviour', async ({ page }) => {
     await open(page);
 
     const offenders = await page.evaluate(() =>
@@ -197,7 +197,7 @@ test('nothing inside the Viewport transitions or animates (UX-6)', async ({ page
     expect(offenders).toEqual([]);
 });
 
-test('UX-7 / ADR-0027, ADR-0029: under forced colors every Cell State and Row Kind stays tellable without its background, on /cells', async ({ page }) => {
+test('UX-7 / ADR-0027, ADR-0029: under forced colors every Cell State and Row Kind stays tellable without its background, on /cells @behaviour', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' });
     await page.goto('/cells');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
@@ -273,7 +273,7 @@ async function inkOf(page, locator, count = 6) {
     return { ground, inked: pixels.sort((a, b) => distance(b) - distance(a)).slice(0, count) };
 }
 
-test('a toned Stale or Error cell paints in its state\'s colour under a theme that sets the tone tokens (ADR-0006, ADR-0029)', async ({ page }) => {
+test('a toned Stale or Error cell paints in its state\'s colour under a theme that sets the tone tokens (ADR-0006, ADR-0029) @behaviour', async ({ page }) => {
     await page.goto('/tones');
     const cellAt = (row, column) => page.locator(`.ex-grid [id$='r${row}c${column}']`);
     await expect(cellAt(TONED.loss, STATE_COLUMN.error)).toHaveClass(/ex-tone-negative/);
@@ -325,7 +325,7 @@ test('a toned Stale or Error cell paints in its state\'s colour under a theme th
 // The Modified mark (ADR-0029's fourth correction, 2026-10-07). It was an inset box-shadow, which
 // drew a band along the whole top and right edges rather than a corner, and which a colour in its
 // token — ExGrid.MudBlazor's — turned into no mark at all.
-test('the Modified mark is a triangle in the top right corner alone, in the colour its token names (UX-20, ADR-0029, ADR-0006)', async ({ page }) => {
+test('the Modified mark is a triangle in the top right corner alone, in the colour its token names (UX-20, ADR-0029, ADR-0006) @behaviour', async ({ page }) => {
     await page.goto('/tones');
     const cellAt = (row, column) => page.locator(`.ex-grid [id$='r${row}c${column}']`);
     await expect(cellAt(TONED.flat, STATE_COLUMN.modified)).toHaveClass(/ex-state-modified/);
@@ -374,7 +374,7 @@ test('the Modified mark is a triangle in the top right corner alone, in the colo
     expect(position).toBe('sticky');
 });
 
-test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ page }) => {
+test('under a dark scheme the untouched grid stays readable (UX-8) @behaviour', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await open(page);
 
@@ -397,7 +397,7 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
     expect(contrast.ratio, JSON.stringify(contrast)).toBeGreaterThanOrEqual(4.5);
 });
 
-test('inside an RTL ancestor the grid stays an LTR island (DIR-2)', async ({ page }) => {
+test('inside an RTL ancestor the grid stays an LTR island (DIR-2) @behaviour', async ({ page }) => {
     await open(page);
     // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
     // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0056).
@@ -453,7 +453,7 @@ function arabicLayout(page) {
     });
 }
 
-test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and the cell does not move, under an RTL page', async ({ page }) => {
+test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and the cell does not move, under an RTL page @behaviour', async ({ page }) => {
     await open(page);
     const before = await arabicLayout(page);
 
@@ -490,7 +490,7 @@ test('DIR-3 / ADR-0031: an Arabic value reads right to left inside its cell, and
     expect(after.letters).toEqual(before.letters);
 });
 
-test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032)', async ({ page }) => {
+test('a Header Group label is centred, and nothing aligns it vertically (HG-13, ADR-0032) @behaviour', async ({ page }) => {
     await open(page);
     await expect(grid(page).locator('.ex-header-group').first()).toBeVisible();
     await circuitQuiet();
@@ -511,7 +511,7 @@ test('a Header Group label is centred, and nothing aligns it vertically (HG-13, 
     expect(painted.verticalAlign).toBe('baseline');
 });
 
-test("the editor's box is exactly the cell's (ED-9)", async ({ page }) => {
+test("the editor's box is exactly the cell's (ED-9) @behaviour", async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
     await page.keyboard.press('F2');
@@ -531,7 +531,7 @@ test("the editor's box is exactly the cell's (ED-9)", async ({ page }) => {
     await page.keyboard.press('Escape');
 });
 
-test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async ({ page }) => {
+test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15) @behaviour', async ({ page }) => {
     await open(page);
     const g = grid(page);
     const box = await g.locator('.ex-scroller').boundingBox();
@@ -570,7 +570,7 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
 // behind the press and handed on at its turn, and the leaving with them, after the last. Handed on
 // ahead of them, it stopped nothing, and the move in the band armed a scroll that never ended
 // (WB-13, Server host, CI, 2026-10-21).
-test('a drag that leaves the grid before its press is answered stops the auto-scroll at its turn (SL-14, ADR-0240)', async ({ page }) => {
+test('a drag that leaves the grid before its press is answered stops the auto-scroll at its turn (SL-14, ADR-0240) @blazor', async ({ page }) => {
     await open(page);
     const g = grid(page);
     const box = await g.locator('.ex-scroller').boundingBox();
@@ -598,7 +598,7 @@ test('a drag that leaves the grid before its press is answered stops the auto-sc
         .toBe(atRest);
 });
 
-test('the Blazor error UI never appears (CON-5)', async ({ page }) => {
+test('the Blazor error UI never appears (CON-5) @blazor', async ({ page }) => {
     await open(page);
     const display = await page.locator('#blazor-error-ui')
         .evaluate((el) => getComputedStyle(el).display);
@@ -733,7 +733,7 @@ async function watchClassesWorn(page) {
     });
 }
 
-test('every class under the root is one ADR-0029 names, stable or internal (UX-4)', async ({ page, context }) => {
+test('every class under the root is one ADR-0029 names, stable or internal (UX-4) @behaviour', async ({ page, context }) => {
     test.setTimeout(180_000);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const at = (row, column, n = 0) => page.locator('.ex-grid').nth(n).locator(`[id$='r${row}c${column}']`);

@@ -30,7 +30,7 @@ async function clickCell(page, row, column) {
     await cell.click({ force: true });
 }
 
-test('typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4)', async ({ page }) => {
+test('typing opens Overwrite containing the character, Enter commits and moves (ED-2/ED-4) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1); // Trader, editable
     await page.keyboard.type('X');
 
@@ -57,7 +57,7 @@ const onApple = (page) => page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navig
 // An AltGr character reports Control and Alt held together, and is how several layouts type @ { [ €:
 // the script's gate passes it as typing, where Control or Alt alone is a shortcut the browser keeps
 // (ED-13, ADR-0010). The C# half is CellEditorTests'; this is the script's, with real keys.
-test('ED-13: Control and Alt held together open the editor with the character; either alone opens nothing (ADR-0010)', async ({ page }) => {
+test('ED-13: Control and Alt held together open the editor with the character; either alone opens nothing (ADR-0010) @behaviour', async ({ page }) => {
     test.skip(await onApple(page), 'On an Apple platform Option types a character of its own (Option+q is œ), and AltGr is not a key there');
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 1); // Trader, editable
@@ -75,7 +75,7 @@ test('ED-13: Control and Alt held together open the editor with the character; e
     await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('q');
 });
 
-test('in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2)', async ({ page }) => {
+test('in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.type('AB');
     // Caret via F2: the arrow now belongs to the editor and moves its caret.
@@ -92,7 +92,7 @@ test('in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2
     await expect(page.locator('#edit-status')).toContainText('Trader=AxB');
 });
 
-test('Escape cancels the editor and never blurs the grid mid-edit (ED-3)', async ({ page }) => {
+test('Escape cancels the editor and never blurs the grid mid-edit (ED-3) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.type('Q');
     await page.keyboard.press('Escape');
@@ -122,7 +122,7 @@ async function aButtonEitherSide(page) {
     });
 }
 
-test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080)', async ({ page }) => {
+test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080) @behaviour', async ({ page }) => {
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
     await page.keyboard.type('Q');
@@ -164,7 +164,7 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     await expect(page.locator('#before-grid')).toBeFocused();
 });
 
-test('Escape, Escape, then a character opens an edit in the selected cell (KB-8)', async ({ page }) => {
+test('Escape, Escape, then a character opens an edit in the selected cell (KB-8) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.type('Q');
     await page.keyboard.press('Escape');
@@ -181,7 +181,7 @@ test('Escape, Escape, then a character opens an edit in the selected cell (KB-8)
     await expect(page.locator('#edit-status')).toContainText('Edited: —');
 });
 
-test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ page }) => {
+test('Escape, a press on a cell, then Tab cycles inside it (KB-8) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.press('Escape');
     // Released once the answer has landed; the user who presses the grid has come back to it.
@@ -194,7 +194,7 @@ test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ pag
     await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
-test('with a 150 ms round trip, Escape and Tab typed at once leave the grid, behind an Enter too, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080)', async ({ page }) => {
+test('with a 150 ms round trip, Escape and Tab typed at once leave the grid, behind an Enter too, and a character opens an edit (KB-8, ADR-0230, ADR-0010, ADR-0080) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly answers before the next key: nothing is held long enough to see');
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
@@ -233,7 +233,7 @@ test('with a 150 ms round trip, Escape and Tab typed at once leave the grid, beh
     await expect(editor).toHaveCount(0);
 });
 
-test('Escape, an arrow, then Tab cycles inside the selection (KB-8)', async ({ page }) => {
+test('Escape, an arrow, then Tab cycles inside the selection (KB-8) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.press('Escape');
     await page.keyboard.press('ArrowDown');
@@ -246,7 +246,7 @@ test('Escape, an arrow, then Tab cycles inside the selection (KB-8)', async ({ p
 
 // KB-44 with KB-8: a held Escape is one press. Its repeats are not another key, so the Tab its press
 // released stays released (ADR-0012, rewritten 2026-10-01 and refined the same day with ADR-0070).
-test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44)', async ({ page }) => {
+test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44) @behaviour', async ({ page }) => {
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
 
@@ -269,7 +269,7 @@ test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, K
     await expectActiveDescendant(grid(page), /r0c1$/);
 });
 
-test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10)', async ({ page }) => {
+test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10) @behaviour', async ({ page }) => {
     // Select the Narrow (####) cell of row 0 and extend to include a text cell.
     await clickCell(page, 0, 2); // Notional
     await page.keyboard.press('Shift+ArrowRight'); // + Narrow (####)
@@ -318,7 +318,7 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
     expect(clipboard['text/html']).toContain('<td>1000000</td><td>1000000</td>');
 });
 
-test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3)', async ({ page }) => {
+test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3) @behaviour', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     // Two ranges that do not line up: (0,1) and (1,2).
     await clickCell(page, 0, 1);
@@ -337,7 +337,7 @@ test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-
 // Ctrl+C and Ctrl+V at the selection rather than at the focused root, so the grid heard neither
 // until DOM focus left it and came back (found on /sheet, 2026-09-29). Enter, Tab and Escape each
 // end an edit here.
-test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by Enter, Tab or Escape', async ({ page }) => {
+test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by Enter, Tab or Escape @behaviour', async ({ page }) => {
     const copies = async (row, column) => {
         await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
         const text = (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
@@ -364,7 +364,7 @@ test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by E
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
 });
 
-test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range', async ({ page }) => {
+test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range @behaviour', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     const source = await grid(page).locator("[id$='r0c1']").textContent();
     await clickCell(page, 0, 1);
@@ -382,7 +382,7 @@ test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills
     await expect(grid(page).locator('.ex-announce')).toContainText('3 rows by 1 columns selected');
 });
 
-test('ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035)', async ({ page }) => {
+test('ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035) @behaviour', async ({ page }) => {
     const counts = page.locator('#intent-count');
     await expect(counts).toHaveText('Intents: 0 edits, 0 pastes');
     await clickCell(page, 0, 2);                   // Notional, editable
@@ -400,7 +400,7 @@ test('ED-19: after a refused fill the editor stands, and Enter then raises exact
     await expect(counts).toHaveText('Intents: 1 edits, 0 pastes');
 });
 
-test('a refusal is announced in the root\'s live region in the built-in words, and again when repeated (A11Y-16, ADR-0203, ERR-2)', async ({ page }) => {
+test('a refusal is announced in the root\'s live region in the built-in words, and again when repeated (A11Y-16, ADR-0203, ERR-2) @behaviour', async ({ page }) => {
     // The built-in Chrome words every refusal, and the grid's one live region says it (ADR-0203). The
     // page shows the reason by name beside it, and is no live region of its own: the refusal is said
     // once.
@@ -498,7 +498,7 @@ async function clipboardAfterwards(page, context) {
 
 const cellText = async (page, row, column) => (await grid(page).locator(`[id$='r${row}c${column}']`).textContent()).trim();
 
-test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event', async ({ page, context }) => {
+test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission granted and no prompt, by the copy event @behaviour', async ({ page, context }) => {
     const expected = `${await cellText(page, 0, 1)}\n${await cellText(page, 1, 1)}`;
     await grantsTakenBack(page, context);
     await watchCopyRoutes(page);
@@ -518,7 +518,7 @@ test('CP-6 / ADR-0005: a Ctrl+C inside the Window writes with no permission gran
     expect(await clipboardAfterwards(page, context), 'the copy landed on the clipboard').toBe(expected);
 });
 
-test('CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and no prompt, by the asynchronous route, with headers (CP-17)', async ({ page, context }) => {
+test('CP-19 / ADR-0005/0036: a menu copy writes with no permission granted and no prompt, by the asynchronous route, with headers (CP-17) @behaviour', async ({ page, context }) => {
     await grantsTakenBack(page, context);
     await watchCopyRoutes(page);
     await clickCell(page, 0, 1);
@@ -558,7 +558,7 @@ async function selectTextWithMouse(page, paragraph) {
 }
 
 for (const way of ['a press on the grid that edits', 'a press on the display-only grid', 'Tab back to the display-only grid']) {
-    test(`CP-10 / ADR-0005: text selected with the mouse, then ${way}: Ctrl+C copies the grid's cell, not the text`, async ({ page }) => {
+    test(`CP-10 / ADR-0005: text selected with the mouse, then ${way}: Ctrl+C copies the grid's cell, not the text @behaviour`, async ({ page }) => {
         const second = way !== 'a press on the grid that edits';
         const target = second ? page.locator('.ex-grid').nth(1) : grid(page);
         const cell = target.locator("[id$='r0c1']");
@@ -594,7 +594,7 @@ for (const way of ['a press on the grid that edits', 'a press on the display-onl
 // number under the invariant culture, a cell's shown text as text in the source's culture. The
 // payload is Excel's shape as its HTML export writes it; the paste event's data is the browser's
 // own, from the clipboard, through the real Ctrl+V.
-test('CP-14 / ADR-0005: an Excel-shaped paste arrives typed and at full precision, from x:num and not the shown text', async ({ page }) => {
+test('CP-14 / ADR-0005: an Excel-shaped paste arrives typed and at full precision, from x:num and not the shown text @behaviour', async ({ page }) => {
     const html = [
         '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"',
         ' xmlns="http://www.w3.org/TR/REC-html40"><head><meta name=ProgId content=Excel.Sheet>',
@@ -639,7 +639,7 @@ const excelShownTextColumn = (cells) => [
     '<!--EndFragment-->\r\n</table>\r\n\r\n</body>\r\n\r\n</html>\r\n',
 ].join('');
 
-test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrives as the shown text and is read as numbers', async ({ page }) => {
+test('CP-14 / ADR-0005: desktop Excel\'s paste, shown text with no x:num, arrives as the shown text and is read as numbers @behaviour', async ({ page }) => {
     const shown = ['6.00', '1,234.50', '0.12'];
     await page.evaluate(({ markup, text }) => navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([markup], { type: 'text/html' }),
@@ -672,7 +672,7 @@ test.describe(() => {
         ...(SERVER ? { expectedHostLog: [logged] } : { expectedErrors: [logged] }),
     });
 
-    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the page by either gesture, and writes nothing', async ({ page }) => {
+    test('CON-8 / ADR-0005: a copy whose payload fails to build says so on the page by either gesture, and writes nothing @blazor', async ({ page }) => {
         await page.goto('/features?copythrows=1');
         await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
@@ -717,7 +717,7 @@ async function expectRangeCovers(page, [fromRow, fromColumn], [toRow, toColumn])
 // Overwrite is Excel's Enter mode (ADR-0010): the Shift+arrows and Shift+Home commit the entry and
 // then extend the Selection, as they do with no edit open, where they once selected the editor's
 // text (the seventeenth Windows run, Part C, case 7). Caret keeps them the editor's.
-test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010)', async ({ page }) => {
+test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in Caret Shift+Home selects the text (ED-2, ADR-0010) @behaviour', async ({ page }) => {
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 2, 1); // Trader, editable
     await page.keyboard.type('AB');
@@ -755,7 +755,7 @@ test('in Overwrite Shift+Home and Shift+↓ commit and extend the Selection; in 
 // The Primary Modifier's arrows the same way (ADR-0010, ED-2): Excel's Enter mode committed on Ctrl+→
 // and moved, and on Ctrl+Shift+→ committed and extended (the readings of 2026-10-12, R1 (vii)); the
 // other directions follow by generalisation. In Caret Ctrl+← is the editor's.
-test('in Overwrite Ctrl+← commits and moves to the row\'s first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010)', async ({ page }) => {
+test('in Overwrite Ctrl+← commits and moves to the row\'s first column, Ctrl+Shift+← commits and extends to it; in Caret Ctrl+← moves the caret (ED-2, ADR-0010) @behaviour', async ({ page }) => {
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 2, 1); // Trader, editable
     await page.keyboard.type('EF');
@@ -822,7 +822,7 @@ const extensionOf = (editor) => editor.evaluate((input) => [input.selectionStart
 // The field's own word moves, typed behind no key the grid is answering: the edit stands open and
 // holds the keyboard before the first of them, so the browser carries them out itself. What the held
 // keys of the next test are measured against.
-test('in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010)', async ({ page }) => {
+test('in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend the selection, and Ctrl+Backspace and Ctrl+Delete delete a word, in the field itself (ED-2, ADR-0010) @behaviour', async ({ page }) => {
     const { word, forward } = await wordKeys(page);
     const editor = await alphaBetaInTrader(page);
     await page.keyboard.press('F2');
@@ -868,7 +868,7 @@ test('in Caret Ctrl+← and Ctrl+→ move the caret by a word, with Shift extend
 // handled itself is handled as it would have (ADR-0010): Ctrl+← and Shift+End were once dropped and
 // collapsed there, so where the caret landed turned on whether the keys arrived before F2's answer —
 // Ctrl+← stood at 2 in 'GH' on Edge, WebAssembly, where the test above it waits for 0 (ED-2).
-test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010)', async ({ page }) => {
+test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2 move and extend as the field would; so do Ctrl+→, Ctrl+Shift+→, Ctrl+Backspace and Ctrl+Delete (ED-2, ADR-0010) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
     const { word, forward } = await wordKeys(page);
     const editor = await alphaBetaInTrader(page);
@@ -910,7 +910,7 @@ test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2
 // move by a word (wordKeys). In Caret they are the field's, as the word moves are: the edit stands
 // and the caret lands at the start and the end. Pressed only where the platform gives them that
 // meaning; KB-3's macOS row runs it (ticket 280).
-test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text\'s start and end, in the field itself (ED-2, KB-3, ticket 280)', async ({ page }) => {
+test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text\'s start and end, in the field itself (ED-2, KB-3, ticket 280) @behaviour', async ({ page }) => {
     test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform; elsewhere Ctrl\'s word moves are pressed above');
     const editor = await alphaBetaInTrader(page);
     await page.keyboard.press('F2');
@@ -929,7 +929,7 @@ test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the t
     await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
 });
 
-test('on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text\'s start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280)', async ({ page }) => {
+test('on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text\'s start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280) @blazor', async ({ page }) => {
     test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform');
     test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
     const editor = await alphaBetaInTrader(page);
@@ -954,7 +954,7 @@ test('on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed 
 // Ctrl+., Ctrl+Backspace and Shift+Backspace are the active cell's keys with no edit open (ADR-0052);
 // with one open, none is taken from it: the field answers Backspace's forms as a field does, Ctrl+.
 // does nothing there, and the range and its Focus stand (KB-42).
-test('KB-42: with an edit open, Ctrl+. walks no corner, and Ctrl+Backspace and Shift+Backspace delete in the field; the range stands (ADR-0052)', async ({ page }) => {
+test('KB-42: with an edit open, Ctrl+. walks no corner, and Ctrl+Backspace and Shift+Backspace delete in the field; the range stands (ADR-0052) @behaviour', async ({ page }) => {
     const { word } = await wordKeys(page);
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 1); // Trader, editable
@@ -977,7 +977,7 @@ test('KB-42: with an edit open, Ctrl+. walks no corner, and Ctrl+Backspace and S
     await expectActiveDescendant(grid(page), /r1c1$/);
 });
 
-test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
+test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034) @behaviour', async ({ page }) => {
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 2); // Notional, which carries the verdict
     await page.keyboard.type('abc');
@@ -993,7 +993,7 @@ test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selecti
     expect(await activeDescendant(grid(page))).toMatch(/r0c2$/);
 });
 
-test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034)', async ({ page }) => {
+test('a Reject holds the editor with real keys, and Escape is the way out (ED-15, ADR-0034) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 2);                   // Notional, which carries the verdict
     await page.keyboard.type('abc');
 
@@ -1015,7 +1015,7 @@ test('a Reject holds the editor with real keys, and Escape is the way out (ED-15
     await expect(grid(page).locator('.ex-editor')).toHaveCount(0);
 });
 
-test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034)', async ({ page }) => {
+test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034) @behaviour', async ({ page }) => {
     // Flag a cell first: -5 is applied and marked by the Consumer's ruleset.
     await clickCell(page, 0, 2);
     await page.keyboard.type('-5');
@@ -1035,7 +1035,7 @@ test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/003
     await expect(grid(page).locator('.ex-message')).toHaveCount(0);
 });
 
-test('a pasted value wears the same mark as a typed one (ADR-0034)', async ({ page }) => {
+test('a pasted value wears the same mark as a typed one (ADR-0034) @behaviour', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.writeText('-5'));
     await clickCell(page, 1, 2);                   // Notional
 
@@ -1045,7 +1045,7 @@ test('a pasted value wears the same mark as a typed one (ADR-0034)', async ({ pa
     await expect(grid(page).locator("[id$='r1c2']")).toHaveClass(/ex-state-error/);
 });
 
-test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) => {
+test('Ctrl+PageDown is neither handled nor prevented (KB-15) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 1);
     // The click's Focus is painted by the render it asked for — a round trip away on the
     // Server host.
@@ -1083,7 +1083,7 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     expect(await activeDescendant(grid(page))).toBe(focusBefore);
 });
 
-test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4, KB-12, ADR-0080)', async ({ page }) => {
+test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4, KB-12, ADR-0080) @behaviour', async ({ page }) => {
     await aButtonEitherSide(page);
     await page.locator('#before-grid').focus();
 
@@ -1119,7 +1119,7 @@ test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4,
     await expect(page.locator('#after-grid')).toBeFocused();
 });
 
-test('two instances stay independent: no --ex-* on :root, no window global (DOM-4)', async ({ page }) => {
+test('two instances stay independent: no --ex-* on :root, no window global (DOM-4) @behaviour', async ({ page }) => {
     const grids = page.locator('.ex-grid');
     await expect(grids).toHaveCount(2);
 
@@ -1138,7 +1138,7 @@ test('two instances stay independent: no --ex-* on :root, no window global (DOM-
     expect(heights).toEqual(['24px', '20px']);
 });
 
-test('a header click sorts and the selection is untouched by it (SR-1)', async ({ page }) => {
+test('a header click sorts and the selection is untouched by it (SR-1) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 0);
     const header = grid(page).locator('.ex-header-cell').nth(2); // Notional
     await header.click({ position: { x: 30, y: 14 }, force: true });
@@ -1152,7 +1152,7 @@ test('a header click sorts and the selection is untouched by it (SR-1)', async (
 // The /cells page is the other half of the key-gate contract: a grid with NO editable
 // column, whose Template Column holds a real focusable control (ADR-0020).
 
-test('a display-only grid does not take printable keys away from the page (ADR-0010/0020)', async ({ page }) => {
+test('a display-only grid does not take printable keys away from the page (ADR-0010/0020) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -1179,7 +1179,7 @@ test('a display-only grid does not take printable keys away from the page (ADR-0
     expect(seen, 'the keydown reached the page untouched').toBe(true);
 });
 
-test('KB-11: arrows typed in a Template Column\'s input move its caret, and the grid\'s Selection stays where it was (ADR-0010/0020)', async ({ page }) => {
+test('KB-11: arrows typed in a Template Column\'s input move its caret, and the grid\'s Selection stays where it was (ADR-0010/0020) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -1214,7 +1214,7 @@ test('KB-11: arrows typed in a Template Column\'s input move its caret, and the 
 // Actions 5, Review 6. Row 0 is a Group row, rows 1 to 5 its Details, and a Mark is painted on a
 // Detail row only (ADR-0043). What was heard is written below the grid with a count.
 
-test('DC-63: a double click where no edit opens is heard once with its cell and the Focus placed there; an Editable cell opens its edit, an open edit and a control in an Action, Template or Mark cell raise nothing (ADR-0063)', async ({ page }) => {
+test('DC-63: a double click where no edit opens is heard once with its cell and the Focus placed there; an Editable cell opens its edit, an open edit and a control in an Action, Template or Mark cell raise nothing (ADR-0063) @behaviour', async ({ page }) => {
     await page.goto('/cells?editable=1&dblclick=1');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -1256,7 +1256,7 @@ test('DC-63: a double click where no edit opens is heard once with its cell and 
     await expect(editor).toHaveCount(0);
 });
 
-test('DC-63: without a listener, a double click where no edit opens places the Focus and changes nothing else (ADR-0063, DC-1)', async ({ page }) => {
+test('DC-63: without a listener, a double click where no edit opens places the Focus and changes nothing else (ADR-0063, DC-1) @behaviour', async ({ page }) => {
     await page.goto('/cells?editable=1');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -1276,7 +1276,7 @@ test('DC-63: without a listener, a double click where no edit opens places the F
 // DC-62 on /cells?editable=1&leave=1, where the page counts OnLeave below the grid and does
 // nothing else with it. A button either side of the grid shows where Tab goes once released.
 
-test('DC-62: with OnLeave declared, Escape with nothing left to dismiss raises it once, keeps the DOM focus and releases Tab; an Escape that cancels an edit, closes a popover, leaves an Interactive cell or returns from a control raises nothing, and a held one raises once (ADR-0070, KB-8)', async ({ page }) => {
+test('DC-62: with OnLeave declared, Escape with nothing left to dismiss raises it once, keeps the DOM focus and releases Tab; an Escape that cancels an edit, closes a popover, leaves an Interactive cell or returns from a control raises nothing, and a held one raises once (ADR-0070, KB-8) @behaviour', async ({ page }) => {
     await page.goto('/cells?editable=1&leave=1');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -1362,7 +1362,7 @@ async function openCellsAt(page, column) {
     return cells;
 }
 
-test('Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037)', async ({ page }) => {
+test('Space enters a cell with several actions; the arrows choose and Space fires once (KB-20/KB-21, ADR-0037) @behaviour', async ({ page }) => {
     const cells = await openCellsAt(page, 6);
 
     await page.keyboard.press(' ');
@@ -1390,7 +1390,7 @@ test('Space enters a cell with several actions; the arrows choose and Space fire
     await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
 });
 
-test('inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037)', async ({ page }) => {
+test('inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020/0037) @behaviour', async ({ page }) => {
     const cells = await openCellsAt(page, 6);
     await page.keyboard.press(' ');
     await page.keyboard.press('ArrowRight');
@@ -1402,7 +1402,7 @@ test('inside a cell Enter never fires: it leaves and moves down (KB-22, ADR-0020
     await expect(cells).toHaveAttribute('aria-activedescendant', /r1c6$/);
 });
 
-test('Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037)', async ({ page }) => {
+test('Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, ADR-0037) @behaviour', async ({ page }) => {
     const cells = await openCellsAt(page, 6);
     await page.keyboard.press(' ');
 
@@ -1413,7 +1413,7 @@ test('Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, 
     await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
 });
 
-test('Space puts the caret in a Template cell\'s field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037)', async ({ page }) => {
+test('Space puts the caret in a Template cell\'s field, and Escape brings the keyboard back (KB-23/KB-24, ADR-0037) @behaviour', async ({ page }) => {
     const cells = await openCellsAt(page, 4);
 
     await page.keyboard.press(' ');
@@ -1430,7 +1430,7 @@ test('Space puts the caret in a Template cell\'s field, and Escape brings the ke
     await expect(note).toHaveValue('memo');
 });
 
-test('a held Space fires a one-action cell once (KB-26, ADR-0037)', async ({ page }) => {
+test('a held Space fires a one-action cell once (KB-26, ADR-0037) @behaviour', async ({ page }) => {
     await openCellsAt(page, 5);
 
     // Playwright marks every keydown after the first as a repeat until the key goes up.
@@ -1444,7 +1444,7 @@ test('a held Space fires a one-action cell once (KB-26, ADR-0037)', async ({ pag
     await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
 });
 
-test('holding Space to enter a cell fires nothing (KB-26, ADR-0037)', async ({ page }) => {
+test('holding Space to enter a cell fires nothing (KB-26, ADR-0037) @behaviour', async ({ page }) => {
     const cells = await openCellsAt(page, 6);
 
     // Without the repeat filter the first repeat would reach an Interactive cell as a
@@ -1458,7 +1458,7 @@ test('holding Space to enter a cell fires nothing (KB-26, ADR-0037)', async ({ p
     await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
 });
 
-test('Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037)', async ({ page }) => {
+test('Shift+Tab from after the grid lands on the root, not on a button inside it (A11Y-17, ADR-0037) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-action').first()).toBeVisible();
@@ -1480,7 +1480,7 @@ test('Shift+Tab from after the grid lands on the root, not on a button inside it
     await expect(cells).toBeFocused();
 });
 
-test('the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037)', async ({ page }) => {
+test('the chosen action is outlined, with and without forced colors (UX-14, ADR-0029/0037) @behaviour', async ({ page }) => {
     for (const forcedColors of ['none', 'active']) {
         await page.emulateMedia({ forcedColors });
         const cells = await openCellsAt(page, 6);
@@ -1496,7 +1496,7 @@ test('the chosen action is outlined, with and without forced colors (UX-14, ADR-
     }
 });
 
-test('a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037)', async ({ page }) => {
+test('a press dragged off an action leaves no button holding the keyboard, and Enter fires nothing (KB-27, ADR-0020/0037) @behaviour', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     const open = cells.locator("[id$='r0c5'] .ex-action");
@@ -1539,7 +1539,7 @@ const writesTo = (region) => region.evaluate((el) => {
     return el.exWrites;
 });
 
-test('A11Y-10: arrows with no Shift move the Focus and leave the live region unwritten (ADR-0033)', async ({ page }) => {
+test('A11Y-10: arrows with no Shift move the Focus and leave the live region unwritten (ADR-0033) @behaviour', async ({ page }) => {
     const region = grid(page).locator('.ex-announce');
     await clickCell(page, 2, 1);
     await expectActiveDescendant(grid(page), /r2c1$/);
@@ -1556,7 +1556,7 @@ test('A11Y-10: arrows with no Shift move the Focus and leave the live region unw
     await expect(region).toHaveText('');
 });
 
-test('A11Y-9: a drag across 200 rows writes the live region once, after it settles (ADR-0033)', async ({ page }) => {
+test('A11Y-9: a drag across 200 rows writes the live region once, after it settles (ADR-0033) @behaviour', async ({ page }) => {
     const region = grid(page).locator('.ex-announce');
     const scroller = grid(page).locator('.ex-scroller');
     await clickCell(page, 0, 1);
@@ -1580,7 +1580,7 @@ test('A11Y-9: a drag across 200 rows writes the live region once, after it settl
     expect(Number(writes[0].match(/^(\d+) rows/)?.[1])).toBeGreaterThan(200);
 });
 
-test('A11Y-6: a wheel scroll that takes the Focus out of the paint clears aria-activedescendant, and scrolling back restores it, never scrolling to the Focus itself (ADR-0033)', async ({ page }) => {
+test('A11Y-6: a wheel scroll that takes the Focus out of the paint clears aria-activedescendant, and scrolling back restores it, never scrolling to the Focus itself (ADR-0033) @behaviour', async ({ page }) => {
     const scroller = grid(page).locator('.ex-scroller');
     await clickCell(page, 1, 1);
     await expectActiveDescendant(grid(page), /r1c1$/);
@@ -1625,7 +1625,7 @@ async function dragIntoBand(page, row, edge, cells) {
     await expect(status).toContainText(new RegExp(`(^|\\D)${cells} cells selected`));
 }
 
-test('SL-11: a drag held against either boundary of a page does not turn it, and the Selection stops at the page (ADR-0015)', async ({ page }) => {
+test('SL-11: a drag held against either boundary of a page does not turn it, and the Selection stops at the page (ADR-0015) @behaviour', async ({ page }) => {
     await page.goto('/features?paged=1');
     const pager = grid(page).locator('.ex-pager');
     await expect(pager).toContainText('1 / 8');
@@ -1650,7 +1650,7 @@ test('SL-11: a drag held against either boundary of a page does not turn it, and
 // out of the table on every path, the editor's included (KB-3, ADR-0012). Win+↓ is a window manager's
 // chord, and Meta+Enter must not fill as Ctrl+Enter does. Where Meta is Command, KB-3's macOS row
 // presses Cmd+Enter instead (sheet-vs-excel.spec.mjs's ControlOrMeta+Enter).
-test('KB-3: off an Apple platform, Meta+↓ moves no Focus, and Meta+Enter in an open edit over a range fills nothing (ADR-0012)', async ({ page }) => {
+test('KB-3: off an Apple platform, Meta+↓ moves no Focus, and Meta+Enter in an open edit over a range fills nothing (ADR-0012) @behaviour', async ({ page }) => {
     test.skip(await onApple(page), 'Meta is Command on an Apple platform, and the Primary Modifier');
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 2, 2); // Notional, editable
@@ -1676,7 +1676,7 @@ test('KB-3: off an Apple platform, Meta+↓ moves no Focus, and Meta+Enter in an
 // A key that names the start of the row or of the result puts the Viewport's left edge at the start,
 // with Pinned Columns or without (KB-10, ADR-0012's note on pinned columns): /wide pins two of its
 // hundred columns, and its button unpins them.
-test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and the result, pinned and unpinned alike (ADR-0012)', async ({ page }) => {
+test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and the result, pinned and unpinned alike (ADR-0012) @behaviour', async ({ page }) => {
     for (const pinned of [2, 0]) {
         await page.goto('/wide?rows=1000');
         const wide = page.locator('.ex-grid').first();
@@ -1710,7 +1710,7 @@ test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and 
 
 // While a range is extended the grid keeps the Extent in view; moved back inside the view, the Extent
 // scrolls nothing (KB-40, ADR-0052). The Focus's half of the clause is layer 2's and the loop above.
-test('KB-40: an Extent carried below the view scrolls it, and moved back inside the view scrolls nothing (ADR-0052)', async ({ page }) => {
+test('KB-40: an Extent carried below the view scrolls it, and moved back inside the view scrolls nothing (ADR-0052) @behaviour', async ({ page }) => {
     const scroller = grid(page).locator('.ex-scroller');
     const top = () => scroller.evaluate((el) => el.scrollTop);
     await clickCell(page, 1, 1);
@@ -1735,7 +1735,7 @@ test('KB-40: an Extent carried below the view scrolls it, and moved back inside 
 // A selection beyond the Window takes the asynchronous route: the grid asks for the rows it has not
 // got, and the copy holds every one of them (CP-7, ADR-0005). /fetch holds a Window of the rows on
 // screen and sixty either side, of a hundred thousand.
-test('CP-7: a copy of rows beyond the Window takes the asynchronous route, and the clipboard holds every row the source was asked for (ADR-0005)', async ({ page }) => {
+test('CP-7: a copy of rows beyond the Window takes the asynchronous route, and the clipboard holds every row the source was asked for (ADR-0005) @behaviour', async ({ page }) => {
     await page.goto('/fetch');
     const fetchGrid = grid(page);
     await expect(fetchGrid.locator("[id$='r0c0']")).toHaveText('0');
@@ -1765,7 +1765,7 @@ test('CP-7: a copy of rows beyond the Window takes the asynchronous route, and t
 // trip from being answered on the Server host — leaves no exception and nothing on the console, and
 // the next grid mounted on the page works (ERR-7, ADR-0018). The console-clean fixture fails the test
 // on anything the browser or the circuit says.
-test('ERR-7: disposing a grid while its interop calls are in flight leaves the console clean, and a grid mounted after it works (ADR-0018)', async ({ page }) => {
+test('ERR-7: disposing a grid while its interop calls are in flight leaves the console clean, and a grid mounted after it works (ADR-0018) @blazor', async ({ page }) => {
     await page.goto('/lifecycle');
     const toggle = page.locator('#toggle-grid');
     const mounted = page.locator('.ex-grid');

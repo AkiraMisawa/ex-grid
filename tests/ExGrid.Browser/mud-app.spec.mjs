@@ -134,7 +134,7 @@ function expectScrollbarsOccupyLayout(measured) {
     expect(measured.gutter.height, message).toBeGreaterThan(0);
 }
 
-test('WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028)', async ({ page }) => {
+test('WR-7: a grid in a tab that was hidden paints correctly once its tab is shown (ADR-0028) @blazor', async ({ page }) => {
     await open(page);
 
     // The premise: the History grid was mounted while its tab was hidden — its box had
@@ -188,7 +188,7 @@ test('WR-7: a grid in a tab that was hidden paints correctly once its tab is sho
     expectFocusReadable(await geometry(history(page), 2), 'after Ctrl+End');
 });
 
-test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028)', async ({ page }) => {
+test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) @blazor', async ({ page }) => {
     await open(page);
     await expect(page.locator('#drawer-status')).toHaveText('Drawer: open');
     // The widths below are the baseline every later one is checked against, so they are taken
@@ -244,7 +244,7 @@ test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (A
     }
 });
 
-test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052)', async ({ page }) => {
+test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052) @blazor', async ({ page }) => {
     await open(page);
 
     // Each click is answered a round trip later on the Server host, so each is waited for.
@@ -291,7 +291,7 @@ test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, AD
     expect(leaks.heights).toEqual(['28px', '24px', '26px']);
 });
 
-test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052)", async ({ page }) => {
+test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052) @blazor", async ({ page }) => {
     await open(page);
 
     // A selection in each grid, and a Focus.
@@ -352,7 +352,7 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(before.orders.active);
 });
 
-test('WR-7: a grid in a MudDialog opens its popovers whole inside its box (ADR-0040)', async ({ page }) => {
+test('WR-7: a grid in a MudDialog opens its popovers whole inside its box (ADR-0040) @blazor', async ({ page }) => {
     await open(page);
     await page.locator('#open-dialog').click();
     const dialogGrid = page.locator('#dialog-paper .ex-grid');
@@ -400,7 +400,7 @@ test('WR-7: a grid in a MudDialog opens its popovers whole inside its box (ADR-0
     await expect(page.locator('#dialog-paper')).toHaveCount(0);
 });
 
-test("WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6)", async ({ page }) => {
+test("WR-9: the application's own controls — theme, tabs, dialog — keep the console clean (CON-1/2/3/6) @blazor", async ({ page }) => {
     // Every test in this file holds the console rules through the fixture; this one
     // walks the controls the others do not touch, so their paths are held too.
     await open(page);
@@ -419,7 +419,7 @@ test("WR-9: the application's own controls — theme, tabs, dialog — keep the 
     await expect(page.locator('#blazor-error-ui')).toBeHidden();
 });
 
-test('WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11)', async ({ page }) => {
+test('WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and the column menu opens (FN-17, UX-11) @blazor', async ({ page }) => {
     await page.goto('/features?chrome=mud');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -446,7 +446,7 @@ test('WR-5 (setup): /features?chrome=mud runs its grids under MudGridChrome, and
     await expect(popover).toHaveCount(0);
 });
 
-test("WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1)", async ({ page }) => {
+test("WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) @blazor", async ({ page }) => {
     await open(page);
 
     // The stripe the grid paints and the colour MudBlazor's own striped tables paint,
@@ -529,7 +529,7 @@ const bookPopover = (grid) => grid.locator('.ex-popover-consumer');
 const bookSelect = (grid) => bookPopover(grid).locator('.demo-book-select .mud-select').first();
 const bookList = (page) => page.locator('.mud-popover-open .mud-list-item');
 
-test("FN-21 / ADR-0441: in a Consumer popover, Escape closes its MudSelect's list first and the next Escape the popover, and the arrows are the grid's again", async ({ page }) => {
+test("FN-21 / ADR-0441: in a Consumer popover, Escape closes its MudSelect's list first and the next Escape the popover, and the arrows are the grid's again @blazor", async ({ page }) => {
     await open(page);
     await clickCell(positions(page), 2, 1);
     await page.locator('#open-book').click();
@@ -545,7 +545,7 @@ test("FN-21 / ADR-0441: in a Consumer popover, Escape closes its MudSelect's lis
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
 });
 
-test('FN-21 / ADR-0441: a press on the rows while a Consumer popover\'s list is open closes both and places the Focus', async ({ page }) => {
+test('FN-21 / ADR-0441: a press on the rows while a Consumer popover\'s list is open closes both and places the Focus @blazor', async ({ page }) => {
     await open(page);
     await page.locator('#open-book').click();
     await bookSelect(positions(page)).click();
@@ -557,7 +557,7 @@ test('FN-21 / ADR-0441: a press on the rows while a Consumer popover\'s list is 
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
 });
 
-test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popover reaches the grid OK left, with OK's choice taken", async ({ page }) => {
+test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popover reaches the grid OK left, with OK's choice taken @blazor", async ({ page }) => {
     await open(page);
     await clickCell(positions(page), 2, 1);
     await page.locator('#open-book').click();
@@ -574,7 +574,7 @@ test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popove
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
 });
 
-test("KB-35 / ADR-0441: an Escape straight after a Consumer popover's MudSelect opens its list is the list's, and the popover stands, over a 150 ms round trip", async ({ page }) => {
+test("KB-35 / ADR-0441: an Escape straight after a Consumer popover's MudSelect opens its list is the list's, and the popover stands, over a 150 ms round trip @blazor", async ({ page }) => {
     await setRoundTrip(150);
     await open(page);
     await page.locator('#open-book').click();
@@ -586,7 +586,7 @@ test("KB-35 / ADR-0441: an Escape straight after a Consumer popover's MudSelect 
     await expect(bookPopover(positions(page))).toBeVisible();
 });
 
-test("WR-7 / ADR-0441: in a grid in a MudDialog, a Consumer popover's MudSelect draws its list above the dialog, and its choice reaches OK", async ({ page }) => {
+test("WR-7 / ADR-0441: in a grid in a MudDialog, a Consumer popover's MudSelect draws its list above the dialog, and its choice reaches OK @blazor", async ({ page }) => {
     await open(page);
     await page.locator('#open-dialog').click();
     const dialogGrid = page.locator('#dialog-paper .ex-grid');

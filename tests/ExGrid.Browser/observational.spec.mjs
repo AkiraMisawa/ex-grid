@@ -133,7 +133,7 @@ test.describe(() => {
     // loaded for real rather than reached inside a booted app (ADR-0056).
     test.use({ freshDocument: true });
 
-    test('mount to first painted row at 10⁶ rows (BIG-7)', async ({ page }, testInfo) => {
+    test('mount to first painted row at 10⁶ rows (BIG-7) @behaviour', async ({ page }, testInfo) => {
         const started = Date.now();
         await page.goto('/wide');
         await expect(page.locator('.ex-grid .ex-row').first()).toBeVisible();
@@ -146,7 +146,7 @@ test.describe(() => {
     });
 });
 
-test('the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6)', async ({ page }, testInfo) => {
+test('the DOM, the settle repaint and the frame intervals, virtualised and not (DOM-5, PF-6, BIG-6) @behaviour', async ({ page }, testInfo) => {
     test.setTimeout(180_000);
     const client = await openWide(page);
     const results = {};
@@ -190,7 +190,7 @@ test('the DOM, the settle repaint and the frame intervals, virtualised and not (
     expect(results.off.dom.cells).toBeGreaterThan(results.on.dom.cells);
 });
 
-test('a selection drag, one row a step, costs this much per step (PF-7)', async ({ page }, testInfo) => {
+test('a selection drag, one row a step, costs this much per step (PF-7) @behaviour', async ({ page }, testInfo) => {
     const client = await openWide(page);
     const scroller = await page.locator('.ex-scroller').boundingBox();
     const status = page.locator('#selection-status');

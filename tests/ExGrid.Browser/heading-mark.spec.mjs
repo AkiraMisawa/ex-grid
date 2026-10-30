@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, columnHeader, expectFocusAt, openSheet, pressAt } from './sheet-helpers.mjs';
 import { painted, resolvedColour, paints, blend, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
 
@@ -72,7 +72,7 @@ async function markColour(page, grid) {
 }
 
 for (const [chrome, mode] of CHROMES) {
-    test(`UX-21 (${chrome} Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4)`, async ({ page }) => {
+    test(`UX-21 (${chrome} Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, mode);
         const grid = sheet(page);
         await clickCell(grid, 'B3');
@@ -119,7 +119,7 @@ for (const [chrome, mode] of CHROMES) {
         expect(downThreeFour, JSON.stringify(downThreeFour)).toEqual({ read: downThreeFour.read, painting: downThreeFour.read });
     });
 
-    test(`UX-21 (${chrome} Chrome): a whole column marks its Heading and every Row Heading in view, and a press on the corner, which selects every cell, every Heading (ADR-0008, 2026-10-13; R5)`, async ({ page }) => {
+    test(`UX-21 (${chrome} Chrome): a whole column marks its Heading and every Row Heading in view, and a press on the corner, which selects every cell, every Heading (ADR-0008, 2026-10-13; R5) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, mode);
         const grid = sheet(page);
         await clickCell(grid, 'B3');
@@ -161,7 +161,7 @@ async function headingPaint(page, locator) {
 }
 
 for (const [chrome, mode] of CHROMES) {
-    test(`UX-21 D1 (${chrome} Chrome): ordinary and whole-axis Headings have distinct shades and marked letters; the corner marks all cells (ADR-0008)`, async ({ page }) => {
+    test(`UX-21 D1 (${chrome} Chrome): ordinary and whole-axis Headings have distinct shades and marked letters; the corner marks all cells (ADR-0008) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, mode);
         const grid = sheet(page);
         await clickCell(grid, 'C3');
@@ -238,7 +238,7 @@ for (const [chrome, mode] of CHROMES) {
 }
 
 for (const [chrome, mode] of CHROMES) {
-    test(`UX-21 D1 (${chrome} Chrome): marked Row Headings follow the dark frame, outside the Paper's light island (ADR-0008/0071)`, async ({ page }) => {
+    test(`UX-21 D1 (${chrome} Chrome): marked Row Headings follow the dark frame, outside the Paper's light island (ADR-0008/0071) ${chromeHost(chrome)}`, async ({ page }) => {
         const shades = {};
         for (const scheme of ['light', 'dark']) {
             await page.goto(`/sheet?case=paper&scheme=${scheme}&chrome=${mode}`);
@@ -265,7 +265,7 @@ for (const [chrome, mode] of CHROMES) {
     });
 }
 
-test('UX-21 at the display\'s scale: ExGrid\'s own header is marked in the Focus outline\'s colour, which a Theme recolours, and its own token wins (ADR-0008, 2026-10-13; ADR-0090)', async ({ page }, testInfo) => {
+test('UX-21 at the display\'s scale: ExGrid\'s own header is marked in the Focus outline\'s colour, which a Theme recolours, and its own token wins (ADR-0008, 2026-10-13; ADR-0090) @behaviour', async ({ page }, testInfo) => {
     // /wide: ExGrid with no Theme and no Row Headings, read at the scale the display gives: 100%
     // here, and a real 150% under the chrome-150 project, as an OS sets it.
     await page.goto('/wide');
@@ -313,7 +313,7 @@ test('UX-21 at the display\'s scale: ExGrid\'s own header is marked in the Focus
     expect(line, JSON.stringify(line)).toEqual({ read: line.read, painting: line.read });
 });
 
-test('UX-21: the mark over a Pinned Column\'s header stays with it, and a scrollable column\'s passes beneath the pinned headers as the column does (ADR-0008, 2026-10-13; ADR-0004)', async ({ page }) => {
+test('UX-21: the mark over a Pinned Column\'s header stays with it, and a scrollable column\'s passes beneath the pinned headers as the column does (ADR-0008, 2026-10-13; ADR-0004) @behaviour', async ({ page }) => {
     await page.goto('/wide');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -371,7 +371,7 @@ test('UX-21: the mark over a Pinned Column\'s header stays with it, and a scroll
     await scroller.evaluate((s) => { s.scrollLeft = 0; });
 });
 
-test('UX-21: under forced colors the line is kept, two Device Pixels on the edge, in the system colour a range\'s outline is restated in (ADR-0008, 2026-10-13)', async ({ page }) => {
+test('UX-21: under forced colors the line is kept, two Device Pixels on the edge, in the system colour a range\'s outline is restated in (ADR-0008, 2026-10-13) @behaviour', async ({ page }) => {
     await page.goto('/wide');
     const grid = page.locator('.ex-grid').first();
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -417,7 +417,7 @@ test('UX-21: under forced colors the line is kept, two Device Pixels on the edge
 });
 
 for (const [chrome, mode] of CHROMES) {
-    test(`UX-21 (${chrome} Chrome): ExPivot's report header is marked over the selected value's column and not over the labels', in the Focus outline's colour (ADR-0008, 2026-10-13; ADR-0059)`, async ({ page }) => {
+    test(`UX-21 (${chrome} Chrome): ExPivot's report header is marked over the selected value's column and not over the labels', in the Focus outline's colour (ADR-0008, 2026-10-13; ADR-0059) ${chromeHost(chrome)}`, async ({ page }) => {
         await page.goto(`/pivot?chrome=${mode}`);
         const report = page.locator('.ex-pivot .ex-pivot-sheet > .ex-grid');
         const rows = report.locator('.ex-viewport .ex-row');
@@ -440,7 +440,7 @@ for (const [chrome, mode] of CHROMES) {
 }
 
 for (const forced of [false, true]) {
-    test(`UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (${forced ? 'forced colours' : 'normal colours'}, ADR-0008/0090)`, async ({ page }) => {
+    test(`UX-21 D2 at the display's scale: a bare grid's four outline sides are two Device Pixels at the header (${forced ? 'forced colours' : 'normal colours'}, ADR-0008/0090) @behaviour`, async ({ page }) => {
         await page.goto('/wide');
         const grid = page.locator('.ex-grid').first();
         const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
@@ -478,7 +478,7 @@ for (const forced of [false, true]) {
     });
 }
 
-test('UX-21 D1: marked Row Headings keep Group and Total weights, including Consumer tokens and stable-class rules (ADR-0008/0024/0029)', async ({ page }) => {
+test('UX-21 D1: marked Row Headings keep Group and Total weights, including Consumer tokens and stable-class rules (ADR-0008/0024/0029) @behaviour', async ({ page }) => {
     await page.goto('/appearance');
     const grid = page.locator('#appearance-headings .ex-grid');
     await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -507,7 +507,7 @@ test('UX-21 D1: marked Row Headings keep Group and Total weights, including Cons
     }
 });
 
-test('UX-21 D1: a whole Row Heading shade mixes its own ground, independent of the column header ground (ADR-0008/0029)', async ({ page }) => {
+test('UX-21 D1: a whole Row Heading shade mixes its own ground, independent of the column header ground (ADR-0008/0029) @behaviour', async ({ page }) => {
     await page.goto('/appearance');
     const grid = page.locator('#appearance-headings .ex-grid');
     await expect(grid.locator('.ex-row').first()).toBeVisible();

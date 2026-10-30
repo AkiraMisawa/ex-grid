@@ -16,7 +16,7 @@ test.describe('over the Script Core, on /sheet?chrome=mud', () => {
         await openSheet(page, 'mud');
     });
 
-    test('SH-45/ADR-0410: the Wrapper\'s tabs stand in the grid\'s frame, a choice pressed and OK at once set it as one undo step, OK pressed before the choice\'s drawing is wired sets it too, and the keyboard is the Sheet\'s again', async ({ page }) => {
+    test('SH-45/ADR-0410: the Wrapper\'s tabs stand in the grid\'s frame, a choice pressed and OK at once set it as one undo step, OK pressed before the choice\'s drawing is wired sets it too, and the keyboard is the Sheet\'s again @blazor', async ({ page }) => {
         const grid = sheet(page);
         const frame = grid.locator('.ex-popover-consumer .mud-ex-sheet-script-format-cells');
         await pressCell(grid, 'C2');

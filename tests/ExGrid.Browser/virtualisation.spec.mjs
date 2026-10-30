@@ -36,7 +36,7 @@ async function openWide(page, rows) {
     return grid;
 }
 
-test('the far corner is reachable and painted at 10⁶ rows (BIG-1)', async ({ page }) => {
+test('the far corner is reachable and painted at 10⁶ rows (BIG-1) @behaviour', async ({ page }) => {
     const grid = await openWide(page);
 
     await cell(page, 0, 0).click({ force: true });
@@ -76,7 +76,7 @@ async function paintedWhereItStands(page) {
     });
 }
 
-test('a reveal is repainted: the offset moves a pixel and back, and the core paints nothing for it (VZ-18, ADR-0012)', async ({ page }) => {
+test('a reveal is repainted: the offset moves a pixel and back, and the core paints nothing for it (VZ-18, ADR-0012) @behaviour', async ({ page }) => {
     await openWide(page);
     await cell(page, 0, 2).click({ force: true });
     await alterPage(page, () => {
@@ -110,7 +110,7 @@ test('a reveal is repainted: the offset moves a pixel and back, and the core pai
     expect(await paintedWhereItStands(page)).toBe(true);
 });
 
-test('a scroll the user makes during a reveal\'s repaint stands, and the grid paints where it stands (VZ-18, ADR-0012)', async ({ page }) => {
+test('a scroll the user makes during a reveal\'s repaint stands, and the grid paints where it stands (VZ-18, ADR-0012) @behaviour', async ({ page }) => {
     await openWide(page);
     await cell(page, 0, 2).click({ force: true });
     // As the reveal lands, a scroll of the user's own to the middle, made in the frame the repaint
@@ -151,7 +151,7 @@ test('a scroll the user makes during a reveal\'s repaint stands, and the grid pa
 // taller than 22,369,618 CSS px. Above the Layout Ceiling the spacer is compressed; below
 // it, it is the true height. Either way it must be laid out exactly as declared — a clamped
 // spacer is the silent failure — and the last row must end flush with the readable bottom.
-test('the spacer is laid out as declared under the Layout Ceiling, and the last row ends flush (VZ-15)', async ({ page }, testInfo) => {
+test('the spacer is laid out as declared under the Layout Ceiling, and the last row ends flush (VZ-15) @behaviour', async ({ page }, testInfo) => {
     const grid = await openWide(page);
     const measure = () => page.evaluate(() => {
         const root = document.querySelector('.ex-grid');
@@ -160,7 +160,10 @@ test('the spacer is laid out as declared under the Layout Ceiling, and the last 
             // Read from the attribute: the CSSOM serialises a length to six significant
             // figures, so spacer.style.height says 2.23694e+07px for 22,369,362.
             declared: Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]),
-            laidOut: spacer.getBoundingClientRect().height,
+            // Read from layout, not from a rect: a rect is single precision, so at 2^24 px and
+            // above it moves in steps of 2, and the React host's page puts the grid where that
+            // rounding reads 2 px over the true height (2026-10-30).
+            laidOut: spacer.offsetHeight,
             ceiling: root.querySelector('.ex-ceiling-probe > div').getBoundingClientRect().height,
             dpr: window.devicePixelRatio,
         };
@@ -206,7 +209,7 @@ test('the spacer is laid out as declared under the Layout Ceiling, and the last 
     expect(heights.range, JSON.stringify(heights)).toBeLessThanOrEqual(heights.scroller + (3 * 28));
 });
 
-test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1)', async ({ page }) => {
+test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1) @behaviour', async ({ page }) => {
     const counts = {};
     for (const rows of [1_000, 100_000, ROWS]) {
         await openWide(page, rows);
@@ -221,7 +224,7 @@ test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, 
     expect(counts, JSON.stringify(counts)).toEqual({ 1000: counts[ROWS], 100000: counts[ROWS], [ROWS]: counts[ROWS] });
 });
 
-test('the first and the last row paint their own data, there and back again (BIG-5)', async ({ page }) => {
+test('the first and the last row paint their own data, there and back again (BIG-5) @behaviour', async ({ page }) => {
     await openWide(page);
 
     await page.evaluate(() => {
@@ -254,7 +257,7 @@ test('the first and the last row paint their own data, there and back again (BIG
 // the untold geometry showed row 798,894, and the first ceiling re-reads the same offset as the
 // end — it used to anchor on row 798,894 and stay there. At scale 1 nothing is compressed and
 // this is BIG-5's own case.
-test('a scroll to the end made as the grid becomes ready is not undone by the Layout Ceiling (BIG-5, ADR-0053)', async ({ page }, testInfo) => {
+test('a scroll to the end made as the grid becomes ready is not undone by the Layout Ceiling (BIG-5, ADR-0053) @behaviour', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
         let done = false;
         // The circuit replaces the prerendered grid, so the ready one is found wherever it is.
@@ -299,7 +302,7 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
     await expectRowPainted(page, ROWS - 1);
 });
 
-test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll)', async ({ page }) => {
+test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1, across a scroll) @behaviour', async ({ page }) => {
     await openWide(page);
 
     const atTop = await elementCount(page);
@@ -321,7 +324,7 @@ test('scrolling changes which rows exist, not how many elements do (ADR-0004 P1,
     expect(Math.abs(await elementCount(page) - atTop)).toBeLessThanOrEqual(300);
 });
 
-test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2)', async ({ page }) => {
+test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next key is answered (BIG-3, SL-6, DOM-2) @behaviour', async ({ page }) => {
     await openWide(page);
     await cell(page, 0, 0).click({ force: true });
     // The press painted: one cell is the Focus outline alone, and nothing more is on its way.
@@ -498,7 +501,7 @@ async function scrollFrames(page, axis, step, frames) {
     }), { axis, step, frames });
 }
 
-test('a scroll frame makes at most one interop call, whatever is painted (PF-1)', async ({ page }) => {
+test('a scroll frame makes at most one interop call, whatever is painted (PF-1) @blazor', async ({ page }) => {
     await openWide(page);
     await countGridInterop(page);
 
@@ -573,7 +576,7 @@ function cellsInDom(grid) {
     });
 }
 
-test('the cells in the DOM are the painted rows × (pinned + scrollable columns on screen), exactly (DOM-3, ADR-0004)', async ({ page }) => {
+test('the cells in the DOM are the painted rows × (pinned + scrollable columns on screen), exactly (DOM-3, ADR-0004) @behaviour', async ({ page }) => {
     const grid = await openWide(page);
 
     // The top left; panned right; deep down and panned to an offset that straddles columns; and
@@ -688,7 +691,7 @@ function flingSeen(grid) {
     });
 }
 
-test('the Pinned Columns are painted at the left edge at every offset, mid-fling included (FN-6, ADR-0004)', async ({ page }) => {
+test('the Pinned Columns are painted at the left edge at every offset, mid-fling included (FN-6, ADR-0004) @behaviour', async ({ page }) => {
     const grid = await openWide(page);
     // The Window /wide answered for the first Viewport, read ahead 60 rows either side (Wide.razor).
     const status = await page.locator('.demo-status').textContent();

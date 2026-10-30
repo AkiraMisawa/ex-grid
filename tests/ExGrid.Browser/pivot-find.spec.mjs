@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, circuitQuiet, settled, chromeHost } from './fixtures.mjs';
 import { activeDescendant } from './keyboard.mjs';
 import { painted, paints, blend } from './pixels.mjs';
 
@@ -70,7 +70,7 @@ async function open(page, chrome) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`ADR-0332 §1: Ctrl+F on the report opens its find panel, the keys typed after it land in its field, and Enter steps through the labels as shown, wrapping (${chrome})`, async ({ page }) => {
+        test(`ADR-0332 §1: Ctrl+F on the report opens its find panel, the keys typed after it land in its field, and Enter steps through the labels as shown, wrapping (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
 
             await watchNextKey(page, ['f', 'F']);
@@ -91,7 +91,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(findField(page)).toBeFocused();
         });
 
-        test(`ADR-0332 §4: the report's painted matches are marked as they are typed, and the current one apart (${chrome})`, async ({ page }) => {
+        test(`ADR-0332 §4: the report's painted matches are marked as they are typed, and the current one apart (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await circuitQuiet();
             const unmarked = { 5: await groundOf(page, 5), 10: await groundOf(page, 10) };
@@ -128,7 +128,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page).locator('.ex-match-mark')).toHaveCount(0);
         });
 
-        test(`ADR-0332 §1: a collapsed group is not searched inside, and nothing expands to show a match (${chrome})`, async ({ page }) => {
+        test(`ADR-0332 §1: a collapsed group is not searched inside, and nothing expands to show a match (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             // APAC's − button, on row 4.
             await cell(page, 4, 0).locator('.ex-pivot-toggle').click();
@@ -157,7 +157,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(page, 10, 0)).toContainText('Grand Total');
         });
 
-        test(`PV-13: an outer Item collapses and expands from the Context Menu, and the Focus stays on it (ADR-0059) (${chrome})`, async ({ page }) => {
+        test(`PV-13: an outer Item collapses and expands from the Context Menu, and the Focus stays on it (ADR-0059) (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const toggle = cell(page, 4, 0).locator('.ex-pivot-toggle');
             const menuItem = (name) => report(page).locator('.ex-popover').getByRole('menuitem', { name, exact: true });
@@ -178,7 +178,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
         });
 
-        test(`ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (${chrome})`, async ({ page }) => {
+        test(`ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             // Bond is a Product, on Columns: it is a header of the report grid, and no row says it.
             const bond = report(page).locator('.ex-header-cell').filter({ hasText: /^Bond$/ });
@@ -202,7 +202,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(findField(page)).toBeFocused();
         });
 
-        test(`ADR-0332 §2: Ctrl+H on the report opens nothing, keeps the key from the browser, and the Pivot Toolbar says why (${chrome})`, async ({ page }) => {
+        test(`ADR-0332 §2: Ctrl+H on the report opens nothing, keeps the key from the browser, and the Pivot Toolbar says why (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
 
             await watchNextKey(page, ['h', 'H']);

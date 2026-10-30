@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet } from './fixtures.mjs';
+import { test, expect, circuitQuiet, chromeHost } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { blend, contrast, onDeviceGrid, painted, wholePixelCentres } from './pixels.mjs';
@@ -151,7 +151,7 @@ async function batches(page) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (${chrome})`, async ({ page }) => {
+        test(`PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
             // Only the page's own batches change anything here. The server's live updates, which
@@ -194,7 +194,7 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         for (const scheme of ['light', 'dark']) {
-            test(`PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (${chrome}, ${scheme})`, async ({ page }) => {
+            test(`PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (${chrome}, ${scheme}) ${chromeHost(chrome)}`, async ({ page }) => {
                 test.setTimeout(90_000);
                 await open(page, chrome, scheme);
                 // Only the server's report is read here: the page's own batches are paused, so that once
@@ -284,7 +284,7 @@ for (const chrome of ['builtin', 'mud']) {
             });
         }
 
-        test(`PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (${chrome})`, async ({ page }) => {
+        test(`PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
             expect((await api('/api/live')).on).toBe(true);
@@ -308,7 +308,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on', async ({ page }) => {
+test('ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on @blazor', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['DemoPivotData.cs#fields']).toContain('.Key("Id", t => t.Id)');

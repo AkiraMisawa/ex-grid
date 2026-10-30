@@ -23,6 +23,19 @@ fi
 listing=$(npx playwright test "$@" --list --reporter=list)
 listed=$(printf '%s\n' "${listing}" | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
 if [ -z "${listed}" ] || [ "${listed}" -eq 0 ]; then
+    # A spec file's tests may all be the other host's (ADR-0370 section 11): the same arguments with
+    # no host left out list them, and this host has nothing to repeat. Listed nowhere, the arguments
+    # are wrong.
+    anywhere=$(EXGRID_EVERY_HOST=1 npx playwright test "$@" --list --reporter=list \
+        | sed -n 's/^Total: \([0-9][0-9]*\) tests\{0,1\} in .*/\1/p')
+    if [ -n "${anywhere}" ] && [ "${anywhere}" -gt 0 ]; then
+        line="no test of this host's in: $* (${anywhere} are the other host's)."
+        echo "counted-run.sh: ${line}"
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            echo "${line}" >> "${GITHUB_STEP_SUMMARY}"
+        fi
+        exit 0
+    fi
     printf '%s\n' "${listing}" >&2
     echo "counted-run.sh: Playwright listed no tests for: $*" >&2
     exit 1

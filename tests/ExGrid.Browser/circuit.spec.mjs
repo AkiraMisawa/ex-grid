@@ -33,7 +33,7 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
         await setRoundTrip(150);
     });
 
-    test('a number typed at full speed is committed whole', async ({ page }) => {
+    test('a number typed at full speed is committed whole @blazor', async ({ page }) => {
         await clickCell(page, 0, 1);                  // Trader, editable
         await page.keyboard.type('1500');
         await page.keyboard.press('Enter');
@@ -42,7 +42,7 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
         await expect(grid(page).locator("[id$='r0c1']")).toHaveText('1500');
     });
 
-    test('continuous entry puts each value in its own cell', async ({ page }) => {
+    test('continuous entry puts each value in its own cell @blazor', async ({ page }) => {
         await clickCell(page, 0, 1);
         await page.keyboard.type('150');
         await page.keyboard.press('Enter');
@@ -53,7 +53,7 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
         await expect(grid(page).locator("[id$='r1c1']")).toHaveText('200');
     });
 
-    test('keys held behind a key that opened nothing replay as ordinary keys', async ({ page }) => {
+    test('keys held behind a key that opened nothing replay as ordinary keys @blazor', async ({ page }) => {
         await clickCell(page, 0, 0);                  // Book, not editable
         await page.keyboard.type('x');
         await page.keyboard.press('ArrowDown');
@@ -79,7 +79,7 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         expectedPageErrors: [/Cannot send data if the connection is not in the 'Connected' State/],
     });
 
-    test('ADR-0240: a row Action made while disconnected is refused and releases the next held input', async ({ page }) => {
+    test('ADR-0240: a row Action made while disconnected is refused and releases the next held input @blazor', async ({ page }) => {
         test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
         const ownConnections = await connectionMark();
         await page.goto('/row-command-order?chrome=builtin');
@@ -105,7 +105,7 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         await expect(page.locator('#row-order-trace')).toHaveText('second | action:0');
     });
 
-    test('an edit committed while the connection is lost is refused once it is back, and the editor keeps its text', async ({ page }) => {
+    test('an edit committed while the connection is lost is refused once it is back, and the editor keeps its text @blazor', async ({ page }) => {
         test.skip(!SERVER, 'a WebAssembly tab has no circuit to lose');
         const ownConnections = await connectionMark();
         await openFeatures(page);
@@ -138,7 +138,7 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
     });
 });
 
-test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)', async ({ page, context }) => {
+test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052) @blazor', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openFeatures(page);
     // Two cells of about 100 KB each in the HTML flavour, as a spreadsheet puts on the
@@ -190,7 +190,7 @@ test.describe('a large paste says it is under way, and Escape cancels it (ADR-02
         await page.keyboard.press('Shift+ArrowDown');
     });
 
-    test('the root is busy and painted so while the paste is read, and not once it lands', async ({ page }) => {
+    test('the root is busy and painted so while the paste is read, and not once it lands @blazor', async ({ page }) => {
         // Every render that marks the root as pasting is read as it is applied: what it painted then.
         await grid(page).evaluate((root) => {
             const seen = [];
@@ -220,7 +220,7 @@ test.describe('a large paste says it is under way, and Escape cancels it (ADR-02
         await expect(grid(page)).not.toHaveAttribute('aria-busy');
     });
 
-    test('an Escape typed while the paste is read cancels it aloud, writes nothing, and does nothing else', async ({ page }) => {
+    test('an Escape typed while the paste is read cancels it aloud, writes nothing, and does nothing else @blazor', async ({ page }) => {
         const before = await grid(page).locator("[id$='r0c1']").textContent();
         // Held, the host cannot have read the paste before the Escape reaches it: the Escape is told
         // to it at once, ahead of the read the host is waiting on (ADR-0220).
@@ -241,7 +241,7 @@ test.describe('a large paste says it is under way, and Escape cancels it (ADR-02
     });
 });
 
-test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {
+test('a clipboard write the browser rejects is refused by name (CP-23) @blazor', async ({ page }) => {
     await openFeatures(page);
     // The browser's rejection, as Chromium raises it for a denied permission or a lost
     // activation. Stubbed rather than provoked: CDP's permission override does not reach
@@ -262,7 +262,7 @@ test('a clipboard write the browser rejects is refused by name (CP-23)', async (
     await expect(page.locator('#copy-status')).toContainText('ClipboardUnavailable');
 });
 
-test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5)', async ({ page, context }) => {
+test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5) @blazor', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openFeatures(page);
     await clickCell(page, 0, 1);
@@ -284,7 +284,7 @@ test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5
         .toMatch(/^Trader\r?\n/);
 });
 
-test('keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039)', async ({ page }) => {
+test('keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039) @blazor', async ({ page }) => {
     await openFeatures(page);
     await clickCell(page, 1, 0);
     await expectActiveDescendant(grid(page), /r1c0$/);
@@ -302,7 +302,7 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
+    test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome}) @blazor`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
         await expectTabStopTaken(grid(page));
         const all = await dataRowCount(grid(page));
@@ -330,7 +330,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome})`, async ({ page }) => {
+    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome}) @blazor`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
         await expectTabStopTaken(grid(page));
         const all = await grid(page).getAttribute('aria-rowcount');
@@ -359,7 +359,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
+test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5) @blazor', async ({ page }) => {
     await page.goto('/features');
     await expectTabStopTaken(grid(page));
     await clickCell(page, 1, 0);
@@ -379,7 +379,7 @@ test('a key typed straight after a letter that runs a command waits for the popo
     await expect(grid(page).locator('.ex-header-cell').first()).toHaveAttribute('aria-sort', 'descending');
 });
 
-test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
+test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5) @blazor', async ({ page }) => {
     await page.goto('/features');
     await expectTabStopTaken(grid(page));
     const all = await grid(page).getAttribute('aria-rowcount');
@@ -425,7 +425,7 @@ async function openMudNotionalPanel(page) {
     return panel;
 }
 
-test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)', async ({ page }) => {
+test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5) @blazor', async ({ page }) => {
     const panel = await openMudNotionalPanel(page);
     const before = await grid(page).getAttribute('aria-rowcount');
     await panel.getByRole('combobox', { name: 'Operator' }).selectOption('greaterThan');
@@ -442,7 +442,7 @@ test('a value typed and Enter pressed at once apply the condition (KB-31, SRV-5)
     await expect.poll(() => grid(page).getAttribute('aria-rowcount')).not.toBe(before);
 });
 
-test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)', async ({ page }) => {
+test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5) @blazor', async ({ page }) => {
     await page.goto('/features?chrome=mud');
     const short = page.locator('.ex-grid').nth(1);
     await expectTabStopTaken(short);
@@ -468,7 +468,7 @@ test.describe(() => {
     // skips: this test loads its page for real (ADR-0056).
     test.use({ freshDocument: true });
 
-    test('a Prerendered page holds no grid to press or tab to until its circuit connects (A11Y-20, ADR-0080)', async ({ page }) => {
+    test('a Prerendered page holds no grid to press or tab to until its circuit connects (A11Y-20, ADR-0080) @blazor', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
         // The document as the server sends it, before any script has run. Blazor's Script grid is drawn by its
         // script, so the prerender holds the element it mounts on and no grid: no root, no rows to press, and no
@@ -489,7 +489,7 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
     // page's ErrorBoundary, which logs it: the fixture asserts it is there.
     test.use({ expectedHostLog: [/ErrorBoundary: .*ADR-0018/] });
 
-    test('a store change reaches both, a sort reaches one, and a shared source is refused', async ({ page, browser }) => {
+    test('a store change reaches both, a sort reaches one, and a shared source is refused @blazor', async ({ page, browser }) => {
         const other = await browser.newContext();
         const second = await other.newPage();
         try {
@@ -571,7 +571,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     }
 
     for (const pauseMs of [0, 30, 60]) {
-        test(`with ${pauseMs} ms between the steps, each value lands in the cell clicked for it`, async ({ page }) => {
+        test(`with ${pauseMs} ms between the steps, each value lands in the cell clicked for it @blazor`, async ({ page }) => {
             await openSheet(page);
             await clickTypeEnter(page, pauseMs);
             await expectEachValueInItsCell(page);
@@ -582,7 +582,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     // ADR-0240's removal of the fallback: on the widened run every core input was answered
     // in order, but the last render was still owed at that deadline. Read only after the
     // Settled Mark; neither a passing re-run nor a larger time bound settles that defect.
-    test('a click straight after a key keeps each pair in order (ED-22, ADR-0240)', async ({ page }) => {
+    test('a click straight after a key keeps each pair in order (ED-22, ADR-0240) @blazor', async ({ page }) => {
         await openSheet(page);
         const nameBox = sheetGrid(page).locator('input.ex-name-box');
         // Twelve rows in pairs: the second click of each pair comes while the first pair's key
@@ -601,7 +601,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
             .toEqual([...Array(12).keys()].map((r) => String(r % 10)));
     });
 
-    test('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5)', async ({ page }) => {
+    test('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5) @blazor', async ({ page }) => {
         await openSheet(page);
         await setRoundTrip(150);
         await clickTypeEnter(page, 0);
@@ -616,7 +616,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     // which row was under the pointer is read from the press itself, in the document's capture
     // phase, ahead of the grid. The host's answers are held meanwhile, so nothing of the press
     // waits on them.
-    test('a press made behind a page move lands on the row painted under it at the press (ED-31, ADR-0021)', async ({ page }) => {
+    test('a press made behind a page move lands on the row painted under it at the press (ED-31, ADR-0021) @blazor', async ({ page }) => {
         await openSheet(page);
         const grid = sheetGrid(page);
         const rowHeight = (await columnF(page, 0).boundingBox()).height;
@@ -681,7 +681,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
     // The built-in editor, and ExGrid.MudBlazor's (a Chrome's control reporting its own text).
     for (const [chrome, field] of [['builtin', 'input.ex-editor'], ['mud', 'input.mud-ex-editor']]) {
-        test(`the Cell Editor, at 10 keys a second (${chrome})`, async ({ page }) => {
+        test(`the Cell Editor, at 10 keys a second (${chrome}) @blazor`, async ({ page }) => {
             await page.goto(`/features?chrome=${chrome}`);
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
             await expectTabStopTaken(grid(page));
@@ -704,7 +704,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         });
     }
 
-    test('the Name Box, at 10 keys a second', async ({ page }) => {
+    test('the Name Box, at 10 keys a second @blazor', async ({ page }) => {
         await page.goto('/sheet');
         const sheet = grid(page);
         await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
@@ -729,7 +729,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 // the list's own mark, which lands with the paint. The key is dispatched from a MutationObserver,
 // so it lands exactly in that gap: on WebAssembly there is no gap, and the test is the case
 // without one.
-test('a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010)', async ({ page }) => {
+test('a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010) @blazor', async ({ page }) => {
     await page.goto('/sheet');
     const sheet = grid(page);
     await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
@@ -777,7 +777,7 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(50);
         });
 
-        test('in the Cell Editor', async ({ page }) => {
+        test('in the Cell Editor @blazor', async ({ page }) => {
             await clickCell(page, 0, 2);               // Notional, editable
             await page.keyboard.press('F2');
             const editor = grid(page).locator('.ex-editor input, input.ex-editor').first();
@@ -790,7 +790,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await editor.inputValue()).toMatch(/123456789$/);
         });
 
-        test('in the find field (ADR-0055)', async ({ page }) => {
+        test('in the find field (ADR-0055) @blazor', async ({ page }) => {
             await clickCell(page, 0, 0);
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
@@ -803,7 +803,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await field.inputValue()).toBe('5320984.5');
         });
 
-        test('in the filter\'s search box (ADR-0009)', async ({ page }) => {
+        test('in the filter\'s search box (ADR-0009) @blazor', async ({ page }) => {
             await clickCell(page, 0, 0);               // Book: a value list with a search box
             await page.keyboard.press('Alt+ArrowDown');
             await page.keyboard.press('e');
@@ -817,7 +817,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await field.inputValue()).toBe('Gammadelta');
         });
 
-        test('in the filter\'s condition value (ADR-0009)', async ({ page }) => {
+        test('in the filter\'s condition value (ADR-0009) @blazor', async ({ page }) => {
             await clickCell(page, 0, 2);               // Notional: the condition form
             await page.keyboard.press('Alt+ArrowDown');
             await page.keyboard.press('e');            // E: where a search is typed — the value
@@ -878,7 +878,7 @@ function sampleFrames(page, ms) {
     }), ms);
 }
 
-test('a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053)', async ({ page }) => {
+test('a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053) @blazor', async ({ page }) => {
     await page.goto('/wide');
     const root = grid(page);
     await expect(root.locator("[id$='-r0c0']")).toHaveText('K-000000', { timeout: 15_000 });

@@ -97,7 +97,7 @@ test.describe('ADR-0033: /features', () => {
         await expect(page.locator('.ex-grid').nth(1).locator('.ex-viewport .ex-row').first()).toBeVisible();
     });
 
-    test('A11Y-3 / ADR-0033: a Header Group band is row 1, the header row 2, and the data rows count from 3, near the top and far down', async ({ page }) => {
+    test('A11Y-3 / ADR-0033: a Header Group band is row 1, the header row 2, and the data rows count from 3, near the top and far down @behaviour', async ({ page }) => {
         const grid = page.locator('.ex-grid').first();
         expect(await headerRowsOf(grid)).toBe(2);
         // The page's 400 trades, and the band's row and the header row; the fixture the other specs
@@ -136,7 +136,7 @@ test.describe('ADR-0033: /features', () => {
         expect(farData.map((row) => row.index)).toContain('303');
     });
 
-    test('A11Y-2 / A11Y-3 / ADR-0033: an untiered header is row 1, the first data row 2, and the count is the data rows and the header row', async ({ page }) => {
+    test('A11Y-2 / A11Y-3 / ADR-0033: an untiered header is row 1, the first data row 2, and the count is the data rows and the header row @behaviour', async ({ page }) => {
         const grid = page.locator('.ex-grid').nth(1);
         expect(await headerRowsOf(grid)).toBe(1);
         // The first 20 trades, and the header row.
@@ -158,7 +158,7 @@ test.describe('ADR-0033: /features', () => {
 const SHEET = '.ex-grid:has(> .ex-formula-bar)';
 
 test.describe('ADR-0033: /sheet', () => {
-    test('A11Y-2 / A11Y-3 / ADR-0033: the Column Headings are row 1, so a Sheet row is its number plus one, near the top and far down', async ({ page }) => {
+    test('A11Y-2 / A11Y-3 / ADR-0033: the Column Headings are row 1, so a Sheet row is its number plus one, near the top and far down @behaviour', async ({ page }) => {
         await openSheet(page);
         const grid = sheet(page);
         // The Sheet's 1,048,576 rows, and the Column Headings' row.

@@ -77,7 +77,7 @@ async function arrowTo(page, grid, key, times, row) {
 }
 
 for (const [kind, query] of [['a grid that edits, its Keyboard Field', '?editable=1'], ['a display-only grid, its root', '']]) {
-    test(`KB-45: on ${kind}, the arrows bring the Focus into the window at the nearest edge, and a cell in the window moves nothing (ADR-0204)`, async ({ page }) => {
+    test(`KB-45: on ${kind}, the arrows bring the Focus into the window at the nearest edge, and a cell in the window moves nothing (ADR-0204) @behaviour`, async ({ page }) => {
         const grid = await openTallGrid(page, query);
         const start = await pageTop(page);
         const twelve = grid.locator("[id$='-r12c0']");
@@ -100,7 +100,7 @@ for (const [kind, query] of [['a grid that edits, its Keyboard Field', '?editabl
     });
 }
 
-test('KB-45: while extending, the page follows the Extent, and the Focus may be left behind (ADR-0204, ADR-0052)', async ({ page }) => {
+test('KB-45: while extending, the page follows the Extent, and the Focus may be left behind (ADR-0204, ADR-0052) @behaviour', async ({ page }) => {
     const grid = await openTallGrid(page);
 
     for (let i = 0; i < 12; i++) {
@@ -112,7 +112,7 @@ test('KB-45: while extending, the page follows the Extent, and the Focus may be 
     await expect.poll(() => activeDescendant(grid)).toMatch(/-r0c0$/);
 });
 
-test('KB-45: extending past the grid\'s own Viewport still brings the Extent into the window, the Focus left off the painted rows (ADR-0204, ADR-0052)', async ({ page }) => {
+test('KB-45: extending past the grid\'s own Viewport still brings the Extent into the window, the Focus left off the painted rows (ADR-0204, ADR-0052) @behaviour', async ({ page }) => {
     // /marks holds 1,000,000 rows in a grid 600px tall, its top at the window's top and its lower
     // part below the fold. Shift+PageDown carries the Extent, and the grid's own Viewport with it, a
     // page down: the Focus on row 0 leaves the painted rows, and the Extent stands at the grid's top,
@@ -150,7 +150,7 @@ test('KB-45: extending past the grid\'s own Viewport still brings the Extent int
     await expectKeyboardOn(grid);
 });
 
-test('KB-45: a resize is not followed — the page stays where it is when the window shrinks over the Focus (ADR-0204)', async ({ page }) => {
+test('KB-45: a resize is not followed — the page stays where it is when the window shrinks over the Focus (ADR-0204) @behaviour', async ({ page }) => {
     const grid = await openTallGrid(page);
     await arrowTo(page, grid, 'ArrowDown', 11, 11);
     const eleven = grid.locator("[id$='-r11c0']");
@@ -166,7 +166,7 @@ test('KB-45: a resize is not followed — the page stays where it is when the wi
     await expectKeyboardOn(grid);
 });
 
-test('KB-45: the editor opens in the window, at the nearest edge, on a cell scrolled out of it (ADR-0204)', async ({ page }) => {
+test('KB-45: the editor opens in the window, at the nearest edge, on a cell scrolled out of it (ADR-0204) @behaviour', async ({ page }) => {
     const grid = await openTallGrid(page);
     // The page scrolled on past the Focus cell, which now stands above the window. The page's scroll
     // is the harness's to put back.
@@ -192,7 +192,7 @@ test('KB-45: the editor opens in the window, at the nearest edge, on a cell scro
 // a Template cell's control taking the keyboard through HandKeyboardToAsync.
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`SRV-5/KB-45: a column menu's opening focus on its way does not take the keyboard from a grid pressed meanwhile (ADR-0204, ${chrome} Chrome)`, async ({ page }) => {
+    test(`SRV-5/KB-45: a column menu's opening focus on its way does not take the keyboard from a grid pressed meanwhile (ADR-0204, ${chrome} Chrome) @blazor`, async ({ page }) => {
         await page.goto(chrome === 'mud' ? '/features?chrome=mud' : '/features');
         const first = page.locator('.ex-grid').first();
         const second = page.locator('.ex-grid').nth(1);
@@ -218,7 +218,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('SRV-5/KB-45: a Template cell\'s request for the keyboard on its way does not take it from a grid pressed meanwhile (ADR-0204)', async ({ page }) => {
+test('SRV-5/KB-45: a Template cell\'s request for the keyboard on its way does not take it from a grid pressed meanwhile (ADR-0204) @blazor', async ({ page }) => {
     await page.goto('/cells?second=1');
     const cells = page.locator('.ex-grid').first();
     const second = page.locator('#second-grid .ex-grid');
@@ -244,7 +244,7 @@ test('SRV-5/KB-45: a Template cell\'s request for the keyboard on its way does n
     await setRoundTrip(0);
 });
 
-test('KB-23/ADR-0204: with nothing pressed meanwhile, Space still gives a Template cell\'s control the keyboard, through the grid', async ({ page }) => {
+test('KB-23/ADR-0204: with nothing pressed meanwhile, Space still gives a Template cell\'s control the keyboard, through the grid @blazor', async ({ page }) => {
     await page.goto('/cells?second=1');
     const cells = page.locator('.ex-grid').first();
     await expectTabStopTaken(cells);

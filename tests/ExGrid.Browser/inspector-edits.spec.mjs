@@ -41,7 +41,7 @@ async function inspect(page, row = 0) {
     return inspector(page, id);
 }
 
-test('RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003)', async ({ page }) => {
+test('RI-16: an approval from the inspector reaches the grid as a new instance, and the inspector shows it without a banner (ADR-0003) @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await panel.locator('.demo-inspector-approve').click();
@@ -53,7 +53,7 @@ test('RI-16: an approval from the inspector reaches the grid as a new instance, 
     await expect(panel.locator('.demo-inspector-refusal')).toHaveCount(0);
 });
 
-test('RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded', async ({ page }) => {
+test('RI-17: a change elsewhere raises the banner with the new value, keeps the old one shown, and disables the actions until reloaded @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     const before = await panel.locator('.demo-inspector-notional').textContent();
@@ -73,7 +73,7 @@ test('RI-17: a change elsewhere raises the banner with the new value, keeps the 
     await expect(panel.locator('.demo-inspector-approve')).toBeEnabled();
 });
 
-test('RI-18: a row deleted elsewhere says so, and its inspector acts on nothing', async ({ page }) => {
+test('RI-18: a row deleted elsewhere says so, and its inspector acts on nothing @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await page.locator('#delete-now').click();
@@ -83,7 +83,7 @@ test('RI-18: a row deleted elsewhere says so, and its inspector acts on nothing'
     await expect(cell(page, 0, 0)).toHaveText('E-002');
 });
 
-test('RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why', async ({ page }) => {
+test('RI-19: an approval pressed before the news of a change arrives is refused by the store, and says why @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     const before = await cell(page, 0, 3).textContent();
@@ -106,7 +106,7 @@ test('RI-19: an approval pressed before the news of a change arrives is refused 
     await expect(cell(page, 0, 5)).toHaveText('2');
 });
 
-test('RI-24: a deletion stays said, whatever news about the trade arrives after it', async ({ page }) => {
+test('RI-24: a deletion stays said, whatever news about the trade arrives after it @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await page.locator('#change-held').click();
@@ -122,7 +122,7 @@ test('RI-24: a deletion stays said, whatever news about the trade arrives after 
     await expect(panel.locator('.demo-inspector-approve')).toBeDisabled();
 });
 
-test('RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced', async ({ page }) => {
+test('RI-25: an inspector opened while news is held back shows what the grid showed, and learns of the change when it is announced @blazor', async ({ page }) => {
     await open(page);
     const before = await cell(page, 0, 3).textContent();
     await page.locator('#change-held').click();
@@ -134,7 +134,7 @@ test('RI-25: an inspector opened while news is held back shows what the grid sho
     await expect(panel.locator('.demo-inspector-banner')).toContainText('Changed elsewhere');
 });
 
-test('RI-20: a note records the version it was written against, and is marked once the trade has moved on', async ({ page }) => {
+test('RI-20: a note records the version it was written against, and is marked once the trade has moved on @blazor', async ({ page }) => {
     await open(page);
     const panel = await inspect(page);
     await panel.locator('.demo-inspector-note-text').fill('Checked against the confirmation');
@@ -151,7 +151,7 @@ test('RI-20: a note records the version it was written against, and is marked on
     await expect(note.locator('.demo-inspector-note-stale')).toHaveText('written against version 1');
 });
 
-test('RI-21: the inspector follows its trade by key when an approval moves it under the sort', async ({ page }) => {
+test('RI-21: the inspector follows its trade by key when an approval moves it under the sort @blazor', async ({ page }) => {
     await open(page);
     await page.locator('#sort-status').click();
     // Z to A: the Pending trades first. E-001 is Booked, so the sort has landed once it
@@ -168,7 +168,7 @@ test('RI-21: the inspector follows its trade by key when an approval moves it un
     await expect(panel).toHaveAttribute('data-inspector-key', id);
 });
 
-test('RI-22: the page says whom the store is shared with — only this tab on WebAssembly, every tab on the Server host', async ({ page }) => {
+test('RI-22: the page says whom the store is shared with — only this tab on WebAssembly, every tab on the Server host @blazor', async ({ page }) => {
     // Each host's own sentence (SRV-2): a WebAssembly host has one user per process, and the Server
     // host one store per process, which the next test shares between two tabs.
     await open(page);
@@ -177,7 +177,7 @@ test('RI-22: the page says whom the store is shared with — only this tab on We
         : 'only this tab');
 });
 
-test('RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018)', async ({ page, browser }) => {
+test('RI-23: on the Server host, an approval in another tab raises the banner in this one (ADR-0018) @blazor', async ({ page, browser }) => {
     test.skip(!SERVER, 'a WebAssembly host has one user per process');
     await open(page);
     const mine = await inspect(page, 1);

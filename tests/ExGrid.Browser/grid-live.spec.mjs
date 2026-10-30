@@ -120,7 +120,7 @@ async function scrollTo(page, row) {
     await expect(grid(page).locator('.ex-viewport .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
 }
 
-test('DC-65/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row', async ({ page }) => {
+test('DC-65/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row @blazor', async ({ page }) => {
     test.setTimeout(150_000);
     await open(page, 'builtin');
     // Marks that outlast the test, so that what is compared is where they are, not when they end.
@@ -160,7 +160,7 @@ test('DC-65/ADR-0068: a mark stays on its cell across a scroll, and never moves 
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome})`, async ({ page }) => {
+    test(`DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome}) @blazor`, async ({ page }) => {
         test.setTimeout(150_000);
         await open(page, chrome);
         await page.locator('#grid-live-highlight').selectOption('60000');
@@ -285,7 +285,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, and leaving turns the live updates off', async ({ page }) => {
+test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, and leaving turns the live updates off @blazor', async ({ page }) => {
     test.setTimeout(120_000);
     await open(page, 'builtin');
     const status = await api('/api/status');
@@ -308,7 +308,7 @@ test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, an
     await expect.poll(async () => (await api('/api/live')).on, { timeout: 15_000 }).toBe(false);
 });
 
-test('ADR-0069/0068/0141: the code the page shows is the code it runs: the hub\'s notice told to the source, and CellChangedAt answered by it', async ({ page }) => {
+test('ADR-0069/0068/0141: the code the page shows is the code it runs: the hub\'s notice told to the source, and CellChangedAt answered by it @blazor', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[], string[]>("TradesChanged"');
@@ -323,7 +323,7 @@ test('ADR-0069/0068/0141: the code the page shows is the code it runs: the hub\'
 /** The trades the grid paints, top to bottom. */
 const paintedTrades = (page) => grid(page).locator('.ex-viewport [id$="c0"]').allTextContents();
 
-test('LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reaching past it, drops the Selection', async ({ page }) => {
+test('LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reaching past it, drops the Selection @blazor', async ({ page }) => {
     test.setTimeout(120_000);
     await open(page, 'builtin');
     await holdStill(page);

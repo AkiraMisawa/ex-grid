@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, roundTripHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -89,7 +89,7 @@ async function seenAt(page, type, key = null) {
     return matching[matching.length - 1];
 }
 
-test('LV-11/LV-21: a commit over a cell that changed under the editor lands, and the Overwrite Notice in the live region names what was seen and what was replaced (ADR-0142)', async ({ page }) => {
+test('LV-11/LV-21: a commit over a cell that changed under the editor lands, and the Overwrite Notice in the live region names what was seen and what was replaced (ADR-0142) @blazor', async ({ page }) => {
     const notice = page.locator('#overwrite-notice-status');
     await expect(notice).toHaveAttribute('role', 'status');
     const notional = cell(page, 0, NOTIONAL);
@@ -116,7 +116,7 @@ test('LV-11/LV-21: a commit over a cell that changed under the editor lands, and
     await expect(notice).not.toContainText('×2');
 });
 
-test('LV-11: Escape over a cell that changed under the editor writes nothing, and tells nothing (ADR-0142)', async ({ page }) => {
+test('LV-11: Escape over a cell that changed under the editor writes nothing, and tells nothing (ADR-0142) @blazor', async ({ page }) => {
     const notional = cell(page, 0, NOTIONAL);
     await clickCell(page, 0, NOTIONAL);
     await expectActiveDescendant(grid(page), /r0c2$/);
@@ -138,7 +138,7 @@ test('LV-11: Escape over a cell that changed under the editor writes nothing, an
     await expect(notional).toHaveText(moved);
 });
 
-test('LV-11: a change to another cell of the row refuses nothing, and tells nothing (ADR-0142)', async ({ page }) => {
+test('LV-11: a change to another cell of the row refuses nothing, and tells nothing (ADR-0142) @blazor', async ({ page }) => {
     await clickCell(page, 0, 1);                       // Trader, editable; F9 moves Notional
     await expectActiveDescendant(grid(page), /r0c1$/);
     await setRoundTrip(150);
@@ -154,7 +154,7 @@ test('LV-11: a change to another cell of the row refuses nothing, and tells noth
     await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
-test('LV-12: an Action press taken on a render whose row has changed since acts on that row as it is now, once (ADR-0142, ADR-0020)', async ({ page }) => {
+test('LV-12: an Action press taken on a render whose row has changed since acts on that row as it is now, once (ADR-0142, ADR-0020) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the next press can be taken: no press can be taken on the render before it');
     await expect(page.locator('#action-refused-status')).toHaveAttribute('role', 'status');
     const notional = cell(page, 0, NOTIONAL);
@@ -180,7 +180,7 @@ test('LV-12: an Action press taken on a render whose row has changed since acts 
     await expect(page.locator('#action-refused-status')).toHaveText('Action refused: —');
 });
 
-test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed, under the same order, pastes where it was aimed (ADR-0142)', async ({ page }) => {
+test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed, under the same order, pastes where it was aimed (ADR-0142) @blazor', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob(['<table><tr><td>5</td></tr></table>'], { type: 'text/html' }),
         'text/plain': new Blob(['5\r\n'], { type: 'text/plain' }),
@@ -212,7 +212,7 @@ test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it l
     }
 });
 
-test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035)', async ({ page }) => {
+test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+Enter can be taken on the render before it');
     // Notional rows 4 and 5, the Focus on 5 (ADR-0052): F9 moves row 4, not the edited cell.
     await clickCell(page, 5, NOTIONAL);
@@ -237,7 +237,7 @@ test('LV-13: a Ctrl+Enter fill whose target changed since the key was pressed la
     await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
-test('LV-13: a fill-handle drag released on a render whose target has changed since lands (ADR-0142, ADR-0050 item 5)', async ({ page }) => {
+test('LV-13: a fill-handle drag released on a render whose target has changed since lands (ADR-0142, ADR-0050 item 5) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the release can be taken on the render before it');
     await clickCell(page, 0, NOTIONAL);
     await circuitQuiet();
@@ -278,7 +278,7 @@ test('LV-13: a fill-handle drag released on a render whose target has changed si
 // keys after Enter are taken on the render from before the commit was painted — at 150 ms always,
 // at 0 ms as the wire allows. On WebAssembly the commit is painted before the next key is taken.
 for (const rtt of [0, 150]) {
-    test(`LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142, ${rtt} ms)`, async ({ page }) => {
+    test(`LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142, ${rtt} ms) ${roundTripHost(rtt)}`, async ({ page }) => {
         test.skip(!SERVER && rtt !== 0, 'WebAssembly has no round trip to set');
         await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
             'text/html': new Blob(['<table><tr><td>7</td></tr></table>'], { type: 'text/html' }),
@@ -308,7 +308,7 @@ for (const rtt of [0, 150]) {
         await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
     });
 
-    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote, with no notice (ADR-0142 D1, ${rtt} ms)`, async ({ page }) => {
+    test(`LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote, with no notice (ADR-0142 D1, ${rtt} ms) ${roundTripHost(rtt)}`, async ({ page }) => {
         test.skip(!SERVER && rtt !== 0, 'WebAssembly has no round trip to set');
         const notional = cell(page, 0, NOTIONAL);
         const before = (await notional.textContent()).trim();
@@ -337,7 +337,7 @@ for (const rtt of [0, 150]) {
     });
 }
 
-test('LV-11: a change in the round trip between the key that opens the editor and the open is not told, and the commit lands (ADR-0142)', async ({ page }) => {
+test('LV-11: a change in the round trip between the key that opens the editor and the open is not told, and the commit lands (ADR-0142) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before the next key can be taken on the render before it');
     const notional = cell(page, 0, NOTIONAL);
     const before = (await notional.textContent()).trim();
@@ -363,7 +363,7 @@ test('LV-11: a change in the round trip between the key that opens the editor an
     await expect(page.locator('#overwrite-notice-status')).toHaveText('Overwritten: —');
 });
 
-test('LV-13: a Delete whose target changed since the key was pressed clears it (ADR-0142, ADR-0054)', async ({ page }) => {
+test('LV-13: a Delete whose target changed since the key was pressed clears it (ADR-0142, ADR-0054) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Delete can be taken on the render before it');
     // Notional rows 0 and 1, both moved by F9.
     await clickCell(page, 0, NOTIONAL);
@@ -382,7 +382,7 @@ test('LV-13: a Delete whose target changed since the key was pressed clears it (
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('LV-13: a Ctrl+R whose target changed since the key was pressed fills it (ADR-0142, ADR-0035)', async ({ page }) => {
+test('LV-13: a Ctrl+R whose target changed since the key was pressed fills it (ADR-0142, ADR-0035) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+R can be taken on the render before it');
     // Row 0, Trader to Notional: Trader is the source, and F9 moves Notional, the target. Notional's
     // right is the Action column, which no fill can write (ADR-0035), so the fill runs rightward into it.
@@ -402,7 +402,7 @@ test('LV-13: a Ctrl+R whose target changed since the key was pressed fills it (A
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('LV-13: a Ctrl+D whose source changed since the key was pressed fills with the source as it is now (ADR-0142, ADR-0035)', async ({ page }) => {
+test('LV-13: a Ctrl+D whose source changed since the key was pressed fills with the source as it is now (ADR-0142, ADR-0035) @blazor', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly paints F9\'s change before Ctrl+D can be taken on the render before it');
     // Notional rows 4 to 6: F9 moves row 4, the source, and not rows 5 and 6, the target.
     await clickCell(page, 4, NOTIONAL);
@@ -426,7 +426,7 @@ test('LV-13: a Ctrl+D whose source changed since the key was pressed fills with 
     await expect(page.locator('#paste-refused-status')).toHaveText('Paste refused: —');
 });
 
-test('ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a live amendment that re-sorts the editor\'s row out of view takes the editor along without a scroll; the keys typed still reach it, and Enter lands on that row (ADR-0142)', async ({ page }) => {
+test('ADR-0011 (note of 2026-10-07) / LV-20: with a Row Key, a live amendment that re-sorts the editor\'s row out of view takes the editor along without a scroll; the keys typed still reach it, and Enter lands on that row (ADR-0142) @behaviour', async ({ page }) => {
     // F8, declared under ?rowkey=1, amends the top row's Notional past every other: under a sort by
     // Notional the row moves to the end, as a live feed's amendment can move it.
     await page.goto('/features?upstream=1&rowkey=1');

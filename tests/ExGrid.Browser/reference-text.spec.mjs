@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, circuitQuiet, chromeHost } from './fixtures.mjs';
 import { pixelsApart, stillPictures } from './pixels.mjs';
 import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
@@ -133,7 +133,7 @@ for (const chrome of ['builtin', 'mud']) {
     // On a circuit the colours answer a keystroke a round trip after it: a burst types past them,
     // and the field's own text shows until the typing pauses. On WebAssembly the same burst runs
     // as the case without a round trip.
-    test(`DC-47: a burst of typing on a 150 ms circuit never shows transparent field text over a layer that differs, and the colours come back when it pauses (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: a burst of typing on a 150 ms circuit never shows transparent field text over a layer that differs, and the colours come back when it pauses (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -160,7 +160,7 @@ for (const chrome of ['builtin', 'mud']) {
 
     // Typed a key at a time, waiting for each key's colours: on WebAssembly they follow at once, and on
     // a circuit a round trip later (SRV-2; the burst above is the case that types past them).
-    test(`DC-47: the colours follow each keystroke, each Reference in a colour of its own (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: the colours follow each keystroke, each Reference in a colour of its own (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -191,7 +191,7 @@ for (const chrome of ['builtin', 'mud']) {
     // opened on the text the field already shows changes nothing in the field: the listener hears
     // the Cell Editor take DOM focus, and the Formula Bar's layer, which stands empty while no edit
     // is open, being given the edit's text.
-    test(`DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured in that surface before anything is typed, and the other stays plain (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured in that surface before anything is typed, and the other stays plain (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D2');
@@ -225,7 +225,7 @@ for (const chrome of ['builtin', 'mud']) {
 
     // The edit is in whichever surface holds DOM focus, and a press moves it from one to the other
     // mid-edit: the colours go with it, at once, and what is typed in the bar is coloured there.
-    test(`DC-47: the colours follow the edit from the Cell Editor into the Formula Bar and back, the other surface plain (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: the colours follow the edit from the Cell Editor into the Formula Bar and back, the other surface plain (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -257,7 +257,7 @@ for (const chrome of ['builtin', 'mud']) {
     // compositionend follows with no input after it. So the listener hears compositionend too, and
     // the colours come back when the composition ends, once the layer holds its text, with no
     // keystroke after it (ticket 29, decided with the user 2026-09-30).
-    test(`DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -330,7 +330,7 @@ async function expectPointedShade(field, text, colour, ink) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -348,7 +348,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(grid)).toHaveCount(0);
     });
 
-    test(`ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -371,7 +371,7 @@ for (const chrome of ['builtin', 'mud']) {
     // Run 18a, answer 6, typed from D10 as the run typed it: =, ↓ and =, ↓, ↓ lay the pointed
     // Reference on the grey in the cell and not in the bar (2026-10-16, decided with the user:
     // straight after the = too).
-    test(`ADR-0057/0051: = ↓ writes =D11 on the grey in the Cell Editor, and = ↓ ↓ =D12, the Formula Bar plain (run 18a, answer 6; ${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0057/0051: = ↓ writes =D11 on the grey in the Cell Editor, and = ↓ ↓ =D12, the Formula Bar plain (run 18a, answer 6; ${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D10');
@@ -396,7 +396,7 @@ for (const chrome of ['builtin', 'mud']) {
 
     // Excel's case 32: the grey is not a selection that typing replaces. The digit follows the
     // Reference, and Point ends.
-    test(`ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F3');
@@ -418,7 +418,7 @@ for (const chrome of ['builtin', 'mud']) {
 
     // Excel's cases 20 and 20x, typed from D10 as the run typed them: ↓ after =D11+ points D11
     // again, which shares the first Reference's colour; ↓ once more points D12, a second colour.
-    test(`DC-56: the pointed Reference's text is Excel's shade of its colour — #0401a2 for the first, #630101 for the second — on #c6c6c6 (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-56: the pointed Reference's text is Excel's shade of its colour — #0401a2 for the first, #630101 for the second — on #c6c6c6 (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D10');
@@ -537,7 +537,7 @@ async function caretTo(page, field, end) {
 
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
-        test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome)`, async ({ page }) => {
+        test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
             const { grid, field } = await editFormula(page, chrome, surface);
 
             // The same font, size, padding and letter spacing (DC-48).
@@ -581,7 +581,7 @@ const MISPLACED = {
 
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
-        test(`DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} (${chrome} Chrome)`, async ({ page }) => {
+        test(`DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
             const { grid, field } = await editFormula(page, chrome, surface);
             await alterPage(page, (misplaced) => {
                 const style = document.createElement('style');

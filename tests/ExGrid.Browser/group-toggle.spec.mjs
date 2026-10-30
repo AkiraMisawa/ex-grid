@@ -30,7 +30,7 @@ async function answered(page) {
     await circuitQuiet();
 }
 
-test('HG-18 / ADR-0400: each press on the toggle is heard once, and the columns shown are the ones the page pushed', async ({ page }) => {
+test('HG-18 / ADR-0400: each press on the toggle is heard once, and the columns shown are the ones the page pushed @behaviour', async ({ page }) => {
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
     expect(await headers(page)).toEqual(all);
 
@@ -47,7 +47,7 @@ test('HG-18 / ADR-0400: each press on the toggle is heard once, and the columns 
     expect(await headers(page)).toEqual(all);
 });
 
-test('HG-22 / ADR-0400: two presses before the Consumer answers ask to close twice, and the columns are those of one press', async ({ page }) => {
+test('HG-22 / ADR-0400: two presses before the Consumer answers ask to close twice, and the columns are those of one press @blazor', async ({ page }) => {
     test.skip(!SERVER, 'an answer a round trip away is the Server host\'s; elsewhere the Consumer answers within the press');
     await holdAnswers(true);
     await toggle(page).click();
@@ -60,7 +60,7 @@ test('HG-22 / ADR-0400: two presses before the Consumer answers ask to close twi
     expect(await headers(page)).toEqual(closed);
 });
 
-test('HG-23 / ADR-0011, ADR-0400: Alt+Shift+↑ and ↓ keep the Focus on its row, in the group\'s first column when its own is hidden', async ({ page }) => {
+test('HG-23 / ADR-0011, ADR-0400: Alt+Shift+↑ and ↓ keep the Focus on its row, in the group\'s first column when its own is hidden @behaviour', async ({ page }) => {
     const focus = () => toggleGrid(page).getAttribute('aria-activedescendant');
     await cell(page, 2, 3).click({ force: true });
     await expect.poll(focus).toMatch(/r2c3$/);
@@ -78,7 +78,7 @@ test('HG-23 / ADR-0011, ADR-0400: Alt+Shift+↑ and ↓ keep the Focus on its ro
     expect(await focus()).toMatch(/r2c2$/);
 });
 
-test('HG-24 / ADR-0400, ADR-0029: each Hidden Mark is painted in its Cell State\'s token, and stays seen under forced colours', async ({ page }) => {
+test('HG-24 / ADR-0400, ADR-0029: each Hidden Mark is painted in its Cell State\'s token, and stays seen under forced colours @behaviour', async ({ page }) => {
     const tokens = {
         stale: ['--ex-state-stale-color', [0, 96, 160]],
         missing: ['--ex-state-missing-background', [160, 0, 96]],

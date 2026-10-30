@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop, dataRowCount, setTicked } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, dataRowCount, setTicked, chromeHost } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
@@ -76,7 +76,7 @@ async function asked(page, kind) {
     return Number(new RegExp(`([\\d,]+) ${kind}`).exec(text)?.[1]?.replaceAll(',', '') ?? NaN);
 }
 
-test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
+test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window @behaviour', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page, 'builtin');
     await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }));
@@ -106,7 +106,7 @@ test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside 
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`PV-20/ADR-0069: the database read over Arrow and asked of the server's Pivot Source shows the same numbers (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: the database read over Arrow and asked of the server's Pivot Source shows the same numbers (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const status = await api('/api/status');
             // The whole database, read into the page's own Snapshot at the server's version.
@@ -126,7 +126,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectSameReports(page);
         });
 
-        test(`PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await expectSameReports(page);
             const before = await painted(page, 'snapshot');
@@ -141,7 +141,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(section(page, 'server').getByRole('checkbox', { name: 'Month', exact: true })).toBeChecked();
         });
 
-        test(`PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (${chrome})`, async ({ page }) => {
+        test(`PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await expectSameReports(page);
             const cell = await firstValue(page, 'server').textContent();
@@ -173,7 +173,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole', async ({ page }) => {
+test('ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole @blazor', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     // The browser's HttpClient turns response streaming off for the Arrow request (ADR-0065).

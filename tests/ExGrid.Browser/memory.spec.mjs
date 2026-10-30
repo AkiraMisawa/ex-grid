@@ -79,7 +79,7 @@ function added(before, after) {
     });
 }
 
-test('mounting and disposing the grid fifty times returns nodes and listeners to baseline (MEM-2)', async ({ page }) => {
+test('mounting and disposing the grid fifty times returns nodes and listeners to baseline (MEM-2) @behaviour', async ({ page }) => {
     const grid = await lifecycle(page);
     const fresh = await grid.counters();
     const freshOnDocument = await grid.listenersOn('document');
@@ -121,7 +121,7 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     record(test.info().project.name, { 'MEM-2': { cycles: 50, baseline: { nodes: baseline.nodes, listeners: baseline.listeners }, drift } });
 });
 
-test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4)', async ({ page }) => {
+test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4) @blazor', async ({ page }) => {
     const grid = await lifecycle(page);
     // The module is the Script Core's bundle (ex-grid-script) and the Blazor adapter over it (ex-grid-core).
     const moduleScript = /@ex-grid(-[\w]+)?(\.[\w-]+)*\.js(\?v=[0-9a-f]{12})?$/;
@@ -172,7 +172,7 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
 // MEM-5 runs ten minutes and MEM-6 is read at its end, so both run only when asked for:
 // EXGRID_SOAK=1 (§22 Step 4). Skipped otherwise, by name — and a skip is a failure at
 // sign-off unless results.md records the soak run that discharges it.
-test('a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6)', async ({ page }, testInfo) => {
+test('a ten-minute scripted scroll does not grow the JS heap (MEM-5, MEM-6) @blazor', async ({ page }, testInfo) => {
     test.skip(process.env.EXGRID_SOAK !== '1', 'the ten-minute soak runs with EXGRID_SOAK=1 (§22 Step 4)');
     const minutes = 10;
     const sampleEveryMs = 30_000;

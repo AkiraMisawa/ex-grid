@@ -1,4 +1,4 @@
-import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet, settled, chromeHost } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
@@ -149,7 +149,7 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         });
 
-        test('a secondary click opens the grid\'s menu, not the browser\'s (CTX-1/CTX-5, ADR-0036)', async ({ page }) => {
+        test(`a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 0, 1);
             // On window, which outlives the page: alterPage takes the listener off as the test
             // ends, if the secondary click never reached it (ADR-0056).
@@ -175,7 +175,7 @@ for (const chrome of CHROMES) {
             await expect(items).toHaveText(['Copy', 'Copy with headers', 'open-trade']);
         });
 
-        test('a secondary click outside the selection moves it first (CTX-1, ADR-0036)', async ({ page }) => {
+        test(`a secondary click outside the selection moves it first (CTX-1, ADR-0036) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 0, 1);
             await expectActiveDescendant(grid(page), /r0c1$/);
             const before = await activeDescendant(grid(page));
@@ -187,7 +187,7 @@ for (const chrome of CHROMES) {
             await expectActiveDescendant(grid(page), /r3c2$/);
         });
 
-        test('the ContextMenu key opens it on the Focus (CTX-4, ADR-0036)', async ({ page }) => {
+        test(`the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 1);
 
             await page.keyboard.press('ContextMenu');
@@ -198,7 +198,7 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('[role=menu]')).toHaveCount(0);
         });
 
-        test('popovers are not clipped by the scroll container and stay per instance (UX-11)', async ({ page }) => {
+        test(`popovers are not clipped by the scroll container and stay per instance (UX-11) ${chromeHost(chrome)}`, async ({ page }) => {
             // The rightmost column's menu of the first grid.
             const buttons = grid(page).locator('.ex-menu-button');
             await buttons.last().click();
@@ -220,7 +220,7 @@ for (const chrome of CHROMES) {
             expect(await page.locator('.ex-grid').nth(1).locator('.ex-popover').count()).toBe(0);
         });
 
-        test('a popover taller than its grid stays inside the grid\'s box and scrolls (UX-11, ADR-0040)', async ({ page }) => {
+        test(`a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) ${chromeHost(chrome)}`, async ({ page }) => {
             // The second grid is 140px tall: its column menu does not fit, and is bounded.
             const short = page.locator('.ex-grid').nth(1);
             await short.locator('.ex-menu-button').first().click();
@@ -238,7 +238,7 @@ for (const chrome of CHROMES) {
             await expect(last).toBeInViewport();
         });
 
-        test('every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039)', async ({ page }) => {
+        test(`every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
             // The column menu, by its ▾.
             await grid(page).locator('.ex-menu-button').first().click();
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu', tag: 'BUTTON' });
@@ -260,7 +260,7 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Copy' });
         });
 
-        test('a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2)', async ({ page }) => {
+        test('a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2) @blazor', async ({ page }) => {
             await clickCell(page, 0, 1);
             await expectActiveDescendant(grid(page), /r0c1$/);
             // The popover opens and never takes DOM focus, so what Alt+↓ started keeps waiting
@@ -280,7 +280,7 @@ for (const chrome of CHROMES) {
             await twoFrames(page);
         });
 
-        test('however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039)', async ({ page }) => {
+        test(`however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
             const focusAfterDown = async () => {
                 const before = await activeDescendant(grid(page));
                 await page.keyboard.press('ArrowDown');
@@ -329,7 +329,7 @@ for (const chrome of CHROMES) {
         // closed it, and a key typed then was the popover's: ↓ moved in a menu about to go, and was lost.
         // The Script grid closes a popover in the browser (ADR-0440), so the keys after the closing one land
         // on the grid itself, with the host's answers held across them to show none is waited on.
-        test('keys typed while Escape closes a menu are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('keys typed while Escape closes a menu are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
@@ -358,7 +358,7 @@ for (const chrome of CHROMES) {
             }
         });
 
-        test('keys typed while Escape closes a filter panel from its search box are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('keys typed while Escape closes a filter panel from its search box are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeText(page)).toBe('Sort ascending');
@@ -385,7 +385,7 @@ for (const chrome of CHROMES) {
             }
         });
 
-        test('a key typed while a command pressed in a menu closes it is the grid\'s: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('a key typed while a command pressed in a menu closes it is the grid\'s: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             await clickCell(page, 2, 1);
             await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
             const command = grid(page).locator('[role=menu] button[role=menuitem]').last();
@@ -435,7 +435,7 @@ for (const chrome of CHROMES) {
             return panel;
         }
 
-        test('keys typed while Enter on OK closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('keys typed while Enter on OK closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             const all = await grid(page).getAttribute('aria-rowcount');
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].ok(panel).focus();
@@ -464,7 +464,7 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeEnabled();
         });
 
-        test('keys typed while Space on Cancel closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('keys typed while Space on Cancel closes a filter panel are the grid\'s, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             const panel = await notionalAboveZero(page);
             await closingButton[chrome].cancel(panel).focus();
             const landed = await watchWhereKeysLand(page);
@@ -491,7 +491,7 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-popover button[role=menuitem]', { hasText: /Clear filter/ })).toBeDisabled();
         });
 
-        test('a key typed while a press on OK closes a filter panel is the grid\'s: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12)', async ({ page }) => {
+        test('a key typed while a press on OK closes a filter panel is the grid\'s: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12) @blazor', async ({ page }) => {
             const panel = await notionalAboveZero(page);
             const landed = await watchWhereKeysLand(page);
             // The host's answers are held across the keys: nothing the close waits on may come from it (ADR-0220).
@@ -511,7 +511,7 @@ for (const chrome of CHROMES) {
             }
         });
 
-        test('in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039)', async ({ page }) => {
+        test(`in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             // Read once it is drawn — a round trip away on the Server host.
@@ -539,7 +539,7 @@ for (const chrome of CHROMES) {
         });
 
         for (const key of ['Enter', ' ']) {
-            test(`in a menu ${key === ' ' ? 'Space' : key} runs the item and closes it (KB-30, ADR-0039)`, async ({ page }) => {
+            test(`in a menu ${key === ' ' ? 'Space' : key} runs the item and closes it (KB-30, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
                 await clickCell(page, 1, 0);
                 await page.keyboard.press('Alt+ArrowDown');
                 await expect.poll(() => activeText(page)).toBe('Sort ascending');
@@ -555,7 +555,7 @@ for (const chrome of CHROMES) {
         }
 
         for (const [key, lands] of [['Tab', 'the search box'], ['Shift+Tab', 'Cancel']]) {
-            test(`over a filter, ${key} on a command moves to ${lands} — nothing runs, nothing closes (FL-12, KB-30, ADR-0044)`, async ({ page }) => {
+            test(`over a filter, ${key} on a command moves to ${lands} — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) ${chromeHost(chrome)}`, async ({ page }) => {
                 await clickCell(page, 1, 0);
                 await page.keyboard.press('Alt+ArrowDown');
                 await page.keyboard.press('ArrowDown');
@@ -573,7 +573,7 @@ for (const chrome of CHROMES) {
             });
         }
 
-        test('the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039)', async ({ page }) => {
+        test(`the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 1);
             await page.keyboard.press('Shift+F10');
             await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
@@ -588,7 +588,7 @@ for (const chrome of CHROMES) {
             await expectKeyboardOn(grid(page));
         });
 
-        test('Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044)', async ({ page }) => {
+        test(`Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) ${chromeHost(chrome)}`, async ({ page }) => {
             await openNotionalPanel(page);
 
             // Forward from the operator through the filter — the value, the join, the second
@@ -618,7 +618,7 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-popover[role=dialog]')).toBeVisible();
         });
 
-        test('the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044)', async ({ page }) => {
+        test(`the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) ${chromeHost(chrome)}`, async ({ page }) => {
             // S from a command sorts ascending and closes.
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
@@ -665,7 +665,7 @@ for (const chrome of CHROMES) {
             await expectKeyboardOn(grid(page));
         });
 
-        test('on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044)', async ({ page }) => {
+        test(`on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeText(page)).toBe('Sort ascending');
@@ -700,7 +700,7 @@ for (const chrome of CHROMES) {
             await expectKeyboardOn(grid(page));
         });
 
-        test('where no value list stands, E goes to the condition\'s value, where a search is typed (FL-15, ADR-0044)', async ({ page }) => {
+        test(`where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 2);
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeText(page)).toBe('Sort ascending');
@@ -717,7 +717,7 @@ for (const chrome of CHROMES) {
             await expect.poll(() => page.evaluate(() => document.activeElement?.value)).toBe('5');
         });
 
-        test('E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044)', async ({ page }) => {
+        test(`E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) ${chromeHost(chrome)}`, async ({ page }) => {
             // A filter in force on Book, so that a search offers "Add current selection".
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
@@ -751,7 +751,7 @@ for (const chrome of CHROMES) {
             await expect(add).toBeChecked({ timeout: 700 });
         });
 
-        test('Enter in the value field applies exactly what OK applies (KB-31, ADR-0039)', async ({ page }) => {
+        test(`Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) ${chromeHost(chrome)}`, async ({ page }) => {
             const byOk = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].apply(panel).click());
 
             await page.reload();
@@ -760,7 +760,7 @@ for (const chrome of CHROMES) {
             expect(byEnter).toBe(byOk);
         });
 
-        test('with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76)', async ({ page }) => {
+        test(`with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76) ${chromeHost(chrome)}`, async ({ page }) => {
             const all = await grid(page).getAttribute('aria-rowcount');
             const popover = grid(page).locator('.ex-popover');
             const values = VALUE_LIST[chrome];
@@ -797,7 +797,7 @@ for (const chrome of CHROMES) {
             expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
         });
 
-        test('a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039)', async ({ page }) => {
+        test(`a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) ${chromeHost(chrome)}`, async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
             await expect(grid(page).locator('.ex-popover [role=menu]')).toBeVisible();
@@ -837,7 +837,7 @@ async function hearAltDown(page) {
     });
 }
 
-test('KB-28: Alt+↓ is taken from the browser where the column has a menu, the page unmoved; on a grid with no column menu it opens nothing (ADR-0039)', async ({ page }) => {
+test('KB-28: Alt+↓ is taken from the browser where the column has a menu, the page unmoved; on a grid with no column menu it opens nothing (ADR-0039) @behaviour', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await hearAltDown(page);

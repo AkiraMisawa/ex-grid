@@ -112,7 +112,7 @@ test.beforeEach(async ({ page, context }) => {
 
 // ---- Moving and selecting (ADR-0012, ADR-0050) ----------------------------------------------
 
-test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07)', async ({ page }) => {
+test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) @behaviour', async ({ page }) => {
     for (const [a1, v] of [['F1', '1'], ['F2', '2'], ['F3', '3'], ['F7', '7'], ['F8', '8'], ['F9', '9']]) {
         await enter(page, a1, v);
     }
@@ -143,7 +143,7 @@ test('item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §
     }
 });
 
-test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ADR-0052, ticket 07)', async ({ page }) => {
+test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ADR-0052, ticket 07) @behaviour', async ({ page }) => {
     // Excel's layout was C2:G2 with the Focus on D2; the same block sits at E6:I6 here, in a row
     // /sheet leaves empty (row 1 holds headings in A1:D1, which would join the block).
     await click(page, 'E6');
@@ -165,7 +165,7 @@ test('item 2: Ctrl+Shift+Right from inside a row block selects to its end, then 
     await expectSelection(page, 'E6', 'F6');
 });
 
-test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
+test('item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) @behaviour', async ({ page }) => {
     const header = (letter) => sheet(page).locator('.ex-header-cell', { hasText: new RegExp(`^${letter}$`) });
     await click(page, 'C3');
     await header('B').click({ force: true });
@@ -186,7 +186,7 @@ test('item 3: a column letter selects the column, Shift+click extends, the Focus
     await expectActive(page, 'D100');
 });
 
-test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
+test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06) @behaviour', async ({ page }) => {
     const heading = (n) => sheet(page).locator('.ex-row-heading', { hasText: new RegExp(`^${n}$`) }).first();
     await click(page, 'C3');
     await pressAt(heading(2));
@@ -201,7 +201,7 @@ test('item 4: a row number selects the row, Shift+click extends, the Focus in th
     await expectActive(page, 'A5');
 });
 
-test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
+test('item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) @behaviour', async ({ page }) => {
     await click(page, 'C3');
     await sheet(page).locator('.ex-headings-corner').click({ force: true });
     await expectSelection(page, 'A1', 'XFD1048576');
@@ -233,7 +233,7 @@ async function expectInView(page, a1) {
 // Excel's cases, driven with real keys and the real mouse. /sheet's data is A1:D13, so the probes
 // that write use E:G, which are empty and on screen.
 
-test('active cell, case 1: Shift+arrows move the far corner, the Focus stays, and the view follows the Extent (ADR-0052)', async ({ page }) => {
+test('active cell, case 1: Shift+arrows move the far corner, the Focus stays, and the view follows the Extent (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'B2');
     await page.keyboard.press('Shift+ArrowDown');
     await page.keyboard.press('Shift+ArrowDown');
@@ -248,7 +248,7 @@ test('active cell, case 1: Shift+arrows move the far corner, the Focus stays, an
     await expect.poll(() => sheet(page).locator('.ex-scroller').evaluate((s) => s.scrollTop)).toBeGreaterThan(0);
 });
 
-test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052)', async ({ page }) => {
+test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'E1');
     const from = await cell(page, 'D5').boundingBox();
     const to = await cell(page, 'B2').boundingBox();
@@ -263,7 +263,7 @@ test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and 
 
 // The size is shown only while a pointer's button is down: the grid cannot tell when Shift is let go,
 // so a range extended by key shows the Focus throughout (DC-39, ADR-0052/0021).
-test('DC-39: a range extended by key shows no size in the Name Box: it names the Focus throughout (ADR-0052)', async ({ page }) => {
+test('DC-39: a range extended by key shows no size in the Name Box: it names the Focus throughout (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'D5');
     await expect(nameBox(page)).toHaveValue('D5');
     for (const key of ['Shift+ArrowUp', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Shift+ArrowUp', 'Shift+ArrowLeft']) {
@@ -278,7 +278,7 @@ test('DC-39: a range extended by key shows no size in the Name Box: it names the
     await expect(nameBox(page)).toHaveValue('D5');
 });
 
-test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052)', async ({ page }) => {
+test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'E1');
     await click(page, 'G3', { modifiers: ['Shift'] });
     await page.keyboard.press('Enter');
@@ -304,7 +304,7 @@ test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the 
     await expectActive(page, 'F2');
 });
 
-test('active cell, case 6: Ctrl+click on the active cell takes it out and the first remaining cell of the range made last is active (ADR-0052)', async ({ page }) => {
+test('active cell, case 6: Ctrl+click on the active cell takes it out and the first remaining cell of the range made last is active (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'E1');
     await click(page, 'G3', { modifiers: ['Shift'] });
     await click(page, 'E1', { modifiers: ['ControlOrMeta'] });
@@ -317,7 +317,7 @@ test('active cell, case 6: Ctrl+click on the active cell takes it out and the fi
     await expect(cell(page, 'E1')).toHaveText('');
 });
 
-test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052)', async ({ page }) => {
+test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'E1');
     await click(page, 'G3', { modifiers: ['Shift'] });
     for (const corner of ['G1', 'G3', 'E3', 'E1']) {
@@ -339,7 +339,7 @@ test('active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrol
     await expectActive(page, 'E1');
 });
 
-test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052)', async ({ page }) => {
+test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) @behaviour', async ({ page }) => {
     await click(page, 'E2');
     await click(page, 'G4', { modifiers: ['Shift'] });
     await page.keyboard.type('x');
@@ -358,7 +358,7 @@ test('active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter
     await expectSelection(page, 'E6', 'G8');
 });
 
-test('third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27)', async ({ page }) => {
+test('third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27) @behaviour', async ({ page }) => {
     // Excel's case 5 (verification/2026-09-28-windows-excel-3/main-keys.jsonl), over /sheet's own
     // cells: B2:C3 selected with the mouse from B2, =A1 typed and Ctrl+Enter. B2 held =A1, C2 =B1, B3
     // =A2 and C3 =B2, showing Item, Qty, Apples and Item; the Selection stayed B2:C3, B2 active.
@@ -386,7 +386,7 @@ test('third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in t
     }
 });
 
-test('item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09)', async ({ page }) => {
+test('item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) @behaviour', async ({ page }) => {
     const viewport = await sheet(page).locator('.ex-scroller').boundingBox();
     await nameBox(page).click();
     await nameBox(page).fill('D200');
@@ -414,7 +414,7 @@ test('item 6: the Name Box selects what it is given and scrolls only as far as i
 
 // ---- Entering and editing (ADR-0051, ADR-0012) --------------------------------------------------
 
-test('item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08)', async ({ page }) => {
+test('item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) @behaviour', async ({ page }) => {
     await click(page, 'E3');
     await page.keyboard.type('abc');
     await page.keyboard.press('ArrowRight');
@@ -427,7 +427,7 @@ test('item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08)
     await expectActive(page, 'E5');
 });
 
-test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08)', async ({ page }) => {
+test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) @behaviour', async ({ page }) => {
     await click(page, 'D2');
     await page.keyboard.press('F2');
     await expect(cellEditor(page)).toHaveValue('=B2*C2');
@@ -447,7 +447,7 @@ test('item 8: F2 on a Formula shows it with the caret at the end, and the arrows
     expect(await entryOf(page, 'D2')).toBe('=B2*C2');
 });
 
-test('item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11) @behaviour', async ({ page }) => {
     await click(page, 'E5');
     await page.keyboard.type('=');
     await expect(cellEditor(page)).toHaveValue('=');
@@ -465,7 +465,7 @@ test('item 9: Point mode by keys writes each Reference as the pointer moves (ADR
     await expect.soft(nameBox(page)).toHaveValue('E5');
 });
 
-test('item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11) @behaviour', async ({ page }) => {
     await click(page, 'E10');
     await page.keyboard.type('=');
     // A click while pointing: no waiting for the Name Box, which is the question here.
@@ -482,7 +482,7 @@ test('item 10: Point mode by mouse writes the clicked cell, then the dragged ran
     await expect(cellEditor(page)).toHaveValue('=C3:D4');
 });
 
-test('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11) @behaviour', async ({ page }) => {
     await click(page, 'E5');
     await page.keyboard.type('=');
     await page.keyboard.press('ArrowDown');
@@ -496,7 +496,7 @@ test('item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, t
     expect(await cellEditor(page).evaluate((e) => e.selectionStart)).toBe(1);
 });
 
-test('item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11)', async ({ page }) => {
+test('item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11) @behaviour', async ({ page }) => {
     await click(page, 'E5');
     await bar(page).click();
     await page.keyboard.type('=');
@@ -505,7 +505,7 @@ test('item 12: typing = in the Formula Bar and pressing Down does not point (ADR
     await expect(bar(page)).toHaveValue('=');
 });
 
-test('item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10)', async ({ page }) => {
+test('item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10) @behaviour', async ({ page }) => {
     const list = sheet(page).locator('.ex-completion-list');
     await click(page, 'E5');
     await page.keyboard.type('=SUM');
@@ -528,7 +528,7 @@ test('item 13: completion lists candidates, Tab takes one with its parenthesis, 
     await expect(cellEditor(page)).toHaveCount(0);
 });
 
-test('item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10)', async ({ page }) => {
+test('item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10) @behaviour', async ({ page }) => {
     const hint = sheet(page).locator('.ex-completion-hint');
     await click(page, 'E5');
     await page.keyboard.type('=XLOOKUP(');
@@ -540,7 +540,7 @@ test('item 14: the argument hint names every argument and marks the current one 
     await expect(hint.locator('strong, b, em').first()).toHaveText('[match_mode]');
 });
 
-test('item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09)', async ({ page }) => {
+test('item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) @behaviour', async ({ page }) => {
     await click(page, 'E5');
     await bar(page).click();
     await page.keyboard.type('xyz');
@@ -555,7 +555,7 @@ test('item 15: Escape in the Formula Bar cancels the edit and gives the keys bac
 
 // ---- Clipboard (ADR-0048, ADR-0050) ------------------------------------------------------------
 
-test('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14) @behaviour', async ({ page }) => {
     await enter(page, 'E1', '=B2');
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'E1');
@@ -568,7 +568,7 @@ test('item 16: a copied Formula pastes with its relative References shifted (ADR
     expect(await entryOf(page, 'E3')).toBe('=B4');
 });
 
-test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)', async ({ page }) => {
+test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14) @behaviour', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     await click(page, 'B2');
     await click(page, 'D4', { modifiers: ['Shift'] });
@@ -584,7 +584,7 @@ test('item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Sele
 });
 
 // Not a probe a spec can run: it needs Excel on the other side of the clipboard.
-test.fixme('item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)', async () => {
+test.fixme('item 18: cells from Excel, and to Excel (ADR-0048, ticket 14) @behaviour', async () => {
     // Observed with clipboard-probe.mjs, which drives Excel too; a spec cannot. Excel → ExSheet:
     // a Formula arrives as its Value, a date as a date (its displayed text, which is ######## when
     // Excel's column was too narrow), and 1,234.50 as 1234.5 without its format. ExSheet → Excel:
@@ -597,23 +597,23 @@ async function pasteText(page, a1, text) {
     await page.keyboard.press('ControlOrMeta+V');
 }
 
-test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14) @behaviour', async ({ page }) => {
     await pasteText(page, 'E5', '=A1+1');
     expect(await entryOf(page, 'E5')).toBe('=A1+1');
 });
 
-test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14) @behaviour', async ({ page }) => {
     await pasteText(page, 'E5', '1,234');
     await expect(cell(page, 'E5')).toHaveText('1,234');
 });
 
-test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)', async ({ page }) => {
+test('item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14) @behaviour', async ({ page }) => {
     await pasteText(page, 'E5', '=1+');
     // Excel took unreadable Formula text as the text itself, with no refusal and no dialog.
     await expect(cell(page, 'E5')).toHaveText('=1+');
 });
 
-test('fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+test('fourth run, active cell item 3: one value of plain text over a range goes into its top-left alone, and the Selection collapses to it (ADR-0014, amended 2026-09-29) @behaviour', async ({ page }) => {
     // Notepad's clipboard: the text alone, nothing of a spreadsheet's
     // (verification/2026-09-29-windows-excel-4/active-cell.md, item 3).
     await page.evaluate(() => navigator.clipboard.writeText('=A1'));
@@ -635,7 +635,7 @@ test('fourth run, active cell item 3: one value of plain text over a range goes 
     expect(await entryOf(page, 'E2')).toBe('=A1');
 });
 
-test('one cell copied inside the Sheet still fills the whole range, as Excel\'s own copy does (ADR-0014, amended 2026-09-29)', async ({ page }) => {
+test('one cell copied inside the Sheet still fills the whole range, as Excel\'s own copy does (ADR-0014, amended 2026-09-29) @behaviour', async ({ page }) => {
     // C2 of the opening data. Copied without an edit before it: a keyboard copy right after an
     // edit committed with Enter writes nothing on this page today, a separate defect.
     const value = await cell(page, 'C2').textContent();
@@ -655,7 +655,7 @@ test('one cell copied inside the Sheet still fills the whole range, as Excel\'s 
 
 // ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------
 
-test('run 18a: a lone number over an empty cell, dragged right, goes on as a series; two numbers are copied (ADR-0050 item 5)', async ({ page }) => {
+test('run 18a: a lone number over an empty cell, dragged right, goes on as a series; two numbers are copied (ADR-0050 item 5) @behaviour', async ({ page }) => {
     // Excel, fill-handle-axis 4: C1 1 over an empty C2 dragged two columns right gives 2 3, row 2 empty;
     // C1 1 over C2 5 gives 1 1 and 5 5.
     await enter(page, 'E1', '1');
@@ -674,7 +674,7 @@ test('run 18a: a lone number over an empty cell, dragged right, goes on as a ser
     await expect(cell(page, 'G5')).toHaveText('1');
 });
 
-test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15)', async ({ page }) => {
+test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15) @behaviour', async ({ page }) => {
     await enter(page, 'E5', '1');
     await enter(page, 'E6', '3');
     await click(page, 'E5');
@@ -687,7 +687,7 @@ test('item 20: a series filled up goes backwards, and the Focus stays on the sou
     await expectActive(page, 'E5');
 });
 
-test('item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15)', async ({ page }) => {
+test('item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) @behaviour', async ({ page }) => {
     await enter(page, 'D10', 'a');
     await enter(page, 'E10', 'b');
     await click(page, 'D10');
@@ -698,7 +698,7 @@ test('item 20: text in two cells filled left repeats backwards (ADR-0050, ticket
     await expect(cell(page, 'B10')).toHaveText('a');
 });
 
-test('item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15)', async ({ page }) => {
+test('item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) @behaviour', async ({ page }) => {
     await click(page, 'A1');
     await click(page, 'B2', { modifiers: ['Shift'] });
     await expect(sheet(page).locator('.ex-fill-handle')).toHaveCount(1);
@@ -708,7 +708,7 @@ test('item 21: with several ranges selected there is no fill handle (ADR-0050, t
 
 // ---- Structure (ADR-0046) -----------------------------------------------------------------------
 
-test('item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13)', async ({ page }) => {
+test('item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13) @behaviour', async ({ page }) => {
     await click(page, 'B3');
     await click(page, 'C4', { modifiers: ['Shift'] });
     await click(page, 'B3', { button: 'right' });
@@ -721,7 +721,7 @@ test('item 22: inserting rows above a selected range keeps the Selection where i
 });
 
 // Nothing to drive yet: /sheet offers the user no rename.
-test.fixme('item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)', async () => {
+test.fixme('item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12) @behaviour', async () => {
     // Excel: renamed to Data through Home > Format > Rename Sheet, then Ctrl+Z: Sheet1 again.
     // ExSheet undoes a rename by decision (ADR-0048), so the two agree. /sheet has no rename
     // command for the user to drive yet.
@@ -729,7 +729,7 @@ test.fixme('item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048,
 
 // ---- Display (ADR-0016, ADR-0046) ---------------------------------------------------------------
 
-test('item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046)', async ({ page }) => {
+test('item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) @behaviour', async ({ page }) => {
     await enter(page, 'E1', 'A long text that runs well past its column');
     const overflow = await cell(page, 'E1').evaluate((e) => ({
         ellipsis: getComputedStyle(e).textOverflow, clipped: e.scrollWidth > e.clientWidth,
@@ -737,7 +737,7 @@ test('item 25: a long text is cut with an ellipsis, by decision; Excel lets it r
     expect(overflow).toEqual({ ellipsis: 'ellipsis', clipped: true });
 });
 
-test('item 26: a number or a date too wide for a column the user sized shows #### (ADR-0016, SH-26)', async ({ page }) => {
+test('item 26: a number or a date too wide for a column the user sized shows #### (ADR-0016, SH-26) @behaviour', async ({ page }) => {
     // Excel, at width 4: 123456 in General, 12345 as 0.00 and a date all showed ####. The item's
     // point is ####, not the format, so the column is sized first, by its grip, as a user sizes it:
     // a column the user sized is never widened, by an entry (SH-26) or by a Number Format (ADR-0071,

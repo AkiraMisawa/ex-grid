@@ -109,7 +109,7 @@ const olderThanTheStamp = (body) => {
 };
 
 test.describe('ERR-9: the address of each file', () => {
-    test(`ERR-9 / ADR-0123: the script and the stylesheets are asked for at ${SERVER ? 'the fingerprinted address' : 'the plain path with the file\'s version'}`, async ({ page }) => {
+    test(`ERR-9 / ADR-0123: the script and the stylesheets are asked for at ${SERVER ? 'the fingerprinted address' : 'the plain path with the file\'s version'} @blazor`, async ({ page }) => {
         // The grid over the Script Core: its module, at the address of this host, and the Shared
         // Script the module imports beside it by the Shared Script's own version (ADR-0411).
         // Every request heard from the document's start: the resource timing buffer of a WebAssembly
@@ -144,7 +144,7 @@ test.describe('ERR-9: the address of each file', () => {
         await expect(page.locator('.ex-grid > [data-ex-stylesheet="ex-grid.css"]').first()).toBeHidden();
     });
 
-    test('ERR-9 / ADR-0123: a page with a HeadContent of its own keeps the packages\' stylesheets, and adds its own', async ({ page }) => {
+    test('ERR-9 / ADR-0123: a page with a HeadContent of its own keeps the packages\' stylesheets, and adds its own @blazor', async ({ page }) => {
         // /pivot puts ExPivot's stylesheet, and its page's own head, through a HeadContent; on the
         // WebAssembly host ExGrid's and ExSheet's are root components, on the Server host App.razor's.
         const count = (pkg) => page.evaluate((p) => document.querySelectorAll(`head link[rel=stylesheet][href*="_content/${p}/"]`).length, pkg);
@@ -183,7 +183,7 @@ async function expectRefused(page) {
 
 test.describe('ERR-10: a script that is not the one the grid was built with', () => {
     for (const [what, change] of [['another version\'s script', anotherVersion], ['a script older than the stamp', olderThanTheStamp]]) {
-        test(`ERR-10 / ADR-0123: ${what} is refused before anything attaches, said in place of the rows and once in the live region`, async ({ page }) => {
+        test(`ERR-10 / ADR-0123: ${what} is refused before anything attaches, said in place of the rows and once in the live region @blazor`, async ({ page }) => {
             test.skip(await scriptIntegrityPinned(page, '/wide'),
                 'this host pins the script by integrity, so the browser refuses a changed body first: the next test');
             await serveScript(page, change);
@@ -194,7 +194,7 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
         });
     }
 
-    test('ERR-10 / ADR-0123: the script the grid was built with attaches, and nothing is refused', async ({ page }) => {
+    test('ERR-10 / ADR-0123: the script the grid was built with attaches, and nothing is refused @blazor', async ({ page }) => {
         // The script as the host serves it, unchanged: a changed body, even one that only counts,
         // is refused where the host pins the script by integrity.
         await page.goto('/wide');
@@ -210,7 +210,7 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
     test.describe('where the host pins the script by integrity', () => {
         test.use({ expectedErrors: [/Failed to find a valid digest in the 'integrity' attribute for resource '[^']*\/_content\/ExGrid\/ex-grid-core\.min[^']*\.js/] });
 
-        test('ERR-10 / ADR-0123: another version\'s script is blocked by the browser, and the grid says so as for a script that did not load, attaching nothing', async ({ page }) => {
+        test('ERR-10 / ADR-0123: another version\'s script is blocked by the browser, and the grid says so as for a script that did not load, attaching nothing @blazor', async ({ page }) => {
             test.skip(!(await scriptIntegrityPinned(page, '/wide')),
                 'this host does not pin the script by integrity: the grid\'s own stamp refuses it, the tests above');
             await serveScript(page, anotherVersion);
@@ -223,7 +223,7 @@ test.describe('ERR-10: a script that is not the one the grid was built with', ()
     });
 });
 
-test('ADR-0411 / ADR-0123: a Shared Script of another build is refused by ExPivot over the Script Core, said in place of the pivot', async ({ page }) => {
+test('ADR-0411 / ADR-0123: a Shared Script of another build is refused by ExPivot over the Script Core, said in place of the pivot @blazor', async ({ page }) => {
     let served = 0;
     await serveChanged(page, /\/_content\/ExGrid\/ex-grid-script\.min\.js\?v=[0-9a-f]{12}$/, (body) => {
         served++;
@@ -259,7 +259,7 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
     for (const { product, path, root, name } of products) {
         const notice = (page) => page.locator(`${root} > [data-ex-stylesheet="${name}.css"]`).first();
 
-        test(`ERR-11 / ADR-0123: ${product}'s own stylesheet hides its notice`, async ({ page }) => {
+        test(`ERR-11 / ADR-0123: ${product}'s own stylesheet hides its notice @blazor`, async ({ page }) => {
             await page.goto(path);
 
             await expect(notice(page)).toBeAttached();
@@ -273,7 +273,7 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
             })).toBe('none');
         });
 
-        test(`ERR-11 / ADR-0123: another version's stylesheet shows ${product}'s notice, with no script`, async ({ page }) => {
+        test(`ERR-11 / ADR-0123: another version's stylesheet shows ${product}'s notice, with no script @blazor`, async ({ page }) => {
             await serveStylesheet(page, stylesheetOf(product, name),
                 (css) => css.replace(new RegExp(`(\\[data-ex-stylesheet="${name}\\.css"\\]\\[data-ex-stamp=")[0-9a-f]{64}`), `$1${ANOTHER_STAMP}`));
 
@@ -286,7 +286,7 @@ test.describe('ERR-11: each product\'s stylesheet notice', () => {
         });
     }
 
-    test('ERR-11 / ADR-0123: while the stylesheet has not arrived, the notice shows nothing', async ({ page }) => {
+    test('ERR-11 / ADR-0123: while the stylesheet has not arrived, the notice shows nothing @blazor', async ({ page }) => {
         // A standalone application links the stylesheet once it has started, so the grid can stand,
         // and hear keys, before its stylesheet has arrived: the cold load's unstyled moment, in which
         // the notice shows nothing. A Blazor Web App's prerendered page has the stylesheet in its

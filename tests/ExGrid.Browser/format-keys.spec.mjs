@@ -41,7 +41,7 @@ async function noteTakenKeys(grid) {
     }, true));
 }
 
-test('SH-42/ADR-0071: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggle the Focus cell, taken from the browser, one Ctrl+Z a press', async ({ page }) => {
+test('SH-42/ADR-0071: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggle the Focus cell, taken from the browser, one Ctrl+Z a press @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A2');
     await expect(font(page)).toHaveText('regular');
@@ -70,7 +70,7 @@ test('SH-42/ADR-0071: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each t
     expect(page.context().pages()).toHaveLength(pages);
 });
 
-test('SH-42/ADR-0071: the toggle follows the Focus cell over a range', async ({ page }) => {
+test('SH-42/ADR-0071: the toggle follows the Focus cell over a range @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A2');
     await page.keyboard.press('ControlOrMeta+b');
@@ -91,7 +91,7 @@ test('SH-42/ADR-0071: the toggle follows the Focus cell over a range', async ({ 
     await expect(font(page)).toHaveText('bold');
 });
 
-test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56/ADR-0100: a Toolbar Item pressed straight after Shift+ArrowDown formats the extended range, as one step', async ({ page }) => {
+test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56/ADR-0100: a Toolbar Item pressed straight after Shift+ArrowDown formats the extended range, as one step @blazor', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B2');
     await expect(cell(grid, 'B3')).toHaveText('7');
@@ -112,7 +112,7 @@ test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56/ADR-0100: a Toolbar Item p
     await expect(cell(grid, 'B3')).toHaveText('7');
 });
 
-test('SH-42/ADR-0071: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Formats under en-US, by the character typed', async ({ page }) => {
+test('SH-42/ADR-0071: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Formats under en-US, by the character typed @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'C2');
     await expect(numberFormat(page)).toHaveText('General');
@@ -138,7 +138,7 @@ test('SH-42/ADR-0071: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Form
     await expect(cell(grid, 'C2')).toHaveText(/^\$0\.50\s*$/);
 });
 
-test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from the browser, and says why', async ({ page }) => {
+test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from the browser, and says why @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await page.keyboard.type('abc');
@@ -173,7 +173,7 @@ test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from t
 // Excel's Ctrl+U widened a column nobody had sized, from 8.09 to 11.73, and Ctrl+I did not; at a
 // width set through COM, neither did. The run pressed each key in a workbook of its own; pressed here
 // one after the other on one Selection, the two together are a reading.
-test('ADR-0071/SH-42 (the seventeenth run, h7): Ctrl+U over #### widens a column at the standard width and leaves a sized one at its width; Ctrl+I widens neither; one Ctrl+Z takes back both', async ({ page }) => {
+test('ADR-0071/SH-42 (the seventeenth run, h7): Ctrl+U over #### widens a column at the standard width and leaves a sized one at its width; Ctrl+I widens neither; one Ctrl+Z takes back both @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
 
