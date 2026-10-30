@@ -109,6 +109,9 @@ function mount(
     init: Partial<WireAttach> = {}, dotnet = new FakeDotNet(), collector = new FakeCollector(), scripts: Readonly<Record<string, LoadedScriptFunction>> = {},
 ): { root: HTMLElement; grid: BlazorGrid } {
     const root = document.createElement('div');
+    // As the component renders it until the script has attached (A11Y-20's note of 2026-10-30).
+    root.setAttribute('data-ex-mounting', 'grid');
+    root.setAttribute('aria-busy', 'true');
     document.body.append(root);
     const functionOf = (script: WireScript): LoadedScriptFunction => {
         const f = scripts[script.export];
@@ -125,6 +128,13 @@ function mount(
 afterEach(() => {
     for (const grid of attached.splice(0)) grid.dispose();
     document.body.replaceChildren();
+});
+
+describe('the mount', () => {
+    it('A11Y-20: the attach lifts the mark the component put on the element it mounts on, and the grid stands there', () => {
+        const { root } = mount();
+        expect([root.hasAttribute('data-ex-mounting'), root.hasAttribute('aria-busy'), root.classList.contains('ex-grid')]).toEqual([false, false, true]);
+    });
 });
 
 describe('values', () => {

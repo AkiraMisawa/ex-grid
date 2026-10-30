@@ -13,7 +13,7 @@ import {
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
-    slotHostOptionsOf, WireMetrics, type DotNetCalls, type WireHeld, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
+    slotHostOptionsOf, takeMount, WireMetrics, type DotNetCalls, type WireHeld, type GridRazorSlotName, type LoadedScriptFunction, type WireCellMetrics, type WirePresentationDefaults, type WireScript,
 } from '@ex-grid/blazor-shared';
 import { ConsumerClaims } from './consumer-claims';
 import { InputNumbers, LostCall } from './input-numbers';
@@ -285,6 +285,7 @@ export function attach(
     root: HTMLElement, bridge: DotNetHandle, json: string, makeCollector = browserCollector, functionOf: (script: WireScript) => LoadedScriptFunction = pageFunctionOf,
 ): BlazorGrid {
     const init = parsed<WireAttach>(json);
+    takeMount(root);
     // A call too large for a message of its own, a large paste, a long edit, a filter of many values or a filter
     // panel's list, is held, and .NET takes it in its turn: the hub would otherwise close the circuit.
     const holding = new HeldMessages(init.circuit);

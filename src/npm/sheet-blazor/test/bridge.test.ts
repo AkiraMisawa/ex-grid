@@ -58,6 +58,9 @@ const options = (more: Partial<WireOptions> = {}): WireOptions =>
 
 function mount(init: Partial<WireAttach> = {}): { readonly element: HTMLElement; readonly sheet: BlazorSheet; readonly dotnet: FakeDotNet } {
     const element = document.createElement('div');
+    // As the component renders it until the script has attached (A11Y-20's note of 2026-10-30).
+    element.setAttribute('data-ex-mounting', 'sheet');
+    element.setAttribute('aria-busy', 'true');
     document.body.append(element);
     const dotnet = new FakeDotNet();
     const sheet = attach(element, dotnet, JSON.stringify({ options: options(), document: null, documentsSent: 0, words: null, circuit: false, ...init }));
@@ -157,6 +160,13 @@ interface Raised {
     readonly sheet: string | null;
     readonly documentsSent: number;
 }
+
+describe('the mount', () => {
+    it('A11Y-20: the attach lifts the mark the component put on the element it mounts on, and the Sheet stands there', () => {
+        const { element } = mount();
+        expect([element.hasAttribute('data-ex-mounting'), element.hasAttribute('aria-busy'), element.querySelector('.ex-grid') !== null]).toEqual([false, false, true]);
+    });
+});
 
 describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)', () => {
     it('opens the document .NET wrote, and raises the Workbook and its one Sheet as documents after a change', async () => {
@@ -867,6 +877,51 @@ describe('Format Cells filled with Razor (ADR-0410, ADR-0071)', () => {
         const format = sheet.cellFormatAt('Sheet1', 'B2');
         if (!('done' in format)) throw new Error(`The Cell Format was not read: ${JSON.stringify(format)}`);
         expect(JSON.parse(format.done)).toMatchObject({ numberFormat: '0.000', fill: '#FF0000' });
+    });
+
+    it('takes an OK made on contents .NET patched before it said it rendered them, once they are wired, with the fields they added set from the draft (SH-45)', async () => {
+        const { element, sheet, dotnet } = await razorSheet(['formatCells']);
+        select(element, 'B2');
+        sheet.openFormatCells();
+        const [drawn] = render(sheet, dotnet, (_name, json) => formatCellsContents(JSON.parse(json) as WireFormatCells));
+        if (drawn === undefined) throw new Error('Format Cells was not mounted.');
+        const { contents } = drawn;
+        await vi.waitFor(() => { expect(document.activeElement?.getAttribute('data-ex-format-tab')).toBe('number'); });
+
+        // Percentage chosen: the view is sent again, and .NET patches the same contents with the places field it adds,
+        // empty, as Razor draws it, a round trip before its word that it rendered them.
+        contents.querySelector<HTMLElement>('[data-ex-format-value="percentage"]')?.click();
+        const update = dotnet.called.findLast(call => call.method === 'UpdateSlot' && call.args[0] === drawn.id);
+        if (update === undefined) throw new Error('Format Cells was not sent again.');
+        const version = Number(update.args[1]);
+        expect((JSON.parse(String(update.args[2])) as WireFormatCells).number.takesDecimalPlaces).toBe(true);
+        const added = document.createElement('input');
+        Object.assign(added, { type: 'number', min: '0', max: '30', required: true });
+        added.setAttribute('data-ex-format-set', 'places');
+        contents.querySelector('[data-ex-format-panel="number"]')?.append(added);
+        contents.setAttribute('data-ex-version', String(version));
+        const places = contents.querySelector<HTMLInputElement>('[data-ex-format-set="places"]');
+        expect(places?.value).toBe('');
+
+        // OK, in that round trip: nothing is refused for a field the draft has not set yet, and nothing is set. Another
+        // category and Cancel pressed after it wait behind it, so neither changes what it sets nor runs first.
+        contents.querySelector<HTMLElement>('button[type="submit"]')?.click();
+        contents.querySelector<HTMLElement>('[data-ex-format-value="number"]')?.click();
+        contents.querySelector<HTMLElement>('[data-ex-format-cancel]')?.click();
+        expect(element.contains(contents)).toBe(true);
+        const before = sheet.cellFormatAt('Sheet1', 'B2');
+        if (!('done' in before)) throw new Error(`The Cell Format was not read: ${JSON.stringify(before)}`);
+        expect(JSON.parse(before.done)).not.toMatchObject({ numberFormat: '0.00%' });
+
+        // The word lands: the contents are wired, the field shows the draft's, and the OK made on them is taken.
+        sheet.slotRendered(drawn.id, version, contents);
+        await vi.waitFor(() => {
+            const format = sheet.cellFormatAt('Sheet1', 'B2');
+            if (!('done' in format)) throw new Error(`The Cell Format was not read: ${JSON.stringify(format)}`);
+            expect(JSON.parse(format.done)).toMatchObject({ numberFormat: '0.00%' });
+        });
+        expect(places?.value).toBe('2');
+        expect(element.contains(contents)).toBe(false);
     });
 
     it('keeps Format Cells open on an OK it refuses, and says why in the view', async () => {

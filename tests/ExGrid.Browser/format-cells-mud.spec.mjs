@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, holdAnswers } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
@@ -539,7 +539,7 @@ test.describe('over the Script Core, on /sheet?chrome=mud', () => {
         await openSheet(page, 'mud');
     });
 
-    test('SH-45/ADR-0410: the Wrapper\'s tabs stand in the grid\'s frame, a choice pressed and OK at once set it as one undo step, and the keyboard is the Sheet\'s again', async ({ page }) => {
+    test('SH-45/ADR-0410: the Wrapper\'s tabs stand in the grid\'s frame, a choice pressed and OK at once set it as one undo step, OK pressed before the choice\'s drawing is wired sets it too, and the keyboard is the Sheet\'s again', async ({ page }) => {
         const grid = sheet(page);
         const frame = grid.locator('.ex-popover-consumer .mud-ex-sheet-script-format-cells');
         await pressCell(grid, 'C2');
@@ -559,5 +559,23 @@ test.describe('over the Script Core, on /sheet?chrome=mud', () => {
         await expectFocusAt(grid, 'C3');
         await page.keyboard.press('ControlOrMeta+Z');
         await expect(cell(grid, 'C2')).toHaveText('0.5');
+
+        // OK pressed once the choice's drawing stands, before .NET's word that it rendered has wired it: the Decimal places
+        // it added hold no text of the draft's until then, and an OK taken at once was refused as a field left blank,
+        // Format Cells left open (CI's Edge on the Server host, PR #500). The word is kept in the proxy until OK is pressed.
+        await pressCell(grid, 'C2');
+        await page.locator('#sheet-format-cells').click();
+        await expect(frame).toBeVisible();
+        await setRoundTrip(300);
+        await frame.getByLabel('Percentage', { exact: true }).click();
+        await expect(frame.locator('.mud-ex-sheet-format-cells-places')).toBeAttached();
+        await holdAnswers(true);
+        await frame.getByRole('button', { name: 'OK', exact: true }).click();
+        await holdAnswers(false);
+        await setRoundTrip(0);
+
+        await expect(frame).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('50.00%');
+        await expectKeyboardOn(grid);
     });
 });

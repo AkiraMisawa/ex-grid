@@ -158,6 +158,15 @@
             its place.
         </p>
         <p>
+            <strong>Wait for the grid to be there first.</strong> Blazor's ExGrid, ExSheet and ExPivot are drawn by their
+            script, and until it has attached, the element each mounts on stands empty, marked
+            <code>aria-busy="true"</code> and <code>data-ex-mounting</code> (with the product's name); the attach lifts
+            both. A page holding several attaches them in no set order, so a script that takes "the first grid" as soon
+            as one appears may take another. Wait until nothing on the page is mounting —
+            <code>await expect(page.locator('[data-ex-mounting]')).toHaveCount(0)</code> — then find the grid by where
+            it stands.
+        </p>
+        <p>
             <strong>Typing is covered too.</strong> The Cell Editor, Formula Bar and Name Box keep the mark
             off until their text has reached the core and its answer is rendered. A key, row press, heading
             click or menu command immediately after typing carries the full field text into its turn.

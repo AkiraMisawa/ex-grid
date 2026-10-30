@@ -188,6 +188,22 @@ public class ScriptSheetTests : BunitContext
         Assert.IsType<JSException>(refused.InnerException);
     }
 
+    [Fact] // A11Y-20's note of 2026-10-30: the element the script mounts on is Busy and says it is mounting until the script attaches, and a refused script's says neither
+    public void A11Y20_the_mount_is_busy_until_the_script_attaches_and_a_refused_one_is_not()
+    {
+        var stamp = _module.Setup<string?>("stamp");
+        var cut = Sheet();
+
+        var mount = cut.Find("[data-ex-mounting='sheet']");
+        Assert.Equal("true", mount.GetAttribute("aria-busy"));
+
+        stamp.SetException(new TaskCanceledException("The import took longer than the circuit waits."));
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[data-ex-notice='script']")));
+        Assert.Empty(cut.FindAll("[data-ex-mounting]"));
+        Assert.Empty(cut.FindAll("[aria-busy]"));
+    }
+
     [Fact] // ADR-0123: a script that does not load, the circuit's fault included, is refused as another version's is, and a command waiting is told so
     public async Task ADR0123_a_script_that_did_not_load_is_refused_and_a_waiting_command_is_told()
     {
