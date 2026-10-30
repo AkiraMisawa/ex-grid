@@ -5,6 +5,53 @@ user took the recommendation of every question, and of (1) after it was explaine
 The inventory it rests on is `docs/specs/input-order/inventory.md`. Tickets 02 to 07 of the same spec build
 it in turn (7); tickets 02 and 04 are built ("As built", below).
 
+## Over the Script Core, as it stands (rewritten 2026-10-30)
+
+*(Rewritten when pull request #501 removed the Razor components, the C# core and `ex-grid.js`, which this decision was
+built on. The sections below are kept as they were decided and built, for their reasons; this section says which of
+them still hold, and how they read now. The notes of 2026-10-27 to 2026-10-29 at the end are where the Script Core met
+each one first.)*
+
+Every product is drawn by a Script Core, in the browser, and **the order is made where the input is heard**. The
+browser hands the core one event at a time, in the order the user made them, and the core answers each before the
+next: there is no round trip between an input and its answer for the order to cross, so nothing is numbered for the
+core's own sake.
+
+- **Section 1 holds.** What is in the order, what a draft is, and the rule that a render never writes back over a
+  draft's choice are the same.
+- **Section 2 is replaced.** The script no longer numbers input for a C# core to take by number. What the core waits on
+  is the Consumer: a verdict or an `onEdit` answered later (a Pending Commit,
+  [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md) section 3), work
+  placed with `inOrder` and the turn it is handed (section 12, the note of 2026-10-28), an asynchronous declared key,
+  or a held row command (the note of 2026-10-27). While one is out, every input made on the Input Root is heard in the
+  capture phase ahead of everything in it, held with its default prevented, and taken again at its turn where it lands
+  then. Over Blazor, what crosses to .NET is numbered as it crosses, which is section 11's rule over the Script Core
+  (the note of 2026-10-29).
+- **Section 3 holds, in the browser.** One input is taken at a time; a turn that waits on the Consumer holds every
+  input behind it until it ends. WebAssembly's gap, a handler that awaits and lets the next event in, has no
+  counterpart: the core's handlers do not await.
+- **Section 4 holds.** Every wait is on an answer or a mark; an input that can no longer be carried out is refused
+  aloud and never replayed against whatever stands.
+- **Section 5 is moot.** The core hears a field's text from its own `input` events as it is typed, so no text rides
+  with a later input. Text the core types into a field from a held input is committed when the field is left, as
+  [ADR-0210](./0210-held-text-commits-when-its-field-is-left.md) has it ("Over the Script Core").
+- **Section 6 holds.** The unit is the product instance; its outermost element marks itself `data-ex-input-root`, and
+  a grid an ExSheet or ExPivot draws hears its input there and takes its place in that product's order. A Chrome or
+  Wrapper surface is a slot in a frame the core owns ([ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)
+  section 3). The queues ticket 04 to 06 replaced, and the handle MudBlazor's own surfaces joined, went with the
+  Razor components.
+- **Sections 7 and 9 are history**: the stages were built, and the breaking changes section 9 allowed them are
+  their Change Notes.
+- **Section 8 holds.** The differential test types at machine speed and one input at a time, and the two must agree
+  (`differential.spec.mjs`).
+- **Section 10's journal went with `ex-grid.js`.** The Script Core keeps none, and layer 3's reading of one finds
+  none; the press journal of RT-1 and KB-23 (`tests/ExGrid.Browser/press-journal.mjs`) is a test's own.
+- **Sections 11 and 12 hold**, as the note of 2026-10-29 carries them: what crosses to .NET is numbered and found lost
+  by count, and an Escape cancels a paste or a Consumer's work still under way, with both outcomes said aloud.
+
+The "As built" sections that follow describe the C# core and the script that held input across a circuit's round
+trip. That machinery is not ported (ADR-0350 section 6); they are kept for the defects they record.
+
 ## Why
 
 The races of 2026-10-16 and 2026-10-17 were each fixed at the entry point where a test happened to

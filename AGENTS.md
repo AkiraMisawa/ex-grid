@@ -26,37 +26,25 @@ documents, ADRs, code, comments, commit messages, test names, UI strings — is 
 Domain terms stay as `CONTEXT.md` defines them (Focus, Extent, Overlay, Window, Consumer,
 Chrome, Overwrite, Caret, …); do not translate those.
 
-### 2. JavaScript is allowlisted, not "minimised"
+### 2. JavaScript is the Script Cores', and the grid still never measures
 
-JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **twenty** permitted uses:
-capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
-reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
-it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
-popover, ADR-0034 — a Blazor handler would be a wire round trip per frame on Server). The last
-two turn on a distinction worth keeping: the grid never **measures** (a synchronous read it
-performs, on the path to a paint), it is **told** when something the browser already knows has
-changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling, the tallest
-element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
-Field's composition, focus and `keyup` on the root, so an IME can start on a selected cell and the
-editor takes the keyboard only once the IME's key has been told whole (ADR-0080). The
-eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
-and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ninth reports the
-browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
-the server's (ADR-0122). The tenth temporarily hears blur, change and Enter's keydown only on a text field changed
-by held typing, supplying its missing commit notification when the field is left or Enter is
-typed there (ADR-0210). The eleventh is capture-phase `click`, `dblclick` and `contextmenu` on the
-root, numbering a click on a control of the grid's own that claims it (`data-ex-claims`) so it is
-handled in its place in the Input Order; the twelfth hears `submit` and `focus` in the window's
-capture phase, filtered to the grid's own root, because Blazor hears both on the document ahead of
-any listener on the root (ADR-0240). The thirteenth reports the position under the pointer on an
-ExChart plot only when it moves onto another, in the hover band's shape; the fourteenth projects and
-draws ExChart's 3D surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
-The fifteenth paints a chart's SVG to PNG, saves its files and reads the theme's tokens for them, on the click, which Blazor cannot do
-(ADR-0282).
-The sixteenth focuses a box's first control where no grid stands to hand the keyboard on — an ExPivot
-report not yet drawn — in place of the control's own `FocusAsync`, which a `display: contents` box cannot
-take (ADR-0360).
+Every script the packages ship is a Script Core or a Framework Adapter's browser half, TypeScript in `src/npm/`
+([ADR-0350](docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
+[ADR-0370](docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)). ADR-0021's allowlist,
+which governed JavaScript beside a Blazor core, was **superseded on 2026-10-30**, when the last such core was removed.
+What it protected holds for every Script Core (ADR-0350 section 6), and is what review checks:
+
+- **The grid never measures.** No layout is read on the path to a paint (P4). The grid is **told** when something the
+  browser already knows has changed or settled — the Scrollbar Gutter and the Layout Ceiling by a `ResizeObserver`, the
+  Device Pixel by `matchMedia`, the pointer only when it moves onto another row and when it rests — never reads it
+  synchronously itself.
+- **Nothing per cell is bound to a listener**, and nothing per cell crosses to .NET.
+- **Every listener belongs to one instance** ([ADR-0018](docs/adr/0018-multiple-instances-must-be-independent.md)):
+  attached to its root, its Input Root or an element inside them, and one on the document or the window acts only
+  on events its own root contains.
+- **What deliberately stays out** — text measurement for overflow, a popover placed by measuring its anchor — is
+  ADR-0021's list, still read as written.
+
 The four touch additions are approved for implementation: the scoped pointer bridge and initial
 capability hint ([ADR-0260](docs/adr/0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)),
 provisional keyboard preparation during an edit gesture
@@ -65,13 +53,10 @@ visual viewport reports while external surfaces are open
 ([ADR-0262](docs/adr/0262-external-frames-follow-visual-viewport-notifications.md)), and registered-target
 lookup during active ExPivot touch drag
 ([ADR-0263](docs/adr/0263-pivot-touch-drag-resolves-only-registered-live-targets.md)).
-Read the relevant boundary before implementing one; none permits JS grid-cell measurement,
-replay-time target discovery or product command decisions.
+Read the relevant boundary before implementing one; none permits grid-cell measurement,
+replay-time target discovery or product command decisions in the browser that the core did not make.
 
-**Anything else needs a new ADR.** See
-[ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
-deliberately stays out of JS (popovers, text measurement, focus, overlay geometry) so you do
-not re-derive it.
+**A use that would break one of these rules needs a new ADR**, with the measurement that justifies it.
 
 ---
 
@@ -454,8 +439,8 @@ rules that make this safe:
 - **Do not add MudBlazor, Fluxor or similar dependencies to the core.** Integrations live in
   separate packages (`ExGrid.MudBlazor`, `ExGrid.Fluxor`). Sharing a repository is not the same
   as mixing dependencies — **enforce it structurally through project reference direction**.
-  Browser-specific API use is likewise confined to popovers and the clipboard
-  (ADR-0017 / 0018 / 0021).
+  Browser-specific API use is likewise confined to the Script Cores and their adapters' browser
+  halves in `src/npm/`, under rule 2 above (ADR-0017 / 0018 / 0350).
 - **Do not turn `CONTEXT.md` into a specification or a scratchpad.** It is a glossary and
   nothing else.
 - **Do not quietly rewrite an ADR.** When a decision changes, leave what changed and why in the

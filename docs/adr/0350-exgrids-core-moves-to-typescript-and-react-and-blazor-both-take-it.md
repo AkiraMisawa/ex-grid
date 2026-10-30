@@ -164,6 +164,12 @@ moves ExSheet's, ExPivot's and ExChart's UIs to Script Cores of their own, and t
 so ADR-0021 governs no script once its section 6's removal holds and is superseded then. These rules
 hold for every Script Core.)*
 
+*(2026-10-30: that removal holds, and [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) is superseded. Of
+the machinery not ported, one piece's reason outlived it: the Script Core also types held input into a field, so
+[ADR-0210](./0210-held-text-commits-when-its-field-is-left.md)'s commit on leaving the field is carried over.
+[ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md) says which of its sections hold over the
+Script Core.)*
+
 ### 7. Blazor's ExGrid moves onto the Script Core in 0.3.0, once React's holds
 
 Blazor's ExGrid becomes a Framework Adapter over the Script Core in the same version. The order inside

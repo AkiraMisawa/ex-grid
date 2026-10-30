@@ -1,5 +1,28 @@
 # JavaScript is allowlisted, not merely "minimised"
 
+> **Superseded 2026-10-30**, by [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+> section 6, step 3, as that step foretold. This ADR governed JavaScript written beside a Blazor core. Pull request
+> #501 removed the last such core: every script the packages ship is now a Script Core, bundled from `src/npm/`, and
+> the C# beside it is a Framework Adapter. An allowlist of a JavaScript core's uses of JavaScript means nothing, so the
+> list below is history, kept for the reasons it records.
+>
+> **What it protected still holds, for every Script Core,** as [ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)
+> section 6 has it: no layout is read on the path to a paint (P4), nothing per cell is bound to a listener, every
+> listener is scoped to its instance's root or Input Root ([ADR-0018](./0018-multiple-instances-must-be-independent.md)),
+> and the grid is told when the browser knows something has changed or settled, never measuring it. "What deliberately
+> stays out of JavaScript" below now reads as what stays out of the Script Core's paint path: text is not measured for
+> overflow, and a popover's place is not measured from its anchor. The entries' own decisions are not undone with the
+> list: each is the ADR it names (ADR-0010, ADR-0053, ADR-0080, ADR-0090, ADR-0122, ADR-0210, ADR-0240, ADR-0255,
+> ADR-0282, ADR-0360), and the four touch additions keep the boundaries ADR-0260 to ADR-0263 set, none of which permits
+> grid-cell measurement, target discovery at replay or a command decided in the browser that C# or the core did not
+> decide. A Framework Adapter's browser half is TypeScript in `src/npm/`, bundled with its Script Core and held to the
+> same rules ([ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md) section 3); no
+> package ships a script outside such a bundle.
+>
+> The tenth entry, ADR-0210's commit for held text, was the one whose reason did not go with the Blazor core: the
+> Script Core also types held input into a field at its turn (ADR-0380 section 3), and that text gets no `change`
+> from the browser either. It is carried to the Script Core in the same change (ADR-0210, "Over the Script Core").
+
 JavaScript is used **only** where Blazor genuinely cannot do the job, or where a measurement
 shows the Blazor-side approach is too slow. "Keep JS to a minimum" is too vague to enforce,
 so the rule is stronger: **there is a list, and anything not on it needs a new ADR.**
