@@ -330,45 +330,6 @@ test.describe('on /sheet', () => {
         }
     });
 
-    // ADR-0039's note of 2026-10-13. Format Cells replaces the Context Menu in one render, and its tab
-    // takes the keyboard a round trip after it on a circuit. The Sheet's root has the keyboard in
-    // between, and holds what is typed there for Format Cells; a Shift+Tab among it is dropped with
-    // the keys behind it (ADR-0010). Before, the keyboard was on nothing in that gap, and a Shift+Tab
-    // reached Format Cells' trailing sentinel from behind and entered at Cancel — DC-60's earlier test
-    // passed or not as the round trip fell. The keys are typed once the render that swaps the menu for
-    // Format Cells has landed, looked for frame by frame, inside the 150 ms the tab's focus is behind it.
-    test('DC-60/ADR-0039: with a 150 ms round trip, a Shift+Tab typed while Format Cells opens from the menu is dropped with the keys behind it', async ({ page }) => {
-        test.skip(!SERVER, 'WebAssembly hands Format Cells the keyboard in the task that draws it: nothing is typed in between');
-        // The Razor component, whose Format Cells takes the keyboard a round trip after it is drawn (CIRCUIT_SHEET's
-        // reason): over the Script Core it takes it as it is drawn, and the Shift+Tab wraps as below.
-        await openSheet(page, 'builtin', 'razor');
-        const grid = sheet(page);
-        const item = page.getByRole('menuitem', { name: 'Format Cells…' });
-        await pressCell(grid, 'C2');
-        await pressAt(cell(grid, 'C2'), { button: 'right' });
-        await expect(item).toBeVisible();
-        await setRoundTrip(150);
-
-        await item.click();
-        await page.waitForFunction(() => document.querySelector('.ex-popover-consumer') !== null, null, { polling: 'raf' });
-        await page.keyboard.press('Shift+Tab');
-        await page.keyboard.press('ArrowRight');
-
-        // The tab takes the keyboard on Format Cells' own opening, and neither key moved it: not to
-        // Cancel, nor on to the Alignment tab.
-        await expect(tab(grid, 'Number')).toBeFocused();
-        await circuitQuiet();
-        await expect(tab(grid, 'Number')).toBeFocused();
-        await expect(tab(grid, 'Number')).toHaveAttribute('aria-selected', 'true');
-        await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
-
-        // From here the keyboard is Format Cells', and Shift+Tab wraps as ever.
-        await page.keyboard.press('Shift+Tab');
-        await expect(formatCells(grid).getByRole('button', { name: 'Cancel' })).toBeFocused();
-        await page.keyboard.press('Tab');
-        await expect(tab(grid, 'Number')).toBeFocused();
-    });
-
     test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
         const grid = sheet(page);
         const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });

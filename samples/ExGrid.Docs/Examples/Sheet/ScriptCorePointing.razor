@@ -30,7 +30,7 @@
         new("Actual", ColumnType.Number, c => c.Actual, format: v => ((double)v).ToString("N0")),
     ];
 
-    // The same Scope as the Razor components': the browser holds it, and this object names it. The grid is registered
+    // The browser holds the Scope, and this object names it. The grid is registered
     // once, as the page is made, and takes its declaration as it is made.
     private readonly PointingScope _scope = new();
     private GridPointedAt<CostCentre>? _pointedAt;

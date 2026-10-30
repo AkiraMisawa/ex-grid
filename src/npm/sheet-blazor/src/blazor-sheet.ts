@@ -4,8 +4,8 @@
 // nothing: the Workbook, its Formulas and what each input means are the Script Core's, in the browser.
 
 import {
-    builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary, type SummaryFigure,
-    type ViewportSize,
+    builtInLabelIds, type AggregateResult, type GridChromeStylesheet, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary,
+    type SummaryFigure, type ViewportSize,
 } from '@ex-grid/core';
 import {
     crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type PagePointingScope,
@@ -85,6 +85,8 @@ export interface WireOptions {
     /** The slots the Consumer's Chrome fills with Razor (ADR-0410): the grid's, never the find panel, which is the
      * Sheet's own, with Within (ADR-0332 §5), and the Sheet's own. */
     readonly razorSlots?: readonly (GridRazorSlotName | SheetRazorSlotName)[];
+    /** The stylesheets the Consumer's Chrome brings (ADR-0123), whose notices the Sheet's grid renders: none where absent. */
+    readonly stylesheets?: readonly GridChromeStylesheet[];
     /** What the component's `ToolbarContent` declares (ADR-0100), in markup order; absent, the default row alone. */
     readonly toolbar?: readonly WireToolbarRow[];
     readonly hears: readonly HeardKind[];
@@ -314,14 +316,23 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     // holds its Settled Mark once there is a Sheet to hold, before the task ends.
     const making: { sheet?: SheetHandle } = {};
     const slots = new RazorSlotHost(dotnet, sheetRazorSlotKinds, slotHostOptionsOf(() => making.sheet, 'Sheet'));
+    // The Chrome, with the stylesheets it brings: the same object while neither its slots nor its stylesheets change, so a
+    // standing part is not drawn again for an update.
+    let dressed: { readonly mounts: SheetChrome; readonly key: string; readonly chrome: SheetChrome } | undefined;
     const chromeOf = (wire: WireOptions): SheetChrome | undefined => {
-        const names = wire.razorSlots;
-        if (names === undefined || names.length === 0) return undefined;
+        const names = wire.razorSlots ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- absent, .NET names no slot: the Chrome brings only stylesheets
+        const { stylesheets } = wire;
+        if (names.length === 0 && stylesheets === undefined) return undefined;
         for (const name of names) {
             // The find panel is the Sheet's own, which a grid's panel would replace (ADR-0332 §5): .NET never names it.
             if (!(isGridRazorSlotName(name) || isSheetRazorSlotName(name)) || name === 'findPanel') throw new TypeError(`Internal: .NET named '${name}' as a slot its Chrome fills.`);
         }
-        return slots.mounts(names);
+        const mounts: SheetChrome = slots.mounts(names);
+        const key = stylesheets === undefined ? '' : JSON.stringify(stylesheets);
+        if (dressed?.mounts === mounts && dressed.key === key) return dressed.chrome;
+        const chrome: SheetChrome = stylesheets === undefined ? mounts : { ...mounts, stylesheets };
+        dressed = { mounts, key, chrome };
+        return chrome;
     };
     // The Consumer's buttons' contents, which .NET draws from their markup: each the same function from one update to
     // the next, as the Sheet asks, so a content standing is not drawn again.

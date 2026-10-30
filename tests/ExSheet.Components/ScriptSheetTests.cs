@@ -14,10 +14,10 @@ using Xunit;
 namespace ExSheet.Components.Tests;
 
 /// <summary>
-/// ADR-0370 section 1: Blazor's ExSheet over the Script Core. The Razor component's parameters cross with its defaults;
+/// ADR-0370 section 1: Blazor's ExSheet over the Script Core. The component's parameters cross with their defaults;
 /// a document crosses as the JSON both engines read, and one the Sheet raised, bound back two ways, crosses no more;
-/// the Sheet's events reach the Consumer's handlers as the Razor component raises them; a refusal in the browser is
-/// thrown in .NET as the Razor component throws it, and what else the engine threw as the C# engine throws it; an edit,
+/// the Sheet's events reach the Consumer's handlers in the order raised; a refusal in the browser is thrown in .NET as
+/// <see cref="SheetRefusedException"/>, and what else the engine threw as the C# engine throws it; an edit,
 /// a Cell Format change and a Linked Table's rows cross as <see cref="SheetWire"/> writes them; and <c>CommandLabel</c>,
 /// a .NET function, crosses as the words it answers.
 /// </summary>
@@ -69,15 +69,15 @@ public class ScriptSheetTests : BunitContext
         documentsSent,
     }));
 
-    [Fact] // ADR-0370 section 1: the Razor component's defaults cross, and only the handlers the Consumer bound are heard
-    public void ADR0370_the_attach_carries_the_razor_components_defaults_and_the_handlers_bound()
+    [Fact] // ADR-0370 section 1: the component's defaults cross, and only the handlers the Consumer bound are heard
+    public void ADR0370_the_attach_carries_the_components_defaults_and_the_handlers_bound()
     {
         Sheet(ps => ps.Add(p => p.Culture, CultureInfo.GetCultureInfo("ja-JP")).Add(p => p.DocumentChanged, (SheetDocument _) => { }));
 
         var attach = Attach();
         var options = attach.GetProperty("options");
         Assert.Equal("ja-JP", options.GetProperty("locale").GetString());
-        Assert.Equal(Components.ExSheet.DefaultRowHeightPx, options.GetProperty("rowHeight").GetDouble());
+        Assert.Equal(global::ExSheet.Script.ExSheet.DefaultRowHeightPx, options.GetProperty("rowHeight").GetDouble());
         Assert.Equal(600, options.GetProperty("viewportHeight").GetDouble());
         Assert.Equal(800, options.GetProperty("viewportWidth").GetDouble());
         Assert.True(options.GetProperty("showSheetTabs").GetBoolean());
@@ -390,7 +390,7 @@ public class ScriptSheetTests : BunitContext
     private static JsonElement Held(int held, string json)
         => Parsed(JsonSerializer.Serialize(new { held, bytes = System.Text.Encoding.UTF8.GetByteCount(json) }));
 
-    [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as the Razor component throws it
+    [Fact] // ADR-0048, ADR-0071: a command answers as the browser's Sheet did, and its refusal is thrown as a SheetRefusedException
     public async Task ADR0048_a_refusal_in_the_browser_is_thrown_as_a_SheetRefusedException()
     {
         var cut = Sheet();
@@ -513,7 +513,7 @@ public class ScriptSheetTests : BunitContext
         })));
         Assert.False(asked);
 
-        // While an edit is open the read is refused, before the change is asked for, as on the Razor component.
+        // While an edit is open the read is refused, before the change is asked for.
         _sheet.Setup<JsonElement>("readFocusFormat").SetResult(Parsed("""{"refused":{"reason":"editIsOpen","message":"Finish the edit first."}}"""));
         var refused = await Assert.ThrowsAsync<SheetRefusedException>(() => cut.InvokeAsync(() => cut.Instance.SetCellFormatFromFocusAsync(_ =>
         {
@@ -525,7 +525,7 @@ public class ScriptSheetTests : BunitContext
         Assert.Empty(_sheet.Invocations["setCellFormatFrom"]);
     }
 
-    [Fact] // ADR-0130, ADR-0048, ADR-0071, ADR-0331: the Sheet's events reach the handlers as the Razor component raises them
+    [Fact] // ADR-0130, ADR-0048, ADR-0071, ADR-0331: the Sheet's events reach the handlers in the order the Sheet raises them
     public async Task ADR0370_the_sheets_events_reach_the_handlers()
     {
         SummaryFigures? figures = null;
@@ -654,21 +654,16 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(SheetWire.WriteRows([Read(new Keyed("R-1"))]), $"[{inBrowser.TableRow(new Keyed("R-1"))}]");
     }
 
-    [Fact] // ADR-0430 section 3: a Scope holding a Razor grid refuses a Script Sheet, and one holding a Script Sheet a Razor grid
-    public void ADR0430_a_Scope_of_both_kinds_is_refused_by_name()
+    [Fact] // ADR-0430: a Scope is held in the browser: a Sheet and a grid drawn by the Script Core join it, and a Razor ExGrid is refused by name
+    public void ADR0430_a_Razor_grid_is_refused_by_name()
     {
-        var razor = new PointingScope();
-        var razorGrid = razor.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
+        var scope = new PointingScope();
+        var grid = scope.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
             ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
-        razorGrid.Take(inBrowser: false);
-        var thrown = Assert.Throws<InvalidOperationException>(() => Sheet(ps => ps.Add(p => p.PointingScope, razor)));
-        Assert.Contains("a Sheet drawn by the Script Core cannot join it", thrown.Message, StringComparison.Ordinal);
+        Sheet(ps => ps.Add(p => p.PointingScope, scope));
+        grid.Take(inBrowser: true);
 
-        var script = new PointingScope();
-        var scriptGrid = script.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
-            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
-        Sheet(ps => ps.Add(p => p.PointingScope, script));
-        thrown = Assert.Throws<InvalidOperationException>(() => scriptGrid.Take(inBrowser: false));
+        var thrown = Assert.Throws<InvalidOperationException>(() => grid.Take(inBrowser: false));
         Assert.Contains("a Razor ExGrid cannot join it", thrown.Message, StringComparison.Ordinal);
     }
 
@@ -848,7 +843,7 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal("Nothing to review.", update.GetProperty("options").GetProperty("toolbar")[1].GetProperty("items")[0].GetProperty("disabledReason").GetString());
     }
 
-    [Fact] // ADR-0100: a button inside a component of the Consumer's that renders on its own reaches the browser, as the Razor component's item redraws itself
+    [Fact] // ADR-0100: a button inside a component of the Consumer's that renders on its own reaches the browser, as it renders on its own
     public async Task ADR0100_a_toolbar_button_rendered_by_a_consumers_component_alone_crosses_again()
     {
         var cut = Render<ScriptSheetSupport.ScriptSheetWithOwnButtons>();
@@ -901,24 +896,5 @@ public class ScriptSheetTests : BunitContext
         Assert.Null(_sheet.Invocations["save"][^1].Arguments[1]);
         answers.SetResult(Parsed("""{"done":null}"""));
         await saving;
-    }
-
-    /// <summary>A Toolbar Item of the Consumer's own, which the Script Core has no counterpart for.</summary>
-    private sealed class OwnItem : ToolbarItemBase
-    {
-        protected override ToolbarItemFace Face() => new(ToolbarItemKind.Button, "Own", ToolbarIcon.None);
-
-        protected override Task PressAsync() => Task.CompletedTask;
-    }
-
-    [Fact] // ADR-0100, the spine's first rule: an item of the Consumer's own is refused by name, never left out
-    public void ADR0100_a_toolbar_item_of_the_consumers_own_is_refused_on_the_script_sheet()
-    {
-        var refused = Assert.Throws<InvalidOperationException>(() => Sheet(ps => ps.Add(p => p.ToolbarContent, toolbar =>
-        {
-            toolbar.OpenComponent<OwnItem>(0);
-            toolbar.CloseComponent();
-        })));
-        Assert.Contains("OwnItem is a Toolbar Item of its own", refused.Message);
     }
 }

@@ -19,9 +19,9 @@ public static class DemoChrome
     public static bool IsMud(string? name) => name == "mud";
 
     /// <summary>
-    /// Whether a sheet page draws the Razor components, as <c>?component=</c> asks, in place of Blazor's components
-    /// over the Script Core (ADR-0370 step 2): <c>razor</c> asks for them, and <c>script</c> or nothing for the Script
-    /// ones, under either Chrome.
+    /// Whether a page draws the Razor ExGrid, as <c>?component=</c> asks, in place of Blazor's ExGrid over the Script
+    /// Core (ADR-0370 step 2): <c>razor</c> asks for it, and <c>script</c> or nothing for the Script one, under either
+    /// Chrome.
     /// </summary>
     /// <exception cref="ArgumentException">The component is none of these.</exception>
     public static bool DrawsRazor(string? component) => component switch

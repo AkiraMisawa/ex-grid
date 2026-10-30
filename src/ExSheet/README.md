@@ -26,7 +26,7 @@ computes, ExGrid paints, selects, navigates and reports.
 ## Showing a Sheet
 
 ```razor
-@using ExSheet.Components
+@using ExSheet.Script
 @using ExSheet.Engine
 
 <ExSheet @bind-Document="_document" ViewportHeight="480" ViewportWidth="900" />
@@ -274,11 +274,11 @@ await sheet.SetCellFormatAsync(new CellFormatChange
     Bold = true,
     Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Thin)),
 });
-var shown = sheet.CellFormatAt(CellAddress.Parse("A1"));   // cell over row over column
+var shown = await sheet.CellFormatAtAsync(CellAddress.Parse("A1"));   // cell over row over column
 ```
 
 A Cell Format set on a selection of whole columns or whole rows is recorded on the columns or
-rows, one entry each, as Excel records it, and `CellFormatAt` answers what a cell shows, part by
+rows, one entry each, as Excel records it, and `CellFormatAtAsync` answers what a cell shows, part by
 part from the cell, its row or its column. Its borders are the edges as shown, which read the same
 from the cell on either side: where both cells record a line on an edge, the upper cell's is shown,
 or the left cell's for a vertical edge. It is a read, and answers while an edit is open.
@@ -344,14 +344,14 @@ own button, and is refused while an edit is open:
 <button disabled="@_editing" @onclick="() => _sheet!.OpenFormatCellsAsync()">Format Cells…</button>
 ```
 
-Under the built-in Chrome it is a popover inside the Sheet's box, which scrolls when the box is
-small. A Chrome that implements `ISheetChrome` draws it in a frame of its own — a page-level
-dialog — from a `FormatCellsContext`: what ExSheet offers is in `FormatCellsOffer`, and the
-context's `FormatCellsDraft` holds what the dialog opens on and what OK sets, so every Chrome sets
-the same parts. Such a Chrome calls the context's `ReturnKeyboard` once its frame has closed.
-In a MudBlazor application, [ExSheet.MudBlazor](https://www.nuget.org/packages/ExSheet.MudBlazor)'s
-`MudSheetChrome` is that Chrome: Format Cells as a `MudDialog`, and ExGrid.MudBlazor's controls in
-the grid.
+It is a popover inside the Sheet's box, which scrolls when the box is small, under every Chrome:
+where it stands, Escape, a press elsewhere, Tab wrapping inside it and the keyboard back on the grid
+as it closes are the grid's. A Chrome that implements `ISheetChrome` and names
+`SheetScriptSlots.FormatCells` draws its contents in Razor from a `SheetFormatCellsView`, every tab's
+controls marked with `SheetScriptSlotAttributes` and no handler of their own; what ExSheet offers is
+in `FormatCellsOffer`, so every Chrome sets the same parts. In a MudBlazor application,
+[ExSheet.MudBlazor](https://www.nuget.org/packages/ExSheet.MudBlazor)'s `MudSheetChrome` is that
+Chrome: Format Cells in MudBlazor's controls, and ExGrid.MudBlazor's controls in the grid.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
@@ -415,18 +415,17 @@ that collide at one level are refused when the toolbar renders. ExSheet's items 
 `CommaItem`, `FormatCellsItem` and `ToolbarSeparator`.
 
 - **The look is the Chrome's.** The built-in Chrome draws plain buttons with inline-SVG pictures.
-  `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements
-  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`. A list
-  of its own opens when `OpenRequest` changes and takes the keyboard through `TakeKeyboard`; drawn
-  outside the Sheet, it joins the Sheet's Input Order through `JoinSurface`, and it puts its keys and
-  presses in their turn through `InOrder`. Closing — a choice, Escape — it calls `ChoicesClosed` in that
-  input's turn with the choice, and the toolbar makes it and takes the keyboard on; the Sheet holds the
-  keys typed meanwhile. It closes without calling `ChoicesClosed` when `CloseRequest` changes, unless it
-  already held the keyboard.
-- **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
-  `SheetToolbarContext` and acts through the Sheet's public commands.
-  `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell
-  Format, as a toggle needs, and it widens a column as the formatting keys do.
+  `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements `ISheetChrome`, names
+  `SheetScriptSlots.ToolbarItem` and draws each item in Razor from its `SheetToolbarItemView`: its
+  kind, name, tooltip, whether it is pressed and why it is disabled, and a list's choices in the rows
+  its keys walk. It marks its controls with `SheetScriptSlotAttributes` and carries no handler of its
+  own: the Sheet's script presses the item, opens and closes the list, answers its keys and keeps the
+  keyboard on the Sheet, in the browser, with nothing waiting on the circuit.
+- **A button of your own** is a `ToolbarButton`: its `OnClick` is yours, and it acts through the
+  Sheet's public commands. `SetCellFormatFromFocusAsync` is the command for a change made from the
+  Focus cell's Cell Format, as a toggle needs, and it widens a column as the formatting keys do.
+  ExSheet's own items only declare where they stand, and an item cannot be derived from
+  `ToolbarItemBase`.
 
 ## More
 

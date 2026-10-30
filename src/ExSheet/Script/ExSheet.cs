@@ -24,12 +24,10 @@ namespace ExSheet.Script;
 /// in the browser, on both hosting models.
 /// </summary>
 /// <remarks>
-/// <para>Its parameters are the Razor component's (<see cref="Components.ExSheet"/>), under the same names and with the
-/// same defaults, so a page moves to it by its type alone. It stands beside the Razor component until ExSheet's Blazor
-/// step holds (ADR-0370 section 11).</para>
+/// <para>It replaced the Razor component drawn in .NET, under the same parameter names and defaults (ADR-0370 section 6,
+/// step 3).</para>
 /// <para>Not carried yet, and so not offered: the Sheet Tabs' menu and the find panel of an
-/// <see cref="ISheetChrome"/>. What the Razor component answers at once is asked of
-/// the browser here, so it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>;
+/// <see cref="ISheetChrome"/>. What the Sheet knows is in the browser, so asking it is awaited: <see cref="CellFormatAtAsync(CellAddress)"/> and <see cref="LinkedTablesAsync"/>;
 /// and <see cref="SetCellFormatFromFocusAsync"/>, which reads the Focus cell in one round trip and sets its change in
 /// another, refuses a change whose Selection moved between them.</para>
 /// </remarks>
@@ -80,11 +78,13 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 
     /// <summary>Every row's height, in pixels (ADR-0013/0046); a height at which Excel's rows do not fit under the
     /// browser's scroll ceiling is refused by name (SH-3).</summary>
-    [Parameter] public double RowHeight { get; set; } = Components.ExSheet.DefaultRowHeightPx;
+    [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
+
+    /// <summary>Every row's height, in pixels, when <see cref="RowHeight"/> is not given: Excel's at 100% zoom.</summary>
+    public const double DefaultRowHeightPx = 28;
 
     // What a Wrapper's paper hands down (ADR-0030): the cells are painted in its font, so the Sheet measures its columns
-    // and decides what fits in that font's widths, at its Density, as the Razor component does. Private, as the Razor
-    // component's is: a cascade a Consumer never writes.
+    // and decides what fits in that font's widths, at its Density. Private: a cascade a Consumer never writes.
     [CascadingParameter] private GridPresentationDefaults? Presentation { get; set; }
 
     /// <summary>The outer height of the sheet, the Formula Bar, the toolbar and the Sheet Tabs included.</summary>
@@ -114,17 +114,17 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<bool> ShowToolbarChanged { get; set; }
 
     /// <summary>
-    /// What the Sheet Toolbar holds, in order (ADR-0100), declared as on the Razor component: <see cref="ToolbarRow"/>s
+    /// What the Sheet Toolbar holds, in order (ADR-0100), declared as components: <see cref="ToolbarRow"/>s
     /// of ExSheet's Toolbar Items and the Consumer's <see cref="ToolbarButton"/>s, <see cref="DefaultToolbarRow"/>, or
     /// Toolbar Items alone, which are one row. The Script Core draws them; a button's <c>OnClick</c> runs in its place in
     /// the Sheet's Input Order, and its <c>ChildContent</c> is drawn beside the Sheet's root and moved into the button.
     /// Null shows the default row.
     /// </summary>
-    /// <remarks>A Toolbar Item of the Consumer's own, derived from <see cref="ToolbarItemBase"/>, is refused: the Script
-    /// Core has no such item. So is a KeyTip on one of ExSheet's items, which carry Excel's, and a row without a
-    /// <see cref="ToolbarRow.Label"/>. <see cref="OpenAsync"/> and <see cref="SaveAsync"/> called from a button's
-    /// <c>OnClick</c> run inside the press, as part of it, as on the Razor component. A button's <c>GivesKeyboardBack</c>
-    /// needs nothing here: the keyboard goes back to the Sheet before <c>OnClick</c> runs, so what it opens takes it.</remarks>
+    /// <remarks>A KeyTip on one of ExSheet's items, which carry Excel's, is refused, and so is a row without a
+    /// <see cref="ToolbarRow.Label"/>; an item of the Consumer's own is a <see cref="ToolbarButton"/>, since
+    /// <see cref="ToolbarItemBase"/> cannot be derived. <see cref="OpenAsync"/> and <see cref="SaveAsync"/> called from a button's
+    /// <c>OnClick</c> run inside the press, as part of it. The keyboard goes back to the Sheet before <c>OnClick</c>
+    /// runs, so what it opens takes it.</remarks>
     [Parameter] public RenderFragment? ToolbarContent { get; set; }
 
     /// <summary>The Selection Summary's figures (ADR-0130): Excel's Average, Count and Sum by default. The Sheet holds
@@ -138,7 +138,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<SummaryFigures> SummaryFiguresChanged { get; set; }
 
     /// <summary>The Selection Summary as it now stands (ADR-0130), for an application that shows the figures
-    /// elsewhere. The Sheet in the browser answers it, as the Razor component's Sheet does.</summary>
+    /// elsewhere. The Sheet in the browser answers it.</summary>
     [Parameter] public EventCallback<SelectionSummary> OnSelectionSummaryChanged { get; set; }
 
     /// <summary>Raised whenever the grid's Selection changes, as ExGrid raises it (ADR-0011/0014).</summary>
@@ -164,8 +164,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback<SheetRefusal> OnFormatKeyRefused { get; set; }
 
     /// <summary>
-    /// The Pointing Scope this Sheet belongs to (ADR-0058), or null — the default — for none: the same object the Razor
-    /// component takes, held for the components drawn by the Script Core in the browser, which decides there what a press
+    /// The Pointing Scope this Sheet belongs to (ADR-0058), or null — the default — for none, held for the components drawn by the Script Core in the browser, which decides there what a press
     /// on a registered grid writes (ADR-0430). While this Sheet holds the keyboard, has an edit open and is in Point, the
     /// grids registered in the Scope and drawn by the Script Core (<c>ExGrid.Script.ExGrid</c>, given their
     /// declaration as <c>PointedAt</c>) are pointed at: a press on a cell writes <c>XLOOKUP(&lt;key&gt;,
@@ -173,19 +172,18 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <c>T[&lt;column&gt;]</c>; after it, the arrow keys point inside the grid pressed. A press that stands for anything
     /// else writes nothing, and is told through <see cref="OnPointingRefused"/>.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The Scope holds Razor components (ADR-0430).</exception>
     [Parameter] public PointingScope? PointingScope { get; set; }
 
     /// <summary>
     /// Tells the Consumer that a press on a grid of <see cref="PointingScope"/>, or an arrow key after one, wrote
-    /// nothing into the Formula being edited, and why (ADR-0058), as the Razor component tells it. ExSheet shows nothing
+    /// nothing into the Formula being edited, and why (ADR-0058). ExSheet shows nothing
     /// of it itself: show the <see cref="PointingRefusal.Message"/> where the page tells its user things.
     /// </summary>
     [Parameter] public EventCallback<PointingRefusal> OnPointingRefused { get; set; }
 
     /// <summary>
     /// Tells the Consumer each Linked Table column the Formula being edited reads, and the colour its References wear
-    /// in the editor (ADR-0057, ADR-0049), as the Razor component tells it: each column once, in order of first
+    /// in the editor (ADR-0057, ADR-0049): each column once, in order of first
     /// appearance, under the names the Consumer declared, whenever that list changes, and an empty list when the edit
     /// ends. A <see cref="PointingScope"/> outlines the columns in its own grids; for any other grid, pass the list to
     /// the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), which the colour was handed out for
@@ -198,8 +196,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <see cref="IGridChrome.ScriptSlots"/> names, such as the Context Menu, and, for an <see cref="ISheetChrome"/>, each
     /// of the Sheet's own its <see cref="ISheetChrome.SheetScriptSlots"/> names, such as the Toolbar Items, is drawn by
     /// its view overload, rendered beside the Sheet's root and moved into the slot by the script, which wires its
-    /// controls. The find panel stays the Sheet's own, with Within (ADR-0332 section 5), as it does under the Razor
-    /// component. Null — the default — leaves every part the Script Core's own.
+    /// controls. The find panel stays the Sheet's own, with Within (ADR-0332 section 5). Null — the default — leaves every part the Script Core's own.
     /// </summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
 
@@ -313,7 +310,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         }
         if (!ReferenceEquals(PointingScope, _claimedScope))
         {
-            // Refused by name if it holds the Razor components, before the browser is told of it (ADR-0430).
+            // Named to the Scope before the browser is told of it (ADR-0430).
             PointingScope?.Claim(inBrowser: true, "a Sheet drawn by the Script Core");
             _claimedScope = PointingScope;
         }
@@ -352,7 +349,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             _documentOwed = false;
             return;
         }
-        // Null after a document opens an empty Sheet, as the Razor component does.
+        // Null after a document opens an empty Sheet.
         _documentJson = JsonOf(document);
         _documentOwed = true;
     }
@@ -669,6 +666,19 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
                 json.WriteStringValue(name);
             json.WriteEndArray();
         }
+        // The stylesheets the Chrome brings, whose notices the Sheet's grid renders beside ExGrid's own (ADR-0123, ERR-11).
+        if (Chrome?.Stylesheets is { Count: > 0 } stylesheets)
+        {
+            json.WriteStartArray("stylesheets");
+            foreach (var stylesheet in stylesheets)
+            {
+                json.WriteStartObject();
+                json.WriteString("name", stylesheet.Name);
+                json.WriteString("stamp", stylesheet.Stamp);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
         json.WriteStartArray("hears");
         if (WorkbookChanged.HasDelegate)
             json.WriteStringValue("workbookChanged");
@@ -729,7 +739,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             result.ValueKind == JsonValueKind.Null ? null : SummaryResultOf(result));
     }
 
-    // The Sheet's columns by their ids, A to XFD, as the Razor component's grid names them: made the first time a
+    // The Sheet's columns by their ids, A to XFD, as the Sheet's grid names them: made the first time a
     // summary is heard, and only then.
     private static IReadOnlyList<string>? _letters;
 
@@ -790,9 +800,8 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// The Consumer's <see cref="ToolbarButton"/> numbered <paramref name="number"/> was pressed (ADR-0100): its
-    /// <c>OnClick</c> runs, and the Sheet's inputs made after the press wait until it has, as on the Razor component
-    /// (ADR-0240 section 6). A refusal of a command it runs is said in the Sheet's notice, as the Razor component's
-    /// toolbar says one; anything else it throws fails the component, as a handler's exception does. A button gone since
+    /// <c>OnClick</c> runs, and the Sheet's inputs made after the press wait until it has (ADR-0240 section 6). A
+    /// refusal of a command it runs is said in the Sheet's notice; anything else it throws fails the component, as a handler's exception does. A button gone since
     /// the press does nothing. The browser numbers the press <paramref name="press"/>: a file the <c>OnClick</c> opens
     /// or saves is opened or saved inside the press's turn, as part of it.
     /// </summary>
@@ -811,8 +820,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// The number of this Sheet's press whose <c>OnClick</c> the caller runs in, while it runs, or null: work placed in
-    /// the browser's Input Order from there runs inside the press's turn, as part of it, as on the Razor component
-    /// (ADR-0240 section 6), where its own place would wait for the press it belongs to.
+    /// the browser's Input Order from there runs inside the press's turn, as part of it (ADR-0240 section 6), where its own place would wait for the press it belongs to.
     /// </summary>
     private int? PressCalledFrom() =>
         PressingOn.Value is { Ended: false } press && ReferenceEquals(press.Sheet, this) ? press.Number : null;
@@ -1030,8 +1038,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo stack, in its place in the
     /// order (ADR-0048), and raises <see cref="DocumentChanged"/>. It names no Sheet, so it is taken only while the
     /// Workbook holds one; with several, name the Sheet with <see cref="DoAsync(string, SheetEdit)"/> (ADR-0331 §6).
-    /// The edit crosses to the browser as <see cref="SheetWire"/> writes it, and the Sheet there does it as the Razor
-    /// component's would.
+    /// The edit crosses to the browser as <see cref="SheetWire"/> writes it, and the Sheet there does it.
     /// </summary>
     /// <exception cref="SheetRefusedException">The Sheet refuses the operation, an edit is open
     /// (<see cref="IsEditing"/>), or the Workbook holds several Sheets
@@ -1061,7 +1068,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <summary>
     /// Sets the parts of a Cell Format that <paramref name="change"/> names on the Selection as the grid holds it when
     /// the command runs, as one operation on the undo stack, and widens as the formatting keys do (ADR-0071, ADR-0048):
-    /// what the Razor component's <c>SetCellFormatAsync</c> does, done by the Sheet in the browser. Answers false when
+    /// done by the Sheet in the browser. Answers false when
     /// nothing is selected.
     /// </summary>
     /// <exception cref="ArgumentException">The change sets no part of a Cell Format.</exception>
@@ -1076,7 +1083,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <summary>
     /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the command runs, as a
     /// toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is not bold, off over one that is. It
-    /// widens as Excel's Home tab buttons do, as the Razor component's <c>SetCellFormatFromFocusAsync</c> does. Answers
+    /// widens as Excel's Home tab buttons do. Answers
     /// false when nothing is selected, and then <paramref name="change"/> is not called.
     /// </summary>
     /// <remarks>
@@ -1198,8 +1205,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     }
 
     /// <summary>
-    /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049), as the Razor
-    /// component's <c>DeclareLinkedTableAsync</c> does: Formulas naming it show <c>#GETTING_DATA</c> until the first
+    /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049): Formulas naming it show <c>#GETTING_DATA</c> until the first
     /// snapshot is pushed, and the declaration is recorded in the Sheet Document. It is the Consumer's data, not a
     /// user's operation, so it is no step on the undo stack.
     /// </summary>
@@ -1227,8 +1233,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     }
 
     /// <summary>
-    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049), as the Razor component's
-    /// <c>PushLinkedTableAsync</c> does: no recalculation sees part of one snapshot and part of another, nothing is
+    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no recalculation sees part of one snapshot and part of another, nothing is
     /// raised through <see cref="DocumentChanged"/>, and nothing goes on the undo stack. The rows cross to the browser
     /// as <see cref="SheetWire.WriteRows"/> writes them.
     /// </summary>
@@ -1270,8 +1275,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private async Task<bool> CommandAsync(string command) => (await AnswerAsync(command)).GetBoolean();
 
     // A command, in its place behind the parameters sent before it: the browser takes the calls in the order they are
-    // made. A refusal, and what else the Sheet threw at the caller, cross as data, and are thrown here as the Razor
-    // component's engine throws them.
+    // made. A refusal, and what else the Sheet threw at the caller, cross as data, and are thrown here as the engine threw them.
     private async Task<JsonElement> AnswerAsync(string command, params object?[] args)
     {
         var sheet = await ReadyAsync();

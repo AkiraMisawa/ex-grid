@@ -191,6 +191,7 @@ function writeStylesheetRecord(product, file, drawer, extra = []) {
 // ExGrid's stylesheet is shared, so the core renders the same notice with the same stamp the C# core does.
 writeStylesheetRecord('ExGrid', 'src/npm/core/src/dom/shipped-stylesheet.ts', 'grid');
 writeStylesheetRecord('ExPivot', 'src/npm/pivot/src/shipped-stylesheet.ts', 'pivot');
+writeStylesheetRecord('ExSheet', 'src/npm/sheet/src/shipped-stylesheet.ts', 'sheet');
 // ExChart's also carries the minified text a saved SVG holds inside it, since a file has no page to take it from
 // (ADR-0282).
 {

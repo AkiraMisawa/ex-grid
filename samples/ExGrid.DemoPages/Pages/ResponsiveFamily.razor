@@ -20,8 +20,8 @@
 </DemoChromeAssets>
 <DemoNav />
 @* Each product is Blazor's component over the Script Core (ExGrid.Script.ExGrid, ExSheet.Script.ExSheet,
-   ExPivot.Script.ExPivot; ADR-0370 step 2), and ?component=razor draws the grid and the Sheet with the Razor
-   components instead, which still ship. *@
+   ExPivot.Script.ExPivot; ADR-0370 step 2), and ?component=razor draws the grid with the Razor ExGrid instead,
+   which still ships. *@
 <h1>Responsive family — the report keeps its meaning</h1>
 <p>Parent-only widths model a phone portrait, phone landscape and narrow desktop panel.
     The browser window stays unchanged. This page checks container sizing, not mobile gestures.</p>
@@ -83,13 +83,12 @@
                        OnColumnWidthChanged="WidthChanged" OnColumnOrderChanged="OrderChanged" OnPinnedCountChanged="PinnedChanged" />,
     };
 
-    // ?component=razor: the grid and the Sheet drawn by the Razor components; the pivot is the Script one either way.
+    // ?component=razor: the grid drawn by the Razor ExGrid. The Sheet and the pivot have no Razor component now, and are
+    // refused by name rather than drawn by the Script one under a name that says otherwise.
     private RenderFragment RazorView => Product switch
     {
-        "sheet" => @<ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
-                            Chrome="@(DemoChrome.IsMud(ChromeName) ? MudSheetChrome.Default : null)"
-                            Culture="Culture" ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
-        "pivot" => ScriptView,
+        "sheet" or "pivot" => throw new ArgumentException(
+            $"?component=razor draws the grid alone: the {Product} has no Razor component (ADR-0370 step 3).", nameof(Component)),
         _ => @<ExGrid.Components.ExGrid TRow="PreciseRow" Window="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
                        Chrome="@(DemoChrome.IsMud(ChromeName) ? _gridChrome : null)" RowHeight="24"
                        ViewportWidth="ViewportSize.Stretch" ViewportHeight="280"

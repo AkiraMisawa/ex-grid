@@ -1,66 +1,17 @@
-using ExSheet.Components;
-using ExSheet.Engine;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
 
 namespace ExSheet;
 
 /// <summary>
-/// What a Toolbar Item says about itself, before the Sheet Toolbar adds what is the toolbar's — its
-/// id, whether an edit is open, where the keyboard is (ADR-0100).
-/// </summary>
-/// <param name="Kind">What kind of control it is.</param>
-/// <param name="Name">Its name, as Excel names it.</param>
-/// <param name="Icon">The picture it shows.</param>
-public sealed record ToolbarItemFace(ToolbarItemKind Kind, string Name, ToolbarIcon Icon)
-{
-    /// <summary>The key that does the same, such as <c>Ctrl+B</c>; null for none.</summary>
-    public string? Shortcut { get; init; }
-
-    /// <summary>The text it shows; null for none.</summary>
-    public string? Text { get; init; }
-
-    /// <summary>For a toggle, whether the Focus cell has it.</summary>
-    public bool Pressed { get; init; }
-
-    /// <summary>Why it cannot be pressed even with no edit open; null when it can.</summary>
-    public string? DisabledReason { get; init; }
-
-    /// <summary>The choices of a menu or a split control.</summary>
-    public IReadOnlyList<ToolbarChoice> Choices { get; init; } = [];
-
-    /// <summary>For a colour control, the colour its face applies.</summary>
-    public CellColour? Colour { get; init; }
-
-    /// <summary>A Consumer item's own content.</summary>
-    public RenderFragment? Content { get; init; }
-}
-
-/// <summary>
-/// A Toolbar Item (ADR-0100): one element of a Toolbar Row, which declares what it means and leaves
-/// how it looks to the Chrome. It stands inside an ExSheet's <c>ToolbarContent</c>, reads the Sheet
-/// through the cascaded <see cref="SheetToolbarContext"/>, and acts through the Sheet's public
-/// commands only. While an edit is open it cannot be pressed.
+/// A Toolbar Item (ADR-0100): one element of a Toolbar Row, which declares what it is and leaves what it does and how
+/// it looks to the Sheet. It stands inside an ExSheet's <c>ToolbarContent</c> and declares itself there, in markup
+/// order; the Script Core draws it and answers its presses, and the Chrome dresses it. It draws nothing itself. The
+/// items are ExSheet's own, a <see cref="ToolbarSeparator"/> and the Consumer's <see cref="ToolbarButton"/>: the Script
+/// Core has no other.
 /// </summary>
 public abstract class ToolbarItemBase : ComponentBase, IDisposable
 {
-    private SheetToolbarContext? _joined;
-    private ToolbarItemContext? _drawn;
-    private int _openRequest;
-    // The opening the last close request closed (ToolbarItemContext.CloseRequest), and whether the
-    // item's choices may be open from the keyboard since: an opening was asked for, and neither the
-    // Chrome has said its list closed nor the toolbar has asked for it to close.
-    private int _closeRequest;
-    private bool _choicesMayBeOpen;
-    private Func<Task>? _invoke;
-    private Func<ToolbarChoice?, bool, Task>? _choicesClosed;
-    private Func<ElementReference, Task>? _takeKeyboard;
-    // Whether the Chrome drew the item, the last render: its list, then, is the Chrome's own.
-    private bool _drawnByChrome;
-    private string? _id;
-
-    /// <summary>The Sheet Toolbar this item stands in.</summary>
-    [CascadingParameter] public SheetToolbarContext? Toolbar { get; set; }
+    private protected ToolbarItemBase() { }
 
     /// <summary>The Toolbar Row this item stands in; null for an item of a toolbar that declares no rows.</summary>
     [CascadingParameter] public ToolbarRow? Row { get; set; }
@@ -72,122 +23,14 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <summary>Where the item stands on the toolbar, in markup order.</summary>
     internal ToolbarOrder Place { get; private set; } = new();
 
-    /// <summary>The Script ExSheet's toolbar, where the item declares itself in place of drawing anything; null on the
-    /// Razor component's. Internal, as its type is (ADR-0201).</summary>
+    /// <summary>The ExSheet's toolbar, where the item declares itself. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
 
     /// <summary>
-    /// The item's KeyTip letters (ADR-0100). ExSheet's own items carry Excel's; a Consumer's item
-    /// carries only what the Consumer declares here, and none otherwise.
+    /// The item's KeyTip letters (ADR-0100): a <see cref="ToolbarButton"/>'s only, which carries one when it is declared
+    /// here and none otherwise. ExSheet's own items carry Excel's, and refuse another.
     /// </summary>
     [Parameter] public string? KeyTip { get; set; }
-
-    /// <summary>The toolbar, which every item has: an item outside an ExSheet's <c>ToolbarContent</c> is refused.</summary>
-    protected SheetToolbarContext Context => Toolbar
-        ?? throw new InvalidOperationException($"{GetType().Name} is a Toolbar Item: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
-
-    /// <summary>An input of this item's — its button's click — in its place in the Sheet's Input Order
-    /// (ADR-0240 section 6).</summary>
-    internal Task InOrderAsync(global::ExGrid.Chrome.GridInputKind kind, Func<Task> handling) => Context.InOrderAsync(kind, handling);
-
-    /// <summary>What the item is and shows now.</summary>
-    protected abstract ToolbarItemFace Face();
-
-    /// <summary>What pressing the item does: for a split control, its face. A menu opens its choices instead.</summary>
-    protected abstract Task PressAsync();
-
-    /// <summary>The item's KeyTip when the Consumer declared none: Excel's, for ExSheet's own items.</summary>
-    protected virtual string? DefaultKeyTip => null;
-
-    /// <summary>Whether a press from the toolbar's keys gives the keyboard back to the Sheet afterwards (ADR-0100).</summary>
-    protected virtual bool ReturnsKeyboard => true;
-
-    /// <summary>The KeyTip the item answers to.</summary>
-    internal string? KeyTipLetters => KeyTip ?? DefaultKeyTip;
-
-    internal bool IsSeparator => Face().Kind == ToolbarItemKind.Separator;
-
-    internal bool CanPress => !IsSeparator && Describe().Enabled;
-
-    /// <summary>The item as the Chrome is told it.</summary>
-    internal ToolbarItemContext Describe()
-    {
-        var context = Context;
-        var face = Face();
-        var disabledReason = context.IsEditing ? SheetWords.ToolbarWhileEditing : face.DisabledReason;
-        _id ??= context.NextId();
-        _invoke ??= () => Face().Kind == ToolbarItemKind.Menu ? OpenChoicesAsync() : Context.RunAsync(PressAsync);
-        _choicesClosed ??= (choice, escaped) =>
-        {
-            _choicesMayBeOpen = false;
-            return Context.ListClosedAsync(this, choice, escaped);
-        };
-        _takeKeyboard ??= control => Context.ListTakesKeyboardAsync(this, control);
-        return new ToolbarItemContext(
-            _id, face.Kind, face.Name, face.Shortcut, face.Icon, face.Text, face.Pressed,
-            Enabled: face.Kind != ToolbarItemKind.Separator && disabledReason is null,
-            disabledReason, _invoke, face.Choices, face.Colour,
-            Active: ReferenceEquals(context.Active, this), _openRequest, _closeRequest, _choicesClosed, face.Content,
-            KeyTipLetters, ShowKeyTip: context.ShowsKeyTip(this))
-        {
-            InOrder = context.InOrderSeam,
-            TakeKeyboard = _takeKeyboard,
-            JoinSurface = context.JoinSurfaceSeam,
-        };
-    }
-
-    /// <summary>A press from the toolbar's keys (ADR-0100): a menu or a split control's arrow opens its
-    /// choices; anything else runs, and the keyboard goes back to the Sheet.</summary>
-    internal async Task PressFromKeyboardAsync(bool openChoices, bool fromKeyTip = false)
-    {
-        var face = Face();
-        if (face.Kind == ToolbarItemKind.Separator || !Describe().Enabled) return;
-        if (openChoices && !fromKeyTip && face.Kind is not (ToolbarItemKind.Menu or ToolbarItemKind.Split)) return;
-        if (face.Kind == ToolbarItemKind.Menu || (openChoices && face.Kind == ToolbarItemKind.Split))
-        {
-            // Opened from a KeyTip, Escape goes back to the KeyTips (ADR-0100's note of 2026-10-12).
-            Context.KeyTipList = fromKeyTip ? this : null;
-            // The keys typed on the toolbar until the list holds the keyboard are the list's (decided
-            // with the user, 2026-10-13): held from now.
-            Context.ListOpening(this, _drawnByChrome);
-            _openRequest++;
-            _choicesMayBeOpen = true;
-            StateHasChanged();
-            return;
-        }
-        await Context.RunAsync(PressAsync);
-        if (ReturnsKeyboard) await Context.ReturnKeyboardAsync();
-    }
-
-    /// <summary>Opens the item's choices in the Sheet's built-in frame.</summary>
-    internal Task OpenChoicesAsync() => Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
-
-    /// <summary>
-    /// Opens the item's choices in the Sheet's built-in frame for the toolbar's keys (<see cref="ToolbarItemContext.OpenRequest"/>):
-    /// the keys the toolbar held meanwhile go to the grid, which hands them to the list once it holds the
-    /// keyboard (decided with the user, 2026-10-13).
-    /// </summary>
-    internal async Task OpenChoicesFromKeyboardAsync()
-    {
-        var opened = await Context.OpenChoicesOfAsync(this, Face().Name, Face().Choices);
-        await Context.ListOpenedInGridAsync(this, opened);
-    }
-
-    /// <summary>Closes the item's choices in the Sheet's built-in frame, if they are what it shows.</summary>
-    internal Task CloseChoicesAsync() => Context.CloseChoicesAsync(Face().Name);
-
-    /// <summary>
-    /// The toolbar is taking the keyboard back (ADR-0100's note of 2026-10-12): choices that may be
-    /// open from the keyboard are asked to close, so a list on its way does not take the keyboard
-    /// from the Sheet after it.
-    /// </summary>
-    internal void RequestCloseOfChoices()
-    {
-        if (!_choicesMayBeOpen) return;
-        _choicesMayBeOpen = false;
-        _closeRequest = _openRequest;
-        StateHasChanged();
-    }
 
     /// <inheritdoc />
     protected override void OnInitialized() => Place = Order?.Next() ?? Place;
@@ -195,54 +38,18 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        if (Script is { } script)
-        {
-            script.Join(this);
-            return;
-        }
-        var context = Context;
-        if (ReferenceEquals(context, _joined)) return;
-        if (_joined is { } previous)
-        {
-            previous.Changed -= OnToolbarChanged;
-            previous.Leave(this);
-        }
-        _joined = context;
-        context.Join(this);
-        context.Changed += OnToolbarChanged;
-        context.RefuseCollidingKeyTips();
+        var script = Script
+            ?? throw new InvalidOperationException($"{GetType().Name} is a Toolbar Item: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
+        script.Join(this);
     }
 
     /// <inheritdoc />
-    protected override bool ShouldRender() => Script is null && !Describe().Equals(_drawn);
-
-    /// <inheritdoc />
-    protected override void BuildRenderTree(RenderTreeBuilder builder)
-    {
-        // Declared to the Script ExSheet's toolbar, which the Script Core draws.
-        if (Script is not null)
-            return;
-        var drawn = Describe();
-        _drawn = drawn;
-        var chromes = Context.Chrome?.ToolbarItem(drawn);
-        _drawnByChrome = chromes is not null;
-        builder.AddContent(0, chromes ?? BuiltInToolbarItem.Draw(drawn, this));
-    }
-
-    private void OnToolbarChanged()
-    {
-        if (!Describe().Equals(_drawn)) _ = InvokeAsync(StateHasChanged);
-    }
+    protected override bool ShouldRender() => false;
 
     /// <inheritdoc />
     public void Dispose()
     {
         Script?.Leave(this);
-        if (_joined is { } joined)
-        {
-            joined.Changed -= OnToolbarChanged;
-            joined.Leave(this);
-        }
         GC.SuppressFinalize(this);
     }
 }

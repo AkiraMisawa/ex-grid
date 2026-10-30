@@ -2,16 +2,19 @@
 @using ExSheet.Script
 @using ExSheet.Engine
 
-@* Your own Chrome's toolbar lists, drawn beside the Sheet and on its seam (OwnListChrome). *@
-<div style="display: flex; gap: 12px; align-items: flex-start">
-    <div style="flex: 1 1 auto; min-width: 0">
-        <ExSheet @bind-Document="_document" ShowToolbar="true" Chrome="_chrome"
-                 ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
-    </div>
-    <div style="flex: 0 0 200px">
-        <OwnListPanel Chrome="_chrome" />
-    </div>
-</div>
+@* Your own Chrome's Toolbar Items, drawn in Razor from each item's view (OwnListChrome). *@
+<style>
+    .own-item { display: inline-flex; gap: 2px; }
+    .own-item button { font: inherit; font-size: 12px; padding: 2px 6px; }
+    .own-list { background: #fff; border: 1px solid #888; padding: 4px 0; max-height: 240px; overflow: auto; font-size: 12px; }
+    .own-choice { padding: 2px 10px; cursor: default; white-space: nowrap; }
+    .own-choice[aria-checked="true"] { font-weight: 600; }
+    .own-choice:focus { outline: 2px solid #1a73e8; outline-offset: -2px; }
+    .own-swatches { display: grid; grid-template-columns: repeat(10, 14px); gap: 2px; padding: 4px 10px; }
+    .own-swatch { width: 14px; height: 14px; border: 1px solid #888; box-sizing: border-box; }
+    .own-swatch[aria-checked="true"], .own-swatch:focus { outline: 2px solid #1a73e8; }
+</style>
+<ExSheet @bind-Document="_document" ShowToolbar="true" Chrome="_chrome" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
 
 @code {
     private readonly OwnListChrome _chrome = new();

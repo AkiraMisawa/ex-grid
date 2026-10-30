@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using global::MudBlazor.Services;
 using ExGrid;
 using ExGrid.Chrome;
 using ExGrid.Finding;
@@ -20,8 +22,14 @@ namespace ExSheet.MudBlazor.Tests;
 /// its Chrome is ExGrid.MudBlazor's in every seam of the grid, so the Sheet's grid looks and behaves
 /// under it as under <see cref="MudGridChrome"/>.
 /// </summary>
-public class MudSheetPackageTests : MudSheetTestContext
+public class MudSheetPackageTests : BunitContext
 {
+    public MudSheetPackageTests()
+    {
+        Services.AddMudServices();
+        JSInterop.Mode = JSRuntimeMode.Loose;
+    }
+
     private static readonly string[] ScriptExtensions = [".js", ".mjs", ".cjs"];
 
     // The types a component needs to call into JavaScript or to be called from it. FocusAsync is
@@ -206,13 +214,5 @@ public class MudSheetPackageTests : MudSheetTestContext
         Assert.Equal(grid.Stylesheets, worded.Stylesheets);
         Assert.Equal("Format Cells…", worded.Label!(SheetCommandIds.FormatCells));
         Assert.Same(grid, new MudSheetChrome { Grid = grid }.Grid);
-    }
-
-    [Fact] // ADR-0071 / ADR-0030: under MudSheetChrome the Sheet's grid wears ExGrid.MudBlazor's controls — the Name Box is the Wrapper's
-    public void The_sheets_grid_wears_the_wrappers_controls()
-    {
-        var page = RenderPage();
-
-        Assert.NotEmpty(page.FindAll(".ex-name-box .mud-ex-name-box"));
     }
 }

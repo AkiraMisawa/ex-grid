@@ -24,11 +24,11 @@ test.beforeEach(async ({ page }) => {
 
 // Reopens /sheet under ExGrid.MudBlazor's Chrome, drawn by `component` where one is named; the built-in one is what
 // beforeEach opened.
-async function underChrome(page, chrome, component = undefined) {
+async function underChrome(page, chrome) {
     if (chrome === 'builtin') {
         return;
     }
-    await page.goto(component === undefined ? `/sheet?chrome=${chrome}` : `/sheet?chrome=${chrome}&component=${component}`);
+    await page.goto(`/sheet?chrome=${chrome}`);
     await expect(page.locator('#demo-interactive')).toBeAttached({ timeout: 30_000 });
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     await expect(page.locator('.mud-ex-formula-bar-text, .mud-ex-name-box').first()).toBeAttached();
@@ -294,45 +294,6 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(editor(grid)).toHaveCount(0);
     });
 }
-
-// A page that loses the Wrapper's shape: the Chrome's fields are then the browser's own inputs, with
-// a ground of their own and not the core's box's width. The core makes a shown field see-through,
-// so the layer's text shows, in colour, over the ground the core's box paints, rather than nothing
-// at all (ADR-0057, "The Wrapper's shape is required…"). /sheet?chrome=mud has the shape; taking
-// the paper's class away takes every rule of mud-ex-grid.css with it. The Razor component's: over the Script Core the
-// Wrapper leaves the Sheet the core's Cell Editor, which colours its References itself (ADR-0410).
-test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell Editor's text still shows, in the layer's colours", async ({ page }) => {
-    await underChrome(page, 'mud', 'razor');
-    await alterPage(page, () => {
-        const paper = document.querySelector('.mud-ex-grid:has(.ex-formula-bar)');
-        paper.classList.remove('mud-ex-grid');
-        return () => paper.classList.add('mud-ex-grid');
-    });
-    const grid = sheet(page);
-    await pressCell(grid, 'F3');
-    await page.keyboard.type('=A1+B2');
-
-    await expectColoured(editor(grid), '=A1+B2');
-    // spec-lint: early-read: expectColoured above waits by expect.poll for the typed text's colours; the lint cannot see into the file's own helper
-    const grounds = await editor(grid).evaluate((input) => ({
-        field: getComputedStyle(input).backgroundColor,
-        box: getComputedStyle(input.closest('.ex-editor')).backgroundColor,
-    }));
-    expect(grounds.field).toBe(TRANSPARENT);
-    expect(grounds.box).not.toBe(TRANSPARENT);
-    // What is seen is the layer's text, through the field: hiding the layer takes it away.
-    const box = editor(grid).locator('xpath=..');
-    await alterPage(page, () => {
-        const style = document.createElement('style');
-        style.textContent = '[data-layer="hidden"] .ex-reference-text { visibility: hidden !important; }';
-        document.head.append(style);
-        return () => style.remove();
-    });
-    const { shown, hidden } = await stillPictures(box, { mark: 'data-layer', ways: ['shown', 'hidden'] });
-    expect(pixelsApart(shown, hidden, 96).apart, 'pixels the layer puts in the Cell Editor').toBeGreaterThan(20);
-    await page.keyboard.press('Escape');
-    await expect(editor(grid)).toHaveCount(0);
-});
 
 // ---------------------------------------------------------------------------------------------
 // The Reference Point is writing, shown selected (ADR-0051; ADR-0057, "What cases 24–32 settled")

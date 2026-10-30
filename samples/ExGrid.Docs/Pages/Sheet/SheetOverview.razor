@@ -48,8 +48,8 @@
         </ul>
         <p>
             ExSheet ships in three packages: <code>ExSheet</code> (the component), <code>ExSheet.Engine</code>
-            (the Formula engine, with no UI and no dependency) and <code>ExSheet.MudBlazor</code> (Format Cells
-            as a <code>MudDialog</code>, and ExGrid.MudBlazor's controls in the grid). ExSheet is a prerelease:
+            (the Formula engine, with no UI and no dependency) and <code>ExSheet.MudBlazor</code> (the toolbar,
+            the Sheet Tabs and Format Cells in MudBlazor's controls, and ExGrid.MudBlazor's controls in the grid). ExSheet is a prerelease:
             its API may change between versions.
         </p>
         <p>
@@ -136,11 +136,13 @@
     <DocsSection Title="A sheet drawn in the browser">
         <p>
             Blazor's ExSheet runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
-            this site draws <code>ExSheet.Script.ExSheet</code>, and the Razor component
-            <code>ExSheet.Components.ExSheet</code> stays in the package only until it is removed in this release. The
+            this site draws <code>ExSheet.Script.ExSheet</code>, which replaced the Razor component
+            <code>ExSheet.Components.ExSheet</code> in this release. The
             Workbook, its Formulas, the Formula Bar, the Sheet Tabs and the status-bar figures run in the browser on
             both hosting models, so on Blazor Server a key typed into a cell no longer crosses the circuit. It takes
-            the parameters above under the same names and defaults, so a page moves to it by its type. The documents
+            the parameters above under the same names and defaults, so a page moves to it by its type
+            (<code>@@using ExSheet.Script</code>); its reads cross to the browser, so they are
+            <code>ToDocumentAsync</code>, <code>CellFormatAtAsync</code> and <code>LinkedTablesAsync</code>. The documents
             cross as the JSON both engines read and write: <code>Document</code> or <code>Workbook</code> goes to the
             browser when you hand over one of your own, and each change comes back through <code>DocumentChanged</code>
             and <code>WorkbookChanged</code>; one it raised, bound back two ways, crosses no more.

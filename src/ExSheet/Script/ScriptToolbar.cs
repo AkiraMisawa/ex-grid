@@ -3,10 +3,9 @@ using System.Text.Json;
 namespace ExSheet.Script;
 
 /// <summary>
-/// A <c>ToolbarContent</c> as the Script ExSheet carries it (ADR-0100, ADR-0370 step 2): the same components the Razor
-/// component's toolbar is declared with — <see cref="ToolbarRow"/>s, <see cref="DefaultToolbarRow"/>, ExSheet's Toolbar
+/// A <c>ToolbarContent</c> as the ExSheet carries it (ADR-0100, ADR-0370 step 2): <see cref="ToolbarRow"/>s, <see cref="DefaultToolbarRow"/>, ExSheet's Toolbar
 /// Items, <see cref="ToolbarSeparator"/>s and the Consumer's <see cref="ToolbarButton"/>s — each declaring itself here,
-/// in markup order, in place of drawing anything. The Script Core draws the toolbar from what they declare, sent as its
+/// in markup order, drawing nothing. The Script Core draws the toolbar from what they declare, sent as its
 /// <c>toolbar</c> option; a press on a button comes back by the number given here. Cascaded by the Script ExSheet to
 /// its <c>ToolbarContent</c> only.
 /// </summary>
@@ -32,7 +31,7 @@ internal sealed class ScriptToolbar
     };
 
     /// <summary>The KeyTip of the one row the items stand in when they stand in no <see cref="ToolbarRow"/>: Excel's
-    /// Home, as the Razor component's.</summary>
+    /// Home.</summary>
     private const string ImplicitRowKeyTip = "H";
 
     private readonly Action _changed;
@@ -92,18 +91,10 @@ internal sealed class ScriptToolbar
                 _numbered[_nextButton] = button;
             }
         }
-        else if (item is not ToolbarSeparator)
+        else if (item is not ToolbarSeparator && item.KeyTip is not null)
         {
-            if (!Commands.ContainsKey(item.GetType()))
-            {
-                throw new InvalidOperationException(
-                    $"{item.GetType().Name} is a Toolbar Item of its own, which the Script Core cannot carry: the toolbar of ExSheet.Script.ExSheet holds ExSheet's items and ToolbarButtons (ADR-0100).");
-            }
-            if (item.KeyTip is not null)
-            {
-                throw new InvalidOperationException(
-                    $"{item.GetType().Name} carries Excel's KeyTip on ExSheet.Script.ExSheet, and takes no other: a KeyTip of the Consumer's is a ToolbarButton's (ADR-0100).");
-            }
+            throw new InvalidOperationException(
+                $"{item.GetType().Name} carries Excel's KeyTip, and takes no other: a KeyTip of the Consumer's is a ToolbarButton's (ADR-0100).");
         }
         _items.Add(item);
         _changed();
@@ -123,8 +114,7 @@ internal sealed class ScriptToolbar
 
     /// <summary>The toolbar as the Script Core's <c>toolbar</c> option reads it: its rows in markup order, the default
     /// row as <c>default</c>, and each run of items that stand in no row as a row of its own, named as the default row
-    /// is. Such a row answers to Excel's Home, H, only on a toolbar that declares no other row, as the Razor component's
-    /// does.</summary>
+    /// is. Such a row answers to Excel's Home, H, only on a toolbar that declares no other row.</summary>
     internal void Write(Utf8JsonWriter json)
     {
         var looseKeyTip = _rows.Count == 0 && _defaults.Count == 0 ? ImplicitRowKeyTip : null;

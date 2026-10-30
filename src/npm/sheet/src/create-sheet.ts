@@ -13,7 +13,7 @@ import {
     type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize, type GridCommand, type GridContextMenuContext, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
-    type SelectionSummary, type SummaryFigure,
+    type SelectionSummary, type SummaryFigure, builtInCommandLabel, reloadNoticeLabelIds,
 } from '@ex-grid/core';
 import {
     BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
@@ -33,6 +33,7 @@ import { readNameBoxPlace } from './name-box-text';
 import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel, type SheetTabCommand, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
+import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
 import type { SheetToolbarContent, SheetToolbarItemSlot } from './sheet-toolbar-slot';
 import { mountedSlot, type SheetFormatCellsSlot, type SheetFormatCellsSlotContext, type SheetTabAddSlot, type SheetTabSlot } from './sheet-chrome-slots';
@@ -591,6 +592,9 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
 class SheetView {
     readonly #element: HTMLElement;
     readonly #gridElement: HTMLElement;
+    // ExSheet's stylesheet's notice (ADR-0123, ERR-11), last in the root, as the Razor component drew it: shown by a stylesheet of another version,
+    // hidden by its own, with no script. The Sheet's grid draws ExGrid's, and the Chrome's beside it.
+    readonly #stylesheetNotice: HTMLElement;
     readonly #toolbar: SheetToolbar;
     readonly #tabs: SheetTabs;
     readonly #notice: HTMLElement;
@@ -698,6 +702,12 @@ class SheetView {
 
         element.classList.add('ex-sheet');
         element.setAttribute('data-ex-input-root', '');
+        this.#stylesheetNotice = document.createElement('div');
+        this.#stylesheetNotice.setAttribute('data-ex-notice', 'stylesheet');
+        this.#stylesheetNotice.setAttribute('data-ex-stylesheet', stylesheetName);
+        this.#stylesheetNotice.setAttribute('data-ex-stamp', stylesheetStamp);
+        this.#stylesheetNotice.style.display = 'none';
+        this.#wordStylesheetNotice();
         this.#gridElement = document.createElement('div');
         this.#notice = document.createElement('div');
         this.#notice.className = 'ex-sheet-notice';
@@ -738,7 +748,7 @@ class SheetView {
             },
             opening: () => { this.#chromeListsOver = this.#grid?.readView().selection; },
         });
-        element.replaceChildren(this.#gridElement, this.#notice);
+        element.replaceChildren(this.#gridElement, this.#notice, this.#stylesheetNotice);
         element.addEventListener('focusout', this.#onSheetFocusOut);
         element.addEventListener('pointerdown', this.#forgetAlt, { capture: true });
         element.addEventListener('wheel', this.#forgetAlt, { capture: true, passive: true });
@@ -785,7 +795,10 @@ class SheetView {
         }
         const wordsMoved = next.label !== this.#options.label || next.japanese !== this.#options.japanese;
         if (wordsMoved) this.#words = new SheetWords({ japanese: next.japanese, label: next.label });
-        if (wordsMoved || next.commandLabel !== this.#options.commandLabel) this.#commandLabel = SheetView.#commandLabelOf(this.#words, next.commandLabel);
+        if (wordsMoved || next.commandLabel !== this.#options.commandLabel) {
+            this.#commandLabel = SheetView.#commandLabelOf(this.#words, next.commandLabel);
+            this.#wordStylesheetNotice();
+        }
         const seedBefore = this.#options.seed;
         const previous = this.#options;
         this.#options = next;
@@ -1285,6 +1298,8 @@ class SheetView {
                 const slot = chrome?.[name];
                 if (slot !== undefined) slots[name] = slot;
             }
+            // The stylesheets the Chrome brings, whose notices the grid renders beside ExGrid's own (ADR-0123, ERR-11).
+            if (chrome?.stylesheets !== undefined) slots['stylesheets'] = chrome.stylesheets;
             // The grid's slots, each checked a function by #checked.
             this.#gridChromeOf = { given: chrome, made: slots };
         }
@@ -2469,6 +2484,13 @@ class SheetView {
     // only then.
     #commandLabel: (id: string) => string | undefined;
 
+    // The stylesheet's notice says the Consumer's words where its commandLabel has some, as the grid's does.
+    #wordStylesheetNotice(): void {
+        const id = reloadNoticeLabelIds.stylesheet;
+        const words = this.#commandLabel(id) ?? builtInCommandLabel(id);
+        if (this.#stylesheetNotice.textContent !== words) this.#stylesheetNotice.textContent = words;
+    }
+
     static #commandLabelOf(words: SheetWords, consumer: ((id: string) => string | undefined) | undefined): (id: string) => string | undefined {
         if (consumer === undefined) return id => sheetCommandWord(words, id);
         return id => {
@@ -3200,6 +3222,8 @@ class SheetView {
             if (typeof chrome !== 'object' || chrome === null) throw new TypeError("A Sheet's chrome is an object of Chrome slots, each a mount function (ADR-0390).");
             const names: readonly string[] = [...sheetSlotNames, ...gridChromeSlotNames];
             for (const [name, slot] of Object.entries(chrome)) {
+                // The stylesheets the Chrome brings are the grid's to check, as it renders their notices (ADR-0123).
+                if (name === 'stylesheets') continue;
                 if (!names.includes(name)) throw new TypeError(`A Sheet's chrome has no slot '${name}': its slots are ${names.join(', ')} (ADR-0390).`);
                 if (slot !== undefined && typeof slot !== 'function') throw new TypeError(`chrome.${name} is a mount function (ADR-0390).`);
             }

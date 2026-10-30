@@ -6,7 +6,7 @@ using Microsoft.JSInterop;
 namespace ExSheet.Script;
 
 /// <summary>
-/// Opening and saving a file in the Input Order (ADR-0330 §10), as the Razor component does: the Sheet in the browser
+/// Opening and saving a file in the Input Order (ADR-0330 §10): the Sheet in the browser
 /// places the opening or the save among its inputs, and calls back into .NET for the read, or for the write, in its
 /// turn. The application's read and write run here, in .NET, where the application's file formats live; what crosses
 /// is a Workbook Document, and for a save the Workbook's state beside it, so that the Workbook .NET writes shows the
@@ -36,16 +36,14 @@ public sealed partial class ExSheet
 
     /// <summary>
     /// Replaces the Workbook with the Workbook Document <paramref name="read"/> answers, taken at this call's place in
-    /// the Input Order of the Sheet in the browser, as the Razor component's <see cref="Components.ExSheet.OpenAsync"/>
-    /// does (ADR-0330 §10): the inputs made before it are taken against the Workbook they were made on, and those made
+    /// the Input Order of the Sheet in the browser (ADR-0330 §10): the inputs made before it are taken against the Workbook they were made on, and those made
     /// after it wait until the document arrives. <paramref name="read"/> runs in .NET, in the opening's turn; a plain
     /// Escape typed in the Sheet while the opening shows cancels its token, and the Workbook stays as it was. An edit
     /// still open in the opening's turn refuses it by name, and nothing is read. When the document arrives it replaces
     /// the whole Workbook: the undo stack is cleared, the Linked Tables declared are gone with it, and
     /// <see cref="WorkbookChanged"/> (and <see cref="DocumentChanged"/> while it holds one Sheet) is raised with the
     /// Workbook opened, as the Sheet's other changes are, after the opening ends. Called from a <see cref="ToolbarButton"/>'s
-    /// <c>OnClick</c>, the opening takes place inside the press, as part of it, as on the Razor component (ADR-0240
-    /// section 6): the inputs made after the press wait until both have ended.
+    /// <c>OnClick</c>, the opening takes place inside the press, as part of it (ADR-0240 section 6): the inputs made after the press wait until both have ended.
     /// </summary>
     /// <param name="read">Reads the document, looking at the token as it goes; a read that sees it cancelled ends in
     /// <see cref="OperationCanceledException"/>.</param>
@@ -90,8 +88,7 @@ public sealed partial class ExSheet
     }
 
     /// <summary>
-    /// Saves the Workbook at this call's place in the Input Order of the Sheet in the browser, as the Razor component's
-    /// <see cref="Components.ExSheet.SaveAsync"/> does (ADR-0330 §10): <paramref name="write"/> is handed the Workbook
+    /// Saves the Workbook at this call's place in the Input Order of the Sheet in the browser (ADR-0330 §10): <paramref name="write"/> is handed the Workbook
     /// as the inputs made before the call left it — every Sheet with its Values as the browser shows them, its Cell
     /// Formats and widths, and the rows each Linked Table holds. The Workbook is .NET's copy of the browser's, made for
     /// this call: the Workbook Document, each Linked Table's rows, the seed, the count of changes, the Sheet Day and

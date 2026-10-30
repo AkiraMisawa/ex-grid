@@ -22,8 +22,8 @@
             <li>
                 <b><code>DocumentChanged</code> is raised while the Workbook holds one Sheet</b>, so a page bound to
                 <code>Document</code> works as it always has. Once it holds several, a Sheet Document cannot say what
-                it holds: <code>DocumentChanged</code> stops, <code>ToDocument()</code> throws, and
-                <code>WorkbookChanged</code> and <code>ToWorkbookDocument()</code> carry the Workbook.
+                it holds: <code>DocumentChanged</code> stops, <code>ToDocumentAsync()</code> throws, and
+                <code>WorkbookChanged</code> and <code>ToWorkbookDocumentAsync()</code> carry the Workbook.
             </li>
             <li>
                 <b>A Formula reads another Sheet by naming it</b>, <code>=Claim!D7</code> or
@@ -119,8 +119,8 @@
     <DocsSection Title="Commands name their Sheet">
         <p>
             A command from your code says which Sheet it acts on: <code>DoAsync("Claim", edit)</code> does the edit on
-            Claim whether Claim is shown or not, and <code>CellFormatAt("Claim", address)</code> reads a cell there.
-            While the Workbook holds one Sheet, <code>DoAsync(edit)</code> and <code>CellFormatAt(address)</code> act on
+            Claim whether Claim is shown or not, and <code>CellFormatAtAsync("Claim", address)</code> reads a cell there.
+            While the Workbook holds one Sheet, <code>DoAsync(edit)</code> and <code>CellFormatAtAsync(address)</code> act on
             it as they always have. Once it holds several they are refused with
             <code>SheetRefusalReason.SheetNotNamed</code> and change nothing: taken against the Sheet shown, what they
             did would depend on whether the user's press on a tab reached the component first. Under React the ref's
@@ -218,10 +218,11 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 added or shown, back in the grid.
             </li>
             <li>
-                <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the tabs' names, the <code>+</code> button and
-                the menu are drawn in MudBlazor's controls; what each press does is ExSheet's under either Chrome. A Chrome
-                of your own draws them through <code>ISheetChrome.SheetTab</code>, <code>SheetTabAdd</code> and
-                <code>SheetTabMenu</code>.
+                <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the tabs' names and the <code>+</code> button
+                are drawn in MudBlazor's controls; what each press does is ExSheet's under either Chrome. A Chrome of your
+                own draws them through <code>ISheetChrome.SheetTab</code> and <code>SheetTabAdd</code>, naming
+                <code>SheetScriptSlots.SheetTab</code> and <code>SheetTabAdd</code>. The tab's menu is ExSheet's own
+                under every Chrome.
             </li>
         </ul>
         <ul>
@@ -305,16 +306,9 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 mark never shows a match a step does not reach.
             </li>
             <li>
-                <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the panel is ExGrid.MudBlazor's, Within two
-                <code>MudButton</code>s, the chosen one filled. A Chrome of your own draws it through <code>ISheetChrome.SheetFindPanel</code>,
-                which is handed a <code>SheetFindContext</code>: the grid's <code>FindContext</code>, Within and its
-                callback, and the outcome in words. Within's callback is a click in the grid's Input Order, as are
-                Match case's and Match entire cell contents' (<code>FindContext.MatchCaseChanged</code> and
-                <code>WholeCellChanged</code>): call each from its handler as it starts and return the task it gives,
-                on a control that claims its click with <code>data-ex-claims="click"</code> — the checkbox itself, not
-                a label around it — so a step clicked after it searches where and how it says. Its words are <code>SheetFindLabelIds</code>, translated through
-                <code>CommandLabel</code> or the Chrome's own. A Chrome that draws no Sheet panel gets the built-in one; the
-                grid's own <code>IGridChrome.FindPanel</code> is not asked on a Sheet.
+                <b>The panel is ExSheet's own under every Chrome</b>, dressed by its Visual Tokens: a Chrome draws no
+                Sheet panel, and the grid's own <code>IGridChrome.FindPanel</code> is not asked on a Sheet. Its words
+                are <code>SheetFindLabelIds</code>, translated through <code>CommandLabel</code>.
             </li>
             <li>
                 <b>Under React</b> <code>ExSheet</code> draws the same panel, Within included, with the same classes, and
@@ -336,12 +330,9 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
     </DocsSection>
 
     <DocsSection Title="API">
-        <ApiTable Type="typeof(global::ExSheet.SheetFindContext)" />
         <ApiTable Type="typeof(global::ExSheet.SheetFindLabelIds)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookDocument)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookChange)" />
         <ApiTable Type="typeof(global::ExSheet.SheetsChange)" />
-        <ApiTable Type="typeof(global::ExSheet.SheetTabMenuContext)" />
-        <ApiTable Type="typeof(global::ExSheet.SheetTabCommand)" />
     </DocsSection>
 </DocsPage>

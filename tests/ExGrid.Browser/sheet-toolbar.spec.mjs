@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip, holdAnswers, circuitQuiet, alterPage, settled } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth, CIRCUIT_SHEET } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
 import { resolvedColour } from './pixels.mjs';
@@ -36,11 +36,10 @@ function activeItemName(page) {
 
 /**
  * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover;
- * MudBlazor's, over the Script Core, the Wrapper's list the adapter's script shows (ADR-0410), drawn
- * closed inside every item, and, in the Razor component a circuit's specs open, an open MudPopover.
+ * MudBlazor's, the Wrapper's list the adapter's script shows (ADR-0410), drawn closed inside every item.
  */
 function openLists(page) {
-    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden]), .mud-popover-open .mud-ex-sheet-toolbar-choices');
+    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden])');
 }
 
 /** Format Cells: the grid's popover under either Chrome, over the Script Core (ADR-0410). */
@@ -772,9 +771,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await keyTips(page, 'h', 'h');
@@ -925,9 +921,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             const landed = await watchWhereKeysLand(page);
@@ -1017,9 +1010,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'h');

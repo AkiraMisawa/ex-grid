@@ -2,10 +2,10 @@
 
 [ExSheet](https://www.nuget.org/packages/ExSheet) inside a MudBlazor application:
 
-- **`MudSheetChrome`** — ExSheet's Format Cells drawn as a `MudDialog`, with MudBlazor's colour
-  picker for More Colours, and every seam of the grid filled by
+- **`MudSheetChrome`** — ExSheet's toolbar, Sheet Tabs and Format Cells drawn in MudBlazor's
+  controls, and every seam of the grid filled by
   [ExGrid.MudBlazor](https://www.nuget.org/packages/ExGrid.MudBlazor)'s `MudGridChrome`.
-- **`mud-ex-sheet.css`** — lays out the dialog's contents and draws the palette in MudBlazor's
+- **`mud-ex-sheet.css`** — lays out Format Cells' contents and draws the palette in MudBlazor's
   palette variables.
 
 What Format Cells offers and what OK sets do not change with the Chrome: ExSheet decides the tabs,
@@ -33,9 +33,8 @@ unless the application treats it as an error). Set MudBlazor up as usual:
 
 - `builder.Services.AddMudServices()`
 - MudBlazor's stylesheet and script
-- `<MudThemeProvider />`, `<MudPopoverProvider />` and `<MudDialogProvider />` in your layout.
-  Format Cells is a `MudDialog`; without a dialog provider it is refused by name when it first
-  opens.
+- `<MudThemeProvider />` and `<MudPopoverProvider />` in your layout. Format Cells stands in the
+  grid's own popover, so it needs no dialog provider.
 
 Then add the stylesheets, ExGrid's and ExSheet's as for any Sheet, and the two MudBlazor ones, as
 components in the head: in `App.razor`'s `<head>` in a Blazor Web App, or as root components in a
@@ -52,7 +51,7 @@ builder.RootComponents.Add<ExSheet.MudBlazor.MudExSheetStylesheet>("head::after"
 
 ```razor
 @using ExGrid.MudBlazor
-@using ExSheet.Components
+@using ExSheet.Script
 @using ExSheet.Engine
 @using ExSheet.MudBlazor
 

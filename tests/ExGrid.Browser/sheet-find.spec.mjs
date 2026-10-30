@@ -3,11 +3,10 @@ import { sheet, cell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Find and Replace on a Sheet with real keys (ADR-0332 §2, §4, §5; find-and-replace ticket 04), on
-// /workbook under both Chromes: ExSheet draws the find panel itself, with Within — the Sheet shown, the
+// /workbook: ExSheet draws the find panel itself, under either Chrome (ADR-0410), with Within — the Sheet shown, the
 // default, or the Workbook. Within the Workbook, a step past the last match of the Sheet shown goes on to
 // the next Sheet, shows it and selects the match there, marked as the current one; Replace All writes every
-// Sheet as one undo step and says the count. The built-in panel and ExSheet.MudBlazor's must give the same
-// outcomes (the spine's fourth rule).
+// Sheet as one undo step and says the count.
 //
 // The page's Workbook: Claim (A1 Item, A2 Flights, A3 "Hotel, nights", A4 Taxis, A5 Total; D2:D5
 // Formulas; A41:A200 "Row N") and Summary (A1 Claimed, B1 =Claim!D5, A2 Travel, B2 =Claim!D2+Claim!D4).
@@ -17,31 +16,22 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 const CURRENT = /(^|\s)ex-match-mark-current(\s|$)/;
 
 for (const chrome of ['builtin', 'mud']) {
-    test.describe(`ADR-0332 Find and Replace on a Sheet (${chrome === 'mud' ? 'mud, the Razor component' : chrome})`, () => {
-        const parts = chrome === 'mud'
-            ? {
-                withinSheet: 'button.mud-ex-sheet-find-within-sheet',
-                withinWorkbook: 'button.mud-ex-sheet-find-within-workbook',
-                replaceField: '.mud-ex-grid-find-replace-field input',
-                replaceAll: 'button.mud-ex-grid-find-replace-all',
-                outcome: '.mud-ex-grid-find-outcome',
-            }
-            : {
-                withinSheet: 'input.ex-sheet-find-within-sheet',
-                withinWorkbook: 'input.ex-sheet-find-within-workbook',
-                replaceField: 'input.ex-find-replace-field',
-                replaceAll: 'button.ex-find-replace-all',
-                outcome: '.ex-find-outcome',
-            };
+    test.describe(`ADR-0332 Find and Replace on a Sheet (${chrome})`, () => {
+        const parts = {
+            withinSheet: 'input.ex-sheet-find-within-sheet',
+            withinWorkbook: 'input.ex-sheet-find-within-workbook',
+            replaceField: 'input.ex-find-replace-field',
+            replaceAll: 'button.ex-find-replace-all',
+            outcome: '.ex-find-outcome',
+        };
 
         const tab = (page, name) => page.locator('.ex-sheet-tab', { hasText: name });
         const panel = (page) => sheet(page).locator('.ex-popover-find');
         const findField = (page) => panel(page).locator('input').first();
 
         async function openWorkbook(page) {
-            // The Wrapper's find panel is the Razor component's: over the Script Core the Sheet keeps its own, with
-            // Within, under either Chrome (ADR-0410), which the built-in case judges.
-            await page.goto(chrome === 'builtin' ? '/workbook' : `/workbook?chrome=${chrome}&component=razor`);
+            // The Sheet keeps its own find panel, with Within, under either Chrome (ADR-0410).
+            await page.goto(chrome === 'builtin' ? '/workbook' : '/workbook?chrome=mud');
             await expect(cell(sheet(page), 'A1')).toHaveText('Item');
             await clickCell(sheet(page), 'A1');
             await expectFocusAt(sheet(page), 'A1');
@@ -58,10 +48,9 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(findField(page)).toBeFocused();
         }
 
-        /** Whether a Within choice is the chosen one: a radio input checked, or a MudButton with aria-checked. */
+        /** Whether a Within choice is the chosen one: its radio input checked. */
         async function expectChosen(locator) {
-            if (chrome === 'mud') await expect(locator).toHaveAttribute('aria-checked', 'true');
-            else await expect(locator).toBeChecked();
+            await expect(locator).toBeChecked();
         }
 
         /**

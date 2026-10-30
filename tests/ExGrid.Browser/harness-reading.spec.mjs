@@ -10,39 +10,37 @@ import { blend, offDevicePixels, onDeviceGrid, paints, pixelsApart, stillPicture
 // would have been wrong without it.
 
 const sheetGrid = (page) => page.locator('.ex-grid').first();
-const nameBox = (page) => sheetGrid(page).locator('input.ex-name-box');
+// A button of the page's own whose label .NET renders: on the Server host a press on it is answered a round trip later.
+const scopeSwitch = (page) => page.locator('#sheet-scope-switch');
 
-// The Razor component: its keys are answered across the circuit, which the test needs, where ExSheet over the Script
-// Core answers them in the browser (sheet-helpers.mjs, CIRCUIT_SHEET).
 async function openSheet(page) {
-    await page.goto('/sheet?component=razor');
+    await page.goto('/sheet?scope=switch');
     await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
-    // Cells are pointer-events: none — the Viewport is the delegated target (ADR-0004).
-    await sheetGrid(page).locator("[id$='-r0c5']").click({ force: true });
-    await expect(nameBox(page)).toHaveValue('F1');
+    await expect(scopeSwitch(page)).toHaveText('Leave the Pointing Scope');
 }
 
 test('circuitQuiet returns once the Server host has answered, so what it decided is there to read at once', async ({ page }) => {
     await openSheet(page);
     await setRoundTrip(300);
 
-    await page.keyboard.press('ArrowDown');
-    // spec-lint: early-read: early on purpose: the test shows the Name Box has not yet moved here, and that circuitQuiet is what makes the later read safe
-    const early = await nameBox(page).inputValue();
+    await scopeSwitch(page).click();
+    // spec-lint: early-read: early on purpose: the test shows the label has not yet changed here, and that circuitQuiet is what makes the later read safe
+    const early = await scopeSwitch(page).textContent();
     const started = Date.now();
     await circuitQuiet();
     const waited = Date.now() - started;
 
     if (SERVER) {
-        // Read at once, the move had not come back: it is the host's, a round trip away.
-        expect(early, 'the Name Box straight after the key').toBe('F1');
+        // Read at once, the press had not come back: its answer is the host's, a round trip away.
+        expect(early, 'the label straight after the press').toBe('Leave the Pointing Scope');
         expect(waited, 'circuitQuiet waited out the round trip').toBeGreaterThanOrEqual(300);
         // One reading, no retry: the answer is in the DOM.
-        expect(await nameBox(page).inputValue(), 'the Name Box once the circuit is quiet').toBe('F2');
+        expect(await scopeSwitch(page).textContent(), 'the label once the circuit is quiet').toBe('Join the Pointing Scope');
     } else {
         expect(waited, 'no wire to wait for on WebAssembly').toBeLessThan(50);
-        await expect(nameBox(page)).toHaveValue('F2');
+        await expect(scopeSwitch(page)).toHaveText('Join the Pointing Scope');
     }
+    await setRoundTrip(0);
 });
 
 test('circuitQuiet refuses a window the keep-alive pings could keep from ever being met', async () => {

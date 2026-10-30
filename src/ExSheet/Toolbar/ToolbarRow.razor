@@ -1,66 +1,30 @@
 @namespace ExSheet
 @implements IDisposable
-@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
-   Every product using is written with global::. A component in ExSheet.Components would look a
-   plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
-   against sibling types (the CS0426 trap recorded in AGENTS.md). The Web namespace makes @on...
-   handlers compile as event handlers rather than as plain HTML attributes. *@
 @using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Web
-@using global::ExGrid
-@using global::ExGrid.Cells
-@using global::ExGrid.Chrome
-@using global::ExGrid.Components
-@using global::ExGrid.Keys
-@using global::ExGrid.Selection
-@using global::ExSheet.Engine
 
 @*
-    One band of a Sheet Toolbar (ADR-0100). Every Toolbar Row of a Sheet is the same height, resolved
-    in C# and written here inline, so the toolbar's height is a count of rows and the Sheet gives the
-    grid what they leave (ADR-0028). What the row holds is fitted to it and clipped, never allowed to
-    grow it. Its KeyTip is what a ribbon tab's is: the formatting row's is H, Excel's Home.
+    One band of a Sheet Toolbar (ADR-0100), declared to the ExSheet's toolbar, which the Script Core draws: only its
+    items stand here, declaring themselves in markup order. Its KeyTip is what a ribbon tab's is: the formatting row's
+    is H, Excel's Home.
 *@
-@if (Script is not null)
-{
-    @* Declared to the Script ExSheet's toolbar, which the Script Core draws: only its items stand here, declaring themselves. *@
-    <CascadingValue Value="this" IsFixed="true">
-        <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
-    </CascadingValue>
-}
-else
-{
-    <div class="ex-sheet-toolbar-row" role="group" aria-label="@Label" style="@Style">
-        @if (Context.KeyTips == KeyTipStage.Rows && KeyTip is { } letters)
-        {
-            <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@letters</span>
-        }
-        <CascadingValue Value="this" IsFixed="true">
-            <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
-        </CascadingValue>
-    </div>
-}
+<CascadingValue Value="this" IsFixed="true">
+    <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
+</CascadingValue>
 
 @code {
-    /// <summary>The Sheet Toolbar this row stands in.</summary>
-    [CascadingParameter] public SheetToolbarContext? Toolbar { get; set; }
-
     /// <summary>The row's Toolbar Items, in order.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>The row's accessible name.</summary>
-    [Parameter] public string? Label { get; set; }
+    /// <summary>The row's accessible name, which every row of the Script Core's names itself with.</summary>
+    [Parameter, EditorRequired] public string? Label { get; set; }
 
     /// <summary>The row's KeyTip letter, as a ribbon tab's (ADR-0100). None unless declared, except on ExSheet's default row, which is H.</summary>
     [Parameter] public string? KeyTip { get; set; }
 
-    private SheetToolbarContext? _joined;
-
     /// <summary>The scope the row takes its place from. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
-    /// <summary>The Script ExSheet's toolbar, where the row declares itself in place of drawing a band; null on the
-    /// Razor component's. Internal, as its type is (ADR-0201).</summary>
+    /// <summary>The ExSheet's toolbar, where the row declares itself. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
 
     /// <summary>Where the row stands on the toolbar, and the scope its items take theirs from.</summary>
@@ -69,62 +33,14 @@ else
     /// <inheritdoc />
     protected override void OnInitialized() => Place = Order?.Next() ?? Place;
 
-    private SheetToolbarContext Context => Toolbar
-        ?? throw new InvalidOperationException("ToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
-
-    private string Style => FormattableString.Invariant($"height: {Context.RowHeightPx}px");
-
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        if (Script is { } script)
-        {
-            script.JoinRow(this);
-            return;
-        }
-        var context = Context;
-        if (ReferenceEquals(context, _joined)) return;
-        if (_joined is { } previous)
-        {
-            previous.Changed -= OnToolbarChanged;
-            previous.LeaveRow(this);
-        }
-        _joined = context;
-        context.JoinRow(this);
-        context.Changed += OnToolbarChanged;
-        context.RefuseCollidingKeyTips();
-    }
-
-    // The row's own letter comes and goes with the KeyTips.
-    private bool _drawnLetter;
-
-    private void OnToolbarChanged()
-    {
-        var shown = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
-        if (shown != _drawnLetter) _ = InvokeAsync(StateHasChanged);
-    }
-
-    // What the render about to be drawn shows, noted as it is drawn: on a circuit OnAfterRender
-    // waits for the browser, and a change and its undoing within that wait would be judged against
-    // a render that was never the last one (layer 3, the Server host).
-    /// <inheritdoc />
-    protected override bool ShouldRender()
-    {
-        if (Script is not null)
-            return true;
-        _drawnLetter = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
-        return true;
+        var script = Script
+            ?? throw new InvalidOperationException("ToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
+        script.JoinRow(this);
     }
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        Script?.LeaveRow(this);
-        if (_joined is { } joined)
-        {
-            joined.Changed -= OnToolbarChanged;
-            joined.LeaveRow(this);
-        }
-        _joined = null;
-    }
+    public void Dispose() => Script?.LeaveRow(this);
 }

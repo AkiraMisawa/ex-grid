@@ -118,8 +118,8 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             the turn it is made, on Blazor Server too, and your function that makes a row the table's row is asked in
             .NET as each row crosses to the browser. Register each grid once, as the page is made: the grid takes its
             declaration as it is made, and refuses another later, or one you made yourself with a .NET
-            <code>OnPress</code>. A Scope holds one kind of component, the Razor ones or these, and refuses the other
-            kind by name as it joins.
+            <code>OnPress</code>. A Scope holds these alone, and refuses a Razor
+            <code>ExGrid</code> by name as it joins.
         </p>
         <DocsExample Builtin="typeof(ScriptCorePointing)"
                      Files="@(["Examples/Sheet/CostCentre.cs", "Examples/Sheet/CostReport.cs"])">
@@ -127,7 +127,7 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             <code>PointingScope</code>.
         </DocsExample>
         <p>
-            A grid outside any Scope is outlined as with the Razor components: the Sheet's
+            A grid outside any Scope is outlined by your page: the Sheet's
             <code>OnLinkedColumnColoursChanged</code> tells you each column its Formula reads and the colour its
             References wear, and you pass them to the grid that shows the table as its <code>OutlinedColumns</code>.
         </p>

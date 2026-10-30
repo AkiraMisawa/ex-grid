@@ -4,7 +4,7 @@
     <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ExSheet.MudBlazor</RootNamespace>
-    <Description>MudBlazor for ExSheet: a Chrome that draws ExSheet's Format Cells as a MudDialog, with MudBlazor's colour picker for More Colours, and ExGrid.MudBlazor's controls in every seam of the grid. Ships at the same version as ExSheet and depends on exactly that version.</Description>
+    <Description>MudBlazor for ExSheet: a Chrome that draws ExSheet's toolbar, Sheet Tabs and Format Cells in MudBlazor's controls, and ExGrid.MudBlazor's controls in every seam of the grid. Ships at the same version as ExSheet and depends on exactly that version.</Description>
     <PackageTags>$(PackageTags);spreadsheet;sheet;mudblazor;material</PackageTags>
   </PropertyGroup>
 

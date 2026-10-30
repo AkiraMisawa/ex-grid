@@ -1,9 +1,8 @@
 @page "/pointing"
 @implements IDisposable
 @using System.Globalization
-@* global::, for the reasons SheetPage.razor gives, and ExSheet.Components not imported, for the same. The Sheet is
-   drawn by ExSheet.Script.ExSheet and the grid by ExGrid.Script.ExGrid, and both by the Razor components under
-   ?component=razor (ADR-0370 step 2). *@
+@* global::, and the components named in full, for the reasons SheetPage.razor gives. The Sheet is drawn by
+   ExSheet.Script.ExSheet and the grid by ExGrid.Script.ExGrid (ADR-0370). *@
 @using global::ExSheet
 @using global::ExSheet.Engine
 
@@ -32,24 +31,12 @@
 }
 
 <div class="demo-side-by-side">
-    @if (DemoChrome.DrawsRazor(Component))
-    {
-        <ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
-                                    PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
-        <div id="pointing-positions">
-            <ExGrid.Components.ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
-        </div>
-    }
-    else
-    {
-        <ExSheet.Script.ExSheet @ref="_script" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
-                                PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
-        <div id="pointing-positions">
-            <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
-                                  ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
-        </div>
-    }
+    <ExSheet.Script.ExSheet @ref="_script" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
+                            PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
+    <div id="pointing-positions">
+        <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+                              ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
+    </div>
 </div>
 
 @* Why a press or an arrow key wrote nothing, as the Sheet tells the page (ADR-0058). *@
@@ -90,11 +77,6 @@
             format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
     ];
 
-    /// <summary><c>razor</c> draws the Sheet and the grid with the Razor components, in place of Blazor's components
-    /// over the Script Core.</summary>
-    [SupplyParameterFromQuery(Name = "component")]
-    public string? Component { get; set; }
-
     /// <summary><c>?narrow</c> lays the positions grid out narrower than its columns, so it shows both
     /// of its own scrollbars: the view the ninth Windows run could not set up (ticket 72).</summary>
     [SupplyParameterFromQuery(Name = "narrow")]
@@ -106,8 +88,7 @@
     // beside the gutters. Through the grid's parameter, never the stylesheet (ADR-0013).
     private ViewportSize PositionsWidth => Narrow is null ? 330 : 260;
 
-    // The Sheet, as whichever component draws it.
-    private ExSheet.Components.ExSheet? _sheet;
+    // The Sheet, once drawn.
     private ExSheet.Script.ExSheet? _script;
     private SheetDocument? _document = Opening();
     private readonly PointingScope _scope = new();
@@ -137,8 +118,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        if (_sheet is not null) await _sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
-        else if (_script is not null)
+        if (_script is not null)
         {
             try
             {

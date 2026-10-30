@@ -1,13 +1,10 @@
 using System.Collections.Immutable;
-using Bunit;
 using ExGrid.Keys;
-using Microsoft.AspNetCore.Components;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
-using SheetComponent = global::ExSheet.Components.ExSheet;
-using SheetGrid = global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>;
+using System.Text.Json.Nodes;
 
 namespace ExGrid.Docs.Generator.Tests;
 
@@ -15,19 +12,14 @@ namespace ExGrid.Docs.Generator.Tests;
 /// The Keyboard reference held against the keys the products take (ADR-0110: a reference page's facts are read
 /// from a named source, and the Keyboard page lists every key in the three products). The rows are the site's own
 /// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (<c>GridKeys</c>, KB-2),
-/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet declares to its grid, read
-/// off the component as it renders with everything that adds a key turned on; ExPivot declares none. A key a menu,
+/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet takes, as
+/// <c>tests/cases/sheet/sheet-keys.json</c> lists them, which <c>@ex-grid/sheet</c>'s declared keys are held to; ExPivot
+/// declares none. A key a menu,
 /// a panel or an open edit answers in its own handler is in no table, and is not checked here.
 /// </summary>
-public class KeyboardCompletenessTests : BunitContext
+public class KeyboardCompletenessTests
 {
     private static readonly ImmutableArray<HandRow> Rows = ReadRows();
-
-    public KeyboardCompletenessTests()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
-    }
 
     [Fact] // ADR-0110, ADR-0012: every key ExGrid's table takes is named by an ExGrid row of the Keyboard page
     public void Every_key_ExGrid_takes_is_named_by_an_ExGrid_row()
@@ -37,8 +29,8 @@ public class KeyboardCompletenessTests : BunitContext
         AssertNamed("ExGrid", taken);
     }
 
-    [Fact] // ADR-0110, ADR-0071, ADR-0100: every key ExSheet declares to its grid is named by an ExSheet row
-    public void Every_key_ExSheet_declares_is_named_by_an_ExSheet_row()
+    [Fact] // ADR-0110, ADR-0071, ADR-0100: every key ExSheet takes is named by an ExSheet row
+    public void Every_key_ExSheet_takes_is_named_by_an_ExSheet_row()
     {
         var declared = SheetDeclared();
 
@@ -97,13 +89,15 @@ public class KeyboardCompletenessTests : BunitContext
             + $". Add a KeyRow to KeyboardByHand.{product} that explains each, linking the section of the page that does, with the key in its Canonical list.");
     }
 
-    // The keys ExSheet declares to its grid where the most are declared: the toolbar shown, with its toggle bound.
-    private IReadOnlyCollection<string> SheetDeclared()
+    // The keys ExSheet takes, as the shared list names them: those it declares to its grid and its toolbar's own.
+    private static IReadOnlyCollection<string> SheetDeclared()
     {
-        var sheet = Render<SheetComponent>(ps => ps
-            .Add(s => s.ShowToolbar, true)
-            .Add(s => s.ShowToolbarChanged, EventCallback.Factory.Create<bool>(this, (bool _) => { })));
-        return [.. sheet.FindComponents<SheetGrid>().SelectMany(g => g.Instance.DeclaredKeys ?? [])];
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
+            directory = directory.Parent;
+        Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
+        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(directory!.FullName, "tests", "cases", "sheet", "sheet-keys.json")))!;
+        return [.. listed["declared"]!.AsArray().Concat(listed["toolbar"]!.AsArray()).Select(key => key!.GetValue<string>())];
     }
 
     // Whether ExGrid's core answers `key` itself: its table, the editor's keys, or the clipboard's. The core

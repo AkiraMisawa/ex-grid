@@ -1,7 +1,6 @@
 import { test, expect, alterPage, circuitBack, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
-import { CIRCUIT_SHEET } from './sheet-helpers.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
 // §24): keys typed faster than a round trip (ED-22), a paste past the hub's message
@@ -544,8 +543,8 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     const sheetGrid = (page) => page.locator('.ex-grid').first();
     const columnF = (page, row) => sheetGrid(page).locator(`[id$='-r${row}c5']`);
 
-    async function openSheet(page, component = undefined) {
-        await page.goto(component === undefined ? '/sheet' : `/sheet?component=${component}`);
+    async function openSheet(page) {
+        await page.goto('/sheet');
         await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
         await expectTabStopTaken(sheetGrid(page));
     }
@@ -609,63 +608,53 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
         await expectEachValueInItsCell(page);
     });
 
-    // A press held behind keys that move the view lands where it was made (ED-31, ADR-0021's note
-    // of 2026-10-02). It was replayed with its screen coordinates, measured again against the rows
-    // the move had brought there: on the Server host, at every round trip, the `2` went into F18,
-    // a page below the F6 the browser showed under the pointer. Which row that was is read from the
-    // press itself, in the document's capture phase, ahead of the grid: on WebAssembly the move can
-    // be painted before the press, and the row under the pointer is then the page's.
-    for (const rtt of [0, 150]) {
-        test(`a press held behind a page move lands on the row painted under it at the press, at ${rtt} ms (ED-31, ADR-0021)`, async ({ page }) => {
-            test.skip(!SERVER && rtt > 0, 'WebAssembly has no round trip to set');
-            await openSheet(page, CIRCUIT_SHEET);
-            const grid = sheetGrid(page);
-            const rowHeight = (await columnF(page, 0).boundingBox()).height;
-            await alterPage(page, () => {
-                const onPress = (event) => {
-                    const viewport = event.target instanceof Element ? event.target.closest('.ex-viewport') : null;
-                    if (event.isTrusted && viewport !== null && window.__pressed === undefined) {
-                        window.__pressed = { first: Number(viewport.getAttribute('data-ex-first-row')), y: event.offsetY };
-                    }
-                };
-                document.addEventListener('mousedown', onPress, true);
-                return () => {
-                    document.removeEventListener('mousedown', onPress, true);
-                    delete window.__pressed;
-                };
-            });
-            await setRoundTrip(rtt);
-            await columnF(page, 0).click({ force: true });
-            await page.evaluate(() => { delete window.__pressed; });
-            // F6's place before anything moves; the keys below move the view a page down.
-            // spec-lint: early-read: the click on F1, in view, does not move F6; only the keys after this read move the view
-            const f6 = await columnF(page, 5).boundingBox();
-            // On a circuit the host's answers are held until every input is made, so the press
-            // is made while the keys before it are unanswered and the page has not moved, however
-            // slow the browser is to take the inputs (ADR-0220). A round trip alone did not see to
-            // that: with the browser slowed, the page move was painted before the press came.
-            await holdAnswers(true);
-            await page.keyboard.type('1');
-            await page.keyboard.press('Enter');
-            await page.keyboard.press('PageDown');
-            await page.keyboard.type('9');
-            await page.mouse.click(f6.x + f6.width / 2, f6.y + f6.height / 2);
-            await page.keyboard.type('2');
-            await page.keyboard.press('Enter');
-            await holdAnswers(false);
-
-            // spec-lint: early-read: deterministic: the capture-phase listener records the press inside its own dispatch, before the click returns
-            const pressed = await page.evaluate(() => window.__pressed);
-            const row = pressed.first + Math.floor(pressed.y / rowHeight);
-            // The Enter after the `2` moves the Focus one row down from where the press put it.
-            await expect(grid.locator('input.ex-name-box')).toHaveValue(`F${row + 2}`);
-            await expect(columnF(page, row)).toHaveText('2');
-            if (SERVER) {
-                // On a circuit the press was made while the keys were unanswered: the page had not moved.
-                expect(row, 'the browser still showed F6 under the pointer').toBe(5);
-            }
+    // A press made behind keys that move the view lands where it was made (ED-31, ADR-0021's note
+    // of 2026-10-02). The Razor ExSheet replayed it with its screen coordinates, measured again
+    // against the rows the move had brought there: on the Server host, at every round trip, the `2`
+    // went into F18, a page below the F6 the browser showed under the pointer. Over the Script Core
+    // the keys move the view in the browser, and the move may be painted before the press comes, so
+    // which row was under the pointer is read from the press itself, in the document's capture
+    // phase, ahead of the grid. The host's answers are held meanwhile, so nothing of the press
+    // waits on them.
+    test('a press made behind a page move lands on the row painted under it at the press (ED-31, ADR-0021)', async ({ page }) => {
+        await openSheet(page);
+        const grid = sheetGrid(page);
+        const rowHeight = (await columnF(page, 0).boundingBox()).height;
+        await alterPage(page, () => {
+            const onPress = (event) => {
+                const viewport = event.target instanceof Element ? event.target.closest('.ex-viewport') : null;
+                if (event.isTrusted && viewport !== null && window.__pressed === undefined) {
+                    window.__pressed = { first: Number(viewport.getAttribute('data-ex-first-row')), y: event.offsetY };
+                }
+            };
+            document.addEventListener('mousedown', onPress, true);
+            return () => {
+                document.removeEventListener('mousedown', onPress, true);
+                delete window.__pressed;
+            };
         });
-    }
+        await columnF(page, 0).click({ force: true });
+        await page.evaluate(() => { delete window.__pressed; });
+        // F6's place before anything moves; the keys below move the view a page down.
+        // spec-lint: early-read: the click on F1, in view, does not move F6; only the keys after this read move the view
+        const f6 = await columnF(page, 5).boundingBox();
+        await holdAnswers(true);
+        await page.keyboard.type('1');
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('PageDown');
+        await page.keyboard.type('9');
+        await page.mouse.click(f6.x + f6.width / 2, f6.y + f6.height / 2);
+        await page.keyboard.type('2');
+        await page.keyboard.press('Enter');
+        await holdAnswers(false);
+
+        // spec-lint: early-read: deterministic: the capture-phase listener records the press inside its own dispatch, before the click returns
+        const pressed = await page.evaluate(() => window.__pressed);
+        const row = pressed.first + Math.floor(pressed.y / rowHeight);
+        // The Enter after the `2` moves the Focus one row down from where the press put it.
+        await expect(grid.locator('input.ex-name-box')).toHaveValue(`F${row + 2}`);
+        await expect(columnF(page, row)).toHaveText('2');
+    });
 });
 
 // A field the core renders never has its own typing written back into it (SRV-5, ED-22). On a

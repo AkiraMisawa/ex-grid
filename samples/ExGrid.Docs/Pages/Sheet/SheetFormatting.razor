@@ -130,8 +130,8 @@
             From code, <code>SetCellFormatAsync(CellFormatChange)</code> sets only the parts the change names, on every
             range of the Selection, as one undo step: a change that sets bold keeps each cell's italic, Fill and Number
             Format. Its borders are relative to each range, so each range gets its own outline.
-            <code>CellFormatAt(address)</code> reads back what a cell shows; in a Workbook of several Sheets it names
-            the Sheet, <code>CellFormatAt("Claim", address)</code> (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
+            <code>CellFormatAtAsync(address)</code> reads back what a cell shows; in a Workbook of several Sheets it names
+            the Sheet, <code>CellFormatAtAsync("Claim", address)</code> (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
             Like every command, these are refused while an edit is open. Under React they are on the component's ref:
             <code>setCellFormat(new CellFormatChange({ bold: true }))</code>, <code>cellFormatAt(address)</code>,
             <code>cellFormatAt("Claim", address)</code>, <code>openFormatCells()</code> and
@@ -173,18 +173,11 @@
                 after it set the format, then move the Focus, over Blazor Server too.
             </li>
             <li>
-                <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
-                <code>MudDialog</code>, with a More Colours button opening MudBlazor's colour picker. More Colours starts in HEX,
-                with the current value selected: type a colour with the opening click, and those characters arrive
-                there in order, even over Blazor Server. The switch beside the fields moves to RGB and HSL, and the mode
-                switched to stays while the picker is open, however soon after the opening it is pressed. Enter or
-                leaving the field commits the colour.
-                Choosing HEX yourself before the opening finishes keeps
-                the keyboard there; Escape closes the colour picker before the dialog. It needs a
-                <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
-                without one. The keys typed as it closes from Escape, OK or Cancel are the Sheet's, in order, over
-                Blazor Server too: ↓ typed straight after Escape moves the Focus, including when the dialog's title or empty space holds the keyboard. OK sets what was touched as it is
-                pressed.
+                <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it stands in the same popover,
+                drawn in MudBlazor's type, buttons and palette, with More Colours a field that takes a hex value. Where
+                it stands, Escape, a press elsewhere, Tab wrapping inside it and the keyboard back on the grid as it
+                closes are the grid's, so the keys typed as it closes from Escape, OK or Cancel are the Sheet's, in
+                order, over Blazor Server too. It needs no <code>&lt;MudDialogProvider /&gt;</code>.
             </li>
             <li>
                 <b>Under <code>MantineExSheet</code></b> (<code>@@ex-grid/sheet-mantine</code>) it is Mantine's Tabs, radios,
@@ -294,19 +287,16 @@
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
                 <code>MudSheetChrome</code> draws MudBlazor's controls; under either the toolbar is one Tab stop. A Chrome
-                of your own draws each item from its <code>ToolbarItemContext</code>, and its lists are on the Sheet's
-                seam as the built-in ones are. Its buttons claim their clicks (<code>data-ex-claims="click"</code>) and run
-                them through <code>InOrder</code>, so a press takes its place among the Sheet's keys and presses. A list
-                of its own opens when <code>OpenRequest</code> changes and takes the keyboard through
-                <code>TakeKeyboard</code>: the keys typed since the toolbar asked for it wait for it and arrive in order.
-                A list drawn outside the Sheet, in a design system's popover or a panel of your own, joins the Sheet's
-                order while it is open through <code>JoinSurface</code>, and claims its keys and its choices' clicks.
-                As it closes, from a key or a choice, it calls <code>ChoicesClosed</code> in that input's turn, with
-                the choice and whether Escape closed it: the toolbar makes the choice and takes the keyboard on, back
-                to the Sheet or to the KeyTips, and the keys typed meanwhile go where it lands; the list goes after
-                that. A list that cannot open calls <code>ChoicesClosed</code> with no choice, and one the toolbar no
-                longer wants closes when <code>CloseRequest</code> changes. <code>MudSheetChrome</code>'s lists are
-                built this way, and so are <code>MantineExSheet</code>'s: a toggle is Mantine's <code>ActionIcon</code>,
+                of your own names <code>SheetScriptSlots.ToolbarItem</code> and draws each item in Razor from its
+                <code>SheetToolbarItemView</code>: its kind, name, tooltip, whether it is pressed and why it is disabled,
+                and a list's choices in the rows its keys walk. It marks its controls with
+                <code>SheetScriptSlotAttributes</code> and carries no handler of its own: <code>Press</code> on a button
+                presses the item or opens its list, <code>List</code> on the one element holding the list, drawn inside
+                the item whatever its state, and <code>Choice</code> on each choice. The Sheet's script wires them in the
+                browser: a press takes its place among the Sheet's keys and presses, the list shows at the item's foot,
+                answers the arrows, Enter and Escape, and gives the keyboard back to the Sheet or to the KeyTips, all
+                with nothing waiting on the circuit. <code>MudSheetChrome</code>'s items are
+                built this way. Under React, <code>MantineExSheet</code>'s lists are built on the slot's context: a toggle is Mantine's <code>ActionIcon</code>,
                 filled while it is pressed, a menu a subtle <code>Button</code>, and each list Mantine's
                 <code>Popover</code>, drawn inside the Sheet so the Sheet hears its keys, with the colours ten across.
                 <code>MuiExSheet</code>'s are too: a toggle is MUI's <code>ToggleButton</code>, selected while it is
@@ -336,16 +326,18 @@
             toolbar's keyboard is on it, its list's <code>choices</code>, a button's own <code>content</code> (a function
             that mounts it into an element and answers what takes it away, which a callback ref can be), and
             <code>openRequest</code> and
-            <code>closeRequest</code>, which change as they do in Blazor. <code>invoke()</code> presses the item, and
+            <code>closeRequest</code>, which change each time the toolbar's keys ask the list to open or close.
+            <code>invoke()</code> presses the item, and
             <code>choicesClosed(choice, escaped)</code> hands a list's close back, with the index of the choice or
             none. The toolbar keeps its keys, the outline on the item its keyboard is on, and the KeyTips. Hand the same
             function on every render: a new one draws the items again.
         </p>
         <DocsExample Title="A Chrome of your own" Builtin="typeof(ToolbarOwnList)"
-                     Files="@(["Examples/Sheet/OwnListChrome.cs", "Examples/Sheet/OwnListButton.razor", "Examples/Sheet/OwnListPanel.razor"])">
-            This Chrome draws the toolbar's lists in a panel beside the Sheet, outside it, on the seam above. Press Alt,
-            H, N and ↓ ↓ Enter straight away: the keys wait for the panel and choose there, and the keyboard comes
-            back to the cell. Escape in the panel goes back to the Home row's KeyTips.
+                     Files="@(["Examples/Sheet/OwnListChrome.cs", "Examples/Sheet/OwnListButton.razor"])">
+            This Chrome draws the toolbar's items as text buttons with lists of its own: in Razor, marked for the
+            Sheet's script, under Blazor; in a panel beside the Sheet, outside it, under React. Press Alt, H, N and
+            ↓ ↓ Enter straight away: the keys reach the list and choose there, and the keyboard comes back to the
+            cell. Escape in the list goes back to the Home row's KeyTips.
         </DocsExample>
     </DocsSection>
 
