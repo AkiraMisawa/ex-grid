@@ -19,8 +19,7 @@
         "tests/ExGrid.Browser/fixtures.mjs",
         "tests/ExGrid.Browser/scrollbar.spec.mjs",
         "src/npm/core/src/",
-        "src/npm/blazor/src/",
-        "src/ExGrid/Components/"
+        "src/npm/blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -49,10 +48,8 @@
         "samples/ExGrid.DemoPages/SheetCases.cs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -93,10 +90,8 @@
         "tests/GlyphWidths/measure.mjs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -137,10 +132,8 @@
         "tests/GlyphWidths/measure.mjs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": null,
       "knownLimitation": {
@@ -172,10 +165,8 @@
         "samples/ExGrid.DemoPages/SheetCases.cs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -199,10 +190,8 @@
         "samples/ExGrid.DemoPages/SheetCases.cs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -226,10 +215,8 @@
         "samples/ExGrid.DemoPages/SheetCases.cs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -258,10 +245,8 @@
         "samples/ExGrid.DemoPages/SheetCases.cs",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": {
         "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
@@ -290,10 +275,8 @@
         "tests/ExGrid.Browser/",
         "src/npm/core/src/",
         "src/npm/blazor/src/",
-        "src/ExGrid/Components/",
         "src/npm/sheet/src/",
-        "src/npm/sheet-blazor/src/",
-        "src/ExSheet/Components/"
+        "src/npm/sheet-blazor/src/"
       ],
       "record": null,
       "knownLimitation": {
@@ -320,8 +303,7 @@
         "samples/ExGrid.Docs/Examples/Grid/Blotter/",
         "samples/ExGrid.Docs/Showcases/Blotter.razor",
         "src/npm/core/src/",
-        "src/npm/blazor/src/",
-        "src/ExGrid/Components/"
+        "src/npm/blazor/src/"
       ],
       "record": null,
       "knownLimitation": {
