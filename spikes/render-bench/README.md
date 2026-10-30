@@ -317,7 +317,24 @@ A host of the Script Core serves the same pages, and nothing in the driver chang
 - **The label.** `script-react`, `script-blazor-wasm`, `script-blazor-server`, beside `csharp-wasm` and
   `csharp-server`, each run on the same machine and browser as the baseline it is read against.
 
-The C# core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`. Its
+The React host is `Bench.React`, a Vite page that builds the Script Core from `src/npm` as the React
+DemoHost does and serves `/core/grid` and `/core/template`:
+
+```sh
+cd Bench.React && npm ci && npx vite build && npx vite preview --port 5496 --strictPort
+RESULTS_DIR=results/core-run CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5496 script-react grid,template
+```
+
+The Blazor pages draw the components over the Script Core since the C# core was removed (ADR-0370 section 6,
+step 3): `CoreGrid` hands its Window as `Rows`, so a pushed Window is a new list and a new source, as a Consumer
+of `Rows` hands one. The C# core's arm is measured from a commit before the removal (`f593e47f`), checked out in
+a worktree of its own and published there. The driver types a digit as the browser does, a keydown and then
+`beforeinput` and `input` on the field holding the keyboard, since the Script Core takes typed text from those
+(ADR-0080); the C# core typed from the keydown, so its runs use the driver of that commit.
+
+The Script Core's numbers of 2026-10-30, beside the C# core's run again on the same machine, are in
+`results/20261030-script-core/`, with `summary.txt`, which names each case that is slower and why. The C#
+core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`. Its
 `csharp-wasm` column is the build output's (see above); a published client's, with the Engine Host
 Worker's and a TypeScript engine's beside it, are in `spikes/engine-host/results/20261025-engine-host/`.
 

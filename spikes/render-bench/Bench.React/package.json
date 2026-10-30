@@ -1,0 +1,21 @@
+{
+  "name": "bench-react",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The core comparison's React host (ADR-0350 section 15): /core/grid and /core/template over the Script Core under React. Disposable, like the rest of render-bench.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview --strictPort"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "vite": "8.3.5"
+  }
+}
