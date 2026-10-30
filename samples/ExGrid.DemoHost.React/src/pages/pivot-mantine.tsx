@@ -6,8 +6,8 @@ import { MantinePivot } from '@ex-grid/pivot-mantine';
 // Mantine's styles and the Wrappers', as text this page writes into a <style> of its own and takes away when it goes:
 // the other pages stay bare, and a spec file's document is the one it booted with once the page is left (ADR-0056).
 import mantineStyles from '@mantine/core/styles.css?inline';
-import gridStyles from '../../../../src/npm/mantine/styles.css?inline';
-import pivotStyles from '../../../../src/npm/pivot-mantine/styles.css?inline';
+import gridStyles from '../../../../packages/mantine/styles.css?inline';
+import pivotStyles from '../../../../packages/pivot-mantine/styles.css?inline';
 import { DemoNav } from '../demo-nav';
 import { demoPivotFields, demoPivotFirstLayout, demoPivotTrades } from '../pivot-data';
 import { useQuery } from '../router';

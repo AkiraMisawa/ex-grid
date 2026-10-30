@@ -99,7 +99,7 @@ Every question file of `docs/specs/exsheet/run-18/`, and what this run does with
   - Layers 1 and 2 need not be run.
 - **Results.** Everything goes under `verification/<date>-windows-18/`: the scripts, the records, the logs, the
   pictures, and one `report.md` with a row per case. Each row says what was read and, where this document gives
-  a reading, whether it matches. Part C's oracle writes `tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>-run18-*.json`;
+  a reading, whether it matches. Part C's oracle writes `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/results-<date>-run18-*.json`;
   commit those as well. Whole-window pictures that show the title bar's account corner stay on the machine.
 
 ## Part A — the by-hand rows on this desk (ADR-0208)
@@ -129,7 +129,7 @@ Edge, on WebAssembly and on the Server host, as run 17's `part-g/vz14.cmd` ran i
 
 - *From `dod-gaps-browser.md`, item 1.* Since commit `2d8695d9` the gutter's observer, and the Layout Ceiling's,
   tell C# from a task of their own after the browser's observation, not inside its callback (`toldAfterTheObservation`
-  in `src/ExGrid/Assets/ex-grid.js`; CON-4, ADR-0013). This is the first run to read that deferred report at a
+  in `dotnet/src/ExGrid/Assets/ex-grid.js`; CON-4, ADR-0013). This is the first run to read that deferred report at a
   scale that is not a whole number of device pixels per CSS pixel. No step is added; record the gutter, the
   `devicePixelRatio` and the Focus's place as run 17 did.
 
@@ -255,7 +255,7 @@ desk's; each is listed with what to record and where, for the run the request na
 |---|---|---|---|
 | **FN-12e** (macOS) | the user's Mac, Chrome and Edge, both hosts, headless (`EXGRID_HEADLESS=1`) | The two paintings of Part A's FN-12e, by name. The macOS widths are measured and held by layer 1, and are not measured again | `verification/<date>-macos-18/`, tagged `verified/<date>-macos-18` |
 | **KB-3** | the user's Mac, the same run | Layer 3 on a Mac, where `ControlOrMeta` presses Command: `npx playwright test`, Chrome and Edge, on both hosts. The verdict names the Cmd+Enter tests on every key path, the editor's included. *From `f4-enter-mode.md`, item 9's macOS half:* `features.spec.mjs`'s two ED-2 tests, by name, where Option+←/→ move by a word and ⌘+←/→ go to the text's ends, held behind F2 or not | the same directory and tag |
-| **WR-10** | Windows or Linux, with Chrome and Edge installed | The Wrappers' MudBlazor floor run and its layer-2 runs, by the Definition of Done's §22 Step 4, "The Wrappers' MudBlazor floor", at the verified commit. Its record at `0399f391` no longer holds: `samples/ExGrid.DemoPages/SheetCases.cs` has changed since. Every stable 9.x listed on nuget.org at the time of the run is a layer-2 run | `verification/<date>-<platform>-mudblazor-floor/`, tagged by its name, as `verification/2026-10-15-linux-mudblazor-floor/` was |
+| **WR-10** | Windows or Linux, with Chrome and Edge installed | The Wrappers' MudBlazor floor run and its layer-2 runs, by the Definition of Done's §22 Step 4, "The Wrappers' MudBlazor floor", at the verified commit. Its record at `0399f391` no longer holds: `dotnet/samples/ExGrid.DemoPages/SheetCases.cs` has changed since. Every stable 9.x listed on nuget.org at the time of the run is a layer-2 run | `verification/<date>-<platform>-mudblazor-floor/`, tagged by its name, as `verification/2026-10-15-linux-mudblazor-floor/` was |
 | **VZ-18** | the remote-isolation PC | Nothing. It is a Known limitation of `0.1.0` (decided with the user, 2026-10-12), and its `knownLimitation` stays | — |
 
 Each of those runs files its records in `verification/by-hand.json` as Part A says, and pushes its own tag.
@@ -309,7 +309,7 @@ says otherwise. Pictures cut to the cells and the Headings.
 and the report's `aria-rowcount`. Since 2026-10-12 both count the header's rows first: a row per tier of the column
 Items' Header Groups, then the header row. `compare.py` matches the body by row label, so a comparison is unchanged.
 Where this run reads the probe's `row` or `rowCount` as the report's own numbers, it subtracts the header's rows, as
-`headerRowsOf` in `tests/ExGrid.Browser/fixtures.mjs` counts them.
+`headerRowsOf` in `tests/browser/fixtures.mjs` counts them.
 
 ## Part E — ExSheet beside what run 18a read of Excel
 

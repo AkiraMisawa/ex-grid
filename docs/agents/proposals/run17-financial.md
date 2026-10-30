@@ -80,7 +80,7 @@ At the end of ADR-0047, after the note of 2026-10-11:
 
 If the user decides NPV (section 4), its outcome is a further bullet of the same note.
 
-## 2. The engine's README (`src/ExSheet.Engine/README.md`)
+## 2. The engine's README (`dotnet/src/ExSheet.Engine/README.md`)
 
 In "Asked of Excel before they are answered", replace
 

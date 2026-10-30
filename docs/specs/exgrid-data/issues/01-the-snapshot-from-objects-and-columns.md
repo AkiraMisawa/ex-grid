@@ -4,9 +4,9 @@ Status: done
 
 **What to build:**
 
-- A new project, `src/ExGrid.Data`, with no package dependency. It targets `net10.0` and documents
+- A new project, `dotnet/src/ExGrid.Data`, with no package dependency. It targets `net10.0` and documents
   every public member.
-- Its tests, `tests/ExGrid.Data.Tests`.
+- Its tests, `dotnet/tests/ExGrid.Data.Tests`.
 - **The Snapshot**:
   - its columns of the six kinds, with Blanks;
   - Text as a dictionary in order of first appearance;

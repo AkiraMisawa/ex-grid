@@ -20,7 +20,7 @@ What the branch changed, so the texts below can be checked against it:
   argument would read in its place, `FunctionCall.Has` now sees through a name bound to a value left
   empty (`MissingNode.IsEmpty`): `=LET(x,,LOG(100,x))` is `=LOG(100,)`, and
   `=LET(x,,IF(FALSE,1,x))&"a"` is `=IF(FALSE,1,)&"a"`. **This touches
-  `src/ExSheet.Engine/Formulas/FunctionDefinition.cs`, outside the area's file list**: one line, `Has`.
+  `dotnet/src/ExSheet.Engine/Formulas/FunctionDefinition.cs`, outside the area's file list**: one line, `Has`.
 - The six cases are `observed` with Excel's answer (3, 3, 3, 0, 1, 1), `oracleSkip` "ask by keys" kept.
 
 ## Corrections after review (2026-10-12)
@@ -110,7 +110,7 @@ ones (ADR-0181, note of this date)." After that note, add:
 > 2026-10-11 is superseded. A name is refused on entry only where it reads as an A1 Reference, or as `TRUE` or
 > `FALSE` (ADR-0181, note of 2026-10-11, run 17).)*
 
-## 2. `src/ExSheet.Engine/README.md`, the `LET` paragraph
+## 2. `dotnet/src/ExSheet.Engine/README.md`, the `LET` paragraph
 
 Replace the bullet that begins "**`LET` takes the names Excel's keyboard accepts**" with:
 
@@ -134,7 +134,7 @@ Replace the bullet that begins "**`LET` takes the names Excel's keyboard accepts
 
 ## 3. The Docs Site, `/exsheet/formulas`, "Supported functions"
 
-`samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`: replace the `<li>` that begins
+`dotnet/samples/ExGrid.Docs/Pages/Sheet/SheetFormulas.razor`: replace the `<li>` that begins
 "<b><code>LET</code></b> takes the names Excel's keyboard accepts" with:
 
 ```razor

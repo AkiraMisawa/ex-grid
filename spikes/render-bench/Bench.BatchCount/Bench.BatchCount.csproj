@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Bench.Live\Bench.Live.csproj" />
     <!-- The calibration (RealGrid.cs) renders the real ExGrid with the same ticks. -->
-    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
 </Project>

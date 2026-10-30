@@ -1,4 +1,4 @@
-// The demo's data, as samples/ExGrid.DemoPages/DemoData.cs makes it: the same seeds and the same arithmetic,
+// The demo's data, as dotnet/samples/ExGrid.DemoPages/DemoData.cs makes it: the same seeds and the same arithmetic,
 // so the three hosts paint the same values.
 import type { GridColumn, RowKind } from '@ex-grid/core';
 import { Temporal } from 'temporal-polyfill';

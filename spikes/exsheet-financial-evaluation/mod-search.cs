@@ -1,6 +1,6 @@
 // The evaluation Excel uses for MOD: a search over candidate evaluations, each written once, against
 // every MOD value Excel was seen to give (every results-*.json under
-// tests/ExSheet.Engine.Tests/ExcelOracle/, which hold every observed MOD case of the corpus). Nothing
+// dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/, which hold every observed MOD case of the corpus). Nothing
 // here ships.
 //
 //   nix develop "git+file://$PWD?shallow=1" -c dotnet run spikes/exsheet-financial-evaluation/mod-search.cs
@@ -134,7 +134,7 @@ var inputs = new Dictionary<string, (double N, double D)>
 // Every value Excel gave, from every results file; the same case read twice must read the same.
 var observed = new SortedDictionary<string, string>();
 var reads = 0;
-foreach (var file in Directory.GetFiles(Path.Combine(root, "tests/ExSheet.Engine.Tests/ExcelOracle"), "results-*.json").Order())
+foreach (var file in Directory.GetFiles(Path.Combine(root, "dotnet/tests/ExSheet.Engine.Tests/ExcelOracle"), "results-*.json").Order())
 {
     using var doc = JsonDocument.Parse(File.ReadAllText(file));
     if (!doc.RootElement.TryGetProperty("cases", out var cases)) continue;
@@ -570,7 +570,7 @@ string? Parts(double n, double d)
     return $"=MOD({R(n)},{R(d)})  {distinct} answers: {string.Join(" | ", groups)} (A gives {candidates[0].Mod(n, d)})";
 }
 
-// The engine's MOD, as src/ExSheet.Engine/Formulas/Functions.Math.cs writes it (after Windows run 18a): the
+// The engine's MOD, as dotnet/src/ExSheet.Engine/Formulas/Functions.Math.cs writes it (after Windows run 18a): the
 // exact remainder where it has the divisor's sign; where it has the number's, the divisor added as B9 adds it.
 // After the second area pass it added it as B9, B10 and B12 did, and refused with #VALUE! where they parted
 // (EngineTurned's three); run 18a's answers to MOD-033 to 036 are B9's.
@@ -741,7 +741,7 @@ static Q Truncate(Q x, int bits)
 static string FindRoot()
 {
     var dir = Directory.GetCurrentDirectory();
-    while (!File.Exists(Path.Combine(dir, "ExGrid.slnx"))) dir = Path.GetDirectoryName(dir) ?? throw new InvalidOperationException("Run from the repository.");
+    while (!File.Exists(Path.Combine(dir, "dotnet", "ExGrid.slnx"))) dir = Path.GetDirectoryName(dir) ?? throw new InvalidOperationException("Run from the repository.");
     return dir;
 }
 

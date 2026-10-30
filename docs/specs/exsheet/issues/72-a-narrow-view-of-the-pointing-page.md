@@ -17,7 +17,7 @@ wires column resizing, and the grids' widths are the page's.
       column, `=` and a press on R-40's PV; the dashes and both column outlines lie inside the
       scroller's client area, not under either gutter (DC-53). On macOS headless the horizontal
       scrollbar is an overlay; the assertion is what CI's Linux run checks
-      (`tests/ExGrid.Browser/README.md`)
+      (`tests/browser/README.md`)
 
 ## Comments
 

@@ -1,5 +1,5 @@
 {
-  "about": "Find and Replace All on GridSource.from (ADR-0055, ADR-0332): the reference step and plan over the source's current result, each column's displayed text as the grid handed it over, the whole Replace All applied as one change. From tests/ExGrid.Tests/GridFindTests.cs and GridReplaceTests.cs.",
+  "about": "Find and Replace All on GridSource.from (ADR-0055, ADR-0332): the reference step and plan over the source's current result, each column's displayed text as the grid handed it over, the whole Replace All applied as one change. From dotnet/tests/ExGrid.Tests/GridFindTests.cs and GridReplaceTests.cs.",
   "kind": "source",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Trader", "type": "text"}, {"name": "Notional", "type": "number"}],
   "cases": [

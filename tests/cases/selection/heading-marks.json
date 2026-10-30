@@ -1,5 +1,5 @@
 {
-  "about": "Which Headings the Heading Mark marks (ADR-0008, 2026-10-13), and which it covers whole (D1): runs of columns and rows, the union of the ranges' spans with spans that overlap or touch joined, and the runs every row (or column) of the extent fills. Moved from the C# core's HeadingMarksTests; the randomised check against a cell-by-cell union, which a case cannot state, is a property test in each language: tests/ExGrid.Tests/HeadingMarksPropertyTests.cs and src/npm/core/test/heading-marks-property.test.ts. The C# core's HeadingMarks; the Script Core's selection/heading-marks.ts.",
+  "about": "Which Headings the Heading Mark marks (ADR-0008, 2026-10-13), and which it covers whole (D1): runs of columns and rows, the union of the ranges' spans with spans that overlap or touch joined, and the runs every row (or column) of the extent fills. Moved from the C# core's HeadingMarksTests; the randomised check against a cell-by-cell union, which a case cannot state, is a property test in each language: dotnet/tests/ExGrid.Tests/HeadingMarksPropertyTests.cs and packages/core/test/heading-marks-property.test.ts. The C# core's HeadingMarks; the Script Core's selection/heading-marks.ts.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

@@ -1,5 +1,5 @@
 {
-  "about": "The class attribute a row is painted with (ADR-0024, ADR-0038), the row's half of the DOM contract (ADR-0350). From tests/ExGrid.Tests/RowKindTests.cs. The C# core's RowClasses is a static class; the Script Core's paint/row-classes.ts is rowClasses under the name for. That each is one held string is checked by each language's own tests.",
+  "about": "The class attribute a row is painted with (ADR-0024, ADR-0038), the row's half of the DOM contract (ADR-0350). From dotnet/tests/ExGrid.Tests/RowKindTests.cs. The C# core's RowClasses is a static class; the Script Core's paint/row-classes.ts is rowClasses under the name for. That each is one held string is checked by each language's own tests.",
   "kind": "scriptCalls",
   "subject": "RowClasses",
   "cases": [

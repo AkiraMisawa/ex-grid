@@ -1,0 +1,233 @@
+import { defineConfig } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
+
+// The host is started on whatever port BASE_URL names, so two checkouts — one per
+// parallel agent — do not share a port: with reuseExistingServer a second runner on
+// the same port would be driving the OTHER checkout's DemoHost and passing (AGENTS.md,
+// "Working in parallel"). Which host, and every port derived from it, is hosting.mjs's.
+const HOST_URL = `http://localhost:${HOST_PORT}`;
+
+// A fresh log per run: CON-6 reads what each test appended to it. The config is loaded
+// again in every worker, and a worker is replaced after each failing test, so only the
+// runner itself clears it — a worker doing so would erase the lines it is meant to read.
+if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
+    fs.rmSync(HOST_LOG, { force: true });
+}
+
+// What starts the hosts. By default the projects themselves, with `dotnet run`: the
+// edit-and-rerun loop. With EXGRID_HOSTS naming a directory, the hosts as
+// `dotnet publish -c Release` wrote them, one directory each — `wasm`, `server` and `api` —
+// which is what CI's full run drives (ADR-0041): built once, as a Consumer deploys it.
+// The published Server host and demo API server run where they were published (their
+// content root) under ASPNETCORE_ENVIRONMENT=Development, as their launch profiles set it
+// for `dotnet run`, and the WebAssembly host's files are served by static-host.mjs, which
+// does what the dev server does. So what changes is how the hosts were built, not the
+// environment they run in.
+const PUBLISHED = process.env.EXGRID_HOSTS ? path.resolve(process.env.EXGRID_HOSTS) : null;
+const published = (name) => {
+    const dir = path.join(PUBLISHED, name);
+    if (!fs.existsSync(dir)) {
+        throw new Error(`EXGRID_HOSTS is "${PUBLISHED}", which holds no "${name}" directory.`);
+    }
+    return dir;
+};
+const development = { ASPNETCORE_ENVIRONMENT: 'Development' };
+
+// Started here so `npx playwright test` is the whole command on any machine. An
+// already-running host is reused, which is what makes an edit-and-rerun loop quick.
+//
+// Into the run's own output, which §22 Step 4 tees into layer3.log. On WebAssembly the
+// log the renderer writes is the browser console, which fixtures.mjs reads, and this is
+// the dev server's side. On Server the circuit's log is this process's, and the host
+// also appends it to HOST_LOG so the fixture can read it per test (CON-6). A reused
+// host was started elsewhere and its output is wherever that was.
+// The React DemoHost is static files as `vite build` writes them (ADR-0350 section 13), served by
+// static-host.mjs as the published WebAssembly host is: built here unless EXGRID_HOSTS holds a `react`
+// build, which is what CI drives. Its dependencies are the npm workspace's at the repository's root,
+// installed already, since this runner is one of its members (ADR-0370 section 9).
+const REACT_HOST = '../../samples/ExGrid.DemoHost.React';
+// Every dotnet command runs in dotnet/, where the SDK finds global.json and the tool manifest (ADR-0370 section 9).
+const DOTNET = path.join(import.meta.dirname, '..', '..', 'dotnet');
+const reactHost = REACT
+    ? {
+        command: PUBLISHED
+            ? `node static-host.mjs ${JSON.stringify(published('react'))} ${HOST_PORT}`
+            : `npm --prefix ${REACT_HOST} run build && node static-host.mjs ${REACT_HOST}/dist ${HOST_PORT}`,
+        url: `${BASE_URL}/wide`,
+        reuseExistingServer: true,
+        timeout: 180_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+    }
+    : null;
+
+// Which tests a host runs (ADR-0370 section 11): the React host the behaviour specs, the Script Core
+// under the built-in Chrome; both Blazor hosts the Blazor specs, anything that passes through Blazor.
+// Each test's title names one (fixtures.mjs's `hostTag` refuses a test that names neither or both),
+// so each host leaves out a test that names only the other, and a test that names neither or both
+// runs, and fails by name, on every host. EXGRID_EVERY_HOST=1 leaves nothing out, for a listing that
+// asks whether any host has a test (counted-run.sh).
+const HOST_SPECS = process.env.EXGRID_EVERY_HOST === '1' ? undefined
+    : REACT ? /^(?!.*@behaviour\b).*@blazor\b/ : /^(?!.*@blazor\b).*@behaviour\b/;
+
+const hostServers = reactHost !== null
+    ? [reactHost]
+    : SERVER
+    ? [
+        {
+            ...(PUBLISHED
+                ? {
+                    command: `dotnet ExGrid.DemoHost.Server.dll --urls ${HOST_URL}`,
+                    cwd: published('server'),
+                    env: { ...development, EXGRID_HOST_LOG: HOST_LOG },
+                }
+                : {
+                    cwd: DOTNET,
+                    command: `dotnet run --project samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
+                    env: { EXGRID_HOST_LOG: HOST_LOG },
+                }),
+            url: `${HOST_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        },
+        {
+            // The browser reaches the Server host through this, at 0 ms until a test
+            // sets a round trip (ED-22, SRV-5, SRV-6).
+            command: `node latency-proxy.mjs ${new URL(BASE_URL).port} ${HOST_PORT} ${new URL(LATENCY_CONTROL_URL).port}`,
+            url: `${BASE_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+        },
+    ]
+    : [
+        {
+            ...(PUBLISHED ? {} : { cwd: DOTNET }),
+            command: PUBLISHED
+                ? `node static-host.mjs ${JSON.stringify(path.join(published('wasm'), 'wwwroot'))} ${HOST_PORT}`
+                : `dotnet run --project samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+            url: `${BASE_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        },
+    ];
+
+// The demo API server (ADR-0069), beside either host: the pages on both call it over HTTP,
+// at their own port plus 3000 (hosting.mjs). Its first start for a count generates the
+// trades into a file outside the repository, which every later start reuses; the run asks
+// for 20,000, about a second's work, unless EXGRID_DEMO_TRADES asks for another count.
+// /api/status answers 503 until the trades are ready, so the run waits for the data, not
+// only for the port. A reused server keeps the count it was started with, so no test
+// assumes one. Stopped with SIGTERM rather than killed, so it deletes the copy of the trades
+// it served (a killed one's copy is removed by the next start).
+const apiServer = {
+    name: 'DemoApi',
+    ...(PUBLISHED
+        ? {
+            command: `dotnet ExGrid.DemoApi.dll --urls ${API_URL}`,
+            cwd: published('api'),
+            env: { ...development, EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+        }
+        : {
+            cwd: DOTNET,
+            command: `dotnet run --project samples/ExGrid.DemoApi --urls ${API_URL}`,
+            env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+        }),
+    url: `${API_URL}/api/status`,
+    reuseExistingServer: true,
+    timeout: 300_000,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
+    stdout: 'pipe',
+    stderr: 'pipe',
+};
+
+const webServer = [...hostServers, apiServer];
+
+export default defineConfig({
+    testDir: '.',
+    grepInvert: HOST_SPECS,
+    // A wait's bound tells a hang, never a speed (ADR-0056, rule 5): performance never gates, so a
+    // test fails on what the app did, never on how long it took. Playwright's defaults, 5 s for a
+    // wait and 30 s for a test, failed a correct pivot laid out again on a Debug build of the hosts.
+    // A test still waits for the state it expects, and reads the moment it holds.
+    timeout: 300_000,
+    expect: { timeout: 60_000 },
+    // One worker, because a run shares what one machine has only one of: the OS clipboard
+    // (one per display, and these browsers are headed), the records fixtures.mjs
+    // read-modify-writes, and on the Server host the latency proxy's round trip and the
+    // host's log. Not the zoom, which this comment used to give: the device scale is
+    // emulated per page, and each worker has a browser of its own (ADR-0056). More at once
+    // is done across machines — CI's shards (ADR-0041) — where none of it is shared, and a
+    // shard is whole spec files, so a file's booted app is never split.
+    workers: 1,
+    fullyParallel: false,
+    reporter: [['list']],
+    // A failing layout assertion is a real answer about this platform, not a flake.
+    // Retrying would turn "the scrollbar covers the Focus here" into an intermittent
+    // report, which is the opposite of what this suite is for.
+    retries: 0,
+    // Both target browsers, because ADR-0017 says both are verified: "Passing on one
+    // does not satisfy the requirement." Each channel resolves a browser that is
+    // already on the machine rather than one downloaded into the repository — what
+    // this suite asks about is what the real browser on the real OS does, so a
+    // bundled build would be answering for the wrong one. A machine without Edge
+    // fails that project by name, which is the honest outcome (ADR-0026).
+    projects: [
+        { name: 'chrome', use: { channel: 'chrome' } },
+        // Edge opens its Downloads hub when a download ends, and from Edge 155 a page under that
+        // hub never finishes closing: every test that saved a file (ADR-0282) timed out tearing its
+        // page down, after its assertions had passed. The hub is the browser's own window furniture,
+        // not the page's behaviour, so it is turned off; the download itself still runs.
+        { name: 'msedge', use: { channel: 'msedge', launchOptions: { args: ['--disable-features=msDownloadsHub'] } } },
+        // The Layout Ceiling at 150% (ADR-0053, VZ-15): Chrome with the display scale set
+        // the way the OS sets it, on the command line, and the viewport left to the window.
+        // Playwright's deviceScaleFactor does NOT reproduce this — it raises
+        // devicePixelRatio and leaves the clamp where it was, which is why the suite was
+        // green while a Windows desktop at 150% could not reach the last 200,000 rows of
+        // /wide. Only the tests the clamp broke run here: the far corner and both ends of a
+        // million rows, the Focus against the scrollbars, and the Sheet's extent. And every
+        // test that scrolls a compressed grid to a row (scrollRowToTop in fixtures.mjs): a
+        // scrollTop of rows × row height showed a later row here, which only a run at 150%
+        // could catch (verification/2026-09-28-windows-3). And a far reveal, which paints
+        // the slice at its target offset through that same compressed mapping (ADR-0012).
+        // And the Border lines (DC-59), whose pixels at 150% are Excel's case 9 at that zoom: a
+        // line's widths and dashes are device pixels, which only a real display scale lays out.
+        // And SH-41's sweep of the bold edge (VZ-19): at 150% a Device Pixel is two thirds of a CSS
+        // pixel, which is what a column's edges round to and what a number may use of its padding.
+        // And the Focus among several ranges (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on /wide,
+        // on the Paper beside R4's three selections, and under ExGrid.MudBlazor on /mud. A border of
+        // one Device Pixel inside its cell, which only a real display scale lays out, and a
+        // screenshot reads, as an OS does. And the Heading Mark (UX-21, ADR-0008 of 2026-10-13):
+        // a line of two Device Pixels on a Heading's edge, ExGrid's own on /wide and on the Sheet's
+        // Headings under both Chromes.
+        {
+            name: 'chrome-150',
+            grep: /BIG-1\b|CH-10|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
+            use: {
+                channel: 'chrome',
+                viewport: null,
+                launchOptions: { args: ['--force-device-scale-factor=1.5', '--window-size=1280,800'] },
+            },
+        },
+    ],
+    use: {
+        // Headed by default, which is not a preference. Measured on macOS 15 / Chrome:
+        // headless keeps overlay scrollbars on the horizontal axis whatever CSS asks
+        // for, so the row band's 15px could not be reproduced there at all and the
+        // scrollbar tests would pass without testing anything. Headed reports 15/15.
+        //
+        // On Windows and Linux the native scrollbars already occupy layout and nothing
+        // has to be forced, so EXGRID_HEADLESS=1 is available for a machine without a
+        // display. Do not make it the default: it would quietly disarm the suite on the
+        // one platform where the bug is invisible to begin with.
+        headless: process.env.EXGRID_HEADLESS === '1',
+        baseURL: BASE_URL,
+        trace: 'retain-on-failure',
+    },
+    webServer,
+});

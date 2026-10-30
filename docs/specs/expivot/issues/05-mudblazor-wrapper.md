@@ -17,4 +17,4 @@ ExPivot's words, and `mud-ex-pivot.css`, on `MudExGridPaper`.
 
 ## Comments
 
-2026-09-30: `tests/ExPivot.MudBlazor.Tests`, 27 tests; `pivot.spec.mjs` under both Chromes.
+2026-09-30: `dotnet/tests/ExPivot.MudBlazor.Tests`, 27 tests; `pivot.spec.mjs` under both Chromes.

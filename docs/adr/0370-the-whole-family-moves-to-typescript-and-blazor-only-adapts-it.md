@@ -681,6 +681,32 @@ The move is one pull request of renames after every step 3, not before (the user
 the threads working in parallel do not rebase over it and the history is tidied once. Until then a new
 file is written where today's layout puts it.
 
+*(2026-10-30, the move made, after #505. What it settled that the section left open:)*
+
+- **Where each path went.** `src/npm/<name>` → `packages/<name>`; `src/npm/lint` and `src/npm/scripts` →
+  `tools/lint` and `tools/scripts`; the workspace's `package.json`, lockfile, `tsconfig.base.json` and
+  `.oxlintrc.json` → the root; `ExGrid.slnx`, `global.json`, `dotnet-tools.json` and `Directory.Build.props`
+  → `dotnet/`; `src/<Package>` → `dotnet/src/<Package>`; every `tests/<Project>` but `cases` and `GlyphWidths`
+  → `dotnet/tests/<Project>`; `tests/ExGrid.Browser` → `tests/browser`, whose freshness app, a .NET project,
+  went to `dotnet/tests/FreshnessApp`; the Blazor samples → `dotnet/samples/`, the React DemoHost and the
+  React Examples of the Docs Site staying in `samples/`; `tools/release` and the two oracles →
+  `dotnet/tools/`. The ADRs before this note name the paths of their day and are read through this list;
+  the specs, the tickets, the Definition of Done and `verification/by-hand.json` were rewritten to the new
+  paths, since they say what holds now.
+- **The Blazor adapters' browser halves stay in `packages/`, marked private.** `@ex-grid/blazor`,
+  `pivot-blazor`, `sheet-blazor`, `chart-blazor` and `board-blazor` are TypeScript built by the workspace's
+  tools beside the packages they bundle, and `"private": true` already keeps them off npm; so `packages/`
+  holds what the workspace builds as a package, and what npm publishes is every member not marked private.
+  Moving them beside their C# was the alternative, which puts a workspace member inside `dotnet/`.
+- **Every by-hand row's record lapses.** A record holds while its paths are unchanged (ADR-0208), and every
+  path moved, so the release workflow refuses a version without a suffix, and a release candidate, until
+  the rows are run again. That is the rule working: nothing checks that a moved file is the same file.
+- **One Playwright, layer 3's.** Layer 3 keeps `@playwright/test` 1.62.1, the version its lockfile had, and
+  the README media, whose lockfile had `playwright` 1.63.0, takes 1.62.1 too: two versions in one
+  `node_modules` both claim the `playwright` command, and which runner `npx playwright test` started would
+  depend on the order npm links them. `tools/assets` keeps its own esbuild, so the root's `allowScripts`
+  names both esbuilds.
+
 ### 10. A Script Core is told its locale, and Excel's text is kept where `Intl`'s differs
 
 A Script Core reads text in a culture: a filter's value, a pasted cell's displayed text, a constant

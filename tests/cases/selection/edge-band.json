@@ -1,5 +1,5 @@
 {
-  "about": "The edge band's rate curve (ADR-0008): one row a tick at the inner lip, the ceiling at the very edge, rising between, zero outside. From tests/ExGrid.Tests/EdgeBandTests.cs.",
+  "about": "The edge band's rate curve (ADR-0008): one row a tick at the inner lip, the ceiling at the very edge, rising between, zero outside. From dotnet/tests/ExGrid.Tests/EdgeBandTests.cs.",
   "kind": "edgeBand",
   "cases": [
     {

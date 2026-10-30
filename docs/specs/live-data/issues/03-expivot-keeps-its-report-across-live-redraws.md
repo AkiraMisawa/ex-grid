@@ -15,13 +15,13 @@ both meet in the grid's check of the report.
 
 ## What ExPivot does on every redraw
 
-Each step is in `src/ExPivot/Components/ExPivot.Asking.cs`.
+Each step is in `dotnet/src/ExPivot/Components/ExPivot.Asking.cs`.
 
 - **The bundled source folds the Change Batch into its Leaf Aggregates** and answers
   (`SnapshotPivotSource.Apply`, ADR-0067). This step is already incremental, and ahead of ag-grid:
   ag-grid's pivot mode buckets every row again on every refresh (research note, §2.4).
 - **The cube is made again from the whole answer** (`PivotEngine.CubeAsync`, `:392`). Its axis trees
-  are built leaf by leaf (`PivotCube.TreeAsync`, `src/ExPivot.Engine/PivotCube.cs:208`), and each
+  are built leaf by leaf (`PivotCube.TreeAsync`, `dotnet/src/ExPivot.Engine/PivotCube.cs:208`), and each
   node's Item hash and path hash are made with it (D10).
 - **The report is laid out again** (`PivotEngine.ReportAsync`, `:544`; `ReportBuilder`). Every row is
   a new `PivotReportRow`, with a new `PivotRowKey`.
@@ -32,7 +32,7 @@ Each step is in `src/ExPivot/Components/ExPivot.Asking.cs`.
 - **The grid checks every row's key** (`RequireDistinctKeys`; ticket 02), and renders.
   - Rows are now kept by key (ADR-0140, PV-42), so a changed row repaints in place.
   - Every painted row still renders. The rows are new instances, and the delegate is new; a row
-    compares the delegate by reference (`src/ExGrid/Components/ExGridRow.razor:320`).
+    compares the delegate by reference (`dotnet/src/ExGrid/Components/ExGridRow.razor:320`).
 
 ## What ag-grid keeps, read in its source
 
@@ -58,11 +58,11 @@ beats. It is that a row node, its id and its rendered row outlive an update.
 - **ADR-0003.** A changed row is a new instance, so that it repaints. An unchanged one may keep its
   instance, and then skips its render.
 - **`PivotReportRow` is a new row per report, by contract.**
-  - The contract is written at `src/ExPivot.Engine/PivotReport.cs:239`.
+  - The contract is written at `dotnet/src/ExPivot.Engine/PivotReport.cs:239`.
   - A row points at its report (`Report`, set by `Attach`, `:276`/`:280`).
   - A row caches its values on first read (`_cells`, `:244`), from its report's cube.
   - ExPivot ties a context command to the report on screen
-    (`ReferenceEquals(context.Row.Report, report)`, `src/ExPivot/Components/ExPivot.Report.cs:564`).
+    (`ReferenceEquals(context.Row.Report, report)`, `dotnet/src/ExPivot/Components/ExPivot.Report.cs:564`).
   - A row shared by two reports would answer with the older report's values and point at the wrong
     report, unless the design changes all of this.
 - **ADR-0060.** The engine is the reference, and a report is immutable. A next report may share what

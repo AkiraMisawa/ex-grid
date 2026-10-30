@@ -20,5 +20,5 @@ no ADR-0021 entry.
 
 - [x] The decision recorded
 - [x] The script's side and the core's side recorded per instance
-- [x] `tests/ExGrid.Browser` attaches the journal to a failed test, on both hosts
+- [x] `tests/browser` attaches the journal to a failed test, on both hosts
 - [x] Nothing per cell, and nothing per pointer move, is recorded (ADR-0027 P1-P9)

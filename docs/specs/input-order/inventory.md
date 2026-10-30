@@ -5,7 +5,7 @@ d47a190. Line numbers are approximate pointers, not contracts.
 
 ## The one path that exists: the key gate
 
-`src/ExGrid/Assets/ex-grid.js` (one script for every product; ExSheet and ExPivot draw through
+`dotnet/src/ExGrid/Assets/ex-grid.js` (one script for every product; ExSheet and ExPivot draw through
 `ExGrid<T>` and ship no script of their own).
 
 - **Numbered** (`nextInput()`, echoed on the Settled Stamp as `data-ex-answered`, reordered in

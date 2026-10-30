@@ -24,7 +24,7 @@ wrong (principle 1; ADR-0016, ADR-0030).
 ### The measurement
 
 Chrome 154, headless on macOS, from a scratch page that loads the files and rules the demo pages
-serve (`samples/ExGrid.DemoPages/wwwroot/fonts/roboto`, Roboto v51, one variable file per subset),
+serve (`dotnet/samples/ExGrid.DemoPages/wwwroot/fonts/roboto`, Roboto v51, one variable file per subset),
 inlined so that nothing else could answer. 14px, `font-variant-numeric: tabular-nums`. A glyph's
 width is the wider of the glyph alone and a hundred of it in a row, divided by a hundred.
 `CSS.getPlatformFontsForNode` confirmed that Roboto itself painted every glyph in the table.
@@ -168,7 +168,7 @@ as a web font to stand in for Linux, so that 600 matches Bold as it does there.
   That does not hold for a variable face (`/` above). The widths here take the widest at every
   weight painted. `CellTextMetrics`' summary repeats the boldest-weight wording.
 - **Two core tests hold their own copy, `new(10.4, 8.0, 4.95, 14)`:**
-  `tests/ExGrid.Tests/GridPresentationDefaultsTests.cs` and
-  `tests/ExGrid.Components/PresentationDefaultsWiringTests.cs`. Their comments called it Roboto's
+  `dotnet/tests/ExGrid.Tests/GridPresentationDefaultsTests.cs` and
+  `dotnet/tests/ExGrid.Components/PresentationDefaultsWiringTests.cs`. Their comments called it Roboto's
   measured widths. They now say it is Roboto's as first declared, and point at
   `MudExGridPresentation`. Only the comments changed.

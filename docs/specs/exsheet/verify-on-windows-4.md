@@ -9,7 +9,7 @@ WSL2 with nix). The third run's method, tools and advance authorisation all stil
 [`verify-on-windows-3.md`](verify-on-windows-3.md) first, and reuse
 `verification/2026-09-28-windows-excel-3/` (`active-cell.ps1`, `main-keys.ps1`, `by-hand.ps1`,
 `clipboard-probe.mjs`, `typing-probe-2.mjs`), `verification/2026-09-28-windows-3/` (`wide-probe.mjs`,
-`os-input.ps1`, `window-shot.ps1`) and `tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1` with its
+`os-input.ps1`, `window-shot.ps1`) and `dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1` with its
 dialog watcher. **Decide nothing. Record everything.** Do not change any ADR, `CONTEXT.md` or
 `docs/definition-of-done.md`.
 

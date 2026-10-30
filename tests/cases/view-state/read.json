@@ -1,5 +1,5 @@
 {
-  "about": "Reading a View State's JSON (ADR-0207): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again by the writer. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "about": "Reading a View State's JSON (ADR-0207): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again by the writer. Transcribed from dotnet/tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
   "kind": "viewStateJson",
   "columns": [
     "Notional",

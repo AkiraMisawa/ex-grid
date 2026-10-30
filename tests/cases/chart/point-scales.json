@@ -1,5 +1,5 @@
 {
-  "about": "An Observation's colour and size read from a column, and their keys beside the plot (ADR-0320), from tests/ExChart.Engine.Tests/PointScaleTests.cs.",
+  "about": "An Observation's colour and size read from a column, and their keys beside the plot (ADR-0320), from dotnet/tests/ExChart.Engine.Tests/PointScaleTests.cs.",
   "kind": "chart",
   "cases": [
     {

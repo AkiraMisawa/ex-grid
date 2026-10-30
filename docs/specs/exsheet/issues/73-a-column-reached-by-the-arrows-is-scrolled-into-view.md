@@ -46,7 +46,7 @@ not scroll. In a grid narrower than its columns the dashed column can lie outsid
   `RevealColumnAsync`. The registered grid's `RevealAsync(PointDashes)` chooses between the two by
   whether the dashes name a row. ↓ from a header and the arrows from a cell reveal as before; their
   tests are unchanged and pass.
-- **Docs and the DemoHost.** The Scope's and the Sheet's doc comments, `src/ExSheet/README.md` and
+- **Docs and the DemoHost.** The Scope's and the Sheet's doc comments, `dotnet/src/ExSheet/README.md` and
   `/pointing`'s prose say that a column reached is scrolled into view across. The `?narrow`
   paragraph says that → from Id's header brings PV into view.
 - **"Whole inside the client area" is read across.** A column's dashes run down the painted rows

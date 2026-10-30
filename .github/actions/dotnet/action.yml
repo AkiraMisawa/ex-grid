@@ -2,8 +2,9 @@ name: .NET SDK
 description: >-
   Installs the newest SDK of global.json's major.minor from the .NET CDN by its exact version, and
   unless told not to, falls back, with a warning, to an SDK the runner image already holds that
-  global.json accepts. Then Node and src/npm's dependencies, from which ExGrid's build bundles the
-  Script Core.
+  global.json accepts. Then Node and the npm workspace's dependencies, from which ExGrid's build
+  bundles the Script Core. global.json is dotnet/'s, where every dotnet command runs (ADR-0370
+  section 9).
 
 # Not actions/setup-dotnet. It turns global.json into a channel, and dotnet-install.sh resolves a
 # channel through an aka.ms redirect: when the redirect answers but its target fails, the script
@@ -25,6 +26,7 @@ runs:
     # feature bands.
     - name: global.json rolls forward across feature bands
       shell: bash
+      working-directory: dotnet
       run: |
         set -euo pipefail
         roll=$(jq -r '.sdk.rollForward' global.json)
@@ -33,6 +35,7 @@ runs:
     - id: install
       shell: bash
       continue-on-error: true
+      working-directory: dotnet
       run: |
         set -euo pipefail
         feed=https://builds.dotnet.microsoft.com/dotnet
@@ -46,10 +49,11 @@ runs:
         echo "$HOME/.dotnet" >> "$GITHUB_PATH"
         echo "version=$version" >> "$GITHUB_OUTPUT"
 
-    # Run from the repository root, `dotnet --version` resolves through global.json and fails when
-    # no SDK it accepts is installed.
+    # Run from dotnet/, `dotnet --version` resolves through global.json and fails when no SDK it
+    # accepts is installed.
     - name: The SDK global.json resolves
       shell: bash
+      working-directory: dotnet
       env:
         INSTALLED: ${{ steps.install.outputs.version }}
         FALLBACK: ${{ inputs.fallback }}
@@ -74,15 +78,14 @@ runs:
         # actions/setup-dotnet registered them (its csc.json).
         echo "::add-matcher::$GITHUB_ACTION_PATH/csc.json"
 
-    # ExGrid's build bundles the Script Core's module from src/npm (ADR-0350 section 7), so every job
-    # that builds .NET builds TypeScript too: Node, and src/npm's dependencies installed once here,
-    # ahead of a build that would otherwise install them itself.
+    # ExGrid's build bundles the Script Core's module from packages/ (ADR-0350 section 7), so every job
+    # that builds .NET builds TypeScript too: Node, and the dependencies of the npm workspace at the
+    # repository's root installed once here, ahead of a build that would otherwise install them itself.
     - uses: actions/setup-node@v7
       with:
         node-version-file: .node-version
         cache: npm
-        cache-dependency-path: src/npm/package-lock.json
-    - name: The Script Core's dependencies
+        cache-dependency-path: package-lock.json
+    - name: The npm workspace's dependencies
       shell: bash
-      working-directory: src/npm
       run: npm ci --no-audit --no-fund

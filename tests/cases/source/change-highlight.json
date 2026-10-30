@@ -1,5 +1,5 @@
 {
-  "about": "The Change Highlight of GridSource.from with a Row Key, the source's half (ADR-0141 LV-9, on ADR-0067's rules and ADR-0068's declaration): when each cell's displayed text last changed, in milliseconds from the case's start. From tests/ExGrid.Tests/LiveSourceTests.cs. The Amount column is shown as a whole number, so a change below one is one the format hides.",
+  "about": "The Change Highlight of GridSource.from with a Row Key, the source's half (ADR-0141 LV-9, on ADR-0067's rules and ADR-0068's declaration): when each cell's displayed text last changed, in milliseconds from the case's start. From dotnet/tests/ExGrid.Tests/LiveSourceTests.cs. The Amount column is shown as a whole number, so a change below one is one the format hides.",
   "kind": "source",
   "columns": [{"name": "Id", "type": "text"}, {"name": "Book", "type": "text"}, {"name": "Amount", "type": "number", "format": "whole"}],
   "cases": [

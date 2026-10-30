@@ -10,12 +10,12 @@ entered over cells whose painted text changed. The grid stops keeping what earli
 
 ## Where it stands
 
-- `src/ExGrid/Components/ExGrid.SeenText.cs` keeps `_paints` (`PaintsKept = 64`, `class Paint` with
+- `dotnet/src/ExGrid/Components/ExGrid.SeenText.cs` keeps `_paints` (`PaintsKept = 64`, `class Paint` with
   `TRow?[] Rows`), judges targets against them (`JudgeTargets`, `JudgeActionRow`), keeps the user's own
   writes (`_ownWrites`), and answers told Action presses (`ActionPressTakenAt`, `_actionPressPending`).
 - The refusal reasons `PasteRefusalReason.TargetChanged`, `PasteRefusalReason.RenderNoLongerKept`,
   `ActionRefusalReason.RowChanged` and `ActionRefusalReason.RenderNoLongerKept` exist for this rule.
-- `tests/ExGrid.Components/WriteRefusalTests.cs` pins the old rule. Its tests are rewritten to the new one,
+- `dotnet/tests/ExGrid.Components/WriteRefusalTests.cs` pins the old rule. Its tests are rewritten to the new one,
   not deleted: each case that refused now lands, or is refused for the order or the row's presence.
 
 ## What to build
@@ -30,7 +30,7 @@ entered over cells whose painted text changed. The grid stops keeping what earli
 - **The kept paints go.** Keep the layouts of recent renders, as positions and geometry, so a press lands
   on the cell it was made on (ED-31), and the row order a gesture was taken under.
 - **The reasons change** as ADR-0142's Consequences list. Update their XML docs and every Consumer that
-  words them: `samples/ExGrid.DemoPages/Pages/Features.razor`, `src/ExSheet/Components/ExSheet.razor`, and
+  words them: `dotnet/samples/ExGrid.DemoPages/Pages/Features.razor`, `dotnet/src/ExSheet/Components/ExSheet.razor`, and
   the reference Chrome's wording.
 - **D5 stays:** the bound source puts out what it gathered before a write is handled.
 

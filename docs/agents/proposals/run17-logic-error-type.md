@@ -91,7 +91,7 @@ with
 
 > `#GETTING_DATA` and `#CIRC!` are given back, never numbered; Excel's newer Error Values take Excel's numbers, 9 to 14, read by the seventeenth Windows run (ADR-0047, 2026-10-10 and its note of 2026-10-12). Ticket 17
 
-## The engine's README, `src/ExSheet.Engine/README.md`
+## The engine's README, `dotnet/src/ExSheet.Engine/README.md`
 
 - The table's `AND`, `OR`, `XOR` row: `logical1, [logical2], ...` becomes
   `logical1, [logical2], ...` — typed text that spells neither TRUE nor FALSE is passed over, as text in a range is

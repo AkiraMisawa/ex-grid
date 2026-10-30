@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** a defect found while writing `tests/ExGrid.Browser/f4-enter-mode.spec.mjs` (PR #128),
+**What to build:** a defect found while writing `tests/browser/f4-enter-mode.spec.mjs` (PR #128),
 on the Server host only. The cause is in ExGrid's core, not ExSheet: the Name Box is ExGrid's
 (ADR-0051), and any ExGrid with `ShowFormulaBar` met it. The keys typed straight after the Name
 Box's Enter must reach the grid, against the Focus the Name Box placed, as they do when typed slowly

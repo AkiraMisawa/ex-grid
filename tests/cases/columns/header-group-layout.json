@@ -1,5 +1,5 @@
 {
-  "about": "Header Groups resolved against the flat column order (ADR-0032): membership is a set, and every impossible declaration is refused by name at resolution. From tests/ExGrid.Tests/HeaderGroupTests.cs; the declaration's own refusals are in header-group.json.",
+  "about": "Header Groups resolved against the flat column order (ADR-0032): membership is a set, and every impossible declaration is refused by name at resolution. From dotnet/tests/ExGrid.Tests/HeaderGroupTests.cs; the declaration's own refusals are in header-group.json.",
   "kind": "calls",
   "subject": "HeaderGroupLayout",
   "cases": [

@@ -14,11 +14,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
-    <ProjectReference Include="..\..\..\src\ExSheet.Xlsx\ExSheet.Xlsx.csproj" />
-    <ProjectReference Include="..\..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
-    <ProjectReference Include="..\..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
-    <ProjectReference Include="..\..\..\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExSheet.Xlsx\ExSheet.Xlsx.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExGrid.Data\ExGrid.Data.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
   </ItemGroup>
 
   <!-- The probe's timings run in this build too, on the same runtime as the Worker's answers. -->

@@ -73,7 +73,7 @@ Alignment, and each new part follows the rules the first two follow.
   `"slantDashDot"`). A colour is `"automatic"` or `"#RRGGBB"`, and an Automatic colour is not
   written. Any other kind of colour, such as a theme object, `"red"` or `"#F00"`, is refused, and
   the refusal names it.
-- **`src/ExSheet`** behaves as before. `FormatSelectionAsync` sends a `CellFormatChange`, and
+- **`dotnet/src/ExSheet`** behaves as before. `FormatSelectionAsync` sends a `CellFormatChange`, and
   `SheetRow` reads `GetNumberFormat`.
 - **Readings, provisional until the eleventh Windows run:**
   - Case 7: setting a side writes the cell's own side only. An outline, Inside or None on a range

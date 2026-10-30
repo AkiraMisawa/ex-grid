@@ -253,13 +253,13 @@ Definition of Done:
   rewriting References and producing `#REF!`; the 1900 date system; number formats; culture
   parsing, and a document saved under one culture reading the same under another; Sheet Document
   round trip and unknown-version refusal; fill rules and refusals; Linked Table snapshots. Prior
-  art: `tests/ExGrid.Tests`, the clipboard and filter-semantics suites, whose "pin every case" style
+  art: `dotnet/tests/ExGrid.Tests`, the clipboard and filter-semantics suites, whose "pin every case" style
   (ADR-0023) is the model.
 - **Layer 1, ExGrid's new pure rules (existing seam):** the spill paste shape and its refusal, the
   fill handle's one-axis extension, a stale placement request dropped.
 - **Layer 2, ExGrid (existing seam):** each declaration off leaves the grid unchanged (the existing
   suites stay green); each on behaves as stated, with render counts showing rows still skip their
-  render. Prior art: `tests/ExGrid.Components`.
+  render. Prior art: `dotnet/tests/ExGrid.Components`.
 - **Layer 2, ExSheet (new seam):** an edit repaints only the rows whose Values changed; inserting a
   row keeps the Selection; a spilled paste selects the block; one Ctrl+Z per operation; Headings and
   the Formula Bar hide. Prior art: the row-memoisation and edit tests.
@@ -267,7 +267,7 @@ Definition of Done:
   driven by real keys: typing, Point by keys and by mouse, completion accepted with Tab, the
   Formula Bar mirroring, the fill-handle drag, paste from the real clipboard, Ctrl+arrow, and two
   ExSheets on one page staying independent, with a clean console throughout. Prior art:
-  `tests/ExGrid.Browser`.
+  `tests/browser`.
 - **The invariants still hold:** the DOM does not grow with the Sheet's extent, rows skip their
   render, and nothing per cell reaches JavaScript.
 - **Performance is measured, not gated:** recalculation at a large Sheet, and per-keystroke

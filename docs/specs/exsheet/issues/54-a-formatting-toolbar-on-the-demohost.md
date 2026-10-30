@@ -56,7 +56,7 @@ decides. ADR-0100's "Found while implementing" records the details settled on th
 
 - **Code.**
   - `ExSheet`: `ShowToolbar`, `ShowToolbarChanged` and `ToolbarContent`.
-  - The items, `ToolbarRow` and `ToolbarButton`, under `src/ExSheet/Toolbar/`.
+  - The items, `ToolbarRow` and `ToolbarButton`, under `dotnet/src/ExSheet/Toolbar/`.
   - `ISheetChrome.ToolbarItem`, and `MudSheetChrome`'s implementation of it.
   - `SetCellFormatFromFocusAsync`, the public command a toggle uses.
 - **Layer 2.**

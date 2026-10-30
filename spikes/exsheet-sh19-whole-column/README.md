@@ -3,7 +3,7 @@
 SH-19 (the Definition of Done, §27) records what ExSheet's recalculation costs at a large Sheet. Its
 case, decided with the user, is a synthetic Sheet from a fixed seed: 10,000 rows by 20 columns with
 about 50,000 Formulas, and **twenty whole-column totals beside the block**, `=SUM(A:A)` to
-`=SUM(T:T)` in V1 to V20. `tests/ExSheet.Engine.Tests/Measurements.cs` measures it.
+`=SUM(T:T)` in V1 to V20. `dotnet/tests/ExSheet.Engine.Tests/Measurements.cs` measures it.
 
 This console project measures **the variant**: the same Sheet, from the same seed and in the same
 shape, with column T written as each row's share of R's total, `=R1/SUM(R:R)`, where SH-19's case has

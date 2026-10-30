@@ -1,5 +1,5 @@
 {
-  "about": "The paste that spills (ADR-0050, item 3): a Consumer's declaration that range to one cell writes the block from that cell. The shape half; the Selection that follows is the grid's. From tests/ExGrid.Tests/SpillPasteTests.cs.",
+  "about": "The paste that spills (ADR-0050, item 3): a Consumer's declaration that range to one cell writes the block from that cell. The shape half; the Selection that follows is the grid's. From dotnet/tests/ExGrid.Tests/SpillPasteTests.cs.",
   "kind": "clipboard",
   "extent": [100, 10],
   "cases": [

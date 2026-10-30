@@ -31,7 +31,7 @@ otherwise than ADR-0071 read. ADR-0071, "What the fourteenth Windows run settled
 
 ### What was built
 
-- **Which Fill covers a gridline** (`src/ExGrid/Components/CellAppearances.cs`, `Resolve`). A cell
+- **Which Fill covers a gridline** (`dotnet/src/ExGrid/Components/CellAppearances.cs`, `Resolve`). A cell
   holds the gridline of its bottom and right edges. A Fill covers it beneath any line there: the
   lower (right) cell's where that cell has one and it differs from this cell's own, else this cell's
   own, which its ground already paints. Before, a cover was given only to an unfilled cell, and only
@@ -56,7 +56,7 @@ otherwise than ADR-0071 read. ADR-0071, "What the fourteenth Windows run settled
 - **A consequence of "beneath any line"**: the gaps of a dashed line on a gridline that a lower (right)
   Fill covers now show that Fill, where before they showed the row's rule. No run looked at this. It
   follows ADR-0071's "A Fill covers all four of its gridlines, beneath any line".
-- **DemoHost cases** (`samples/ExGrid.DemoPages/SheetCases.cs`):
+- **DemoHost cases** (`dotnet/samples/ExGrid.DemoPages/SheetCases.cs`):
   - `14-16`, `14-17` and `14-18` are the fourteenth run's set-ups.
   - `fills` holds the arrangements no run looked at: B2/C2 side by side; a double on E2's bottom over
     E3's Fill; on B5's right between two Fills; on E5's right beside F5's Fill; and on B8's bottom

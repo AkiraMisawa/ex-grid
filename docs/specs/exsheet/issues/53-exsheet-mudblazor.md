@@ -6,10 +6,10 @@ Status: done
 
 **Blocked by:** None (52 is in)
 
-- [x] **A new project, `src/ExSheet.MudBlazor`** (SH-47).
+- [x] **A new project, `dotnet/src/ExSheet.MudBlazor`** (SH-47).
   - It references `ExSheet`, `ExGrid.MudBlazor` and MudBlazor.
   - XML doc comments on every public member.
-  - `tests/ExGrid.PackageSmoke/check.sh` packs it.
+  - `dotnet/tests/ExGrid.PackageSmoke/check.sh` packs it.
   - It stays out of `release.yml` as ExSheet does.
 - [x] **Its Format Cells Chrome is a `MudDialog`** (SH-45).
   - More Colours is MudBlazor's colour picker.
@@ -23,7 +23,7 @@ Status: done
 ## Comments
 
 *(2026-10-01, agent cf-53, built; written into the ticket by the orchestrator from the agent's report.)*
-`src/ExSheet.MudBlazor`, Format Cells as a `MudDialog`.
+`dotnet/src/ExSheet.MudBlazor`, Format Cells as a `MudDialog`.
 
 - **The package (SH-47).**
   - It references ExSheet, ExGrid.MudBlazor and MudBlazor 9.0.0, the Wrapper's floor. It depends on
@@ -75,7 +75,7 @@ Status: done
     Server. The full run is CI's.
   - Package smoke passed, run before the tab fix (a C# change only).
 - **Left open.** A real IME in the Custom code field under MudBlazor was not tried.
-  (`format-cells.spec.mjs` is now listed in `tests/ExGrid.Browser/README.md`.)
+  (`format-cells.spec.mjs` is now listed in `tests/browser/README.md`.)
 
 *(2026-10-01, agent cf-53, follow-up.)* Horizontal and Underline are dropdowns (`MudSelect`), as
 Excel's and the built-in Chrome's are. The first build drew them as radio groups, on the expectation

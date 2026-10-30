@@ -1,5 +1,5 @@
 {
-  "about": "What the gestures on a Mark Column mean (ADR-0043): lining a block of rows up, the header's state from the Consumer's counts, and what pressing the header does. From tests/ExGrid.Tests/RowMarkRuleTests.cs. The C# core's RowMarkRules is a static class; the Script Core's rows/row-marks.ts is its functions under these names.",
+  "about": "What the gestures on a Mark Column mean (ADR-0043): lining a block of rows up, the header's state from the Consumer's counts, and what pressing the header does. From dotnet/tests/ExGrid.Tests/RowMarkRuleTests.cs. The C# core's RowMarkRules is a static class; the Script Core's rows/row-marks.ts is its functions under these names.",
   "kind": "calls",
   "subject": "RowMarkRules",
   "cases": [

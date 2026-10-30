@@ -1,5 +1,5 @@
 {
-  "about": "The reference Selection Summary (ADR-0130, SM-1/SM-4/SM-6), and its exact arithmetic (ADR-0350 §16): what each figure is over which cells, and the text it is shown with where no format applies. From tests/ExGrid.Tests/GridSummaryTests.cs.",
+  "about": "The reference Selection Summary (ADR-0130, SM-1/SM-4/SM-6), and its exact arithmetic (ADR-0350 §16): what each figure is over which cells, and the text it is shown with where no format applies. From dotnet/tests/ExGrid.Tests/GridSummaryTests.cs.",
   "kind": "summary",
   "columns": ["Book", "Notional", "Rate", "Date", "Live"],
   "rows": [

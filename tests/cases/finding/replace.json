@@ -1,5 +1,5 @@
 {
-  "about": "The reference Replace All (ADR-0332 §2 and §3): what is replaced, written or refused, all or nothing and uncapped, under the version it was read in, over rows written as the entries their cells' editors open with. A write to a column the file names in numberColumns takes only a number, and otherwise refuses with \"not a number\". From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "about": "The reference Replace All (ADR-0332 §2 and §3): what is replaced, written or refused, all or nothing and uncapped, under the version it was read in, over rows written as the entries their cells' editors open with. A write to a column the file names in numberColumns takes only a number, and otherwise refuses with \"not a number\". From dotnet/tests/ExGrid.Tests/GridReplaceTests.cs.",
   "kind": "replace",
   "columns": ["Book", "Trader", "Notional"],
   "numberColumns": ["Notional"],

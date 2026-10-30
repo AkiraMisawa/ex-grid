@@ -1,0 +1,1023 @@
+// Runs a shared case of tests/cases/sheet/ (ADR-0370 sections 2 and 5) against the ported engine, as
+// dotnet/tests/ExSheet.Engine.Tests/Cases/SheetCases.cs runs it against ExSheet.Engine: a Workbook made under a culture,
+// steps taken on it in turn, and what each step reads back. tests/cases/README.md says what a file holds.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { CellAddress } from '../src/cell-address';
+import { BorderLine, CellColour, CellFill, type BorderLineStyle, type CellFormat, type CellBorders, type CellFont, type HorizontalAlignment } from '../src/cell-format';
+import { BorderChange, CellFormatChange } from '../src/cell-format-change';
+import { CellRange } from '../src/cell-range';
+import { Culture } from '../src/culture';
+import { formatRoundTrip } from '../src/dotnet';
+import { Entry } from '../src/entry';
+import { FormatError } from '../src/format-error';
+import { FormulaSyntaxError } from '../src/formula-syntax-error';
+import { NumberFormat } from '../src/number-format';
+import type { Sheet, SheetCopy } from '../src/sheet';
+import { RepeatedKeyError, SheetRefusedError, type SheetChange, type SheetRefusal } from '../src/sheet-change';
+import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-document-parts';
+import { SheetDocument } from '../src/sheet-document';
+import { SheetEdit } from '../src/sheet-edit';
+import { readLinkedRows, readSheetEdit, writeCellFormat, writeLinkedRows, writeRepeatedKey } from '../src/sheet-wire';
+import { parseWrittenError, Value } from '../src/value';
+import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
+import { WorkbookDocument } from '../src/workbook-document';
+
+/** Where the shared cases of the engine live. */
+export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../tests/cases/sheet');
+
+/** A value of a case, as JSON holds it. */
+export type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
+/** An object of a case. */
+export type JsonObject = { readonly [key: string]: Json };
+
+export function isObject(value: Json | undefined): value is JsonObject {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function object(value: Json | undefined, what: string): JsonObject {
+    if (!isObject(value)) throw new CaseError(`${what} is not an object.`);
+    return value;
+}
+
+export function text(value: Json | undefined, what: string): string {
+    if (typeof value !== 'string') throw new CaseError(`${what} is not text.`);
+    return value;
+}
+
+export function list(value: Json | undefined, what: string): readonly Json[] {
+    if (!Array.isArray(value)) throw new CaseError(`${what} is not a list.`);
+    return value as readonly Json[];
+}
+
+function integer(value: Json | undefined, what: string): number {
+    if (typeof value !== 'number' || !Number.isInteger(value)) throw new CaseError(`${what} is not a whole number.`);
+    return value;
+}
+
+/** Reads a file of the shared cases. */
+export function readFile(file: string): JsonObject {
+    return object(JSON.parse(fs.readFileSync(path.join(root, file), 'utf8')) as Json, file);
+}
+
+/** Every case of every file of the kind, as [file, name] pairs. */
+export function casesOf(kind: string): [string, string][] {
+    const rows: [string, string][] = [];
+    for (const file of fs.readdirSync(root).filter(f => f.endsWith('.json')).toSorted()) {
+        const document = readFile(file);
+        if (document['kind'] !== kind) continue;
+        const names = new Set<string>();
+        for (const entry of list(document['cases'], `${file}'s cases`)) {
+            const name = text(object(entry, 'a case')['name'], 'a case name');
+            if (names.has(name)) throw new CaseError(`sheet/${file} holds two cases named "${name}".`);
+            names.add(name);
+            rows.push([file, name]);
+        }
+    }
+    return rows;
+}
+
+/** The case of the file named so, and the file it is in. */
+export function findCase(file: string, name: string): { file: JsonObject; entry: JsonObject } {
+    const document = readFile(file);
+    for (const entry of list(document['cases'], `${file}'s cases`)) {
+        if (object(entry, 'a case')['name'] === name) return { file: document, entry: object(entry, 'a case') };
+    }
+    throw new CaseError(`sheet/${file} holds no case named "${name}".`);
+}
+
+/** A number a case writes: a JSON number, or `"Infinity"`, `"-Infinity"`, `"NaN"`. */
+export function caseNumber(value: Json | undefined, what: string): number {
+    if (typeof value === 'number') return value;
+    if (value === 'Infinity') return Infinity;
+    if (value === '-Infinity') return -Infinity;
+    if (value === 'NaN') return NaN;
+    throw new CaseError(`${what} is no number.`);
+}
+
+/** A Value as a case writes one: a number, text, a Boolean, `null` for a blank, and an Error Value as `{"error": "#N/A"}`. */
+export function encode(value: Value | undefined): Json {
+    if (value === undefined) return null;
+    switch (value.kind) {
+        case 'number':
+            return value.number;
+        case 'text':
+            return value.text;
+        case 'boolean':
+            return value.boolean;
+        case 'error':
+            return value.isRefused ? { error: value.error, refused: true } : { error: value.error };
+        default:
+            throw new CaseError('Internal: no kind of Value.');
+    }
+}
+
+/** A Value a case writes, read back; the inverse of `encode`. */
+export function decode(node: Json | undefined): Value | undefined {
+    if (node === null || node === undefined) return undefined;
+    if (typeof node === 'string') return Value.fromText(node);
+    if (typeof node === 'boolean') return Value.fromBoolean(node);
+    if (typeof node === 'number') return Value.fromNumber(node);
+    if (isObject(node) && Object.keys(node).length === 2 && node['refused'] === true) {
+        // A refusal, as a Consumer holds one read from a refused cell.
+        if (node['error'] === '#VALUE!') return Value.refusal;
+        if (node['error'] === '#NAME?') return Value.refusedName;
+        throw new CaseError(`${JSON.stringify(node)} is no refusal: a refusal is #VALUE! or #NAME?.`);
+    }
+    if (isObject(node)) {
+        // The two states of a computation are no Error Value typed, but a case may give one to be refused.
+        const written = node['error'];
+        const error = written === '#CIRC!' || written === '#GETTING_DATA' ? written : typeof written === 'string' ? parseWrittenError(written) : undefined;
+        if (error === undefined || Object.keys(node).length !== 1) throw new CaseError(`${JSON.stringify(node)} is no Error Value a case gives.`);
+        return Value.fromError(error);
+    }
+    throw new CaseError(`${JSON.stringify(node)} is no Value.`);
+}
+
+function colourOf(node: Json | undefined): CellColour {
+    const written = text(node, 'a colour');
+    if (written === 'Automatic') return CellColour.automatic;
+    const colour = CellColour.fromHex(written);
+    if (colour === undefined) throw new CaseError(`'${written}' is no colour.`);
+    return colour;
+}
+
+function font(of: CellFont): JsonObject {
+    return { colour: of.colour.toString(), bold: of.bold, italic: of.italic, underline: of.underline, strikethrough: of.strikethrough };
+}
+
+function fill(of: CellFill): Json {
+    return of.colour === undefined ? 'none' : of.colour.toString();
+}
+
+function fillOf(node: Json | undefined): CellFill {
+    return node === 'none' ? CellFill.none : CellFill.solid(colourOf(node));
+}
+
+function line(of: BorderLine): Json {
+    return of.isNone ? 'none' : { style: of.style, colour: of.colour.toString() };
+}
+
+function lineOf(node: Json | undefined): BorderLine {
+    if (node === 'none') return BorderLine.none;
+    const written = object(node, 'a line');
+    return new BorderLine(text(written['style'], 'style') as BorderLineStyle, written['colour'] === undefined ? CellColour.automatic : colourOf(written['colour']));
+}
+
+function borders(of: CellBorders): JsonObject {
+    return { top: line(of.top), bottom: line(of.bottom), left: line(of.left), right: line(of.right) };
+}
+
+/** A Cell Format as Blazor's adapter hands one to .NET (ADR-0370 section 1), so every case holds that writer to the shape. */
+export function cellFormatJson(of: CellFormat): JsonObject {
+    return object(JSON.parse(writeCellFormat(of)) as Json, 'a Cell Format');
+}
+
+/** Nodes in the code-unit order of their JSON's text, so that a set reads the same from both runners. */
+function sorted(nodes: readonly Json[]): Json[] {
+    return nodes.map(n => [JSON.stringify(n), n] as const).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, n]) => n);
+}
+
+/** Text a case types: a string, or `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula too long to write out. */
+function typedText(node: Json | undefined, what: string): string {
+    if (typeof node === 'string') return node;
+    if (!isObject(node) || Object.keys(node).length !== 1 || !Array.isArray(node['parts'])) {
+        throw new CaseError(`${what}: '${JSON.stringify(node)}' is no text to type: a string, or {"parts": [...]}.`);
+    }
+    return list(node['parts'], 'parts').map(part => {
+        if (typeof part === 'string') return part;
+        const [piece, times] = list(part, 'a part');
+        if (typeof piece !== 'string' || typeof times !== 'number' || !Number.isSafeInteger(times) || times < 0 || list(part, 'a part').length !== 2) {
+            throw new CaseError(`${what}: '${JSON.stringify(part)}' is no part of a text: a string, or [string, times] with times a whole number, 0 or more.`);
+        }
+        return piece.repeat(times);
+    }).join('');
+}
+
+/** A per-cell reading of texts with each built text (`typedText`) written out; a `null` stays one. */
+function texts(expected: Json, what: string): JsonObject {
+    return Object.fromEntries(Object.entries(object(expected, what)).map(([a, t]) => [a, isObject(t) ? typedText(t, a) : t]));
+}
+
+function entryJson(entry: Entry | undefined): Json {
+    if (entry === undefined) return null;
+    return entry.formula === undefined ? { constant: encode(entry.constant) } : { formula: entry.formula };
+}
+
+const changeParts = new Set(['numberFormat', 'alignment', 'fontColour', 'bold', 'italic', 'underline', 'strikethrough', 'fill', 'borders']);
+const edges = new Set(['top', 'bottom', 'left', 'right', 'insideHorizontal', 'insideVertical']);
+
+function flag(node: Json | undefined, what: string): boolean | undefined {
+    if (node === undefined) return undefined;
+    if (typeof node !== 'boolean') throw new CaseError(`${what} is not true or false.`);
+    return node;
+}
+
+/** A Cell Format change as a case writes one: each part it sets, by the Script Core's name. */
+function changeOf(node: Json | undefined): CellFormatChange {
+    const parts = object(node, 'a Cell Format change');
+    for (const key of Object.keys(parts)) {
+        if (!changeParts.has(key)) throw new CaseError(`'${key}' is no part of a Cell Format change.`);
+    }
+    return new CellFormatChange({
+        numberFormat: parts['numberFormat'] === undefined ? undefined : NumberFormat.parse(text(parts['numberFormat'], 'numberFormat')),
+        // A number is a value cast in from outside the vocabulary, given to be refused.
+        alignment: parts['alignment'] === undefined ? undefined
+            : typeof parts['alignment'] === 'number' ? parts['alignment'] as unknown as HorizontalAlignment
+            : text(parts['alignment'], 'alignment') as HorizontalAlignment,
+        fontColour: parts['fontColour'] === undefined ? undefined : colourOf(parts['fontColour']),
+        bold: flag(parts['bold'], 'bold'),
+        italic: flag(parts['italic'], 'italic'),
+        underline: flag(parts['underline'], 'underline'),
+        strikethrough: flag(parts['strikethrough'], 'strikethrough'),
+        fill: parts['fill'] === undefined ? undefined : fillOf(parts['fill']),
+        borders: parts['borders'] === undefined ? undefined : borderChangeOf(parts['borders']),
+    });
+}
+
+function borderChangeOf(node: Json): BorderChange {
+    if (node === 'none') return BorderChange.none;
+    const given = object(node, 'a Border change');
+    const keys = Object.keys(given);
+    if (keys.length === 1 && given['outline'] !== undefined) return BorderChange.outline(lineOf(given['outline']));
+    if (keys.length === 1 && given['inside'] !== undefined) return BorderChange.inside(lineOf(given['inside']));
+    for (const key of keys) {
+        if (!edges.has(key)) throw new CaseError(`'${key}' is no edge of a Border change.`);
+    }
+    const edge = (key: string): BorderLine | undefined => given[key] === undefined ? undefined : lineOf(given[key]);
+    return new BorderChange({
+        top: edge('top'), bottom: edge('bottom'), left: edge('left'), right: edge('right'),
+        insideHorizontal: edge('insideHorizontal'), insideVertical: edge('insideVertical'),
+    });
+}
+
+/** A run of columns or rows formatted alike, as a case reads one. */
+function axisFormatJson(of: SheetDocumentAxisFormat): JsonObject {
+    return {
+        first: of.first,
+        last: of.last,
+        numberFormat: orNull(of.numberFormat?.code),
+        alignment: orNull(of.alignment),
+        font: of.font === undefined ? null : font(of.font),
+        fill: of.fill === undefined ? null : fill(of.fill),
+        borders: of.borders === undefined ? null : borders(of.borders),
+    };
+}
+
+/** A Sheet Document as a case reads one: its cells, its column and row formats and its column widths. */
+function documentJson(document: SheetDocument): JsonObject {
+    return {
+        cells: document.cells.map(c => ({
+            address: c.address.toString(),
+            entry: entryJson(c.entry),
+            numberFormat: orNull(c.numberFormat?.code),
+            alignment: orNull(c.alignment),
+            font: c.font === undefined ? null : font(c.font),
+            fill: c.fill === undefined ? null : fill(c.fill),
+            borders: c.borders === undefined ? null : borders(c.borders),
+        })),
+        cellAddresses: document.cells.map(c => c.address.toString()),
+        columns: document.columns.map(axisFormatJson),
+        rows: document.rows.map(axisFormatJson),
+        columnWidths: document.columnWidths.map(w => ({ first: w.first, last: w.last, width: w.width, kind: w.kind, isCustom: w.isCustom })),
+    };
+}
+
+/** What a case writes for a reading the engine leaves out: `null`, as the C# runner reads a missing key. */
+function orNull<T extends Json>(value: T | undefined): T | null {
+    return value === undefined ? null : value;
+}
+
+function show(node: Json | undefined): string {
+    if (node === undefined) return 'null';
+    if (typeof node === 'number') return formatRoundTrip(node);
+    return JSON.stringify(node);
+}
+
+/**
+ * Whether `actual` is what `expected` says, and where not, how: an object is compared by the keys the case writes,
+ * a key the engine leaves out reading as `null`; a list, element by element; a number, exactly, or within
+ * `{"near": n, "within": e}`.
+ */
+export function compare(where: string, expected: Json | undefined, actual: Json | undefined, differences: string[]): void {
+    if (isObject(expected) && 'near' in expected && 'within' in expected && Object.keys(expected).length === 2) {
+        const centre = caseNumber(expected['near'], 'near');
+        const within = caseNumber(expected['within'], 'within');
+        if (typeof actual !== 'number' || Math.abs(actual - centre) > within) {
+            differences.push(`${where}: expected ${formatRoundTrip(centre)} within ${formatRoundTrip(within)}, got ${show(actual)}`);
+        }
+        return;
+    }
+    // An Error Value compares in full: one written without "refused" is Excel's own, and a refusal is not it.
+    if (isObject(expected) && isObject(actual) && 'error' in expected && 'error' in actual
+        && Object.keys(expected).length !== Object.keys(actual).length) {
+        differences.push(`${where}: expected ${show(expected)}, got ${show(actual)}`);
+        return;
+    }
+    if (isObject(expected) && isObject(actual)) {
+        for (const [key, value] of Object.entries(expected)) compare(`${where}.${key}`, value, orNull(actual[key]), differences);
+        return;
+    }
+    if (Array.isArray(expected) && Array.isArray(actual)) {
+        const e = expected as readonly Json[];
+        const a = actual as readonly Json[];
+        if (e.length !== a.length) {
+            differences.push(`${where}: expected ${JSON.stringify(e)}, got ${JSON.stringify(a)}`);
+            return;
+        }
+        for (let i = 0; i < e.length; i++) compare(`${where}[${String(i)}]`, e[i], a[i], differences);
+        return;
+    }
+    if (typeof expected === 'number' && typeof actual === 'number') {
+        if (!Object.is(expected, actual) && !(expected === actual && expected !== 0)) {
+            differences.push(`${where}: expected ${show(expected)}, got ${show(actual)}`);
+        }
+        return;
+    }
+    if (JSON.stringify(orNull(expected)) !== JSON.stringify(orNull(actual))) {
+        differences.push(`${where}: expected ${show(expected)}, got ${show(actual)}`);
+    }
+}
+
+export function cultureOf(name: string): Culture {
+    return name === 'invariant' ? Culture.invariant : Culture.of(name);
+}
+
+const verbs = new Set([
+    'enter', 'enterAll', 'enterRun', 'do', 'doWire', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
+    'doAll', 'readTable', 'setColumnWidth', 'setAutomaticColumnWidth', 'rename', 'retype',
+]);
+const modifiers = new Set(['on', 'expect', 'note']);
+
+/** What a step did, for its readings: the change it reported, the refusal it was checked for, its step. */
+/** A Linked Table's columns, as `linkedTableColumns` answers them. */
+type Columns = readonly (readonly (Value | undefined)[])[];
+
+function columnsJson(columns: Columns | undefined): Json {
+    return columns === undefined ? null : columns.map(c => c.map(encode));
+}
+
+interface Outcome {
+    sheet: Sheet;
+    change: SheetChange | undefined;
+    checked: boolean;
+    refusal: SheetRefusal | undefined;
+    step: WorkbookStep | undefined;
+    /** How many times the case's clock had been read before the step. */
+    clockReadsBefore: number;
+    /** What a step, an undo or a redo changed across the Workbook. */
+    workbookChange: WorkbookChange | undefined;
+    /** A Linked Table's columns as `readTable` read them (`undefined` while it waits), or `false` when no table was read. */
+    tableColumns: Columns | undefined | false;
+}
+
+function padded(n: number, width: number): string {
+    return String(n).padStart(width, '0');
+}
+
+function addresses(of: Iterable<CellAddress>): string[] {
+    return [...of].map(a => a.toString());
+}
+
+/** A Sheet's change as a case reads one. */
+function changeJson(change: SheetChange): JsonObject {
+    return {
+        valueChanges: addresses(change.valueChanges),
+        recalculated: addresses(change.recalculated),
+        recalculatedCount: change.recalculated.length,
+        rows: [...change.rows],
+        columns: [...change.columns],
+        reformatsUnnamedRows: change.reformatsUnnamedRows,
+    };
+}
+
+/** A case the runner cannot read: the case's defect, never a refusal it can expect. */
+export class CaseError extends Error {}
+
+/**
+ * A refusal as a case expects it, in the words the C# runner uses for .NET's exception types. What is not the
+ * engine refusing is thrown on: the runner's own `CaseError`, an engine defect (`Internal: …`), and what
+ * JavaScript throws by itself (a plain `TypeError`, the call stack running out).
+ */
+export function thrown(e: unknown): JsonObject {
+    if (e instanceof CaseError) throw e;
+    if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
+    if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
+    if (e instanceof RepeatedKeyError) {
+        // Read as Blazor's adapter hands it to .NET (ADR-0370 section 1), so every case holds that writer to what it says.
+        const handed = object(JSON.parse(writeRepeatedKey(e)) as Json, 'a refused snapshot');
+        const keys = list(handed['keys'], 'keys');
+        return {
+            refusal: 'repeatedKey', saying: e.message, table: orNull(handed['table']), keyColumn: e.keyColumn, key: orNull(keys[0]),
+            keyColumns: orNull(handed['keyColumns']), keys, firstRow: orNull(handed['firstRow']), secondRow: orNull(handed['secondRow']),
+            valueChanges: orNull(object(handed['change'], 'a change')['valueChanges']),
+        };
+    }
+    if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
+    if (e instanceof FormatError) return { refusal: 'format', saying: e.message };
+    if (e instanceof RangeError && e.message !== 'Maximum call stack size exceeded') return { refusal: 'argument', saying: e.message };
+    if (e instanceof TypeError || e instanceof RangeError) throw e;
+    if (e instanceof Error && !e.message.startsWith('Internal')) return { refusal: 'invalidOperation', saying: e.message };
+    throw e;
+}
+
+/** One case being run: its Workbook, the steps it has done, and what it remembered. */
+export class Run {
+    readonly culture: Culture;
+    workbook: Workbook;
+    readonly differences: string[] = [];
+    readonly #done: WorkbookStep[] = [];
+    readonly #pictures = new Map<string, string>();
+    readonly #copies = new Map<string, SheetCopy>();
+    readonly #tables = new Map<string, Columns | undefined>();
+    #clockReads = 0;
+
+    constructor(culture: Culture) {
+        this.culture = culture;
+        this.workbook = new Workbook(culture);
+    }
+
+    take(step: JsonObject, where: string): void {
+        for (const key of Object.keys(step)) {
+            if (!verbs.has(key) && !modifiers.has(key)) throw new CaseError(`${where}: '${key}' is no step or modifier.`);
+        }
+        const named = Object.keys(step).filter(k => verbs.has(k));
+        const verb = named[0];
+        if (named.length !== 1 || verb === undefined) throw new CaseError(`${where}: a step takes one verb, not ${String(named.length)}.`);
+        const argument = orNull(step[verb]);
+        const on = step['on'];
+        let sheet = this.workbook.shown;
+        if (on !== undefined) {
+            const found = this.workbook.find(text(on, 'on'));
+            if (found === undefined) throw new CaseError(`${where}: the Workbook has no Sheet '${JSON.stringify(on)}'.`);
+            sheet = found;
+        }
+        const expect = step['expect'] === undefined ? undefined : object(step['expect'], 'expect');
+        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads, workbookChange: undefined, tableColumns: false };
+        try {
+            this.#act(verb, argument, sheet, outcome);
+        } catch (e) { // oxlint-disable-line ex-grid/no-catch -- a refusal a case expects is read, not rethrown
+            if (!(e instanceof Error) || e.message.startsWith('Internal')) throw e;
+            const throws = expect?.['throws'];
+            if (throws === undefined) {
+                this.differences.push(`${where} (${verb}) threw ${e.name}: ${e.message}`);
+                return;
+            }
+            compare(`${where}.throws`, throws, thrown(e), this.differences);
+            for (const [key, value] of Object.entries(expect === undefined ? {} : expect)) {
+                if (key !== 'throws') this.#read(where, key, value, outcome);
+            }
+            return;
+        }
+        if (expect === undefined) return;
+        if (expect['throws'] !== undefined) {
+            this.differences.push(`${where} (${verb}): expected it to throw ${JSON.stringify(expect['throws'])}, but it did not`);
+            return;
+        }
+        for (const [key, value] of Object.entries(expect)) this.#read(where, key, value, outcome);
+    }
+
+    /** A Workbook opened from one Sheet saved as a Sheet Document, or from a document's JSON as the case writes it. */
+    #reopened(argument: JsonObject): Workbook {
+        const keys = Object.keys(argument);
+        // One Sheet saved as a Sheet Document's JSON, read back, and opened as a Workbook of that one Sheet.
+        if (keys.length === 1 && argument['sheet'] !== undefined) {
+            return Workbook.open(SheetDocument.fromJson(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')).toJson()));
+        }
+        if (keys.length === 1 && argument['sheetJson'] !== undefined) return Workbook.open(SheetDocument.fromJson(text(argument['sheetJson'], 'reopen.sheetJson')));
+        if (keys.length === 1 && argument['workbookJson'] !== undefined) return Workbook.open(WorkbookDocument.fromJson(text(argument['workbookJson'], 'reopen.workbookJson')));
+        throw new CaseError(`${JSON.stringify(argument)} is no way to reopen a Workbook.`);
+    }
+
+    #act(verb: string, argument: Json, sheet: Sheet, outcome: Outcome): void {
+        switch (verb) {
+            case 'enter':
+                for (const [address, typed] of Object.entries(object(argument, 'enter'))) {
+                    outcome.change = sheet.enter(CellAddress.parse(address), typedText(typed, address));
+                }
+                break;
+            case 'enterAll':
+                outcome.change = sheet.enterMany(Object.entries(object(argument, 'enterAll')).map(([a, t]) => [CellAddress.parse(a), typedText(t, a)] as const));
+                break;
+            case 'enterRun': {
+                // One batch over a range, each cell typed from a template naming its row: {row} or {row-1}.
+                const run = object(argument, 'enterRun');
+                const typed = text(run['typed'], 'enterRun.typed');
+                outcome.change = sheet.enterMany([...CellRange.parse(text(run['range'], 'enterRun.range')).cells()].map(a =>
+                    [a, typed.replaceAll('{row-1}', String(a.row)).replaceAll('{row}', String(a.row + 1))] as const));
+                break;
+            }
+            case 'do':
+            case 'doWire': {
+                // An edit's text exactly as .NET's SheetWire writes it, read as Blazor's adapter reads it (ADR-0370 section 1).
+                const step = this.workbook.do(sheet.name, verb === 'do' ? this.#edit(argument) : readSheetEdit(text(argument, 'doWire')));
+                this.#done.push(step);
+                outcome.step = step;
+                outcome.sheet = step.sheet;
+                outcome.workbookChange = step.change;
+                outcome.change = step.change.changesSheets && !this.workbook.sheets.includes(step.sheet) ? undefined : step.change.for(step.sheet);
+                break;
+            }
+            case 'doAll': {
+                // Several edits, each on the Sheet it names, as one operation.
+                const all = this.workbook.doAll(list(argument, 'doAll').map(pair => {
+                    const [on, edit] = list(pair, 'an edit on a Sheet');
+                    return [text(on, 'a Sheet'), this.#edit(orNull(edit))] as const;
+                }));
+                this.#done.push(all);
+                outcome.step = all;
+                outcome.sheet = all.sheet;
+                outcome.workbookChange = all.change;
+                outcome.change = all.change.for(all.sheet);
+                break;
+            }
+            case 'readTable':
+            {
+                // A table's name, or {"name", "as"}, which also holds the snapshot read under that label.
+                const named = isObject(argument) ? argument : undefined;
+                const columns = this.workbook.linkedTableColumns(text(named === undefined ? argument : named['name'], 'readTable'));
+                outcome.tableColumns = columns;
+                if (named !== undefined) this.#tables.set(text(named['as'], 'as'), columns);
+                break;
+            }
+            case 'check':
+                outcome.checked = true;
+                outcome.refusal = this.workbook.check(sheet.name, this.#edit(argument));
+                break;
+            case 'undo':
+            case 'redo': {
+                const done = this.#stepOf(argument);
+                outcome.step = done;
+                const change = verb === 'undo' ? done.undo() : done.redo();
+                outcome.workbookChange = change;
+                outcome.change = this.workbook.sheets.includes(done.sheet) ? change.for(done.sheet) : undefined;
+                break;
+            }
+            case 'reopen':
+                // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
+                if (isObject(argument)) this.workbook = this.#reopened(argument);
+                else if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
+                else if (argument === 'json') this.workbook = Workbook.open(WorkbookDocument.fromJson(this.workbook.toDocument().toJson()));
+                else throw new CaseError(`'${JSON.stringify(argument)}' is no way to reopen a Workbook.`);
+                outcome.sheet = this.workbook.shown;
+                break;
+            case 'remember':
+                this.#pictures.set(text(argument, 'remember'), this.#picture());
+                break;
+            case 'read':
+                if (argument !== true) throw new CaseError("'read' takes true.");
+                break;
+            case 'copy': {
+                const copy = object(argument, 'copy');
+                this.#copies.set(text(copy['as'], 'as'), sheet.copy(CellRange.parse(text(copy['range'], 'range'))));
+                break;
+            }
+            case 'setNumberFormat':
+                for (const [at, code] of Object.entries(object(argument, 'setNumberFormat'))) {
+                    outcome.change = sheet.setNumberFormat(CellRange.parse(at), code === null ? undefined : NumberFormat.parse(text(code, at)));
+                }
+                break;
+            case 'setAlignment':
+                for (const [at, alignment] of Object.entries(object(argument, 'setAlignment'))) {
+                    outcome.change = sheet.setAlignment(CellRange.parse(at), text(alignment, at) as HorizontalAlignment);
+                }
+                break;
+            case 'setColumnWidth': {
+                // The Sheet's own forms, outside any step.
+                const width = object(argument, 'setColumnWidth')['width'];
+                if (width === undefined) throw new CaseError('setColumnWidth names no width: write null for the default.');
+                outcome.change = sheet.setColumnWidth(CellRange.parse(text(object(argument, 'setColumnWidth')['columns'], 'columns')),
+                    width === null ? undefined : caseNumber(width, 'width'));
+                break;
+            }
+            case 'setAutomaticColumnWidth':
+                outcome.change = sheet.setAutomaticColumnWidth(CellRange.parse(text(object(argument, 'setAutomaticColumnWidth')['columns'], 'columns')),
+                    caseNumber(object(argument, 'setAutomaticColumnWidth')['width'], 'width'));
+                break;
+            case 'rename':
+                // The Sheet's own rename, outside any step.
+                outcome.change = sheet.rename(text(argument, 'rename'));
+                break;
+            case 'retype':
+                // Each cell's Entry text, as the Cell Editor opens it, typed back into the cell.
+                for (const cell of list(argument, 'retype')) {
+                    const address = CellAddress.parse(text(cell, 'retype'));
+                    outcome.change = sheet.enter(address, sheet.getEntryText(address));
+                }
+                break;
+            case 'setCellFormat': {
+                // The Sheet's own form, outside any step.
+                const format = object(argument, 'setCellFormat');
+                outcome.change = sheet.setCellFormat(list(format['ranges'], 'setCellFormat.ranges').map(r => CellRange.parse(text(r, 'range'))), changeOf(format['change']));
+                break;
+            }
+            case 'declareTable': {
+                const table = object(argument, 'declareTable');
+                const stray = Object.keys(table).find(part => !['name', 'columns', 'key'].includes(part));
+                if (stray !== undefined) throw new CaseError(`'${stray}' is no part of a Linked Table declared: name, columns and key.`);
+                const columns = list(table['columns'], 'columns').map(c => text(c, 'a column'));
+                const key = table['key'];
+                const name = text(table['name'], 'name');
+                const change = key === undefined || key === null
+                    ? this.workbook.declareLinkedTable(name, columns)
+                    : this.workbook.declareLinkedTable(name, columns, Array.isArray(key) ? list(key, 'key').map(k => text(k, 'a key column')) : text(key, 'key'));
+                outcome.change = change.for(sheet);
+                break;
+            }
+            case 'pushTable': {
+                const table = object(argument, 'pushTable');
+                const rows = list(table['rows'], 'rows').map(r => list(r, 'a row').map(decode));
+                // The rows as an adapter's wire carries them (ADR-0370 section 1): the case's own text read by
+                // readLinkedRows, which must read what the case means and write what it reads.
+                const wired = readLinkedRows(JSON.stringify(table['rows']));
+                if (writeLinkedRows(wired) !== writeLinkedRows(rows)) {
+                    throw new CaseError(`readLinkedRows reads the rows ${JSON.stringify(table['rows'])} as ${writeLinkedRows(wired)}.`);
+                }
+                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), wired);
+                outcome.change = outcome.workbookChange.for(sheet);
+                break;
+            }
+            case 'setToday': {
+                if (argument === null) {
+                    outcome.change = this.workbook.setToday(undefined).for(sheet);
+                    break;
+                }
+                const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text(argument, 'setToday'));
+                if (match === null) throw new CaseError(`'${JSON.stringify(argument)}' is no day.`);
+                outcome.change = this.workbook.setToday({ year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) }).for(sheet);
+                break;
+            }
+            case 'setSeed': {
+                // A seed, or {"seed", "changes"}: the seed and the count of changes together.
+                const seedOf = (node: Json | undefined): bigint | undefined =>
+                    node === null || node === undefined ? undefined : BigInt(typeof node === 'number' ? node : text(node, 'setSeed'));
+                if (isObject(argument) && argument['seed'] === undefined) throw new CaseError('setSeed names no seed: write null for none.');
+                outcome.change = (isObject(argument)
+                    ? this.workbook.setSeed(seedOf(argument['seed']), integer(argument['changes'], 'changes'))
+                    : this.workbook.setSeed(seedOf(argument))).for(sheet);
+                break;
+            }
+            case 'getDisplay': {
+                // A display asked for, so that a width refused is a refusal the step can expect.
+                const asked = object(argument, 'getDisplay');
+                sheet.getDisplay(CellAddress.parse(text(asked['at'], 'getDisplay.at')), caseNumber(asked['width'], 'getDisplay.width'));
+                break;
+            }
+            case 'setClock': {
+                // A clock that moves on `step` seconds each time it is read, and counts its reads.
+                const clock = object(argument, 'setClock');
+                const from = text(clock['from'], 'setClock.from');
+                // Exactly yyyy-MM-ddTHH:mm:ss, as the C# runner reads it.
+                if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/u.test(from)) throw new CaseError(`'${from}' is no moment written yyyy-MM-ddTHH:mm:ss.`);
+                let at = Date.parse(`${from}Z`);
+                if (Number.isNaN(at)) throw new CaseError(`'${from}' is no moment.`);
+                const step = clock['step'];
+                if (typeof step !== 'number' || !Number.isFinite(step)) throw new CaseError('setClock.step is a number of seconds.');
+                this.workbook.nowSource = () => {
+                    this.#clockReads++;
+                    at += step * 1000;
+                    const d = new Date(at);
+                    return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes(), second: d.getUTCSeconds(), millisecond: d.getUTCMilliseconds() };
+                };
+                break;
+            }
+            case 'recalculateVolatile':
+                outcome.change = this.workbook.recalculateVolatile().for(sheet);
+                break;
+            case 'show': {
+                // The Sheet shown, by its name.
+                const shown = this.workbook.find(text(argument, 'show'));
+                if (shown === undefined) throw new CaseError(`The Workbook has no Sheet '${text(argument, 'show')}' to show.`);
+                this.workbook.shown = shown;
+                outcome.sheet = shown;
+                break;
+            }
+            default:
+                throw new CaseError(`'${verb}' is no step.`);
+        }
+    }
+
+    #stepOf(argument: Json): WorkbookStep {
+        if (argument === 'last') {
+            const last = this.#done.at(-1);
+            if (last === undefined) throw new CaseError('No step has been done.');
+            return last;
+        }
+        const step = this.#done[integer(argument, 'a step')];
+        if (step === undefined) throw new CaseError(`No step ${JSON.stringify(argument)} has been done.`);
+        return step;
+    }
+
+    /**
+     * A Sheet Edit as a case writes one: an object of one key, the factory, and its arguments. It is read by the reader
+     * Blazor's adapter reads .NET's edits with (ADR-0370 section 1), so every case holds that reader to the vocabulary;
+     * only what a case alone writes is read here: a paste of a `copy` the case took, a text built from `parts`, and an
+     * alignment cast in from outside the vocabulary to be refused.
+     */
+    #edit(node: Json): SheetEdit {
+        const edit = object(node, 'an edit');
+        const keys = Object.keys(edit);
+        const name = keys[0];
+        if (keys.length !== 1 || name === undefined) throw new CaseError(`An edit names one operation: ${JSON.stringify(edit)}.`);
+        const argument = orNull(edit[name]);
+        if (name === 'paste' && isObject(argument) && argument['copy'] !== undefined) {
+            const copy = this.#copies.get(text(argument['copy'], 'copy'));
+            const block = copy?.block;
+            if (block === undefined) throw new CaseError('The copy pasted was refused, or never taken.');
+            const at = argument['at'];
+            if (Array.isArray(at)) return SheetEdit.paste(block, list(at, 'at').map(t => CellRange.parse(text(t, 'a target'))));
+            const target = text(at, 'at');
+            return SheetEdit.paste(block, target.includes(':') ? CellRange.parse(target) : CellAddress.parse(target));
+        }
+        if (name === 'setCellFormat' && isObject(argument) && isObject(argument['change']) && typeof argument['change']['alignment'] === 'number') {
+            return SheetEdit.setCellFormat(list(argument['ranges'], 'ranges').map(r => CellRange.parse(text(r, 'a range'))), changeOf(argument['change']));
+        }
+        return readSheetEdit(JSON.stringify({ [name]: withTexts(name, argument) }));
+    }
+    /** Everything the Workbook records and shows: its document, and every held cell's Value on every Sheet. */
+    #picture(): string {
+        const values = this.workbook.sheets.flatMap(s => s.entryAddresses.map(a => `${s.name}!${a.toString()}=${valueText(s.getValue(a))}`));
+        return `${this.workbook.toDocument().toJson()}\n${values.join('\n')}`;
+    }
+
+    #read(where: string, key: string, written: Json, outcome: Outcome): void {
+        const expected = key === 'formulas' || key === 'entryTexts' ? texts(written, key) : written;
+        const sheet = outcome.sheet;
+        const perCell = (read: (address: CellAddress) => Json): JsonObject =>
+            Object.fromEntries(Object.keys(object(expected, key)).map(a => [a, read(CellAddress.parse(a))]));
+        const perRange = (read: (range: CellRange) => Json): JsonObject =>
+            Object.fromEntries(Object.keys(object(expected, key)).map(r => [r, read(CellRange.parse(r))]));
+        let actual: Json;
+        switch (key) {
+            case 'values':
+                actual = perCell(a => encode(sheet.getValue(a)));
+                break;
+            case 'displays':
+                actual = Object.fromEntries(Object.entries(object(expected, key)).map(([address, wanted]) => {
+                    const width = isObject(wanted) ? wanted['width'] : undefined;
+                    const at = CellAddress.parse(address);
+                    const display = width === undefined || width === null ? sheet.getDisplay(at) : sheet.getDisplay(at, caseNumber(width, 'width'));
+                    return [address, {
+                        width: orNull(width),
+                        text: display.text,
+                        cannotShow: display.cannotShow,
+                        alignment: display.alignment,
+                        colour: orNull(display.colour),
+                        isNumber: display.isNumber,
+                    }];
+                }));
+                break;
+            case 'texts':
+                actual = perCell(a => sheet.getDisplay(a).text);
+                break;
+            case 'fonts':
+                actual = perCell(a => font(sheet.getFont(a)));
+                break;
+            case 'fills':
+                actual = perCell(a => fill(sheet.getFill(a)));
+                break;
+            case 'borders':
+                actual = perCell(a => borders(sheet.getBorders(a)));
+                break;
+            case 'cellFormats':
+                // The Cell Formats a range shows, each once, in the order of their JSON's text, as the C# runner orders them.
+                actual = perRange(r => sorted(sheet.getCellFormats(r).map(cellFormatJson)));
+                break;
+            case 'edgeLines': {
+                // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
+                actual = perRange(r => {
+                    const lines = sheet.getEdgeLines(r);
+                    return { top: sorted(lines.top.map(line)), bottom: sorted(lines.bottom.map(line)), left: sorted(lines.left.map(line)), right: sorted(lines.right.map(line)) };
+                });
+                break;
+            }
+            case 'workbookJson':
+                // The Workbook Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toDocument().toJson();
+                break;
+            case 'documentJson':
+                // The Sheet Document's JSON as written, which the two engines write alike.
+                actual = this.workbook.toSheetDocument(sheet.name).toJson();
+                break;
+            case 'document':
+                actual = documentJson(this.workbook.toSheetDocument(sheet.name));
+                break;
+            case 'formulas':
+                actual = perCell(a => orNull(sheet.getEntry(a)?.formula));
+                break;
+            case 'entryTexts':
+                actual = perCell(a => sheet.getEntryText(a));
+                break;
+            case 'entries':
+                actual = perCell(a => entryJson(sheet.getEntry(a)));
+                break;
+            case 'numberFormats':
+                actual = perCell(a => sheet.getNumberFormat(a).code);
+                break;
+            case 'alignments':
+                actual = perCell(a => sheet.getAlignment(a));
+                break;
+            case 'widthOnEntry':
+                actual = perCell(a => orNull(sheet.getWidthOnEntry(a)));
+                break;
+            case 'entryAddressesIn':
+                // The cells of each range that hold an Entry, in row order and then column order.
+                actual = perRange(r => addresses(sheet.entryAddressesIn(r).toSorted((a, b) => a.compareTo(b))));
+                break;
+            case 'spilledFrom':
+                actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
+                break;
+            case 'completions':
+                // Per text being typed, its caret marked |, the Sheet's completion there: what it replaces and each candidate.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(marked => {
+                    const caret = marked.indexOf('|');
+                    if (caret < 0 || marked.includes('|', caret + 1)) throw new CaseError(`'${marked}' marks no caret: one | is the caret.`);
+                    const completion = sheet.complete(marked.slice(0, caret) + marked.slice(caret + 1), caret);
+                    return [marked, completion === undefined ? null : {
+                        start: completion.start,
+                        length: completion.length,
+                        candidates: completion.candidates.map(c => ({ name: c.name, kind: c.kind, insertText: c.insertText, description: orNull(c.description) })),
+                    }];
+                }));
+                break;
+            case 'references':
+                // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(t => [t, sheet.references(t).map(r => ({
+                    start: r.start,
+                    length: r.length,
+                    cells: orNull(r.cells?.toString()),
+                    linkedColumn: r.linkedColumn === undefined ? null : { table: r.linkedColumn.table, column: r.linkedColumn.column },
+                }))]));
+                break;
+            case 'columnWidths':
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(column => {
+                    const index = CellAddress.tryParseColumn(column);
+                    if (index === undefined) throw new CaseError(`'${column}' is no column.`);
+                    const width = sheet.getColumnWidth(index);
+                    return [column, width === undefined ? null : { width: width.width, kind: width.kind, isCustom: width.isCustom, isSetByUser: width.isSetByUser }];
+                }));
+                break;
+            case 'change':
+                actual = outcome.change === undefined ? null : changeJson(outcome.change);
+                break;
+            case 'changes': {
+                // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
+                const changes = outcome.workbookChange;
+                if (changes === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads its changes.`);
+                actual = Object.fromEntries(changes.sheets.map(reached => [reached.name, changeJson(changes.for(reached))]));
+                break;
+            }
+            case 'refusal':
+                if (!outcome.checked) throw new CaseError(`${where}: only a check reads a refusal.`);
+                actual = outcome.refusal === undefined ? null : { reason: outcome.refusal.reason, saying: outcome.refusal.message };
+                break;
+            case 'clockReads':
+                actual = this.#clockReads - outcome.clockReadsBefore;
+                break;
+            case 'stepSheet':
+                // The Sheet a step was done on, or made: an inserted or copied Sheet is its step's.
+                if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
+                actual = outcome.step.sheet.name;
+                break;
+            case 'changesSheets':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads whether it changed the Sheets.`);
+                actual = outcome.workbookChange.changesSheets;
+                break;
+            case 'isUndone':
+                if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
+                actual = outcome.step.isUndone;
+                break;
+            case 'ranges':
+                if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
+                actual = outcome.step.ranges.map(r => r.toString());
+                break;
+            case 'picture':
+                actual = this.#pictures.get(text(expected, key)) === this.#picture() ? expected : 'a different picture';
+                break;
+            case 'pictureNot': {
+                const remembered = this.#pictures.get(text(expected, key));
+                actual = remembered !== undefined && remembered !== this.#picture() ? expected : 'the same picture';
+                break;
+            }
+            case 'entryAddresses':
+                actual = addresses(sheet.entryAddresses);
+                break;
+            case 'valueAddresses':
+                actual = addresses(sheet.valueAddresses);
+                break;
+            case 'alike':
+                // Groups of cells whose Values are one another's, a refusal alike only to a refusal.
+                actual = list(expected, 'alike').map(group => {
+                    const values = list(group, 'a group of alike cells').map(c => JSON.stringify(encode(sheet.getValue(CellAddress.parse(text(c, 'a cell'))))));
+                    return new Set(values).size === 1 ? group : `unlike: ${values.join(', ')}`;
+                });
+                break;
+            case 'recalculationPasses':
+                actual = sheet.recalculationPasses;
+                break;
+            case 'sheets':
+                actual = this.workbook.sheets.map(s => s.name);
+                break;
+            case 'shown':
+                actual = this.workbook.shown.name;
+                break;
+            case 'sheetsReached':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo, a redo or a push reads the Sheets it reached.`);
+                actual = outcome.workbookChange.sheets.map(s => s.name);
+                break;
+            case 'tableColumns': {
+                const columns = outcome.tableColumns;
+                if (columns === false) throw new CaseError(`${where}: only readTable reads a Linked Table's columns.`);
+                actual = columnsJson(columns);
+                break;
+            }
+            case 'heldTables':
+                // Each snapshot readTable held, as it stands now.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(label => {
+                    if (!this.#tables.has(label)) throw new CaseError(`${where}: no snapshot was held as '${label}'.`);
+                    return [label, columnsJson(this.#tables.get(label))];
+                }));
+                break;
+            case 'copies':
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(name => {
+                    const copy = this.#copies.get(name);
+                    if (copy === undefined) throw new CaseError(`${where}: no copy was taken as '${name}'.`);
+                    const block = copy.block;
+                    return [name, {
+                        refusal: copy.refusal === undefined ? null : copy.refusal.reason,
+                        saying: copy.refusal === undefined ? null : copy.refusal.message,
+                        text: copy.text === undefined ? null : copy.text,
+                        html: copy.html === undefined ? null : copy.html,
+                        block: block === undefined
+                            ? null
+                            : Array.from({ length: block.rowCount }, (_, r) => Array.from({ length: block.columnCount }, (_unused, c) => entryJson(block.entryAt(r, c)))),
+                    }];
+                }));
+                break;
+            case 'workbook': {
+                const today = this.workbook.today;
+                actual = {
+                    culture: this.workbook.culture.name,
+                    today: today === undefined ? null : `${padded(today.year, 4)}-${padded(today.month, 2)}-${padded(today.day, 2)}`,
+                    hasVolatileFormulas: this.workbook.hasVolatileFormulas,
+                    changes: this.workbook.changes,
+                    seed: this.workbook.seed === undefined ? null : this.workbook.seed.toString(),
+                    linkedTables: this.workbook.linkedTables.map(t => ({
+                        name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], key: orNull(t.key), isWaiting: t.isWaiting, rowCount: t.rowCount,
+                    })),
+                };
+                break;
+            }
+            default:
+                throw new CaseError(`${where}: '${key}' is no reading.`);
+        }
+        compare(`${where}.${key}`, expected, actual, this.differences);
+    }
+}
+
+/** A Value as C#'s Value.ToString writes it, for a picture. */
+function valueText(value: Value | undefined): string {
+    return value === undefined ? '' : value.toString();
+}
+
+/** An edit's argument with each text a case builds from `parts` written out, as .NET sends the text itself. */
+function withTexts(name: string, argument: Json): Json {
+    const typedCells = (cells: Json | undefined): Json =>
+        Object.fromEntries(Object.entries(object(cells, 'typed cells')).map(([a, t]) => [a, typedText(t, a)]));
+    switch (name) {
+        case 'enter':
+            return typedCells(argument);
+        case 'pasteFields':
+            return { ...object(argument, name), typed: typedCells(object(argument, name)['typed']) };
+        case 'enterInto':
+            return { ...object(argument, name), typed: typedText(object(argument, name)['typed'], 'typed') };
+        default:
+            return argument;
+    }
+}
+
+/** Runs the case, and answers every way the engine differs from what it expects; empty when it agrees. */
+export function runSheetCase(file: JsonObject, entry: JsonObject): string[] {
+    const culture = entry['culture'] ?? file['culture'];
+    if (culture === undefined) throw new CaseError('Neither the case nor its file names a culture.');
+    const run = new Run(cultureOf(text(culture, 'culture')));
+    const sheets = entry['sheets'];
+    if (sheets !== undefined) run.workbook = new Workbook(run.culture, list(sheets, 'sheets').map(s => text(s, 'a Sheet name')));
+    const setup = entry['setup'];
+    if (setup !== undefined) {
+        const setups = file['setups'];
+        const named = isObject(setups) ? setups[text(setup, 'setup')] : undefined;
+        if (named === undefined) throw new CaseError(`The file names no setup '${JSON.stringify(setup)}'.`);
+        list(named, 'a setup').forEach((step, i) => {
+            run.take(object(step, 'a step'), `setup step ${String(i + 1)}`);
+        });
+    }
+    const steps = list(entry['steps'], 'steps');
+    if (steps.length === 0) throw new CaseError('The case takes no steps.');
+    steps.forEach((step, i) => {
+        run.take(object(step, 'a step'), `step ${String(i + 1)}`);
+    });
+    return run.differences;
+}

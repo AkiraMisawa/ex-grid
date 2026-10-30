@@ -23,7 +23,7 @@ Status: done
 a `NumberFormatColour` (Black, Blue, Cyan, Green, Magenta, Red, White, Yellow), or none.
 `CellDisplay.Colour` carries it from both `Sheet.GetDisplay` overloads, so the display at a column's
 width, which the component paints, carries it too. `NumberFormatColours.Rgb` is the one table of
-Excel's legacy palette, as `0xRRGGBB`. `src/ExSheet` is unchanged: painting is ticket 48.
+Excel's legacy palette, as `0xRRGGBB`. `dotnet/src/ExSheet` is unchanged: painting is ticket 48.
 
 - **The precedence over the Font colour** is stated on `CellDisplay.Colour` and on
   `NumberFormatColour`. The engine has no Font until ticket 45, so what is tested is the engine's

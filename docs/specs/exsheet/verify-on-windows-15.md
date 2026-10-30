@@ -41,7 +41,7 @@ Three things only a Windows desktop can answer:
 
 ## Part A — VZ-14 at the current base
 
-Run `tests/ExGrid.Browser/scrollbar.spec.mjs`, headed, under both browsers, on WebAssembly and on the
+Run `tests/browser/scrollbar.spec.mjs`, headed, under both browsers, on WebAssembly and on the
 Server host, once at **125%** display scaling and once at **150%**, as the run of 2026-09-23 did
 (`verification/2026-09-23-windows/results.md` has the commands and what it recorded). Tee each run to
 `verification/<date>-windows-15/scrollbar-<scale>-<host>.log`. Record the gutter as the grid is told

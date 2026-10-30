@@ -1,5 +1,5 @@
 {
-  "about": "The Consumer's answer to a Replace All (ADR-0332 §3). From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "about": "The Consumer's answer to a Replace All (ADR-0332 §3). From dotnet/tests/ExGrid.Tests/GridReplaceTests.cs.",
   "kind": "calls",
   "subject": "GridReplaceResult",
   "cases": [

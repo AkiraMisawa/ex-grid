@@ -16,7 +16,7 @@ layer 3 at a time.
 
 ## Comments
 
-2026-09-27, the suite. Three specs in `tests/ExGrid.Browser`, sharing `sheet-helpers.mjs`, run by
+2026-09-27, the suite. Three specs in `tests/browser`, sharing `sheet-helpers.mjs`, run by
 the committed config on `chrome` and `msedge`: `sheet.spec.mjs` (`/sheet`: typing and Formulas,
 Ctrl+arrow, the Headings and the band held while scrolling sideways, the Name Box with and without
 an edit open, the Formula Bar mirroring, insertion by button and Context Menu with one Ctrl+Z each,
@@ -88,7 +88,7 @@ above are no longer marked anywhere.
 The first box stays open. Two criteria of §27 name Layer 3 and have no layer-3 test on a Sheet:
 
 - **SH-27**, Ctrl+Enter with a Formula over a range: `=A1` over B2:C3 from B2 gives `=A1`, `=B1`,
-  `=A2`, `=B2`. Layer 2 has it (`tests/ExSheet.Components/ExcelKeyWiringTests.cs`); its layer 3 is
+  `=A2`, `=B2`. Layer 2 has it (`dotnet/tests/ExSheet.Components/ExcelKeyWiringTests.cs`); its layer 3 is
   "beside Excel", so a probe in `sheet-vs-excel.spec.mjs`.
 - **SH-41**, a bold number's `####` and an italic number's edges, read in pixels. Only the core's
   DC-58 tests exist (`appearance.spec.mjs`), on `/appearance`, which has no ExSheet.

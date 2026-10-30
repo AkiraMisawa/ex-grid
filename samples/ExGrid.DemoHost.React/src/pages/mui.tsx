@@ -8,7 +8,7 @@ import { MuiExGrid } from '@ex-grid/mui';
 // The Wrapper's stylesheet, as text this page writes into a <style> of its own and takes away when it goes: the other
 // pages, the bare grid's fixtures, stay bare, and a spec file's document is the one it booted with once the page is
 // left (ADR-0056).
-import wrapperStyles from '../../../../src/npm/mui/styles.css?inline';
+import wrapperStyles from '../../../../packages/mui/styles.css?inline';
 import { DemoNav } from '../demo-nav';
 import { tradeWindow, type DemoTrade } from '../demo-data';
 

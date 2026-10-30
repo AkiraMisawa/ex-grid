@@ -1,5 +1,5 @@
 {
-  "about": "Edges between an Observation's nodes, drawn and cut to the plot (ADR-0321), from tests/ExChart.Engine.Tests/EdgeTests.cs.",
+  "about": "Edges between an Observation's nodes, drawn and cut to the plot (ADR-0321), from dotnet/tests/ExChart.Engine.Tests/EdgeTests.cs.",
   "kind": "chart",
   "cases": [
     {

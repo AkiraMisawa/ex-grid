@@ -37,7 +37,7 @@ nix develop -c dotnet run -c Release spikes/exsheet-financial-evaluation/Search.
 python3 -B spikes/exsheet-financial-evaluation/pmt_exact.py --check pmt.txt engine.txt
 ```
 
-`Search.cs` references `src/ExSheet.Engine` (`#:project`) for `--refusals` and `--engine`, which enter each
+`Search.cs` references `dotnet/src/ExSheet.Engine` (`#:project`) for `--refusals` and `--engine`, which enter each
 input as a Formula in a `Sheet` through the engine's public surface; everything else in it is the standard
 library and, for the C library's `log1p` and `expm1`, `libm.so.6`. `pmt_exact.py` is the standard library's
 `decimal`, and computes nothing the engine computes: it re-implements PMT's rules from their comments over exact

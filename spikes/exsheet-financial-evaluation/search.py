@@ -33,8 +33,8 @@ from fractions import Fraction as Q
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-RESULTS = ROOT / "tests/ExSheet.Engine.Tests/ExcelOracle"
-CASES = ROOT / "tests/ExSheet.Engine.Tests/ExcelCases"
+RESULTS = ROOT / "dotnet/tests/ExSheet.Engine.Tests/ExcelOracle"
+CASES = ROOT / "dotnet/tests/ExSheet.Engine.Tests/ExcelCases"
 AREAS = ("fv", "pv", "pmt", "npv", "xnpv")
 
 decimal.getcontext().prec = 80

@@ -51,7 +51,7 @@ Three edits for files a background agent does not edit, and one collision to put
   sentence to append to the section's last bullet: *(2026-10-12: the first build showed it does. A parameter written
   in `@code` is reported at its line in the `.razor` file, so the analyzer is the baseline for every shipped project
   and no snapshot test was written.)* Two facts the section may also want: the analyzer is
-  `Microsoft.CodeAnalysis.PublicApiAnalyzers` 5.3.0, added once in `src/Directory.Build.props`; and its other rules
+  `Microsoft.CodeAnalysis.PublicApiAnalyzers` 5.3.0, added once in `dotnet/src/Directory.Build.props`; and its other rules
   are off there — RS0026 and RS0027 would reshape members with optional parameters, which `0.1.0` does not review
   ("Types are reviewed; members are not reshaped"), and RS0041 reports the `BuildRenderTree` Razor generates with
   nullable annotations off.

@@ -81,7 +81,7 @@ All of these are recorded in ADR-0064 and ADR-0065; they are summarised here.
 
 ## Testing Decisions
 
-- **Layer 1 only**, in `tests/ExGrid.Data.Tests` and `tests/ExGrid.Data.Arrow.Tests`, each test
+- **Layer 1 only**, in `dotnet/tests/ExGrid.Data.Tests` and `dotnet/tests/ExGrid.Data.Arrow.Tests`, each test
   named with its ADR.
 - **The Arrow tests write streams the way other producers write them**, using `Apache.Arrow`'s own
   builders, as the measurement's self-tests did.

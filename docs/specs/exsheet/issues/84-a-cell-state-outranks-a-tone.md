@@ -25,7 +25,7 @@ declared before it, "so a state the Consumer named outranks a tone its rule deri
 
 ### What changed
 
-- **The Tone block moved** in `src/ExGrid/wwwroot/ex-grid.css`, from near the end of the file to just
+- **The Tone block moved** in `dotnet/src/ExGrid/wwwroot/ex-grid.css`, from near the end of the file to just
   before the Cell State block, where its comment already said it was. Both are written as
   `.ex-cell.ex-x`, so the order decides, and it no longer depends on any token: a Stale or Error cell
   paints its state's colour whatever colours a theme gives the two. The Cell State comment now names

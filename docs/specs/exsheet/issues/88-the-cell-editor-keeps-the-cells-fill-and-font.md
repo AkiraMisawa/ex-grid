@@ -69,7 +69,7 @@ editor's look below is a **reading**, built and not observed:
   Font's own colour (`SheetRow.EditorAppearanceAt`). So -5 in `0;[Red]-0` under a blue Font shows
   red in the cell and blue in the editor. An Automatic Font is the Ink, and a row's or column's Fill
   is the ground of a cell that holds nothing.
-- `ex-sheet.css`'s comment and `src/ExSheet/README.md` say so.
+- `ex-sheet.css`'s comment and `dotnet/src/ExSheet/README.md` say so.
 
 ### Tests
 

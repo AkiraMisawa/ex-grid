@@ -32,7 +32,7 @@ structured references under that rule.
       `#NAME?` (ADR-0049). Decide, with Excel's answer, whether declaring the table rewrites the
       text or leaves it as typed until it is next written.
 - [x] **The SH-6 test changes its expectation.**
-      `tests/ExSheet.Engine.Tests/ReferenceGrammarCultureTests.cs` pins today's behaviour in the
+      `dotnet/tests/ExSheet.Engine.Tests/ReferenceGrammarCultureTests.cs` pins today's behaviour in the
       form `(Sheet.DefaultName, "=sum(limit[line])", "=SUM(limit[line])", "=SUM(limit[line])", 7)`.
       Its written and after-insert texts become the declared case. Declare the table in that test
       with a column whose case differs from its name's (for example `LIMIT` with `Line`), so that

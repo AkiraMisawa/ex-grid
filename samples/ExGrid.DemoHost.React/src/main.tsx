@@ -2,11 +2,11 @@
 // page catalogue at the same paths, so layer 3 drives all three alike.
 import { StrictMode, useEffect, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import '../../ExGrid.DemoPages/wwwroot/app.css';
-import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
-import '../../../src/ExChart/wwwroot/ex-chart.min.css';
-import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
-import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
+import '../../../dotnet/samples/ExGrid.DemoPages/wwwroot/app.css';
+import '../../../dotnet/src/ExGrid/wwwroot/ex-grid.min.css';
+import '../../../dotnet/src/ExChart/wwwroot/ex-chart.min.css';
+import '../../../dotnet/src/ExPivot/wwwroot/ex-pivot.min.css';
+import '../../../dotnet/src/ExSheet/wwwroot/ex-sheet.min.css';
 import { Appearance } from './pages/appearance';
 import { Board } from './pages/board';
 import { Cells } from './pages/cells';

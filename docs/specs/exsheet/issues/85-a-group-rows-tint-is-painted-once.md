@@ -37,7 +37,7 @@ read from the screen. Nothing compares the two today.
 ### What changed
 
 - **The tint is painted on the cells, and on the row only where no cell is**
-  (`src/ExGrid/wwwroot/ex-grid.css`, the Row Kind block).
+  (`dotnet/src/ExGrid/wwwroot/ex-grid.css`, the Row Kind block).
   - Each cell paints it once, over whatever ground it has: a pinned cell's opaque one, a Fill, or
     none.
   - A group or total row paints no background beneath its cells (`background-image: none`, as it

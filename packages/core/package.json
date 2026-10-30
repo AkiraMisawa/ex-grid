@@ -1,0 +1,34 @@
+{
+  "name": "@ex-grid/core",
+  "version": "0.0.0-dev",
+  "description": "ExGrid's Script Core: an Excel-like grid for reading money and risk numbers, in TypeScript and free of any UI framework.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/data": "0.0.0-dev"
+  }
+}

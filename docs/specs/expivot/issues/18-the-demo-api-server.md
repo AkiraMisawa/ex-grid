@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** `samples/ExGrid.DemoApi` (ADR-0069).
+**What to build:** `dotnet/samples/ExGrid.DemoApi` (ADR-0069).
 
 - **The server itself:** an ASP.NET Core minimal API with SQLite (`Microsoft.Data.Sqlite`) and
   SignalR, allowing the hosts' origins (CORS).
@@ -22,7 +22,7 @@ Status: done
 
 **Blocked by:** 10, exgrid-data 03 and 05
 
-- [x] `tests/ExGrid.DemoApi.Tests`: the SQL source's answers equal `PivotSource.From`'s over the
+- [x] `dotnet/tests/ExGrid.DemoApi.Tests`: the SQL source's answers equal `PivotSource.From`'s over the
   same trades (PV-22)
 - [x] Layer 3's configuration starts the server with each host, and CI does the same
 

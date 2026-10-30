@@ -32,7 +32,7 @@ right edge. Headless Chrome on this Mac, WebAssembly. So the defect is real.
 
 ### What was built
 
-All of it is in the core's stylesheet (`src/ExGrid/wwwroot/ex-grid.css`), next to the row's own rule.
+All of it is in the core's stylesheet (`dotnet/src/ExGrid/wwwroot/ex-grid.css`), next to the row's own rule.
 - **A Pinned Column's cell paints its row's rule itself.** It uses the same image the row paints, from
   the same token (`--ex-row-rule-color`, transparent by default), named in `--ex-row-rule`:
   `.ex-pinned:where(.ex-cell)`. It has one class's specificity and leaves header cells out.

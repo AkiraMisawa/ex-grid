@@ -1,5 +1,5 @@
 {
-  "about": "Every filter operator on every column type (FL-6, ADR-0023), against the reference implementation GridSource.From runs: a value either side of the operand and a Blank where an operator is offered, a refusal naming the column where it is not. From tests/ExGrid.Tests/OperatorMatrixTests.cs. A Date cell here is a date and time, exact to C#'s tick, never truncated to the day.",
+  "about": "Every filter operator on every column type (FL-6, ADR-0023), against the reference implementation GridSource.From runs: a value either side of the operand and a Blank where an operator is offered, a refusal naming the column where it is not. From dotnet/tests/ExGrid.Tests/OperatorMatrixTests.cs. A Date cell here is a date and time, exact to C#'s tick, never truncated to the day.",
   "kind": "query",
   "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}, {"name": "TradedOn", "type": "date", "dateType": "dateTime"}],
   "cases": [

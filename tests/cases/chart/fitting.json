@@ -1,5 +1,5 @@
 {
-  "about": "The fits a Consumer calls (ADR-0291): least squares, Theil–Sen and a polynomial, in the plotted space or on ln y and ln x, their coefficients, R² and Note, the values they have only over the range they were fitted on, the Level series they hand in, and what they refuse (ADR-0290), from tests/ExChart.Engine.Tests/FittingTests.cs. A coefficient in the plotted space is compared exactly, as both engines do the same arithmetic in the same order; one fitted on a logarithm, or read back through one, is compared within 1e-9, because each language's ln and exp may differ in the last bit.",
+  "about": "The fits a Consumer calls (ADR-0291): least squares, Theil–Sen and a polynomial, in the plotted space or on ln y and ln x, their coefficients, R² and Note, the values they have only over the range they were fitted on, the Level series they hand in, and what they refuse (ADR-0290), from dotnet/tests/ExChart.Engine.Tests/FittingTests.cs. A coefficient in the plotted space is compared exactly, as both engines do the same arithmetic in the same order; one fitted on a logarithm, or read back through one, is compared within 1e-9, because each language's ln and exp may differ in the last bit.",
   "kind": "chart",
   "cases": [
     {

@@ -1,5 +1,5 @@
 {
-  "about": "A 3D surface in the data's terms: a grid, points on a grid, a sampled function or a Consumer's triangles, refused by name where it cannot be drawn, and its slices as 2D charts (ADR-0257, ADR-0272, ADR-0274, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
+  "about": "A 3D surface in the data's terms: a grid, points on a grid, a sampled function or a Consumer's triangles, refused by name where it cannot be drawn, and its slices as 2D charts (ADR-0257, ADR-0272, ADR-0274, ADR-0311, ADR-0312), from dotnet/tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
   "kind": "chart",
   "definitions": {
     "vol": {

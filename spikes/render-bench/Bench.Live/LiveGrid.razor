@@ -1,6 +1,6 @@
 @using System.Runtime.CompilerServices
 @* The painted rows of one grid, keyed one of two ways:
-   - KeyByInstance (variant A, ExGrid today, src/ExGrid/Components/ExGrid.razor:446 and :8681): the
+   - KeyByInstance (variant A, ExGrid today, dotnet/src/ExGrid/Components/ExGrid.razor:446 and :8681): the
      key is an object held per row instance, so a new instance is a new key, and Blazor disposes the
      old row's component and mounts a new one;
    - otherwise (variant B, candidate 2): the key is the record's Id, so the component is kept and

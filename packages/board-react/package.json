@@ -1,0 +1,42 @@
+{
+  "name": "@ex-grid/board-react",
+  "version": "0.0.0-dev",
+  "description": "ExBoard for React: the Framework Adapter of ExBoard's Script Core, which mounts a Board of ExGrid, ExPivot and ExChart views in a React tree.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/board-react"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/board": "0.0.0-dev",
+    "@ex-grid/chart-react": "0.0.0-dev",
+    "@ex-grid/pivot": "0.0.0-dev",
+    "@ex-grid/pivot-react": "0.0.0-dev",
+    "@ex-grid/react": "0.0.0-dev"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

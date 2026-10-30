@@ -1,5 +1,5 @@
 // Minifies the JavaScript and CSS each package ships (ADR-0123). The source a contributor edits is
-// src/<Package>/Assets/<name>; what ships is src/<Package>/wwwroot/<name without extension>.min.<ext>
+// dotnet/src/<Package>/Assets/<name>; what ships is dotnet/src/<Package>/wwwroot/<name without extension>.min.<ext>
 // and its source map, which carries the source itself so a browser's debugger shows it. Both are
 // committed, so a build needs no Node: run this after editing a source, and commit what it writes.
 //
@@ -17,7 +17,7 @@
 //   this stylesheet's name and any stamp, and one that hides it for the stamp of this source. A
 //   product's root renders the notice with the stamp it was built with, so another version's
 //   stylesheet shows it, its own hides it, and one not yet loaded shows nothing.
-// - src/<Package>/ShippedAssets.g.cs, the package's own record of what it ships: for each file, its
+// - dotnet/src/<Package>/ShippedAssets.g.cs, the package's own record of what it ships: for each file, its
 //   path, the first twelve hex digits of the SHA-256 of the file as shipped (the version its address
 //   carries) and the source's SHA-256 (its stamp). C# reads it at build time without Node, and
 //   ShippedAssetTests checks it against the files.
@@ -33,14 +33,14 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 /** Every package's sources, in a fixed order so the output never depends on the file system. */
 export const sources = [
-    'src/ExChart/Assets/ex-chart.css',
-    'src/ExChart.MudBlazor/Assets/mud-ex-chart.css',
-    'src/ExGrid/Assets/ex-grid.css',
-    'src/ExGrid.MudBlazor/Assets/mud-ex-grid.css',
-    'src/ExPivot/Assets/ex-pivot.css',
-    'src/ExPivot.MudBlazor/Assets/mud-ex-pivot.css',
-    'src/ExSheet/Assets/ex-sheet.css',
-    'src/ExSheet.MudBlazor/Assets/mud-ex-sheet.css',
+    'dotnet/src/ExChart/Assets/ex-chart.css',
+    'dotnet/src/ExChart.MudBlazor/Assets/mud-ex-chart.css',
+    'dotnet/src/ExGrid/Assets/ex-grid.css',
+    'dotnet/src/ExGrid.MudBlazor/Assets/mud-ex-grid.css',
+    'dotnet/src/ExPivot/Assets/ex-pivot.css',
+    'dotnet/src/ExPivot.MudBlazor/Assets/mud-ex-pivot.css',
+    'dotnet/src/ExSheet/Assets/ex-sheet.css',
+    'dotnet/src/ExSheet.MudBlazor/Assets/mud-ex-sheet.css',
 ];
 
 const hashOf = (text) => createHash('sha256').update(text.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
@@ -109,7 +109,7 @@ for (const source of sources) {
     }
 
     const version = hashOf(fs.readFileSync(outfile, 'utf8')).slice(0, versionLength);
-    const pkg = source.split('/')[1];
+    const pkg = source.split('/')[2];
     const kinds = shipped.get(pkg) ?? {};
     kinds[isScript ? 'Script' : 'Stylesheet'] = { name, path: `_content/${pkg}/${minified}`, version, stamp };
     shipped.set(pkg, kinds);
@@ -161,7 +161,7 @@ for (const [pkg, kinds] of shipped) {
     }
     lines.pop();
     lines.push('}', '');
-    const file = path.join(repo, 'src', pkg, 'ShippedAssets.g.cs');
+    const file = path.join(repo, 'dotnet', 'src', pkg, 'ShippedAssets.g.cs');
     fs.writeFileSync(file, lines.join('\n'));
     console.log(`-> ${path.relative(repo, file)}`);
 }
@@ -173,7 +173,7 @@ function writeStylesheetRecord(product, file, drawer, extra = []) {
     const { name, stamp } = shipped.get(product).Stylesheet;
     const target = path.join(repo, file);
     fs.writeFileSync(target, [
-        `// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/${product}/Assets/ and run it`,
+        `// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit dotnet/src/${product}/Assets/ and run it`,
         '// again, and commit what it writes. test/shipped-stylesheet.test.ts checks it against the source.',
         '',
         `/** The name of the stylesheet the ${drawer} draws against, by which its notice rules find the notice. */`,
@@ -188,16 +188,16 @@ function writeStylesheetRecord(product, file, drawer, extra = []) {
 }
 
 // ExGrid's stylesheet is shared, so the core renders the same notice with the same stamp the C# core does.
-writeStylesheetRecord('ExGrid', 'src/npm/core/src/dom/shipped-stylesheet.ts', 'grid');
-writeStylesheetRecord('ExPivot', 'src/npm/pivot/src/shipped-stylesheet.ts', 'pivot');
-writeStylesheetRecord('ExSheet', 'src/npm/sheet/src/shipped-stylesheet.ts', 'sheet');
+writeStylesheetRecord('ExGrid', 'packages/core/src/dom/shipped-stylesheet.ts', 'grid');
+writeStylesheetRecord('ExPivot', 'packages/pivot/src/shipped-stylesheet.ts', 'pivot');
+writeStylesheetRecord('ExSheet', 'packages/sheet/src/shipped-stylesheet.ts', 'sheet');
 // ExChart's also carries the minified text a saved SVG holds inside it, since a file has no page to take it from
 // (ADR-0282).
 {
-    const minified = fs.readFileSync(path.join(repo, 'src/ExChart/wwwroot/ex-chart.min.css'), 'utf8');
+    const minified = fs.readFileSync(path.join(repo, 'dotnet/src/ExChart/wwwroot/ex-chart.min.css'), 'utf8');
     const comment = minified.lastIndexOf('/*# sourceMappingURL=');
     const text = (comment < 0 ? minified : minified.slice(0, comment)).trimEnd();
-    writeStylesheetRecord('ExChart', 'src/npm/chart/src/dom/shipped-stylesheet.ts', 'chart', [
+    writeStylesheetRecord('ExChart', 'packages/chart/src/dom/shipped-stylesheet.ts', 'chart', [
         '/** The stylesheet as it ships, minified, without its source map comment: what a saved SVG carries. */',
         `export const stylesheetText = ${JSON.stringify(text)};`,
         '',

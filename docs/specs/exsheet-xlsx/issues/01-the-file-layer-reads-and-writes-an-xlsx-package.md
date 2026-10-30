@@ -14,7 +14,7 @@ Status: done
 
 **Blocked by:** None (can start immediately).
 
-**Settled while building (2026-10-21):** the package is `src/ExGrid.Data.Xlsx`, net10.0, referencing
+**Settled while building (2026-10-21):** the package is `dotnet/src/ExGrid.Data.Xlsx`, net10.0, referencing
 `ExGrid.Data` alone at exactly its own version, and nothing from NuGet: `System.IO.Compression` and
 `XmlReader`/`XmlWriter` with DTD processing prohibited. Its model stays at the file's level — cell
 types, raw values, Formula text with its shared or array kind and the dynamic-array mark, style
@@ -32,7 +32,7 @@ platform, and is refused as `Malformed`, naming the part; a stored entry, which 
 its compressed size, is refused as `TooLarge` past what it declares. The size limit counts what the
 zip declares, and no part is read past that.
 
-The defaults were measured with `tests/ExGrid.Data.Xlsx.Tests/Measure` (run by hand, never gated) on
+The defaults were measured with `dotnet/tests/ExGrid.Data.Xlsx.Tests/Measure` (run by hand, never gated) on
 a 4-vCPU Intel Xeon, .NET 10.0.7, Ubuntu 24.04, CoreCLR Release. Each workbook has ten columns a row
 — four numbers, three texts, two Formulas and a date, most styled — and is read in a process of its
 own:
@@ -63,7 +63,7 @@ a coloured accent it differs from what Excel's palette shows by one or two in a 
 matched both. That is left for ticket 07's run on Windows to read against Excel.
 
 The package is packed, its nuspec read back and a workbook written and read through it by
-`tests/ExGrid.PackageSmoke/check.sh`, but into `.feed-unreleased`, not into the feed the release
+`dotnet/tests/ExGrid.PackageSmoke/check.sh`, but into `.feed-unreleased`, not into the feed the release
 publishes: the release publishes exactly the packages ADR-0042's table names, and the Docs Site's
 Packages page is generated from the same list, so adding `ExGrid.Data.Xlsx` to the release is an
 ADR-0042 change, left to be decided.

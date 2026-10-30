@@ -1,5 +1,5 @@
 {
-  "about": "Thinning past the plot's device pixels (ADR-0254) and the pixels a Chart Source thinned before them (ADR-0344), from tests/ExChart.Engine.Tests/ThinningTests.cs.",
+  "about": "Thinning past the plot's device pixels (ADR-0254) and the pixels a Chart Source thinned before them (ADR-0344), from dotnet/tests/ExChart.Engine.Tests/ThinningTests.cs.",
   "kind": "chart",
   "cases": [
     {

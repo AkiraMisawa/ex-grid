@@ -1,5 +1,5 @@
 {
-  "about": "The grow-only width of an Auto column, ADR-0016's diagram. From tests/ExGrid.Tests/AutoWidthTests.cs; the narrowing by Size to fit is in column-width-spec.json.",
+  "about": "The grow-only width of an Auto column, ADR-0016's diagram. From dotnet/tests/ExGrid.Tests/AutoWidthTests.cs; the narrowing by Size to fit is in column-width-spec.json.",
   "kind": "calls",
   "subject": "AutoWidth",
   "cases": [

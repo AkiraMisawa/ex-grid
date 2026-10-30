@@ -2,7 +2,7 @@
 
 Status: done — every item was observed beside Excel at 9a78a14 on 2026-09-27, as the first Windows
 run's Part D (`verification/2026-09-27-windows-excel/behaviours.md`). Its probes are
-`tests/ExGrid.Browser/sheet-vs-excel.spec.mjs`, which the second to fourth runs ran again. *(Set
+`tests/browser/sheet-vs-excel.spec.mjs`, which the second to fourth runs ran again. *(Set
 from the records on 2026-10-10.)* *(2026-10-25, ADR-0370 section 11: the probes that read only an
 engine's Values left that file, since the case corpus holds the same answers: item 20's copied number,
 date by day, shifted Formula, trend and refused patterns (`ExcelCases/fill.json`), and item 27's
@@ -47,8 +47,8 @@ For each item, use the first method that answers it, and record which one you us
    - Ask one precise question: what to do, and what to report.
 
 **ExSheet's side** is driven with Playwright on the DemoHost's `/sheet` page, in the same way
-`tests/ExGrid.Browser` drives the grid: real keys and the real mouse through the browser. Write
-these probes as specs under `tests/ExGrid.Browser/` (for example `sheet-vs-excel.spec.mjs`), with
+`tests/browser` drives the grid: real keys and the real mouse through the browser. Write
+these probes as specs under `tests/browser/` (for example `sheet-vs-excel.spec.mjs`), with
 Excel's observed answer as the expectation, so they keep checking after this run. A probe whose
 feature is not built yet (see the ticket's `Status:`) is written with `test.fixme` and a note.
 

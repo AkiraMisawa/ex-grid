@@ -8,9 +8,9 @@ const at = (path: string): string => fileURLToPath(new URL(path, import.meta.url
 export default defineConfig({
     resolve: {
         alias: {
-            '@ex-grid/core': at('../../../src/npm/core/src/index.ts'),
-            '@ex-grid/react': at('../../../src/npm/react/src/index.ts'),
-            '@ex-grid/data': at('../../../src/npm/data/src/index.ts'),
+            '@ex-grid/core': at('../../../packages/core/src/index.ts'),
+            '@ex-grid/react': at('../../../packages/react/src/index.ts'),
+            '@ex-grid/data': at('../../../packages/data/src/index.ts'),
         },
         dedupe: ['react', 'react-dom'],
     },

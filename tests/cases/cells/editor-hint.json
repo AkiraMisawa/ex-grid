@@ -1,5 +1,5 @@
 {
-  "about": "The argument hint beneath the candidates (ADR-0051), split around the span it sets off. From tests/ExGrid.Tests/EditorTextRulesTests.cs.",
+  "about": "The argument hint beneath the candidates (ADR-0051), split around the span it sets off. From dotnet/tests/ExGrid.Tests/EditorTextRulesTests.cs.",
   "kind": "calls",
   "subject": "EditorHint",
   "cases": [

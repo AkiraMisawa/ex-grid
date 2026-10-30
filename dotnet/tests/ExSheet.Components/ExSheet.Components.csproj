@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- The same shape as dotnet/tests/ExGrid.Components: net10.0 on xunit.v3 and
+         Microsoft.Testing.Platform, no apphost (dotnet/tests/Directory.Build.targets says why). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+    <AssemblyName>ExSheet.Components.Tests</AssemblyName>
+    <RootNamespace>ExSheet.Components.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageReference Include="bunit" Version="2.9.0" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
+    <!-- Opening and saving a file in the Input Order through the package that reads and writes one
+         (ADR-0330 §10): the component references no file format, its application does. -->
+    <ProjectReference Include="..\..\src\ExSheet.Xlsx\ExSheet.Xlsx.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The glyph-width corpus (ADR-0016, ticket 83), checked against what the built-in formats paint. -->
+    <None Include="..\..\..\tests\GlyphWidths\corpus.json" Link="GlyphWidths\corpus.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The stream a held message crosses as, as the grid's paste tests stand it in. -->
+    <Compile Include="..\ExGrid.Components\Support\FakeJSStream.cs" Link="Support\FakeJSStream.cs" />
+  </ItemGroup>
+
+</Project>

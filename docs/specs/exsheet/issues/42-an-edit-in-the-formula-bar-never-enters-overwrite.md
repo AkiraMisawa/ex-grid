@@ -74,12 +74,12 @@ press back into the cell only when text is next typed there. So F2 in the cell, 
 such a press and before anything is typed, stays in Caret, as in the bar. That is accepted, and
 said in the code: it errs toward Caret, and never commits.
 
-- **Layer 2** (`tests/ExGrid.Components/FormulaBarModeTests.cs`, twelve tests). Eight fail on
+- **Layer 2** (`dotnet/tests/ExGrid.Components/FormulaBarModeTests.cs`, twelve tests). Eight fail on
   4179010's component source. The four that pass there pin what did not change: the cell's
   Overwrite, F2 in the cell, F2 once the edit is typed in the cell again, and Point kept when the
   core hands the keyboard back.
 - **Layer 3, written, not run**: `ED-29: =A1+B1 … (builtin|mud Chrome)` in
-  `tests/ExGrid.Browser/declarations.spec.mjs`, from D10, under each Chrome. Four ways into the bar:
+  `tests/browser/declarations.spec.mjs`, from D10, under each Chrome. Four ways into the bar:
   typed there, typed there then F2 (case `7k`), pointed from there and typed on, and begun in the
   cell then pressed into the bar.
 

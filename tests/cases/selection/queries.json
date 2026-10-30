@@ -1,5 +1,5 @@
 {
-  "about": "What a selection answers without data: its ranges, its cell count, whether it holds a cell, and equality. From tests/ExGrid.Tests/SelectionQueryTests.cs.",
+  "about": "What a selection answers without data: its ranges, its cell count, whether it holds a cell, and equality. From dotnet/tests/ExGrid.Tests/SelectionQueryTests.cs.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

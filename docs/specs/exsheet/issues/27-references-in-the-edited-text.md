@@ -30,7 +30,7 @@ is unfinished for as long as it is typed.
 The readings are asked of Excel in [verify-on-windows-8.md](../verify-on-windows-8.md), Part A. A
 reading that Excel contradicts is fixed after the run, with the ADR paragraph.
 
-Done (layer 1, `tests/ExSheet.Engine.Tests/FormulaReferencesTests.cs`): `FormulaEntry.References(text,
+Done (layer 1, `dotnet/tests/ExSheet.Engine.Tests/FormulaReferencesTests.cs`): `FormulaEntry.References(text,
 sheetName)` and `Sheet.References(text)` answer a list of `FormulaReference` (start, length, and
 either a `CellRange` or a `LinkedTableColumn`). A Reference is what `Lexer` reads as one over the
 whole of an operand of the tolerant `Scan`, as for F4; there is no second grammar. The key keeps the

@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
-    <ProjectReference Include="..\..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+    <ProjectReference Include="..\..\..\dotnet\src\ExPivot.Engine\ExPivot.Engine.csproj" />
   </ItemGroup>
 
 </Project>

@@ -38,6 +38,6 @@ source does not answer disabled, with the reason, and never asks for them. Filte
 list Items under the report's Source Version, an open Filter… lists again when a new version
 lands, and a refused version says the data has changed. Layer 2: `AskingTests`,
 `ToolbarAndDeferTests`, `DetailsAndVersionTests` and `SubstitutedChromeTests` in
-`tests/ExPivot.Components`, and `tests/ExPivot.MudBlazor.Tests`; layer 3: `pivot.spec.mjs` on
+`dotnet/tests/ExPivot.Components`, and `dotnet/tests/ExPivot.MudBlazor.Tests`; layer 3: `pivot.spec.mjs` on
 the WebAssembly host in Chromium, under both Chromes. The Stale Report's notice and the source's
 `Changed` are ticket 15's: the failure ExPivot holds and `AskAgainAsync` are where it starts.

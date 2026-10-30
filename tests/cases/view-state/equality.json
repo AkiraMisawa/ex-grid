@@ -1,5 +1,5 @@
 {
-  "about": "Whether two View States hold the same view, and two Queries ask for the same thing (ADR-0207, ST-4, FN-13): by what they hold, an operand by its type and that type's own equality (ADR-0023). Transcribed from tests/ExGrid.Tests/QuerySerialisationTests.cs.",
+  "about": "Whether two View States hold the same view, and two Queries ask for the same thing (ADR-0207, ST-4, FN-13): by what they hold, an operand by its type and that type's own equality (ADR-0023). Transcribed from dotnet/tests/ExGrid.Tests/QuerySerialisationTests.cs.",
   "kind": "viewStateJson",
   "columns": [
     "Notional",

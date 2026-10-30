@@ -1,5 +1,5 @@
 {
-  "about": "An Observation's intervals, one a row on both axes (ADR-0304), from tests/ExChart.Engine.Tests/ObservationIntervalTests.cs.",
+  "about": "An Observation's intervals, one a row on both axes (ADR-0304), from dotnet/tests/ExChart.Engine.Tests/ObservationIntervalTests.cs.",
   "kind": "chart",
   "cases": [
     {

@@ -1,5 +1,5 @@
 {
-  "about": "The vertical arithmetic every visual layer reads: rows of 20px in a 100px Viewport unless a case says otherwise. From tests/ExGrid.Tests/ViewportGeometryTests.cs.",
+  "about": "The vertical arithmetic every visual layer reads: rows of 20px in a 100px Viewport unless a case says otherwise. From dotnet/tests/ExGrid.Tests/ViewportGeometryTests.cs.",
   "kind": "calls",
   "subject": "ViewportGeometry",
   "defaults": {"rowHeightPx": 20, "viewportHeightPx": 100},

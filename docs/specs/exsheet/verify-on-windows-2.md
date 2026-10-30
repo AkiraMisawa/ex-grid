@@ -37,7 +37,7 @@ out old commits, last.
 
 ## Part A — the oracle again, whole corpus
 
-`tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`, as before: en-US for the whole corpus, then
+`dotnet/tests/ExSheet.Engine.Tests/ExcelOracle/oracle.ps1`, as before: en-US for the whole corpus, then
 de-DE, ja-JP and en-GB for the cases that name them. Then `-Update`.
 
 - Many cases changed since the first run to take Excel's observed answers. There are new
@@ -87,7 +87,7 @@ in File › Options › Advanced), record the setting's value.
 
 ## Part C — ExSheet beside Excel again
 
-Re-run `tests/ExGrid.Browser/sheet-vs-excel.spec.mjs` on both hosts and both browsers. The
+Re-run `tests/browser/sheet-vs-excel.spec.mjs` on both hosts and both browsers. The
 clipboard items (16–19) are now wired: ExSheet carries Entries in its own copies, and its copies to
 Excel carry formats. `clipboard-probe.mjs` covers both directions again, including a date copied
 from a too-narrow Excel column, which ExSheet should now refuse by name. Record whether the HTML's
@@ -100,7 +100,7 @@ every value in the clicked cell.
 ## Part D — layer 3, both browsers, both hosts
 
 As the first run's Part B (§22 Step 4), with the whole suite, including ticket 18's new specs
-(`sheet.spec.mjs`, `declarations.spec.mjs` or whatever it added — read `tests/ExGrid.Browser`).
+(`sheet.spec.mjs`, `declarations.spec.mjs` or whatever it added — read `tests/browser`).
 Record failures with their criterion IDs. MEM-4 now expects the editor's `input` listener. Also
 run `typing-race` or its equivalent under the latency proxy at 150 ms.
 

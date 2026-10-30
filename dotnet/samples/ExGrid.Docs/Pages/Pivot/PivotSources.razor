@@ -1,0 +1,422 @@
+@page "/expivot/sources"
+@using ExGrid.Docs.Examples.Pivot
+
+
+<DocsPage Product="ExPivot" Title="Sources"
+          Lead="A Pivot Source is what a report is computed from: your records in the browser, a Snapshot read from a file, or a server that answers the same questions over your own transport.">
+
+    <DocsSection Title="How a source is asked">
+        <p>
+            ExPivot asks its source for the Leaf Aggregates of the layout: one group per combination of the Items the
+            Rows and Columns place, with each value field's parts. The report, its subtotals and totals, Show Values As
+            and its order are built from them where the pivot is drawn, in the browser, so a scroll, a collapse or a
+            sort by value asks the source nothing (ADR-0370). A slow answer leaves the report under its loading
+            indication, and a newer question cancels the older one. A question asked for newer data the source
+            announced leaves the report undimmed. Filter… asks a page of a field's Items, and Show Details the records
+            behind a cell, under the Source Version the report was built from.
+        </p>
+        <ul>
+            <li><strong><code>Source</code></strong> takes the Pivot Source: <code>PivotSource.From</code> over local records or a Snapshot, including a CSV that stays in the browser, or <code>PivotSource.Fetch</code> over a server. Each question crosses to it as PivotJson and its answer comes back the same way.</li>
+            <li><strong>Keep the source in a field.</strong> Each report owns independent calculation state; a new Pivot Source starts a new calculation, as a refresh.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Over your objects">
+        <p>
+            <code>PivotFields.Of&lt;T&gt;()</code> declares each field once with a typed accessor
+            (<code>Sales.cs</code> shows them all). The declaration makes both the Snapshot column the records
+            are read into, without boxing a value, and the Pivot Field over it:
+        </p>
+        <ul>
+            <li><strong>Text</strong>, with Excel's custom list (<code>itemOrder</code>) or an Order Key; <code>null</code> is the Item <code>(blank)</code>, and <code>""</code> is a value.</li>
+            <li><strong>Number</strong> over <code>decimal</code> (exact), <code>int</code> or <code>long</code> (exact), or <code>double</code> (Excel's arithmetic).</li>
+            <li><strong>Date</strong> over <code>DateTime</code>, <code>DateOnly</code> or <code>DateTimeOffset</code>, with <code>Year</code>, <code>Quarter</code> and <code>Month</code> as fields of their own, ordered by the calendar.</li>
+            <li><strong>Boolean</strong>, labelled <code>TRUE</code> and <code>FALSE</code>; and a <strong>Key</strong>, the Record Key a Change Batch finds a record by.</li>
+        </ul>
+        <p>
+            <code>PivotSource.From(records, fields)</code> reads the records on the calling thread. For a large
+            list in a browser, <code>PivotSource.FromAsync</code> reads them in slices of about 30 ms, yielding
+            between them and reporting progress, so the page keeps painting.
+        </p>
+        <p>
+            Under React, <code>RecordPivotSource</code> reads your objects when it is first asked. A set as large as
+            this one comes better as a Snapshot read in slices: the React Example reads 200,000 sales from an Arrow
+            stream, as a server would send them, with <code>readArrowSnapshot</code>'s <code>onProgress</code>, and
+            pivots it with a <code>SnapshotPivotSource</code> that computes in slices of the same size.
+        </p>
+        <DocsExample Builtin="typeof(LoadInSlices)" Mud="typeof(LoadInSlicesMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Over a Snapshot">
+        <p>
+            A <a href="data">Snapshot</a> is pivoted as it is, wherever it came from. <code>PivotSource.From(snapshot)</code>
+            offers one field per column, captioned and typed by it; or name the fields you want over its columns,
+            a date part naming the Date column it is a part of. A field naming a column the Snapshot does not
+            have is refused by name.
+        </p>
+        <DocsExample Builtin="typeof(FromSnapshot)" Mud="typeof(FromSnapshotMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="From a CSV">
+        <p>
+            <code>ExGrid.Data</code> reads a CSV straight into a Snapshot's columns under a <code>CsvSchema</code> you
+            declare: what each column is and how to read it. Nothing is guessed, because a guess reads the account
+            number <code>004417</code> as the number 4,417. A file the user brings comes from Blazor's
+            <code>InputFile</code> (<code>e.File.OpenReadStream(maxAllowedSize)</code>); the Example writes one in
+            memory instead.
+        </p>
+        <p>
+            A value its column cannot read refuses the whole file, naming the row and the column. The report is
+            then not drawn at all, rather than drawn over the rows that happened to read. See
+            <a href="data">Snapshot</a> for the Schema's options and for suggesting one from a file nobody has
+            described.
+        </p>
+        <DocsExample Builtin="typeof(FromCsv)" Mud="typeof(FromCsvMud)" Files="@(["Examples/Pivot/SalesCsv.cs", "Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="A server's source">
+        <p>
+            <code>PivotSource.Fetch</code> carries your Aggregate, Items and Details transports: the server answers the
+            Leaf Aggregates of a question, a page of a field's Items and the records behind a cell, and ExPivot builds
+            the report from them (ADR-0370 section 3). ExPivot ships no HTTP client or endpoint. <code>PivotJson</code>
+            writes the questions and answers as versioned JSON, preserving decimal and double values, the same document
+            to the byte as <code>@@ex-grid/pivot-engine</code>'s. On the server, a <code>PivotSource.From(data)</code>
+            answers them over a Snapshot or your records, or write the answer yourself over SQL, one <code>GROUP BY</code>
+            at the leaves (below).
+        </p>
+        <ul>
+            <li>Culture, formats, display words and Order Keys are the page's: the report is laid out where it is drawn, so a server neither computes the report nor orders it.</li>
+            <li>
+                <strong>Find reads the report where it is built.</strong> <kbd>Ctrl+F</kbd> searches every cell the report lays
+                out, with no round trip (<a href="expivot/layout#find">Find</a>).
+            </li>
+            <li>The Consumer owns the transport, its authentication and its retries. A question that fails leaves the report on screen as a Stale Report, with Retry (<a href="expivot/live">Live data</a>).</li>
+            <li>A server's notice that its data moved on goes to <code>FetchingPivotSource.NotifyChanged(version)</code>, and ExPivot asks the report on screen again.</li>
+        </ul>
+        <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
+            The server here is simulated in the page, with half a second of latency: change the layout and watch the
+            report wait under its loading indication. Tick Date in the field list for a report hundreds of rows long,
+            and scroll it: the server answered the Leaf Aggregates once, and the report is built whole in the browser,
+            so a scroll asks it nothing.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="The shape before the report">
+        <p>
+            A report source answers the shape of the data it pivots, before any report, with <code>ShapeAsync</code>:
+            one over a Snapshot, records' included, answers the Snapshot's own, and a fetching source the one its
+            <code>Shape</code> call asks the server for, such as an Arrow schema read by
+            <code>SnapshotArrow.ReadShapeAsync</code>. A source that says none answers null. An
+            <a href="exboard">ExBoard</a> input is checked against it with <code>BoardInput.CheckAsync</code>, and
+            refused by name when a column is missing or of another kind (ADR-0341).
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Caps">
+        <p>
+            <code>Caps</code> (<code>PivotCaps</code>) refuses, by name, a layout whose report is too large to read:
+            more than 200,000 leaves, or more rows or columns than Excel's 1,048,576 and 16,384. The report on screen
+            stays, and the Pivot Toolbar says why. ExPivot drawn by the Script Core takes the same caps as
+            <code>maxLeaves</code>, <code>maxRows</code> and <code>maxColumns</code>.
+        </p>
+        <p>
+            Over server data the leaves grow with the product of the placed fields' Items, not with the records, so a
+            server's source may say how many Items each field has. Declare it in the features
+            (<code>new PivotSourceFeatures(aggregations, canRefresh, countsItems: true)</code>) and pass
+            <code>PivotSource.Fetch</code> a fourth delegate, after the other three, that asks for the counts; your server answers it with its own
+            source's <code>ItemCountsAsync</code>, a <code>PivotItemCounts</code> under the Source Version it counted,
+            written with <code>PivotJson.Write</code>. The bundled sources answer <code>ItemCountsAsync</code> too, so a
+            server built on one has nothing to write. <code>PivotLeafBound.Of(layout, counts)</code> is then the most
+            leaves a layout can make: the product of its Rows' and Columns' counts, less the Items it hides, or null where
+            a field it places was not counted. It is a hint, known before anything is asked, and never a refusal: the
+            question is still asked with <code>MaxLeaves</code>, and the server refuses past it as before (ADR-0370).
+            In <code>@@ex-grid/pivot-engine</code> they are the third argument of <code>PivotSourceFeatures</code>, an
+            <code>itemCounts</code> fetcher beside the other three, each source's <code>itemCounts()</code>, and
+            <code>pivotLeafBound</code>.
+            The Field List that shows the counts, marks a drop target past the cap and words the refusal by the field
+            (<em>Customer (1,020,000 items) in Rows makes more than 200,000 combinations, the most server data allows</em>)
+            comes with the TypeScript engine's UI in 0.3.0; ExPivot today does not ask for the counts.
+        </p>
+        <p id="level-aggregates">
+            A collapsed report shows far fewer cells than it has leaves, so a server's source may answer <strong>Level
+            Aggregates</strong> in place of a refusal. <code>PivotQuery.ForLevels(layout, maxLeaves)</code> asks the
+            question <code>PivotQuery.For</code> asks with the groups the layout shows: <code>Levels</code>, one
+            <code>PivotLevelRule</code> a row and a column field, saying whether its Items are collapsed and which are
+            toggled. A source that declares it (<code>new PivotSourceFeatures(aggregations, canRefresh, countsItems,
+            answersLevels: true)</code>) may answer such a question, when its leaves pass <code>MaxLeaves</code>, with the
+            cells of the groups shown instead: each a shown row group crossed with a shown column group, named by its Items
+            down to its depth, which a SQL server makes with <code>GROUPING SETS</code>. A cell the levels do not show,
+            two cells for one group, and a cell whose parent is missing are each refused by name, as another question's
+            answer. A sum that is a double carries the sum of its numbers' magnitudes beside it, so that the report made
+            from the cells can check each set of children against its parent within the rounding their order allows,
+            and refuse a figure that rounding cannot explain (ADR-0370).
+        </p>
+        <pre class="docs-code"><code>// Region collapsed over Product: the grand total and each Region.
+// SELECT GROUPING(Region) AS IsTotal, Region, COUNT(*), SUM(Amount) … GROUP BY GROUPING SETS ((), (Region))
+var query = PivotQuery.ForLevels(layout, maxLeaves);
+var answer = new PivotAnswerBuilder(query, sourceVersion);
+foreach (var row in rows)
+{
+    // A Blank Region is a group of its own, so the total is told by GROUPING(), not by a null.
+    var cell = answer.AddCell(row.IsTotal ? [] : [PivotItemKey.For(row.Region)], [], row.Count);
+    answer.SetCounts(cell, 0, row.Count, row.Count);
+    answer.SetSum(cell, 0, PivotNumber.Exact(row.Amount));   // a double: SetSum(cell, 0, sum, absoluteSum)
+}
+return answer.Build();</code></pre>
+        <p>
+            The bundled sources answer Level Aggregates too, without declaring them, and the TypeScript engine's answer
+            is theirs cell for cell, so a server built on one has nothing to write. In
+            <code>@@ex-grid/pivot-engine</code> they are <code>levelQueryForLayout</code>, the fourth argument of
+            <code>PivotSourceFeatures</code>, the builder's <code>addCell</code> and <code>setLevelSum</code>, and an
+            answer's <code>isLevels</code>; <code>PivotJson</code> carries a question's <code>levels</code> and a level
+            answer's cells, each double sum with its <code>absoluteSum</code>.
+        </p>
+        <p>
+            The TypeScript engine lays a report out from them. Its cube takes every total as the server answered it and
+            checks each set of groups shown below an expanded one against it: the records exactly, and the parts within
+            the rounding their order allows. A set that does not add up refuses the whole answer, naming the group
+            (<em>The server's answer for [Region=Text:EU] × [] does not add up: its sum of 'Amount' is not what its row
+            groups below compose to</em>), and no figure from it is shown. The report is the report the leaves make, to the
+            last bit: subtotals, grand totals, Show Values As and sorting by value are computed in the browser from the
+            same parts. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that declares
+            <code>answersLevels</code> asks every question with the groups its layout shows, and a cube made from Level
+            Aggregates (<code>cube.isLevels</code>) holds only those, so an expand asks the server again, one round trip,
+            where a cube of leaves already holds it; a collapse of groups it holds is laid out from it. ExPivot lays its report out with the TypeScript engine
+            under both frameworks; <code>ExPivot.Engine</code>'s own cube, which leaves with it in 0.3.0, still refuses
+            an answer of cells by name.
+        </p>
+        <p id="level-windows">
+            Collapsing does not help where one set of siblings is itself too large: a Customer field of a million Items
+            expanded under its Region. Such a set can be answered as a <strong>Sibling Window</strong> when the report sorts it
+            by a value. A row field's rule then carries <code>Order</code> (<code>new PivotLevelOrder(value,
+            aggregation, descending)</code>, the value in the question's <code>Values</code> and the Aggregation read at
+            its grand total), and <code>Levels</code> a <code>PivotLevelWindow(limit, starts)</code>: a set ordered by a
+            value with more than <code>limit</code> siblings is answered from the place a <code>PivotWindowStart</code>
+            asks under its parent, or the first, with <code>limit</code> siblings and every sibling tied with the first
+            and the last, one more each side as a margin, and the siblings beyond each margin merged into one <strong>Rest Cell</strong>
+            a column group, which a SQL server makes with <code>ROW_NUMBER() OVER (PARTITION BY … ORDER BY SUM(…))</code>.
+            The builder's <code>AddWindow(parentRows, before, after)</code> says how many siblings lie on each side and
+            <code>AddRest</code> adds the rest cells; a window not where it was asked, a set past the limit answered
+            whole, or a side whose siblings beyond the margin have no rest cell is refused by name, as another question's
+            answer. A set sorted by its labels is never windowed and stays refused past the cap, because the labels'
+            order (the culture's collation, formatted labels, Order Keys) is not one a server can reproduce, so the
+            siblings before a window could not be checked. The bundled sources answer windows too, and
+            <code>@@ex-grid/pivot-engine</code>'s answer is theirs to the last bit, as <code>order</code>,
+            <code>window</code>, <code>addWindow</code>, <code>addRest</code> and an answer's <code>windows</code> and
+            <code>restAt</code>.
+        </p>
+        <p>
+            The demo API server in this repository, <code>dotnet/samples/ExGrid.DemoApi</code> over SQLite, declares
+            <code>answersLevels</code> and answers both, and its source is a worked example. SQLite has no
+            <code>GROUPING SETS</code>, so its aggregate is one <code>GROUP BY</code> a pair of depths joined by
+            <code>UNION ALL</code>, each selecting its row and column depths first: a Blank is a <code>NULL</code> too, so
+            only the depths say where a group's Items end. A depth's <code>WHERE</code> keeps the records whose Items
+            above it are expanded, and a depth that every collapsed Item shuts off is not asked. It answers with the leaves
+            whenever they fit, as the bundled sources do. Its windows are cut in .NET rather than with
+            <code>ROW_NUMBER()</code>: it first reads the row groups at the grand total of the columns, orders each set by its value read from their parts with
+            <code>ExGrid.Data</code>'s <code>AggregateArithmetic.Read</code>, the engine's own arithmetic, so an Average
+            orders as the report sorts it to the last bit, with ties in its order of Items, and merges the groups of the
+            siblings beyond each margin into rest cells. Asked through <code>PivotSource.Fetch</code>, it answers as
+            <code>PivotSource.From</code> over the same trades, cell for cell, except for which of two tied siblings beyond
+            a window is its margin: the bundled sources take the one their leaves reached first, and the engine holds
+            either to the same checks.
+        </p>
+        <p>
+            The TypeScript engine lays a window out with a row for every sibling of its set, so the report's row count and
+            the scrollbar drawn from it are the whole set's. Its cube first checks the window: the siblings shown, the
+            margins and the rest cells compose to the parent at every column group, and each margin sorts strictly beyond
+            its edge, or the answer is refused naming the parent. A sibling outside the window is a
+            <strong>Pending Row</strong>: role <code>pending</code>, no label and no value, never painted, and
+            <code>valueAt</code>, <code>rowPath</code> and <code>detailsQuery</code> refuse it by name rather than read
+            it as empty. Pending Rows are made a few hundred at a time, in the report's slices, so a window over a
+            million siblings leaves the page painting while its rows are laid out. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that answers Level
+            Aggregates asks a question whole first, and with windows only once the server refuses it past the cap, so a
+            report that fits is never windowed. When a report Window reaches Pending Rows it asks again, each set the
+            Window reaches started so that the rows asked for lie in the middle of its window, and answers once that
+            answer is checked: scrolling down a million customers asks the server for the thousand around the screen, and
+            the rows' sequence, and the selection, stay as they were. A Copy or a Selection Summary that reaches a
+            Pending Row is refused by name (<code>rowsNotAnswered</code>), never answered with blanks (ADR-0370).
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="From TypeScript">
+        <p>
+            <code>@@ex-grid/pivot-engine</code>, an npm package that depends only on <code>@@ex-grid/data</code>, is
+            ExPivot's engine in TypeScript: the same sources (<code>SnapshotPivotSource</code> over a Snapshot,
+            <code>RecordPivotSource</code> over your objects, <code>FetchingPivotSource</code> asking a server), the same
+            Leaf Aggregates with decimals summed exactly, and the same report in each form, locale and set of words. It is
+            the engine ExPivot's React and Blazor packages draw with (ADR-0370), built in this repository and published
+            with 0.3.0.
+        </p>
+        <pre class="docs-code"><code>import { createPivotLayout, pivotCube, pivotReport, queryForLayout, SnapshotPivotSource } from '@@ex-grid/pivot-engine';
+
+const source = new SnapshotPivotSource(snapshot);   // a Snapshot from @@ex-grid/data
+const layout = createPivotLayout({ rows: ['Region'], values: [{ field: 'Amount', aggregation: 'sum' }] });
+const query = queryForLayout(layout);
+const answer = await source.aggregate(query);        // the Leaf Aggregates, or a refusal (answer.refusal)
+const report = pivotReport(pivotCube(query, answer, source.fields), layout, { locale: 'en-US' });</code></pre>
+        <p>
+            Both engines run the same cases, under <code>tests/cases/pivot/</code>, and a differential run holds whole
+            reports over random data to the C# engine, to the last bit of every number. A refusal says the same words,
+            except where it names its own platform's call (<code>aggregatePivot</code> for
+            <code>PivotEngine.Aggregate</code>). A record behind a cell carries a date as its ticks, as a Snapshot from
+            <code>@@ex-grid/data</code> holds one. There is no Example here, because this site is a Blazor app and runs no
+            package script of its own.
+        </p>
+        <p>
+            <code>PivotJson</code> writes and reads every question and answer a <code>FetchingPivotSource</code> sends its
+            server, as the C# engine's <code>PivotJson</code> does, the same document to the byte: the Leaf Aggregates,
+            a page of Items or of records, the counts of Items and a notice that the data moved on. A page can so ask a
+            server built on <code>ExPivot.Engine</code>, over whatever transport you choose (<code>post</code> here is
+            your own, such as a <code>fetch</code> call):
+        </p>
+        <pre class="docs-code"><code>const source = new FetchingPivotSource(fields, features, {
+    aggregate: async (query, signal) => PivotJson.readAnswer(await post('/pivot/aggregate', PivotJson.writeQuery(query), signal)),
+    items: async (query, signal) => PivotJson.readItemPage(await post('/pivot/items', PivotJson.writeItemsQuery(query), signal)),
+    details: async (query, signal) => PivotJson.readDetailPage(await post('/pivot/details', PivotJson.writeDetailsQuery(query), signal)),
+});</code></pre>
+        <p>
+            An exact number crosses as its digits, without trailing zeros, since a Decimal is a value and not the places
+            it was written with; one that no decimal holds exactly, past 28 places or past 2^96, is refused by name
+            rather than rounded, by either engine. A document of a version the reader does not read is refused with a
+            <code>PivotVersionError</code>, and one that cannot be with a <code>PivotFormatError</code> naming what is
+            wrong.
+        </p>
+        <p>
+            A <code>SnapshotPivotSource</code> is live as the C# one is (<a href="expivot/live">Live data</a>):
+            <code>apply(batch)</code> takes a Change Batch, folds it into the answer held for the last question, and tells
+            each listener given to <code>subscribe</code> the new Source Version. Its work runs in slices of 30 ms by
+            default, yielding to the browser between them, and a question whose <code>AbortSignal</code> is cancelled
+            rejects with the signal's reason at the next slice:
+        </p>
+        <pre class="docs-code"><code>const source = new SnapshotPivotSource(snapshot, undefined, { sliceBudgetMs: 30 });
+const stop = source.subscribe(({ sourceVersion }) => refresh(sourceVersion));
+source.apply(createChangeBatch({ changed, removedKeys: [42n] }));    // from @@ex-grid/data
+const answer = await source.aggregate(query, controller.signal);</code></pre>
+        <p>
+            After a batch it reads the records in the Snapshot's order, so its answer is the one a new source over the
+            next Snapshot gives, leaves and Items in the same order. The C# source reads them in the order its storage
+            keeps, which a changed record moves until the Snapshot is compacted: the two hold the same leaves, Items and
+            exact numbers, and a sum of doubles may differ in its last bit where the order changed it. The shared cases
+            and a differential run over random batches hold both.
+        </p>
+        <p>
+            A <code>FetchingPivotSource</code> is live too, over a transport you own: a WebSocket, Server-Sent Events,
+            SignalR or a poll, whatever your server already speaks. Give its fetchers a <code>subscribe</code> that starts
+            your transport, hands each message on to <code>notify</code>, and returns the function that stops it; the source
+            starts it when its first listener subscribes and stops it when its last one goes. A message is one of two
+            notices. <code>changed</code> says the data moved on and asks the question again, as AG Grid's
+            <code>refreshServerSide</code> does. <code>changeBatch</code> names the records the data lost and gained between
+            two Source Versions, each as its values in the order of the fields, as AG Grid's
+            <code>applyServerSideTransaction</code> does; the engine finds the leaves they fall in and folds them into the
+            answer it holds, so a total moves without a round trip:
+        </p>
+        <pre class="docs-code"><code>const source = new FetchingPivotSource(fields, features, {
+    aggregate, items, details,
+    subscribe: notify => {
+        const socket = new WebSocket('/pivot/live');                  // your transport
+        socket.onmessage = event => notify(PivotJson.readServerNotice(event.data, fields));
+        return () => socket.close();
+    },
+});
+// { kind: 'changed', sourceVersion: 'v8' }
+// { kind: 'changeBatch', from: 'v8', to: 'v9',
+//   removed: [['East', 'FX', { mantissa: 1000n, scale: 2 }]], added: [['East', 'FX', { mantissa: 1250n, scale: 2 }]] }</code></pre>
+        <p>
+            A count is folded, and so is an exact sum and an extreme numbers only came to. Anything the records alone
+            cannot carry is asked of the server again rather than guessed: a sum of doubles, a product, a variance, an
+            extreme a number left, a number that is not finite, a batch that does not start where the last one ended, a
+            record whose leaf the answer does not hold, and an answer of Level Aggregates. A malformed notice throws to your
+            transport and changes nothing. A batch is folded when the question is next asked, so a burst of them costs one
+            fold. An answer is held only while your transport runs, and Refresh asks the server (a source that wraps
+            another passes its <code>refresh</code> on). A changed record is the old one removed and the new one added. A record
+            carries its values as a record behind a cell does: an exact number as a <code>SnapshotDecimal</code>, a date as
+            its ticks, and a date part as its number; a JavaScript number is a double, whose sum is asked again. A <code>LocalPivotReportSource</code> over the source tells
+            its own listeners each notice, as it does over a Snapshot.
+        </p>
+        <p>
+            <code>PivotJson</code> carries both notices, as it carries the questions and answers. A server built on
+            <code>ExPivot.Engine</code> writes a notice with <code>PivotJson.Write(new PivotSourceChanged(version))</code>
+            and a batch with <code>PivotJson.Write(new PivotServerChangeBatch(from, to, fields, removed, added))</code>,
+            its records the <code>PivotDetailRecord</code>s it would show behind a cell; a page reads either with
+            <code>PivotJson.readServerNotice(text, fields)</code>, the same document to the byte. A batch names its fields,
+            and one written under other fields, or in another order, is refused by name rather than read into the wrong
+            ones.
+        </p>
+        <p>
+            ExPivot drawn by the Script Core (<code>createPivot</code>, or <code>ExPivot</code> from
+            <code>@@ex-grid/pivot-react</code>) hears those notices itself and asks the report on screen again, under its
+            layout, as the Blazor component does: a notice after a quiet spell at once, and the notices that come within
+            <code>redrawInterval</code> of the last change shown (250 ms unless given) gathered into one question, asked
+            when the interval ends. A notice of the version already on screen asks nothing (unless the report is stale,
+            below), and a question out is never
+            cancelled by one: its answer is shown, and the changes that came meanwhile are asked for after it. Such a
+            question is asked quietly: the pivot is not marked busy for it, so a ticking report does not flicker. The
+            values it changed wear the Change Highlight for <code>changeHighlightDuration</code> milliseconds (one second
+            unless given), as the Blazor component's <code>ChangeHighlightDuration</code> marks them; a move of the
+            user's marks nothing.
+        </p>
+        <p>
+            Newer data the report cannot show leaves a Stale Report, as on the
+            <a href="expivot/live">Live data</a> page: an answer past <code>maxLeaves</code>, a refusal or a failure of
+            the source keeps the report on the last data it could show, with its numbers muted, and a notice under the
+            Pivot Toolbar says as of when and why, with Retry, which asks the source again. While it is stale, Copy is
+            refused, saying the time the data is as of. The next answer for newer data, or Retry's, ends it. A failure of the
+            source is raised to <code>onFailed</code>; one the notice says is thrown no further.
+        </p>
+        <pre class="docs-code"><code>const pivot = createPivot(element, {
+    source,                       // a SnapshotPivotSource, or a FetchingPivotSource with a transport
+    layout,
+    redrawInterval: 1000,         // a ticking source redraws the report at most once a second
+    changeHighlightDuration: 2000, // and a value it changed stays marked for two
+});</code></pre>
+        <p>
+            The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
+            the same slicing and an <code>AbortSignal</code>, and give what <code>pivotCube</code> and
+            <code>pivotReport</code> give, so an answer of a hundred thousand leaves, or a field with thousands of Items
+            to order, leaves the page painting while its report is made. A report's <code>hasSameRowsAsAsync</code>
+            compares its rows with another's in slices the same way. Each call begins a slice of its own and ends
+            without yielding, so yield between them where the page must paint:
+        </p>
+        <pre class="docs-code"><code>const cube = await pivotCubeAsync(query, answer, source.fields, { sliceBudgetMs: 30 }, controller.signal);
+const report = await pivotReportAsync(cube, layout, { locale: 'en-US' }, { sliceBudgetMs: 30 }, controller.signal);
+const keepState = await report.hasSameRowsAsAsync(shown, { sliceBudgetMs: 30 }, controller.signal);</code></pre>
+        <p>
+            <code>LocalPivotReportSource</code> is the report source over any of them, as <code>PivotReportSource.From</code>
+            is in C#: asked for a Window of the report a layout makes, it answers that Window's rows with the whole report's
+            metadata, under a Report Version that Copy, the Selection Summary, a field's Items and Show Details name back,
+            and it marks each cell a Change Batch moved with the version that moved it. Everything it answers is plain data,
+            so a Window crosses to a Web Worker as it is. Unlike the C# source, it always answers a Window whole: Window
+            Changes and their digest were the server's answer to a round trip, which the browser does not make. A layout
+            gesture (<code>markChanges: false</code>) lays out the data of the Window named as its <code>baseline</code>,
+            so a change you have not shown yet is marked by the next request that marks changes. The settings name their
+            <code>locale</code>; with none, the browser's language is taken. When a highlight starts is yours, on your clock:
+            <code>PivotChangeTimes</code> stamps each change the first time you adopt a Window that lists it.
+        </p>
+        <pre class="docs-code"><code>const reports = new LocalPivotReportSource(source, { orderKeys: { tenor } });
+const shown = await reports.window({
+    requestId: crypto.randomUUID(), layout, window: { start: 0, count: 60 },
+    settings: { locale: 'en-US', orderKeyPolicies: { Tenor: 'tenor' } },
+    baseline: held?.metadata.version,
+});
+if (shown.refusal === undefined) {
+    times.adopt(shown, Date.now(), 1000);            // times = new PivotChangeTimes()
+    const copy = await reports.copy({ version: shown.metadata.version, columns, ranges });
+}</code></pre>
+        <p>
+            Over a <code>SnapshotPivotSource</code>, a Window after a Change Batch is computed from what the batch touched,
+            as the C# source computes it (ADR-0153): the leaves it moved, the totals above them, and the rows that show
+            them, so one record changed among a hundred thousand costs a few tens of milliseconds, not a whole report.
+            Every other row is the very object the Window before held. The result is the report a fresh source over the
+            same Snapshot makes, to the last bit of every number. Once a batch has begun to be folded in, the work is
+            carried through to its end, and a cancellation is heard only before that, or while a new layout is laid out.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.SnapshotPivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.PivotCaps)" />
+    </DocsSection>
+</DocsPage>

@@ -1,6 +1,6 @@
 {
-  // The Script Core's settings (src/npm/tsconfig.base.json), with nothing emitted: esbuild bundles.
-  "extends": "../../../src/npm/tsconfig.base.json",
+  // The Script Core's settings (tsconfig.base.json), with nothing emitted: esbuild bundles.
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
     "declaration": false,

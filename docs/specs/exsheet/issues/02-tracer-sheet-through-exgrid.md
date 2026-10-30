@@ -22,20 +22,20 @@ only `+ - * /` over single-cell References. The rest of the grammar is ticket 03
 
 ## Comments
 
-2026-09-27, engine half: `src/ExSheet.Engine` exists with no package or project reference (a
+2026-09-27, engine half: `dotnet/src/ExSheet.Engine` exists with no package or project reference (a
 layer 1 test pins that its assembly references only the base class library, SH-1's engine half).
 It holds a `Sheet` of Entries by `CellAddress` (`A1`…`XFD1048576`), takes typed text through
 `Sheet.Enter`, evaluates `+ - * /` over numbers and single-cell References, and returns a
 `SheetChange` naming exactly the cells whose Values changed and their rows, published only after
 the recalculation completes. `Sheet.ToDocument` / `Sheet.Open` round-trip the Sheet Document
-(layer 1, `tests/ExSheet.Engine.Tests`). **What remains is the component's:** the `ExSheet`
+(layer 1, `dotnet/tests/ExSheet.Engine.Tests`). **What remains is the component's:** the `ExSheet`
 package and its reference direction, the ExGrid rendering (Columns `A`…`XFD`, `TotalCount`,
 new row instances for `SheetChange.Rows`, render counts), scrolling to the extent, the row-height
 refusal, Pinned Columns, sort and filter left unwired, and the DemoHost page.
 
-2026-09-27, component half: `src/ExSheet` (Razor class library, `net10.0`, packable, XML docs,
+2026-09-27, component half: `dotnet/src/ExSheet` (Razor class library, `net10.0`, packable, XML docs,
 README) references `ExSheet.Engine` and `ExGrid` and nothing else of ours; nothing references it
-but the demo pages and `tests/ExSheet.Components` (`ReferenceDirectionTests`). The component,
+but the demo pages and `dotnet/tests/ExSheet.Components` (`ReferenceDirectionTests`). The component,
 `ExSheet.Components.ExSheet`, renders one `ExGrid<SheetRow>`: Columns `A`…`XFD` built once per
 process (`SheetColumns`; Fixed at Excel's 8.43 digits in the grid's Cell Metrics), `TotalCount`
 1,048,576, rows as positions (Row Sequence Version always 0), a new `SheetRow` for each row a
@@ -53,7 +53,7 @@ What remains: the DemoHost page (ticket item 5 of this stream) and its browser r
 Scrolling to the extent is layer 2 only (the DOM bound at A1 and at XFD1048576); a real scroll to
 row 1,048,576 is layer 3's, under SH-18.
 
-2026-09-27, the DemoHost page: `/sheet` in `samples/ExGrid.DemoPages` (so both hosts serve it),
+2026-09-27, the DemoHost page: `/sheet` in `dotnet/samples/ExGrid.DemoPages` (so both hosts serve it),
 listed in `DemoPageList` under "ExSheet", shows an ExSheet bound two ways to a Sheet Document
 holding values, Formulas (`=B2*C2`, `=SUM(B2:B4)`) and a date, with buttons for undo, redo, a
 number format on the selection and a row insertion as Consumer commands. Layer 3

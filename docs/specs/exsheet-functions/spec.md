@@ -21,7 +21,7 @@ queue.** A function is admitted when it matches Excel, edge cases included, or g
 for the argument values where it cannot. It never gives a different answer. A priority does not
 change that rule, and a function listed here is not a promise.
 
-`tests/ExSheet.Engine.Tests/FunctionCatalogueTests.cs` reads this file: the rows marked
+`dotnet/tests/ExSheet.Engine.Tests/FunctionCatalogueTests.cs` reads this file: the rows marked
 **Supported** must be exactly `DeclaredFunction.All`. Admitting a function without changing its row
 here fails the build, and so does changing a row without admitting the function. It also reads the
 file's list of [Excel's functions not in the queue](#excels-functions-not-in-the-queue): each name is
@@ -52,13 +52,13 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 ## Admitting a function
 
 1. A ticket under `issues/`, numbered within this spec, naming the functions it admits.
-2. A table of Excel's results in `tests/ExSheet.Engine.Tests/FunctionTests.cs`, and the cases in
-   `tests/ExSheet.Engine.Tests/ExcelCases/` that the next Windows run checks against Excel.
-3. The declaration in `src/ExSheet.Engine/Formulas/Functions.cs`, with Excel's argument names and
+2. A table of Excel's results in `dotnet/tests/ExSheet.Engine.Tests/FunctionTests.cs`, and the cases in
+   `dotnet/tests/ExSheet.Engine.Tests/ExcelCases/` that the next Windows run checks against Excel.
+3. The declaration in `dotnet/src/ExSheet.Engine/Formulas/Functions.cs`, with Excel's argument names and
    signature (completion and the argument hint read them; ADR-0051).
 4. Its row here becomes **Supported**. ADR-0047's list gets a dated addition naming the function,
    and `The_declared_functions_are_exactly_adr_0047s_set` takes the new name.
-5. The table in `src/ExSheet.Engine/README.md`, and any value an argument takes from a fixed list
+5. The table in `dotnet/src/ExSheet.Engine/README.md`, and any value an argument takes from a fixed list
    (`DeclaredFunction.ValuesOf`, ADR-0058).
 
 ## Catalogue

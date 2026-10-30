@@ -65,7 +65,7 @@ more; flagged for the user to confirm.)*
   that alone, a slice at a time (`SavePacer`, as `ExGrid.Data.Xlsx`'s `Pacer` paces a read). `XlsxSaveOptions`
   gained `Progress` (`XlsxSaveProgress`: worksheet, worksheets, elements written of those the file writes; Sheet -1
   while the snapshot is planned), `SliceBudget` and `Yield`; the token is looked at between batches, and a write
-  cancelled while it is built leaves the stream empty. Layer 1 in `tests/ExSheet.Xlsx.Tests/SavePacingTests.cs`.
+  cancelled while it is built leaves the stream empty. Layer 1 in `dotnet/tests/ExSheet.Xlsx.Tests/SavePacingTests.cs`.
 - **Rows bounded.** `XlsxSaveOptions.MaxCells` counts each row a row format writes as an element, holding a cell or
   not (`SheetFormatPlan.FormattedRows`), so a row format over every row costs 1,048,576 of the budget and ten such
   Sheets are refused by name before anything is written. One limit rather than a second one, since the ticket named
@@ -74,5 +74,5 @@ more; flagged for the user to confirm.)*
   hand the saved bytes to a `data:` link the user clicks, since the Docs Site's JavaScript list (ADR-0110) has no
   download. A one-click download would need an entry there.
 - `/xlsx` on the DemoHost (`?hold=1` holds the read until a button lets it go, so the opening is under way with no
-  clock) and `tests/ExGrid.Browser/xlsx.spec.mjs` (XL-1 to XL-3, both Chromes); layer 2 in
-  `tests/ExGrid.Components/WorkUnderWayTests.cs` and `tests/ExSheet.Components/OpenAndSaveInOrderTests.cs`.
+  clock) and `tests/browser/xlsx.spec.mjs` (XL-1 to XL-3, both Chromes); layer 2 in
+  `dotnet/tests/ExGrid.Components/WorkUnderWayTests.cs` and `dotnet/tests/ExSheet.Components/OpenAndSaveInOrderTests.cs`.

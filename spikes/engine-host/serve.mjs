@@ -73,7 +73,7 @@ ${scenario === 'pivot' ? `        <div class="core-controls">
 
 const files = {
     '/core-bench.js': path.join(here, '../render-bench/Bench.Live/wwwroot/core-bench.js'),
-    '/ex-grid.min.css': path.join(here, '../../src/ExGrid/wwwroot/ex-grid.min.css'),
+    '/ex-grid.min.css': path.join(here, '../../dotnet/src/ExGrid/wwwroot/ex-grid.min.css'),
 };
 
 // The page's own files (the bundles, the stylesheet, the driver) have no .br beside them: they are

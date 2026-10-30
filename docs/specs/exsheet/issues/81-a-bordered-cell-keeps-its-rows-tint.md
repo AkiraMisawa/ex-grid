@@ -22,7 +22,7 @@ ExSheet uses neither, but an ExGrid Consumer may use both.
 
 ### What changed
 
-- **Each tint is named, then painted** (`src/ExGrid/wwwroot/ex-grid.css`). The rules that paint a
+- **Each tint is named, then painted** (`dotnet/src/ExGrid/wwwroot/ex-grid.css`). The rules that paint a
   cell's tint — a pinned cell's Row Stripe (`.ex-row-stripe .ex-pinned`), a group or total row's
   (`.ex-row-group .ex-cell`, `.ex-row-total .ex-cell`) and a Missing state's
   (`.ex-cell.ex-state-missing`) — set `--ex-tint` and paint `background-image: var(--ex-tint)`. Their
@@ -60,7 +60,7 @@ ExSheet uses neither, but an ExGrid Consumer may use both.
 
 ### Tests
 
-- **Layer 2** (`tests/ExGrid.Components/CellAppearanceTests.cs`, against the shipped stylesheet read
+- **Layer 2** (`dotnet/tests/ExGrid.Components/CellAppearanceTests.cs`, against the shipped stylesheet read
   through the static-web-asset manifest; `ShippedStylesheetTests.CoreStylesheet` is now `internal`):
   - `A_lined_cell_keeps_its_group_or_total_rows_tint` (ADR-0050 item 15 / ADR-0024);
   - `A_lined_pinned_cell_keeps_its_rows_stripe` (ADR-0038);

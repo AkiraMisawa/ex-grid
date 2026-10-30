@@ -1,5 +1,5 @@
 {
-  "about": "Ctrl+D and Ctrl+R (ADR-0035, CP-24, CP-25): where the source is, what the target is, and every reason a fill is refused. From tests/ExGrid.Tests/FillKeyRuleTests.cs.",
+  "about": "Ctrl+D and Ctrl+R (ADR-0035, CP-24, CP-25): where the source is, what the target is, and every reason a fill is refused. From dotnet/tests/ExGrid.Tests/FillKeyRuleTests.cs.",
   "kind": "clipboard",
   "extent": [1000, 20],
   "cases": [

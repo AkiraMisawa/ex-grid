@@ -1,5 +1,5 @@
 {
-  "about": "The keys that move and extend the selection: arrows, Shift+arrows, Ctrl+arrows, PageUp and PageDown, Ctrl+Space and Shift+Space, Ctrl+A under a pager, and the refusals. From tests/ExGrid.Tests/SelectionKeyboardTests.cs.",
+  "about": "The keys that move and extend the selection: arrows, Shift+arrows, Ctrl+arrows, PageUp and PageDown, Ctrl+Space and Shift+Space, Ctrl+A under a pager, and the refusals. From dotnet/tests/ExGrid.Tests/SelectionKeyboardTests.cs.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

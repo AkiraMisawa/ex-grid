@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Mirrors dotnet/tests/ExPivot.Engine.Tests: net10.0 (ADR-0022), xunit v3 on Microsoft.Testing.Platform,
+         and no native apphost (dotnet/tests/Directory.Build.targets has the account). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExChart.Engine\ExChart.Engine.csproj" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shared chart cases (ADR-0370, section 2): written once as data, run here against the C# engine
+         and by Vitest against @ex-grid/chart. tests/cases/README.md says what a file holds. -->
+    <None Include="..\..\..\tests\cases\chart\*.json" Link="cases\chart\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

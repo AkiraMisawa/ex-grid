@@ -12,7 +12,7 @@ asked of a report.
 
 ## What to build
 
-- **`src/ExPivot.Engine/PivotReport.cs`:**
+- **`dotnet/src/ExPivot.Engine/PivotReport.cs`:**
   - `PivotReportRow.ValueAt` and `PivotReportRow.Report` (with `Attach` and `_cells`) move to the report,
     as `PivotReport.ValueAt(row, column)`. The report computes a cell on first read and keeps it.
   - Rewrite the contract at `:239` to "a next report shares the rows it did not change".

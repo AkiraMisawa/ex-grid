@@ -1,0 +1,9 @@
+{
+  // The shipped sources alone, whose declarations API Extractor rolls up (scripts/build.mjs).
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "temp/types"
+  },
+  "include": ["src"]
+}

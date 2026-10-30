@@ -16,7 +16,7 @@ results, and a function with a known deviation stays out (ADR-0047).
 ## Comments
 
 2026-09-27, engine half: the eleven functions are declared in `ExSheet.Engine` and each has a
-table in `tests/ExSheet.Engine.Tests/FunctionTests.cs`, transcribed from Microsoft's
+table in `dotnet/tests/ExSheet.Engine.Tests/FunctionTests.cs`, transcribed from Microsoft's
 documentation (blanks, text, booleans and Error Values typed as arguments and inside ranges;
 `ROUND`'s own examples and half away from zero; `XLOOKUP`'s match and search modes). An unknown
 function is `#NAME?`, and a call with the wrong number of arguments is refused on entry, as

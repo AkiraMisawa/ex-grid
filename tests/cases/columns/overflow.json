@@ -1,5 +1,5 @@
 {
-  "about": "The Overflow decision (ADR-0016): Text and Boolean show their value, a Number or Date that does not fit becomes a run of #. From tests/ExGrid.Tests/OverflowRuleTests.cs, CellTextMetricsClassTests.cs and BoldWidthTests.cs; what C# alone can say (an interned run, its allocation, a null text, default metrics, an undefined type) stays there.",
+  "about": "The Overflow decision (ADR-0016): Text and Boolean show their value, a Number or Date that does not fit becomes a run of #. From dotnet/tests/ExGrid.Tests/OverflowRuleTests.cs, CellTextMetricsClassTests.cs and BoldWidthTests.cs; what C# alone can say (an interned run, its allocation, a null text, default metrics, an undefined type) stays there.",
   "kind": "calls",
   "subject": "OverflowRules",
   "cases": [

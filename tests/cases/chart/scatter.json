@@ -1,5 +1,5 @@
 {
-  "about": "Observations: marks never joined, merged on one device pixel, rounded bounds, a narrowed left axis and logarithmic axes (ADR-0290), from tests/ExChart.Engine.Tests/ScatterTests.cs.",
+  "about": "Observations: marks never joined, merged on one device pixel, rounded bounds, a narrowed left axis and logarithmic axes (ADR-0290), from dotnet/tests/ExChart.Engine.Tests/ScatterTests.cs.",
   "kind": "chart",
   "cases": [
     {

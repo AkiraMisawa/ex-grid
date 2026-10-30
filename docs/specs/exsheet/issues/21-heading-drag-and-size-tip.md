@@ -42,7 +42,7 @@ on one header and a release on another, the browser fires `click` on their commo
 handler would sort the column under the release. The press has to be remembered, and a click that
 ends a drag ignored.
 
-2026-09-29, built. A Heading drag is its own drag mode, in `src/ExGrid/Components/ExGrid.HeadingDrag.cs`,
+2026-09-29, built. A Heading drag is its own drag mode, in `dotnet/src/ExGrid/Components/ExGrid.HeadingDrag.cs`,
 wired into `ExGrid.razor`'s press, move, release, edge-tick and header-click handlers. The press
 maps to `SelectColumn` / `SelectRow` (`ExtendToColumn` / `ExtendToRow` with Shift) and every move,
 over the header or over the cells, to `ExtendToColumn` / `ExtendToRow`, so no transition is new.
@@ -60,10 +60,10 @@ class is `ex-size-tip` and its tokens are `--ex-size-tip-background`, `--ex-size
 gives its tooltips (`mud-ex-grid.css`). A scroll during a Heading drag re-renders the root when a
 Size Tip stands, so the tip keeps to its Heading.
 
-Layer 2: `tests/ExGrid.Components/HeadingDragTests.cs` (29 tests; 26 were red before the change)
-and `tests/ExGrid.MudBlazor.Tests/WrapperStylesheetTests.cs`. Layer 3 is written and not yet run:
-the `DC-42:`, `DC-43:` and `DC-44:` tests in `tests/ExGrid.Browser/headings.spec.mjs` (/sheet), and
-the `(SR-2d, …)` tests and the resize-grip test in `tests/ExGrid.Browser/sizing.spec.mjs` (a plain
+Layer 2: `dotnet/tests/ExGrid.Components/HeadingDragTests.cs` (29 tests; 26 were red before the change)
+and `dotnet/tests/ExGrid.MudBlazor.Tests/WrapperStylesheetTests.cs`. Layer 3 is written and not yet run:
+the `DC-42:`, `DC-43:` and `DC-44:` tests in `tests/browser/headings.spec.mjs` (/sheet), and
+the `(SR-2d, …)` tests and the resize-grip test in `tests/browser/sizing.spec.mjs` (a plain
 ExGrid).
 
 Left open, each raised with the orchestrator:

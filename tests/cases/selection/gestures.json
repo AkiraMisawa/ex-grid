@@ -1,5 +1,5 @@
 {
-  "about": "The pointer's gestures on cells: click, Shift+click and drag, Ctrl+click adding and taking out, Ctrl+A. From tests/ExGrid.Tests/SelectionGestureTests.cs.",
+  "about": "The pointer's gestures on cells: click, Shift+click and drag, Ctrl+click adding and taking out, Ctrl+A. From dotnet/tests/ExGrid.Tests/SelectionGestureTests.cs.",
   "kind": "selection",
   "extent": [100, 26],
   "cases": [

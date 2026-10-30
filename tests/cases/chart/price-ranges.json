@@ -1,5 +1,5 @@
 {
-  "about": "Price Ranges: the rows they refuse, their candles and volume, candles merged into the market's periods, and packed sessions (ADR-0300 to ADR-0302), from tests/ExChart.Engine.Tests/PriceRangeTests.cs.",
+  "about": "Price Ranges: the rows they refuse, their candles and volume, candles merged into the market's periods, and packed sessions (ADR-0300 to ADR-0302), from dotnet/tests/ExChart.Engine.Tests/PriceRangeTests.cs.",
   "kind": "chart",
   "cases": [
     {

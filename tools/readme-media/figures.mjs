@@ -344,7 +344,7 @@ function writeReadmeNames(figures) {
     const from = readme.indexOf(start), to = readme.indexOf(end);
     if (from < 0 || to < from) throw new Error(`README.md has no block for ${figure.name}: ${start} … ${end}`);
     const names = figure.parts.map((p, i) => `${i + 1}. **${p.term}**: ${p.note}`).join('\n');
-    const block = `${start}\n[![${figure.alt}](samples/ExGrid.Docs/wwwroot/figures/${figure.name}.png)](${site}${figure.overview})\n\n${names}\n`;
+    const block = `${start}\n[![${figure.alt}](dotnet/samples/ExGrid.Docs/wwwroot/figures/${figure.name}.png)](${site}${figure.overview})\n\n${names}\n`;
     readme = readme.slice(0, from) + block + readme.slice(to);
   }
   writeFileSync(file, readme);

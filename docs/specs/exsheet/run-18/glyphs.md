@@ -2,7 +2,7 @@
 
 Gathered from `claude/run17gh-glyphs` (the seventeenth run's Part G and the Japanese-display records of 2026-10-12),
 to be folded into the eighteenth run's spec. This branch changes the estimate's tables
-(`src/ExGrid/Columns/DefaultGlyphWidths.cs`, `src/ExGrid.MudBlazor/RobotoGlyphTable.cs`) and `tests/GlyphWidths/measure.mjs`
+(`dotnet/src/ExGrid/Columns/DefaultGlyphWidths.cs`, `dotnet/src/ExGrid.MudBlazor/RobotoGlyphTable.cs`) and `tests/GlyphWidths/measure.mjs`
 after the seventeenth run's commit `8436e45e`, all within FN-12e's indexed paths (`verification/by-hand.json`), so both
 halves of the row are asked again:
 

@@ -13,7 +13,7 @@ ADR-0047's rule, or an Error Value where the engine cannot yet say what Excel gi
 
 **Blocked by:** nothing
 
-- [x] Each function's cases are in `tests/ExSheet.Engine.Tests/ExcelCases/<function>.json`:
+- [x] Each function's cases are in `dotnet/tests/ExSheet.Engine.Tests/ExcelCases/<function>.json`:
       Microsoft's examples and statements as `documented`, the cases it leaves open as `uncertain`
 - [x] The declarations carry Excel's argument names, for completion and the argument hint
 - [x] `DATE` gives a General cell the short date format on entry, as Microsoft documents (FF-036)

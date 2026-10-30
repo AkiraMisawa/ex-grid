@@ -31,7 +31,7 @@
 // through the engine's public surface and compares its answer with the survivors' (2026-10-12, later).
 
 #:property PublishAot=false
-#:project ../../src/ExSheet.Engine/ExSheet.Engine.csproj
+#:project ../../dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj
 
 using System.Globalization;
 using System.Numerics;
@@ -345,7 +345,7 @@ static string RuntimeLabel() => $"{System.Runtime.InteropServices.RuntimeInforma
 static string FindRoot()
 {
     var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-    while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "ExGrid.slnx"))) dir = dir.Parent;
+    while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "dotnet", "ExGrid.slnx"))) dir = dir.Parent;
     return dir?.FullName ?? throw new InvalidOperationException("Run from inside the repository.");
 }
 
@@ -378,10 +378,10 @@ static class Observations
     public static List<Observation> Load(string root)
     {
         var cells = new Dictionary<string, Dictionary<string, string>>();
-        var fixtures = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tests/ExSheet.Engine.Tests/ExcelCases/fixtures.json"))).RootElement.GetProperty("fixtures");
+        var fixtures = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "dotnet/tests/ExSheet.Engine.Tests/ExcelCases/fixtures.json"))).RootElement.GetProperty("fixtures");
         foreach (var area in Areas)
         {
-            var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, $"tests/ExSheet.Engine.Tests/ExcelCases/{area}.json")));
+            var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, $"dotnet/tests/ExSheet.Engine.Tests/ExcelCases/{area}.json")));
             foreach (var c in doc.RootElement.GetProperty("cases").EnumerateArray())
             {
                 var map = new Dictionary<string, string>();
@@ -391,7 +391,7 @@ static class Observations
             }
         }
         var seen = new Dictionary<(string, string), Observation>();
-        foreach (var path in Directory.GetFiles(Path.Combine(root, "tests/ExSheet.Engine.Tests/ExcelOracle"), "results-*.json").Order(StringComparer.Ordinal))
+        foreach (var path in Directory.GetFiles(Path.Combine(root, "dotnet/tests/ExSheet.Engine.Tests/ExcelOracle"), "results-*.json").Order(StringComparer.Ordinal))
         {
             var doc = JsonDocument.Parse(File.ReadAllText(path).TrimStart('﻿'));
             if (!doc.RootElement.TryGetProperty("cases", out var list)) continue;

@@ -11,7 +11,7 @@ whole. The painted rows' keys are checked on every render, vouched or not.
 ## What to build
 
 - **A grid parameter beside `RowKey`**, meaningful only with a Row Key, by which a Consumer that pushes its
-  Window vouches for it, with its XML doc. `TakeInWindow` (`src/ExGrid/Components/ExGrid.RowKey.cs`) then
+  Window vouches for it, with its XML doc. `TakeInWindow` (`dotnet/src/ExGrid/Components/ExGrid.RowKey.cs`) then
   treats the Window as it treats a source's `VouchesDistinctRows`.
 - **On every render, the grid checks the Row Keys of the rows it paints** before Blazor's own exception,
   and refuses a repeat by name, naming the key and its positions (LV-2's message).
@@ -56,7 +56,7 @@ on the CoreCLR figure, as the brief allowed; the browser half of it (257 ms) sta
 2026-10-07, after the late reviews: the figure's box is unticked. The CoreCLR half is recorded above;
 the browser half (ticket 01's 257 ms, taken again with a vouched pushed Window) is not, and stays open.
 It needs a browser harness page with a pushed grid, and the layer-3 lock. The Docs Site now says the
-feature: `samples/ExGrid.Docs/Pages/Grid/GridData.razor`, "Pushing a Window", explains the Row Key and the
+feature: `dotnet/samples/ExGrid.Docs/Pages/Grid/GridData.razor`, "Pushing a Window", explains the Row Key and the
 vouch; the million-row Example declares both, under each Chrome (`MillionRows.razor`,
 `MillionRowsMud.razor`). The site was run and the Example used once under each Chrome: Ctrl+End painted
 the last trade, and the console stayed clean.

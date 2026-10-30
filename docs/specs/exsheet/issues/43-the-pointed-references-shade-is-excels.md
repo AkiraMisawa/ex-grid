@@ -11,7 +11,7 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
 
 - [x] One Visual Token per place in the palette, `--ex-reference-1-pointed` to
       `--ex-reference-7-pointed`, read by `.ex-reference-pointed` for the span's colour
-      (`src/ExGrid/wwwroot/ex-grid.css`, the rule around `.ex-reference-text .ex-reference-pointed`)
+      (`dotnet/src/ExGrid/wwwroot/ex-grid.css`, the rule around `.ex-reference-text .ex-reference-pointed`)
       (DC-56)
 - [x] Defaults: `#0401a2` and `#630101` for the first two in light mode; the other five, and all
       seven in dark mode, keep today's mix (toward black in light, toward white in dark) (DC-56)
@@ -46,7 +46,7 @@ The shade was approximated (55% toward black); Excel's are `#0401a2` for the fir
   past the palette's end, that the ground's rule is unchanged, and that no shipped asset names the
   retired token. It fails on 4179010.
 - **Layer 3, written, not run**: `DC-56: the pointed Reference's text is Excel's shade of its colour
-  …` in `tests/ExGrid.Browser/reference-text.spec.mjs`, under the built-in Chrome and
+  …` in `tests/browser/reference-text.spec.mjs`, under the built-in Chrome and
   ExGrid.MudBlazor's. From D10, as the run typed Excel's cases 20 and 20x: `=D11+`, then ↓ points
   D11 in the first colour, with text `rgb(4, 1, 162)` on `rgb(198, 198, 198)`. ↓ again points D12
   in the second colour, `rgb(99, 1, 1)`. Then `=SUM(`, ↓, ↓ gives the first colour's shade.

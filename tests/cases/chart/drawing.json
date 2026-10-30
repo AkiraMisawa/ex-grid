@@ -1,5 +1,5 @@
 {
-  "about": "What one series draws in the axes' units: gaps, steps with filled and open ends, amounts per year, and sampled functions (ADR-0253, ADR-0257), from tests/ExChart.Engine.Tests/SeriesDrawingTests.cs.",
+  "about": "What one series draws in the axes' units: gaps, steps with filled and open ends, amounts per year, and sampled functions (ADR-0253, ADR-0257), from dotnet/tests/ExChart.Engine.Tests/SeriesDrawingTests.cs.",
   "kind": "chart",
   "cases": [
     {

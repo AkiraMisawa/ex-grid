@@ -12,7 +12,7 @@
 // The trades are CorePivot's, drawn from the same seed by .NET's Random (DotNetRandom), so the figures
 // are the ones the Blazor page paints. They cross to the Worker once, as columns of JSON.
 
-import { createGrid, type GridColumn, type GridHandle } from '../../../../src/npm/core/src/index';
+import { createGrid, type GridColumn, type GridHandle } from '../../../../packages/core/src/index';
 import { EngineClient } from './engine-client';
 import { EngineWindowSource, type WindowAnswer } from './engine-window-source';
 import { recordBoot, waitForPaint } from './boot';

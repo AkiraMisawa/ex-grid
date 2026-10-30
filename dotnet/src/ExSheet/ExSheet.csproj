@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExSheet</RootNamespace>
+    <Description>ExSheet: a general-purpose sheet for Blazor, drawn by ExGrid as that grid's Consumer. It holds a Sheet of Entries computed by ExSheet.Engine, shows Excel's extent with Headings, a Formula Bar and a Name Box, and hands the application a Sheet Document to persist.</Description>
+    <PackageTags>$(PackageTags);spreadsheet;sheet;formula</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0046): ExSheet references the engine and ExGrid,
+         and nothing references ExSheet but the demo pages and its tests (SH-1). -->
+    <ProjectReference Include="..\ExSheet.Engine\ExSheet.Engine.csproj" />
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExSheet.Components.Tests" />
+    <!-- The Wrapper's layer 2 and the keyboard reference's check find the grid a Sheet draws, which
+         is an ExGrid of ExSheet's own rows: SheetRow is internal (ADR-0201). Granted to test
+         projects only, never to a package. -->
+    <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
+    <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
+  </ItemGroup>
+
+  <!-- ExSheet's Script Core's module for ExSheet.Components.ExSheet (ADR-0370 section 1): the bridge, @ex-grid/sheet,
+       its engine and the grid it draws through, bundled from their sources in packages/ as this project builds, never
+       committed, as ExGrid's and ExPivot's are (ADR-0350 section 7). The module goes to wwwroot, where the package
+       serves it; its version and stamp (ADR-0123) are compiled in as ScriptCoreAsset. The npm workspace's dependencies are
+       ExGrid's build's to install: the bundle is built once the project references are, so the two never run npm in
+       the workspace at once. -->
+  <PropertyGroup>
+    <ScriptCoreWorkspace>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..'))</ScriptCoreWorkspace>
+    <ScriptCoreModule>$(MSBuildThisFileDirectory)wwwroot/ex-sheet.min.js</ScriptCoreModule>
+    <ScriptCoreConstants>$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ScriptCoreAsset.g.cs</ScriptCoreConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)packages/core/src/**/*.ts;$(ScriptCoreWorkspace)packages/data/src/**/*.ts;$(ScriptCoreWorkspace)packages/sheet-engine/src/**/*.ts;$(ScriptCoreWorkspace)packages/sheet/src/**/*.ts;$(ScriptCoreWorkspace)packages/sheet-blazor/src/**/*.ts;$(ScriptCoreWorkspace)packages/blazor/src/shared.ts;$(ScriptCoreWorkspace)packages/blazor/src/snapshots.ts;$(ScriptCoreWorkspace)packages/blazor/src/held-messages.ts;$(ScriptCoreWorkspace)packages/blazor/src/razor-slot-host.ts;$(ScriptCoreWorkspace)packages/blazor/src/grid-razor-slot-kinds.ts;$(ScriptCoreWorkspace)packages/blazor/src/pointing-scopes.ts;$(ScriptCoreWorkspace)packages/blazor/src/wire-metrics.ts" />
+    <ScriptCoreSource Include="$(ScriptCoreWorkspace)tools/scripts/build-blazor.mjs;$(ScriptCoreWorkspace)package-lock.json" />
+    <!-- The Shared Script it imports, whose stamp it carries: built from more of blazor/src than this module reads, so a
+         change there that reaches the Shared Script alone builds this module again. -->
+    <ScriptCoreSource Include="$(MSBuildThisFileDirectory)../ExGrid/wwwroot/ex-grid-script.min.js" />
+    <Content Remove="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+  </ItemGroup>
+
+  <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
+          Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
+    <Exec Command="node ../../tools/scripts/build-blazor.mjs --name ex-sheet --namespace ExSheet.Components --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-sheet.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+          WorkingDirectory="$(ScriptCoreWorkspace)packages/sheet-blazor" />
+  </Target>
+
+  <!-- Apart from the build, which is skipped while its outputs are newer than every source: the items are
+       added on every build, so the static web assets and the compile always hold the module. -->
+  <Target Name="IncludeScriptCore" DependsOnTargets="BuildScriptCore"
+          BeforeTargets="BeforeBuild;CoreCompile;ResolveProjectStaticWebAssets;ResolveStaticWebAssetsConfiguration">
+    <ItemGroup>
+      <Content Remove="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+      <Content Include="wwwroot/ex-sheet.min.js;wwwroot/ex-sheet.min.js.map" />
+      <Compile Remove="$(ScriptCoreConstants)" />
+      <Compile Include="$(ScriptCoreConstants)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- ExSheet depends on exactly the core and engine versions it was built with, as the
+       Wrapper does (ADR-0042): the declarations it makes are the core's of that version. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
+         Script adapter, beside the Shared Script's half (packages/blazor/src/held-messages.ts). -->
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
+    <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the Sheet's grid's slots,
+         read and drawn as ExGrid's own adapter reads and draws them. -->
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\ExGrid\Components\RazorSlot.cs" Link="Components\RazorSlot.cs" />
+    <Compile Include="..\ExGrid\Components\ScriptJson.cs" Link="Components\ScriptJson.cs" />
+    <Compile Include="..\Shared\Components\ScriptMetricsJson.cs" Link="Components\ScriptMetricsJson.cs" />
+  </ItemGroup>
+
+</Project>

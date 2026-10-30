@@ -1,5 +1,5 @@
 {
-  "about": "An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it (ADR-0342, ADR-0120): what it reads, what it refuses, and the text it writes under the invariant culture and under en-GB, de-DE and ja-JP (ADR-0370 section 10). Transcribed from tests/ExGrid.Tests/ShapedGridTests.cs, with the locales added.",
+  "about": "An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it (ADR-0342, ADR-0120): what it reads, what it refuses, and the text it writes under the invariant culture and under en-GB, de-DE and ja-JP (ADR-0370 section 10). Transcribed from dotnet/tests/ExGrid.Tests/ShapedGridTests.cs, with the locales added.",
   "kind": "formatCode",
   "cases": [
     {

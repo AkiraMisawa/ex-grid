@@ -1,5 +1,5 @@
 {
-  "about": "The horizontal arithmetic every visual layer reads: five 100px columns in a 350px Viewport unless a case says otherwise. From tests/ExGrid.Tests/ColumnGeometryTests.cs and HeadingsSelectionTests.cs; the Device Pixel properties over many widths and ratios stay there and in column-geometry.test.ts.",
+  "about": "The horizontal arithmetic every visual layer reads: five 100px columns in a 350px Viewport unless a case says otherwise. From dotnet/tests/ExGrid.Tests/ColumnGeometryTests.cs and HeadingsSelectionTests.cs; the Device Pixel properties over many widths and ratios stay there and in column-geometry.test.ts.",
   "kind": "calls",
   "subject": "ColumnGeometry",
   "defaults": {"widthsPx": [100, 100, 100, 100, 100]},

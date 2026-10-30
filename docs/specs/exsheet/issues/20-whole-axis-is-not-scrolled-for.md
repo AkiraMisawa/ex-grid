@@ -41,7 +41,7 @@ the move, keeps the offset the scroller is going to. The pointing outline's reve
 range and takes the same rule, as its comment says it is kept on screen "as the Extent is".
 Shift+click and a drag reveal nothing: the pointer is on the Extent, and a cell drag's edge band
 follows the pointer. The Heading drag's edge band is ticket 21's (DC-43). Layer 2:
-`tests/ExGrid.Components/WholeAxisRevealTests.cs` (13 tests; 8 were red before the change).
+`dotnet/tests/ExGrid.Components/WholeAxisRevealTests.cs` (13 tests; 8 were red before the change).
 
 Two readings were needed, and neither is a new rule:
 
@@ -59,8 +59,8 @@ Not observed in Excel, and applied as ADR-0052 is written ("judged on the range 
 a move that itself makes the range span an axis holds that axis too. Ctrl+Shift+↓ from row 1 of an
 empty column, or Ctrl+Shift+→ from a whole column to the whole grid, scrolls nothing.
 
-Layer 3 is written and not yet run: `tests/ExGrid.Browser/headings.spec.mjs` (the three `SR-2c:`
-tests, on /sheet) and `tests/ExGrid.Browser/sizing.spec.mjs` (the two `(SR-2c, ADR-0052)` tests,
+Layer 3 is written and not yet run: `tests/browser/headings.spec.mjs` (the three `SR-2c:`
+tests, on /sheet) and `tests/browser/sizing.spec.mjs` (the two `(SR-2c, ADR-0052)` tests,
 on a plain ExGrid). The last box waits for that run.
 
 2026-09-29, layer 3 run: `headings.spec.mjs`, `sizing.spec.mjs` and `sheet.spec.mjs` pass in Chrome

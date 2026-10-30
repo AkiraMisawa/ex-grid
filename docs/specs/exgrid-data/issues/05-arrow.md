@@ -2,9 +2,9 @@
 
 Status: done
 
-**What to build:** a new project, `src/ExGrid.Data.Arrow`, referencing `ExGrid.Data` exactly and
+**What to build:** a new project, `dotnet/src/ExGrid.Data.Arrow`, referencing `ExGrid.Data` exactly and
 `Apache.Arrow` within a stated range (built with 23.0.0). Its tests are
-`tests/ExGrid.Data.Arrow.Tests`.
+`dotnet/tests/ExGrid.Data.Arrow.Tests`.
 
 - **Reading:** Arrow's IPC stream and file formats, read into a Snapshot.
   - Work from the buffers, never the per-value accessors, which were measured 10–40 times slower.

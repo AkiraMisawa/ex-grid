@@ -1,5 +1,5 @@
 {
-  "about": "The Consumer's answer to the editor's text and caret (ADR-0051): an answer with neither candidates nor a hint shows nothing. From tests/ExGrid.Tests/EditorTextRulesTests.cs.",
+  "about": "The Consumer's answer to the editor's text and caret (ADR-0051): an answer with neither candidates nor a hint shows nothing. From dotnet/tests/ExGrid.Tests/EditorTextRulesTests.cs.",
   "kind": "calls",
   "subject": "EditorCompletion",
   "cases": [

@@ -41,7 +41,7 @@ written `XLOOKUP(...)` lies on the grey ground as a whole.
 - **A case the correspondence cannot see.** The Scope does not know a grid's column names, so a grid
   column that is its table column by name is outlined only when named exactly as the Sheet declares
   the column, while a press on it finds the column without regard to case (ticket 37). Documented on
-  `RegisterGrid`'s `tableColumns` and in `src/ExSheet/README.md`; an entry in `tableColumns` covers any
+  `RegisterGrid`'s `tableColumns` and in `dotnet/src/ExSheet/README.md`; an entry in `tableColumns` covers any
   other casing.
 - **The dashes.** A press that writes sets `GridPointedAt.Dashes`: `OverColumn` for a header, and for a
   cell `OverCell` by a function that reads each painted row through `tableRow` and compares its key

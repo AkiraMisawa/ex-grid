@@ -1,5 +1,5 @@
 {
-  "about": "The tooltip (ADR-0270): a series read at a position by its Series Kind — a level's value, a step's interval, a thinned pixel's range, a sampler's value and its Segment's method, an Interval's bounds, a candle and its volume — the nearest series when not all fit, an Observation's mark and an edge (ADR-0290, ADR-0300 to ADR-0304, ADR-0320, ADR-0321), from tests/ExChart.Engine.Tests (ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
+  "about": "The tooltip (ADR-0270): a series read at a position by its Series Kind — a level's value, a step's interval, a thinned pixel's range, a sampler's value and its Segment's method, an Interval's bounds, a candle and its volume — the nearest series when not all fit, an Observation's mark and an edge (ADR-0290, ADR-0300 to ADR-0304, ADR-0320, ADR-0321), from dotnet/tests/ExChart.Engine.Tests (ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
   "kind": "chart",
   "definitions": {
     "forty": {

@@ -19,6 +19,6 @@ container; CoreCLR 10.0.12; a published WebAssembly build in Chromium 141). A mi
 | Read from a CSV (89.7 MiB) | 955 ms | 14.6 s |
 | Read from Arrow | 475 ms (77 ms without the unique id) | 3.7 s |
 
-The CoreCLR numbers come from the explicit `MeasureTests` in `tests/ExGrid.Data.Tests` and
-`tests/ExGrid.Data.Arrow.Tests`; the browser's from `measure-pivot.spec.mjs`.
+The CoreCLR numbers come from the explicit `MeasureTests` in `dotnet/tests/ExGrid.Data.Tests` and
+`dotnet/tests/ExGrid.Data.Arrow.Tests`; the browser's from `measure-pivot.spec.mjs`.
 

@@ -200,7 +200,7 @@ of `main` without the mark, and `tools/cdp-settled.mjs` drives a browser already
 ```sh
 nix develop -c dotnet run -c Release --project Bench.Server            # BENCH_PORT=5491
 nix develop -c dotnet run -c Release --project Bench.Host --urls http://0.0.0.0:5492
-node ../../tests/ExGrid.Browser/latency-proxy.mjs 5591 5491 5691       # then POST :5691/?rtt=60
+node ../../tests/browser/latency-proxy.mjs 5591 5491 5691       # then POST :5691/?rtt=60
 CDP_PORT=9333 node tools/cdp-settled.mjs http://localhost:5491/settled with-server-0ms 7 40 120
 ```
 
@@ -317,7 +317,7 @@ A host of the Script Core serves the same pages, and nothing in the driver chang
 - **The label.** `script-react`, `script-blazor-wasm`, `script-blazor-server`, beside `csharp-wasm` and
   `csharp-server`, each run on the same machine and browser as the baseline it is read against.
 
-The React host is `Bench.React`, a Vite page that builds the Script Core from `src/npm` as the React
+The React host is `Bench.React`, a Vite page that builds the Script Core from `packages/` as the React
 DemoHost does and serves `/core/grid` and `/core/template`:
 
 ```sh

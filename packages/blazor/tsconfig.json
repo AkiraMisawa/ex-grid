@@ -1,0 +1,10 @@
+{
+  // The sources and the tests, for the editor and for `npm run typecheck`. The core, and the data it reads,
+  // are read from their sources, as the bundle reads them.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": { "@ex-grid/blazor-shared": ["./src/shared.ts"], "@ex-grid/core": ["../core/src/index.ts"], "@ex-grid/data": ["../data/src/index.ts"] }
+  },
+  "include": ["src", "test"]
+}

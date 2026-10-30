@@ -1,5 +1,5 @@
 {
-  "about": "The reference rule for one cell (ADR-0055, ADR-0332 §4), which a Find step finds by and a Match Mark marks by: ordinal, case ignored as OrdinalIgnoreCase ignores it unless Match case, containment unless Whole cell. A pattern is written {text, matchCase, wholeCell}. From tests/ExGrid.Tests/GridFindTests.cs.",
+  "about": "The reference rule for one cell (ADR-0055, ADR-0332 §4), which a Find step finds by and a Match Mark marks by: ordinal, case ignored as OrdinalIgnoreCase ignores it unless Match case, containment unless Whole cell. A pattern is written {text, matchCase, wholeCell}. From dotnet/tests/ExGrid.Tests/GridFindTests.cs.",
   "kind": "calls",
   "subject": "GridFind",
   "cases": [

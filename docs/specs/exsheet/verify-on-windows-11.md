@@ -144,7 +144,7 @@ screenshots, case by case. **Decide nothing. Record everything.**
   from its tip, and record the tip.
   - Run the DemoHost as the ninth run's Part B ran it (`verification/2026-10-01-windows-9/`), and the
     thirteenth run's Part B after it: from WSL with nix, the WebAssembly host
-    (`samples/ExGrid.DemoHost`) and the Server host (`samples/ExGrid.DemoHost.Server`), opened from
+    (`dotnet/samples/ExGrid.DemoHost`) and the Server host (`dotnet/samples/ExGrid.DemoHost.Server`), opened from
     Windows' Chrome and Edge.
 - **The pages.** `/sheet?case=<name>` opens one of Part A's set-ups instead of the page's own
   Sheet. The names are 1, 2, 3b, 3c, 4–14, 16–18, `12-1` (the twelfth run's case 1) and `12-14`

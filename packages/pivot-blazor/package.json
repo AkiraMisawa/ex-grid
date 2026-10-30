@@ -1,0 +1,21 @@
+{
+  "name": "@ex-grid/pivot-blazor",
+  "private": true,
+  "version": "0.0.0-dev",
+  "description": "Blazor's ExPivot, the browser's half: ExPivot's Script Core and its bridge to .NET, bundled into the script the ExPivot NuGet package ships (ADR-0370 section 1, ADR-0350 section 9). Never published to npm.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "node ../../tools/scripts/build-blazor.mjs --name ex-pivot",
+    "api": "node ../../tools/scripts/build-blazor.mjs --name ex-pivot",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/core": "0.0.0-dev",
+    "@ex-grid/data": "0.0.0-dev",
+    "@ex-grid/pivot": "0.0.0-dev",
+    "@ex-grid/pivot-engine": "0.0.0-dev"
+  }
+}

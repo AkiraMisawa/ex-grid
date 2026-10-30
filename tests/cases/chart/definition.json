@@ -1,5 +1,5 @@
 {
-  "about": "What a definition refuses when it is made, and the defaults it applies (ADR-0251, ADR-0253, ADR-0256, ADR-0257), from tests/ExChart.Engine.Tests/ChartDefinitionTests.cs.",
+  "about": "What a definition refuses when it is made, and the defaults it applies (ADR-0251, ADR-0253, ADR-0256, ADR-0257), from dotnet/tests/ExChart.Engine.Tests/ChartDefinitionTests.cs.",
   "kind": "chart",
   "cases": [
     {

@@ -1,5 +1,5 @@
 @implements IDisposable
-@* ExGrid's row shape, in miniature (src/ExGrid/Components/ExGridRow.razor): one component per row
+@* ExGrid's row shape, in miniature (dotnet/src/ExGrid/Components/ExGridRow.razor): one component per row
    whose ShouldRender is written by hand and compares the row by reference (ADR-0003), cells as
    plain markup, and on each cell the attributes ExGridRow writes — class, style, role, id,
    aria-colindex — with the id composed once per cell for the row's life, as ExGridRow caches it. *@

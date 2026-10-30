@@ -1,5 +1,5 @@
 {
-  "about": "ADR-0052's rules as Excel showed them (verification/2026-09-27-windows-excel-2/active-cell.md): the Focus is Excel's active cell and stays while a range is extended; the Extent is the end that moves. From tests/ExGrid.Tests/ActiveCellTests.cs; its key cases move with the keys.",
+  "about": "ADR-0052's rules as Excel showed them (verification/2026-09-27-windows-excel-2/active-cell.md): the Focus is Excel's active cell and stays while a range is extended; the Extent is the end that moves. From dotnet/tests/ExGrid.Tests/ActiveCellTests.cs; its key cases move with the keys.",
   "kind": "selection",
   "extent": [1000, 60],
   "cases": [

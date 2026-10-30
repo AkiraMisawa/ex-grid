@@ -1,5 +1,5 @@
 {
-  "about": "A chart laid out as immutable pieces: panels, axes, zero, positions, Notes and Thinning (ADR-0251 to ADR-0257, ADR-0272), from tests/ExChart.Engine.Tests/SceneTests.cs and ComponentSupportTests.cs.",
+  "about": "A chart laid out as immutable pieces: panels, axes, zero, positions, Notes and Thinning (ADR-0251 to ADR-0257, ADR-0272), from dotnet/tests/ExChart.Engine.Tests/SceneTests.cs and ComponentSupportTests.cs.",
   "kind": "chart",
   "definitions": {
     "exposure": {

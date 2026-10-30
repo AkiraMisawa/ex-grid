@@ -1,5 +1,5 @@
 {
-  "about": "The single resolved geometry of an instance (ADR-0028): the presets, per-value precedence, a Wrapper's defaults (ADR-0030) and the widths they give the estimate (ADR-0016). From tests/ExGrid.Tests/GridMetricsTests.cs, GridPresentationDefaultsTests.cs, BoldWidthTests.cs, GlyphWidthTableTests.cs and OtherClassTests.cs.",
+  "about": "The single resolved geometry of an instance (ADR-0028): the presets, per-value precedence, a Wrapper's defaults (ADR-0030) and the widths they give the estimate (ADR-0016). From dotnet/tests/ExGrid.Tests/GridMetricsTests.cs, GridPresentationDefaultsTests.cs, BoldWidthTests.cs, GlyphWidthTableTests.cs and OtherClassTests.cs.",
   "kind": "calls",
   "subject": "GridMetrics",
   "cases": [

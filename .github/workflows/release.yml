@@ -9,7 +9,7 @@
 # completes that release rather than making another.
 #
 # What the tag's version is decides what its release must carry. The checks are
-# tools/release/ExGrid.Release, whose tests (tests/ExGrid.Release.Tests) are layer 1:
+# dotnet/tools/release/ExGrid.Release, whose tests (dotnet/tests/ExGrid.Release.Tests) are layer 1:
 #
 # - Every tag: a version as SemVer writes it, on a commit on main or a release/* branch
 #   (ADR-0205), whose Release Notes are cut (ADR-0190): docs/releases/<version>.md, its first line
@@ -88,6 +88,7 @@ jobs:
       # publishes the Docs Site (ADR-0042, ADR-0205).
       - id: admit
         name: The version, and the branch it is on
+        working-directory: dotnet
         run: dotnet run --project tools/release/ExGrid.Release -c Release -- admit --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA"
 
       # Before CI's twenty minutes: a tag publishes all of main, so its commit holds the version's
@@ -138,6 +139,7 @@ jobs:
       # cannot be read (ADR-0205, ADR-0208, 2026-10-12). The runner reaches nuget.org.
       - name: The stable path's checks
         if: ${{ !cancelled() && steps.admit.outcome == 'success' && steps.admit.outputs.kind != 'prerelease' }}
+        working-directory: dotnet
         run: >-
           dotnet run --project tools/release/ExGrid.Release -c Release -- gate
           --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --fetch-missing
@@ -181,19 +183,20 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: packages
-          path: packages
+          # The .nupkg files, in a directory named for them: packages/ is the npm workspace's (ADR-0370 section 9).
+          path: nupkg
 
       - name: Exactly the packages the package job tested
         run: |
           set -euo pipefail
-          ls -l packages
+          ls -l nupkg
           ids="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExSheet.Xlsx ExGrid.Data ExGrid.Data.Arrow ExGrid.Data.Xlsx ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard"
           for id in $ids; do
             for ext in nupkg snupkg; do
-              [ -f "packages/$id.$VERSION.$ext" ] || { echo "::error::packages/$id.$VERSION.$ext is missing"; exit 1; }
+              [ -f "nupkg/$id.$VERSION.$ext" ] || { echo "::error::nupkg/$id.$VERSION.$ext is missing"; exit 1; }
             done
           done
-          [ "$(ls packages | wc -l)" -eq 32 ] || { echo "::error::the artifact holds more than the thirty-two expected files"; exit 1; }
+          [ "$(ls nupkg | wc -l)" -eq 32 ] || { echo "::error::the artifact holds more than the thirty-two expected files"; exit 1; }
 
       - uses: ./.github/actions/dotnet
         with:
@@ -215,7 +218,7 @@ jobs:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
           set -euo pipefail
-          dotnet nuget push "packages/*.nupkg" \
+          dotnet nuget push "nupkg/*.nupkg" \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
@@ -310,9 +313,9 @@ jobs:
           fi
           if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
             gh release edit "$TAG" --repo "$REPO" "$prerelease" --notes-file "$RUNNER_TEMP/release-notes.md"
-            gh release upload "$TAG" packages/* --repo "$REPO" --clobber
+            gh release upload "$TAG" nupkg/* --repo "$REPO" --clobber
           else
-            gh release create "$TAG" packages/* --repo "$REPO" \
+            gh release create "$TAG" nupkg/* --repo "$REPO" \
               --verify-tag "$prerelease" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 

@@ -4,7 +4,7 @@ Status: done
 
 **Why:** [ADR-0252](../../../adr/0252-a-chart-renders-as-svg-elements-in-components-that-skip-their-render.md), [ADR-0256](../../../adr/0256-a-series-look-is-chosen-by-three-appearance-keys.md), ADR-0027/0028.
 
-- [x] `src/ExChart` references `ExChart.Engine` and `ExGrid` and nothing else; text width is ExGrid's glyph estimate at the chart's Density
+- [x] `dotnet/src/ExChart` references `ExChart.Engine` and `ExGrid` and nothing else; text width is ExGrid's glyph estimate at the chart's Density
 - [x] `<ExChart>` renders a Chart Definition as SVG elements: one component per panel's axes and grid lines, one per series, each with a hand-written `ShouldRender`; no `MarkupString`
 - [x] A series' SVG node count does not grow with its number of points (CH-3)
 - [x] Each colour key takes a slot in order of first appearance, hidden series included; ten slots by default, a theme may declare more; past the last, colours repeat and a note says so (CH-6)

@@ -17,7 +17,7 @@ intent. A commit whose row is gone, or whose order moved, is refused with the ed
     and the text replaced.
   - The user's own writes not yet painted when the editor opened are not reported (D1, for the notice
     only).
-- **`GridEditIntent<TRow>`** (`src/ExGrid/Cells/GridEditIntent.cs`, today a positional record of row,
+- **`GridEditIntent<TRow>`** (`dotnet/src/ExGrid/Cells/GridEditIntent.cs`, today a positional record of row,
   column and value) gains:
   - the text seen and the text replaced;
   - `Refuse(message)`, honoured when called before the `OnEdit` handler completes. The editor stays open

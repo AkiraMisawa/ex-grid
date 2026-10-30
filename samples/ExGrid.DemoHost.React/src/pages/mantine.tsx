@@ -7,7 +7,7 @@ import { MantineExGrid } from '@ex-grid/mantine';
 // goes: the other pages, the bare grid's fixtures, stay bare, and a spec file's document is the one it booted
 // with once the page is left (ADR-0056).
 import mantineStyles from '@mantine/core/styles.css?inline';
-import wrapperStyles from '../../../../src/npm/mantine/styles.css?inline';
+import wrapperStyles from '../../../../packages/mantine/styles.css?inline';
 import { DemoNav } from '../demo-nav';
 import { tradeWindow, type DemoTrade } from '../demo-data';
 

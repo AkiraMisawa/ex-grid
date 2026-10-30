@@ -64,7 +64,7 @@ Pointing Scope's tests.
 - **After a drag took back its press**, the Scope had already done what Part B read: the take-back
   restores the dashes that stood before the press, none, so the arrows reach the Sheet's own Point.
   Two Layer 2 tests now pin that, one for a drag over cells and one for a drag across headers.
-- **Docs and the DemoHost.** The Scope's and the Sheet's doc comments, `src/ExSheet/README.md`, and
+- **Docs and the DemoHost.** The Scope's and the Sheet's doc comments, `dotnet/src/ExSheet/README.md`, and
   `/pointing`'s prose say what the arrows do after a header press.
 - **Not built, noted for a later decision:** a column that ← or → reaches is not scrolled into view
   horizontally. DC-55 says "scrolls a cell into view", and ADR-0058 speaks of "the pointed cell".

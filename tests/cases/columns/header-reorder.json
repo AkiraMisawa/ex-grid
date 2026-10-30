@@ -1,5 +1,5 @@
 {
-  "about": "The reorder gesture's arithmetic (ADR-0011, ADR-0032): a drag never crosses an edge that carries meaning, the pinned boundary or a Header Group's edge, and the order it hands over moves the grabbed unit whole. From tests/ExGrid.Tests/HeaderReorderTests.cs. The C# core's HeaderReorder is a static class; the Script Core's columns/header-reorder.ts is its functions, allowedBoundaries and reorderColumns.",
+  "about": "The reorder gesture's arithmetic (ADR-0011, ADR-0032): a drag never crosses an edge that carries meaning, the pinned boundary or a Header Group's edge, and the order it hands over moves the grabbed unit whole. From dotnet/tests/ExGrid.Tests/HeaderReorderTests.cs. The C# core's HeaderReorder is a static class; the Script Core's columns/header-reorder.ts is its functions, allowedBoundaries and reorderColumns.",
   "kind": "scriptCalls",
   "subject": "HeaderReorder",
   "cases": [

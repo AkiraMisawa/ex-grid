@@ -31,9 +31,12 @@ dotnet --version
 Without direnv, prefix commands instead:
 
 ```sh
-nix develop -c dotnet build
-nix develop -c dotnet test
+nix develop -c bash -c 'cd dotnet && dotnet build'
+nix develop -c bash -c 'cd dotnet && dotnet test'
 ```
+
+Every dotnet command runs in `dotnet/`, where the SDK finds `global.json` and the tool manifest;
+every npm command runs at the repository's root, the npm workspace.
 
 A second shell provides a headless Chromium and Node.js for the render spike:
 
@@ -44,7 +47,7 @@ nix develop .#browser -c node ...
 To see the component running, start the demo host and open <http://localhost:5299>:
 
 ```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoHost
+nix develop -c bash -c 'cd dotnet && dotnet run --project samples/ExGrid.DemoHost'
 ```
 
 Stop it with `kill $(lsof -ti tcp:5299)` — not `pkill -f`, which matches the calling
@@ -53,7 +56,7 @@ shell's own command line and kills it.
 The same pages run under Blazor Server from the second host, on <http://localhost:5298>:
 
 ```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
+nix develop -c bash -c 'cd dotnet && dotnet run --project samples/ExGrid.DemoHost.Server'
 ```
 
 The pages that read a database call the demo API server, which each page finds at its own
@@ -63,7 +66,7 @@ Its first start generates a million trades into a SQLite file outside the reposi
 `EXGRID_DEMO_TRADES` asks for another count:
 
 ```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoApi --urls http://localhost:8299
+nix develop -c bash -c 'cd dotnet && dotnet run --project samples/ExGrid.DemoApi --urls http://localhost:8299'
 ```
 
 > **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
@@ -72,9 +75,10 @@ nix develop -c dotnet run --project samples/ExGrid.DemoApi --urls http://localho
 ### Option B — without Nix
 
 Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) yourself;
-`global.json` accepts any 10.0.x SDK at feature band 100 or later. Then the usual:
+`dotnet/global.json` accepts any 10.0.x SDK at feature band 100 or later. Then the usual, in `dotnet/`:
 
 ```sh
+cd dotnet
 dotnet build
 dotnet test
 ```
@@ -92,19 +96,23 @@ your environment alone.
 |---|---|
 | [`CONTEXT.md`](CONTEXT.md) | Domain glossary. The vocabulary used everywhere; read it first |
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
-| [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
-| [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
-| [`src/ExSheet.Engine/`](src/ExSheet.Engine/), [`src/ExSheet/`](src/ExSheet/), [`src/ExSheet.MudBlazor/`](src/ExSheet.MudBlazor/) | ExSheet: its Formula engine, the Sheet ExGrid draws, and its MudBlazor Wrapper |
-| [`src/ExGrid.Data/`](src/ExGrid.Data/), [`src/ExGrid.Data.Arrow/`](src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
-| [`src/ExPivot.Engine/`](src/ExPivot.Engine/), [`src/ExPivot/`](src/ExPivot/), [`src/ExPivot.MudBlazor/`](src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
-| [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExSheet.MudBlazor.Tests`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
+| [`packages/`](packages/) | The npm workspace's packages: every product's Script Core, its engines, the React adapters and Wrappers, and the Blazor adapters' browser halves (private). See its README |
+| [`dotnet/`](dotnet/) | Everything .NET, where every dotnet command runs: `ExGrid.slnx`, `global.json`, and the projects below ([ADR-0370](docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 9) |
+| [`dotnet/src/ExGrid/`](dotnet/src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
+| [`dotnet/src/ExGrid.MudBlazor/`](dotnet/src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
+| [`dotnet/src/ExSheet.Engine/`](dotnet/src/ExSheet.Engine/), [`dotnet/src/ExSheet/`](dotnet/src/ExSheet/), [`dotnet/src/ExSheet.MudBlazor/`](dotnet/src/ExSheet.MudBlazor/) | ExSheet: its Formula engine, the Sheet ExGrid draws, and its MudBlazor Wrapper |
+| [`dotnet/src/ExGrid.Data/`](dotnet/src/ExGrid.Data/), [`dotnet/src/ExGrid.Data.Arrow/`](dotnet/src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
+| [`dotnet/src/ExPivot.Engine/`](dotnet/src/ExPivot.Engine/), [`dotnet/src/ExPivot/`](dotnet/src/ExPivot/), [`dotnet/src/ExPivot.MudBlazor/`](dotnet/src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
+| [`dotnet/tests/`](dotnet/tests/) | The .NET test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExSheet.MudBlazor.Tests`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
+| [`tests/`](tests/) | What judges both platforms: the shared cases (`cases/`), layer 3 in real browsers (`browser/`), and the glyph width records |
+| [`samples/`](samples/) | The React DemoHost and the Docs Site's React Examples |
 | [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`), the prerelease publish (`release.yml`) and the Docs Site's publish (`docs.yml`) |
-| [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
-| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
-| [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
-| [`samples/ExGrid.DemoApi/`](samples/ExGrid.DemoApi/) | The demo API server both hosts' pages call: SQLite, Arrow, a Pivot Source answered in SQL, and live changes over SignalR. A Consumer's server, not shipped |
-| [`samples/ExGrid.Docs/`](samples/ExGrid.Docs/) | The Docs Site, published to GitHub Pages by `docs.yml` ([ADR-0110](docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)). A Consumer, not shipped, and not layer 3's fixture |
-| [`samples/ExGrid.Docs.Generator/`](samples/ExGrid.Docs.Generator/) | The Docs Site's build step: highlights each Example's source and reads the API documentation |
+| [`dotnet/samples/ExGrid.DemoPages/`](dotnet/samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
+| [`dotnet/samples/ExGrid.DemoHost/`](dotnet/samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
+| [`dotnet/samples/ExGrid.DemoHost.Server/`](dotnet/samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
+| [`dotnet/samples/ExGrid.DemoApi/`](dotnet/samples/ExGrid.DemoApi/) | The demo API server both hosts' pages call: SQLite, Arrow, a Pivot Source answered in SQL, and live changes over SignalR. A Consumer's server, not shipped |
+| [`dotnet/samples/ExGrid.Docs/`](dotnet/samples/ExGrid.Docs/) | The Docs Site, published to GitHub Pages by `docs.yml` ([ADR-0110](docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)). A Consumer, not shipped, and not layer 3's fixture |
+| [`dotnet/samples/ExGrid.Docs.Generator/`](dotnet/samples/ExGrid.Docs.Generator/) | The Docs Site's build step: highlights each Example's source and reads the API documentation |
 | [`tools/readme-media/`](tools/readme-media/) | Records the README's GIFs from the Docs Site's Showcases (see its README) |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
@@ -148,7 +156,7 @@ follow `main` (history in `history.csv` on
 the `badges` branch). Windows (VZ-14)
 and a real IME remain runs by hand. A fourth job packs the family's ten packages
 into the release feed and publishes an application that takes them from the packed files alone
-([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
+([`dotnet/tests/ExGrid.PackageSmoke`](dotnet/tests/ExGrid.PackageSmoke/check.sh)).
 
 Test names carry the ADR number they enforce, so a failure says which decision was
 violated.

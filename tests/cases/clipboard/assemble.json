@@ -1,5 +1,5 @@
 {
-  "about": "The two-flavour assembly of an approved copy (ADR-0005): the displayed text as TSV and the raw values as an HTML table, in one operation. A cell displays d{row}.{column} and is raw r{row}.{column}, and a header is H{column}, unless the step names other text. The plan comes from the real rules, so the order held here is the order copies get. From tests/ExGrid.Tests/ClipboardDataTests.cs.",
+  "about": "The two-flavour assembly of an approved copy (ADR-0005): the displayed text as TSV and the raw values as an HTML table, in one operation. A cell displays d{row}.{column} and is raw r{row}.{column}, and a header is H{column}, unless the step names other text. The plan comes from the real rules, so the order held here is the order copies get. From dotnet/tests/ExGrid.Tests/ClipboardDataTests.cs.",
   "kind": "clipboard",
   "extent": [100, 26],
   "cases": [

@@ -1,0 +1,31 @@
+{
+  "name": "@ex-grid/data-xlsx",
+  "version": "0.0.0-dev",
+  "description": "The cells of an .xlsx workbook read and written as a stream, with no dependency, as ExGrid.Data.Xlsx reads and writes them: the workbook's sheets, shared strings, cells with their Formulas, the styles a sheet carries and the theme's colours, with every file it cannot read faithfully refused by name.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "packages/data-xlsx"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ../../tools/scripts/build.mjs",
+    "api": "node ../../tools/scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

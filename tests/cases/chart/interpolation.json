@@ -1,5 +1,5 @@
 {
-  "about": "The interpolations a Consumer calls (ADR-0257): linear and a natural cubic spline through points, bilinear on a grid and linear on a Consumer's triangles, each naming its method and having no value outside its points, the Interpolated Level series a curve hands in and the sampled surface a surface does (ADR-0274), and what they refuse, from tests/ExChart.Engine.Tests/InterpolationTests.cs. Every value is compared exactly: both engines do the same arithmetic in the same order.",
+  "about": "The interpolations a Consumer calls (ADR-0257): linear and a natural cubic spline through points, bilinear on a grid and linear on a Consumer's triangles, each naming its method and having no value outside its points, the Interpolated Level series a curve hands in and the sampled surface a surface does (ADR-0274), and what they refuse, from dotnet/tests/ExChart.Engine.Tests/InterpolationTests.cs. Every value is compared exactly: both engines do the same arithmetic in the same order.",
   "kind": "chart",
   "cases": [
     {

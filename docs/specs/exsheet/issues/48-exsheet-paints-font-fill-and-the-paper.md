@@ -34,7 +34,7 @@ section). It needs a decision.
 
 ### What was built
 
-- **The declaration** (`src/ExSheet/SheetAppearance.cs`, `SheetRow.AppearanceAt`). ExSheet hands
+- **The declaration** (`dotnet/src/ExSheet/SheetAppearance.cs`, `SheetRow.AppearanceAt`). ExSheet hands
   its grid ADR-0050 item 15's `CellAppearance`. Each cell's Font (colour, bold, italic, underline,
   strikethrough) and Fill come from the engine, cell over row over column (`Sheet.GetFont`,
   `Sheet.GetFill`).
@@ -92,7 +92,7 @@ section). It needs a decision.
   - `/sheet?case=N` opens one of the eleventh run's Part A set-ups instead of the page's own Sheet
     (`SheetCases`): 1, 2, 3b, 3c, 4, 5, 6, 16, 17 and 18, for Part C. `paper` gathers recorded
     colours, emphases, and a row's and a column's Fill.
-- `src/ExSheet/README.md` has a section on the Paper and the Ink.
+- `dotnet/src/ExSheet/README.md` has a section on the Paper and the Ink.
 
 ### Tests
 

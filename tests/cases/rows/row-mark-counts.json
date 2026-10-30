@@ -1,5 +1,5 @@
 {
-  "about": "What the Consumer answers about its Row Marks for the header and the count display (ADR-0043). From tests/ExGrid.Tests/RowMarkRuleTests.cs.",
+  "about": "What the Consumer answers about its Row Marks for the header and the count display (ADR-0043). From dotnet/tests/ExGrid.Tests/RowMarkRuleTests.cs.",
   "kind": "calls",
   "subject": "RowMarkCounts",
   "cases": [
