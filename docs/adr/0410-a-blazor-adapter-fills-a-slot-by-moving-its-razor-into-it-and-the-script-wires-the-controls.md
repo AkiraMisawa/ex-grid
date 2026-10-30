@@ -174,6 +174,14 @@ the browser's own events, heard where they happen, and an event inside an anchor
 there. The sheet tabs are buttons in a `tablist`, not a tabs component, because the pivot owns which
 sheet is shown and a component that keeps its own active tab would disagree with it for a round trip.
 
+*Note of 2026-10-30, as a drag pressed straight after a tick was found refused:* a drag's start is judged
+on the entry dragged alone: it starts while the place it was drawn at holds the same field, and is refused
+once that place names another. Judged against the whole Areas, a field ticked into any Area refused every
+drag for the round trip before .NET drew the pane again, though the entry pressed was the one the pane
+still shows there: on the Server host the browser's drag died at once and nothing was dragged. The
+gesture still carries what it was taken against (spine rule 6); a press and a drop are judged against the
+Areas as before, since a drop lands at an index among entries that may have moved.
+
 ### 5. A slot's contents arrive a render later, and the grid is settled only once they stand
 
 On the Server host the contents arrive a round trip after the slot. Meanwhile the core already owes the
