@@ -271,6 +271,45 @@ public class ScriptPivotTests : BunitContext
         cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
     }
 
+    private sealed record Deal(long Id, string Desk, decimal Amount);
+
+    private static PivotFields<Deal> Deals(bool keyed = false) => PivotFields.Of<Deal>()
+        .Key("Id", d => d.Id)
+        .Text("Desk", d => d.Desk, orderKey: keyed ? text => text : null)
+        .Number("Amount", d => d.Amount);
+
+    [Fact] // ADR-0370 section 3 (note of 2026-10-30): a batch the bundled source applies crosses as what it removed and added, and its notice is not told again
+    public void ADR0370_a_batch_the_bundled_source_applies_crosses_as_what_it_changed()
+    {
+        _pivot.SetupVoid("changed", _ => true).SetVoidResult();
+        var fields = Deals();
+        var source = PivotSource.From([new Deal(1, "Rates", 10m)], fields);
+        var cut = Pivot(source);
+
+        source.Apply(fields.Batch(changed: [new Deal(1, "Rates", 12m)]));
+
+        cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+        var told = PivotJson.ReadServerChangeBatch(Assert.IsType<string>(_pivot.Invocations["changed"][0].Arguments[1]));
+        Assert.Equal(source.SourceVersion, told.To);
+        var amount = told.Fields.ToList().FindIndex(field => field.Name == "Amount");
+        Assert.Equal(12m, Assert.Single(told.Added).Values[amount]);
+        Assert.Equal(10m, Assert.Single(told.Removed).Values[amount]);
+    }
+
+    [Fact] // ADR-0370 section 3, ADR-0412: a source with an Order Key is told by its notice alone, since a batch may bring an Item whose key no answer carried
+    public void ADR0370_a_source_with_an_order_key_is_told_by_its_notice()
+    {
+        _pivot.SetupVoid("changed", _ => true).SetVoidResult();
+        var fields = Deals(keyed: true);
+        var source = PivotSource.From([new Deal(1, "Rates", 10m)], fields);
+        var cut = Pivot(source);
+
+        source.Apply(fields.Batch(added: [new Deal(2, "FX", 5m)]));
+
+        cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+        Assert.Equal(source.SourceVersion, PivotJson.ReadSourceChanged(Assert.IsType<string>(_pivot.Invocations["changed"][0].Arguments[1])).SourceVersion);
+    }
+
     [Fact] // ADR-0412: an answer that names no Item of a field with an Order Key crosses as it is
     public async Task ADR0412_an_answer_naming_no_keyed_field_crosses_as_it_is()
     {

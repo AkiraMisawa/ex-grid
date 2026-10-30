@@ -129,7 +129,7 @@ export class DotNetSource implements GridSource<BlazorRow> {
         this.#markCounts = counts === undefined || counts === null ? undefined : new RowMarkCounts(counts);
         // The rows past the slice are read in the same message as the slice, so each row is one object whichever it is in.
         const beyond = state.beyond ?? []; // oxlint-disable-line ex-grid/no-stand-in-default -- .NET sends none while no edit holds a key past the rows sent
-        const read = this.#rows.read([...state.window, ...beyond.map(held => held.row)], state.seq, this.#columns, clockOffset);
+        const read = this.#rows.readState([...state.window, ...beyond.map(held => held.row)], state.seq, this.#columns, clockOffset);
         if (!Number.isInteger(state.asked) || state.asked > this.#queries) throw new Error(`Internal: .NET took in query ${String(state.asked)}, and the grid asked for ${this.#queries}.`);
         this.#requests = this.#requests.filter(request => request.asked > state.asked);
         this.#sent = Object.freeze({

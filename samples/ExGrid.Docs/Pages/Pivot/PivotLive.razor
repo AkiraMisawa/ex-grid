@@ -28,6 +28,15 @@
                 is redrawn at most every <code>RedrawInterval</code> (250 ms by default; zero redraws on every change).
                 A change of values keeps the Selection and any open menu or panel.
             </li>
+            <li>
+                <strong>On Blazor, the batch crosses, not the answer.</strong> <code>SnapshotPivotSource</code> raises
+                <code>Batched</code> as it applies a batch: the records it removed and added, as a server's Change Batch.
+                ExPivot hands that to the browser, which folds it into the answer it holds, so an amended trade crosses
+                as two records rather than every leaf again. A source whose fields declare an Order Key is told by
+                <code>Changed</code> alone, and the browser asks again. A server that answers with a
+                <code>SnapshotPivotSource</code> can push <code>PivotJson.Write(batch)</code> from <code>Batched</code>
+                to a TypeScript <code>FetchingPivotSource</code> the same way.
+            </li>
         </ul>
         <DocsExample Builtin="typeof(LiveBatches)" Mud="typeof(LiveBatchesMud)" Files="@(["Examples/Pivot/Sales.cs"])">
             Five sales are amended every 400 ms. Select a few cells, or open a field's menu: they stay as the values move.

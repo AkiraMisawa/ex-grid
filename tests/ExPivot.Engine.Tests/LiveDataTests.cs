@@ -104,6 +104,33 @@ public class LiveDataTests
         Assert.NotEqual(one.SourceVersion, other.SourceVersion);
     }
 
+    [Fact] // ADR-0370 s3 (note of 2026-10-30): a batch applied is raised as a server's Change Batch, from the version before to the one after, ahead of the notice
+    public async Task A_batch_applied_is_raised_as_a_servers_change_batch_ahead_of_its_notice()
+    {
+        var fields = Declarations();
+        var source = PivotSource.From(fields.Build([Row(1, "East", 1m), Row(2, "West", 2m)]), fields.Fields);
+        var before = source.SourceVersion;
+        var heard = new List<object>();
+        source.Batched += heard.Add;
+        source.Changed += heard.Add;
+
+        source.Apply(fields.Batch(added: [Row(3, "North", 3m)], changed: [Row(1, "East", 5m)], removedKeys: [2L]));
+
+        var batch = Assert.IsType<PivotServerChangeBatch>(heard[0]);
+        Assert.Equal(new PivotSourceChanged(source.SourceVersion), heard[1]);
+        Assert.Equal(before, batch.From);
+        Assert.Equal(source.SourceVersion, batch.To);
+        Assert.Equal(fields.Fields.Select(f => f.Name), batch.Fields.Select(f => f.Name));
+        var amount = fields.Fields.ToList().FindIndex(f => f.Name == "Amount");
+        Assert.Equal([1m, 2m], batch.Removed.Select(r => (decimal)r.Values[amount]!).Order());
+        Assert.Equal([3m, 5m], batch.Added.Select(r => (decimal)r.Values[amount]!).Order());
+        // What the fetching source reads, as a server writes it.
+        Assert.Equal(2, PivotJson.ReadServerChangeBatch(PivotJson.Write(batch)).Added.Count);
+        // The records it carries are the ones a cell's records name.
+        var details = await source.DetailsAsync(new PivotDetailsQuery(source.SourceVersion), Ct);
+        Assert.Contains(details.Records, r => r.Values[amount] is 5m);
+    }
+
     [Fact] // ADR-0067: a batch that compacts the Snapshot moves its rows; the source then answers afresh, as a fresh aggregation does
     public async Task A_compacting_batch_is_answered_afresh()
     {

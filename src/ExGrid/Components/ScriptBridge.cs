@@ -97,7 +97,7 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task Cancel(long id) => Calls.InOrder(() => grid.Cancel(id));
 
     [JSInvokable]
-    public Task Release(long[] ids, long seen) => Calls.InOrder(() => grid.Release(ids, seen));
+    public Task<long[]> Release(long[] ids, long seen) => Calls.InOrder(() => Task.FromResult(grid.Release(ids, seen)));
 
     [JSInvokable]
     public Task MountSlot(long id, int version, string name, string context) => Calls.InOrder(() => grid.MountSlot(id, version, name, context));
@@ -169,8 +169,7 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
                 await grid.SetFilterAsync(At(0).GetInt32(), Text(1), At(2).GetInt64());
                 return null;
             case nameof(Release):
-                grid.Release([.. At(0).EnumerateArray().Select(id => id.GetInt64())], At(1).GetInt64());
-                return null;
+                return grid.Release([.. At(0).EnumerateArray().Select(id => id.GetInt64())], At(1).GetInt64());
             case nameof(MountSlot):
                 grid.MountSlot(At(0).GetInt64(), At(1).GetInt32(), Text(2), Text(3));
                 return null;

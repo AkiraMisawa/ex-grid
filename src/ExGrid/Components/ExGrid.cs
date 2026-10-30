@@ -393,6 +393,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     // The last Sort or Filter the browser asked of the source numbered _generation, by the browser's count.
     private long _queryAsked;
     private IReadOnlyList<GridColumn<TRow>>? _toldColumns;
+    // The columns the number _columnsVersion names, which the rows the browser holds were read by.
+    private IReadOnlyList<GridColumn<TRow>>? _numberedColumns;
 
     /// <summary>The rows sent before the grid has asked for any: about five screens at the Compact density.</summary>
     private const int FirstRows = 256;
@@ -509,14 +511,24 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _queryAsked = 0;
             _toldColumns = null;
             source.StateChanged += OnSourceChanged;
+            // A Template cell standing is drawn again under the new source, as under new columns (ADR-0020).
+            _renderOwed |= _slots.Any;
         }
         TakeSurface(source);
+        // The source sorts and filters by the columns' values, read in .NET (ADR-0001): a new source is told the columns
+        // as it is taken, and every source each declaration after.
+        if (!SameColumns(_toldColumns, Columns))
+        {
+            source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
+            _toldColumns = Columns;
+        }
         var culture = CultureInfo.CurrentCulture.Name;
-        var sameColumns = SameColumns(_toldColumns, Columns);
+        var sameColumns = SameColumns(_numberedColumns, Columns);
         if (!sameColumns || culture != _toldCulture)
         {
             // Another declaration, or another culture for the formats to write in, is another number, and the rows
-            // the browser holds were read by the one before (ADR-0006).
+            // the browser holds were read by the one before (ADR-0006). A new source reading the same columns is not:
+            // a row the browser holds reads the same by them (ADR-0350 section 15's note of 2026-10-30).
             _columnsVersion += 1;
             _declared[_columnsVersion] = Columns;
             _declared.Remove(_columnsVersion - DeclarationsKept);
@@ -524,9 +536,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _toldCulture = culture;
             if (!sameColumns)
             {
-                // The source sorts and filters by the columns' values, read in .NET (ADR-0001).
-                source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
-                _toldColumns = Columns;
+                _numberedColumns = Columns;
                 // A Template cell standing is drawn by the fragment its column now declares: the core mounts it again
                 // only for another row (ADR-0020).
                 _renderOwed |= _slots.Any;
@@ -1024,7 +1034,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("asked", _queryAsked);
             WriteSurfaceState(json);
             json.WriteEndObject();
-        }));
+        }), new RowsRead(_columnsVersion, source.RowKey));
     }
 
     private string OptionsJson() => Json(json =>
@@ -1503,7 +1513,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             asked.Cancel();
     }
 
-    internal void Release(long[] ids, long seen) => _rows.Release(ids, seen);
+    internal long[] Release(long[] ids, long seen) => _rows.Release(ids, seen);
 
     /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to. A
     /// question <paramref name="Aside"/> is asked in its turn and answered out of it: nothing after it waits on it.</summary>

@@ -488,6 +488,15 @@ the engine asked the question again — the whole question under Leaf Aggregates
 Aggregates — and how the Consumer told the source was left open. Re-asking stands for a notice, for Level
 Aggregates and for every batch the engine cannot fold.)*
 
+*(2026-10-30, after ADR-0350 section 15's measurement: Blazor's ExPivot passed the bundled source's notice on, and
+the browser asked the whole question again after every Change Batch: one trade amended crossed 63.5 KB on Blazor
+Server, where the C# core crossed 2.6 KB. The adapter is a transport of this section's kind, so `SnapshotPivotSource`
+now raises `Batched` as it applies a batch, just before its notice: the records the batch removed and added, as a
+server's Change Batch from the version before to the version after, which a server answering with that source can
+write with `PivotJson` too. Blazor's ExPivot passes that batch on in place of the notice, and the browser folds it
+as it folds any server's, or asks again where it cannot. A source with an Order Key is told by its notice alone: a key
+is answered in .NET for the Items an answer holds, and a batch may bring an Item no answer held.)*
+
 ### 4. Where an engine runs
 
 A Script Core asks its engine through an **Engine Host**: the page's own thread or a Web Worker. The

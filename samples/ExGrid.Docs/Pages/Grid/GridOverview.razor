@@ -255,7 +255,9 @@
             <li>
                 <strong>A row repaints when its instance changes.</strong> Rows skip their render while their instance
                 is the same, so rewriting a row object in place does not repaint it. Replace the instance instead —
-                records and <code>with</code> make it one line.
+                records and <code>with</code> make it one line. On Blazor this is also what crosses: a row the browser
+                already holds, the same instance under the same columns, is sent as its id, and its values are not
+                read again; only what it paints, its <code>CellState</code> among them, is asked each time.
             </li>
             <li>
                 <strong>Give the grid the same objects across renders.</strong> Keep the source, the column list and

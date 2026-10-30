@@ -39,11 +39,13 @@ export interface BlazorRow {
 
 /** A row as .NET sends it: its id, its Row Key where the source has one, its cells, for each column .NET
  * formats, the text of the cell's value, `null` where it does not, and the Cell State of each cell, where the
- * Consumer answers one and it is not Normal for every cell of the row. */
+ * Consumer answers one and it is not Normal for every cell of the row. A state names a row whose values the bridge
+ * holds, read by the columns it has, by its id and what it paints alone, without `k`, `c`, `t` and `o`: a row whose
+ * data changes is another instance, with another id (ADR-0003, ADR-0350 section 15's note of 2026-10-30). */
 export interface WireRow {
     readonly i: number;
     readonly k?: unknown;
-    readonly c: readonly unknown[];
+    readonly c?: readonly unknown[];
     readonly t?: readonly (string | null)[];
     readonly s?: readonly CellState[];
     readonly p?: readonly unknown[];
@@ -379,6 +381,9 @@ interface HeldRow {
  */
 export class RowSet {
     readonly #held = new Map<number, HeldRow>();
+    // The values of each row a state carried whole, and the columns that read them, until .NET answers that it let the
+    // row go: a later state may name the row by its id alone, and no state after that answer does.
+    readonly #values = new Map<number, { readonly version: number; readonly values: Pick<WireRow, 'k' | 't' | 'o'>; readonly cells: readonly unknown[] }>();
     readonly #live = new Map<number, number>();
     readonly #collector: RowCollector;
     readonly #release: (ids: readonly number[], seen: number) => void;
@@ -414,6 +419,35 @@ export class RowSet {
         return read;
     }
 
+    /** Reads a state's rows, as `read` does. A state is taken in in the order .NET sent it, so it may name a row
+     * whose values an earlier state carried by its id alone, and the values it carries are held for the next. */
+    readState(rows: readonly WireRow[], sequence: number, columns: ColumnSet, clockOffset = 0): readonly BlazorRow[] {
+        return this.read(rows.map(wire => {
+            if (wire.c === undefined) {
+                const held = this.#values.get(wire.i);
+                if (held === undefined) throw new Error(`Internal: .NET named row ${String(wire.i)} by its id, and no state the bridge holds carried its values.`);
+                if (held.version !== columns.version) {
+                    throw new Error(`Internal: .NET named row ${String(wire.i)} by its id under columns ${columns.version}, and its values were read by columns ${held.version}.`);
+                }
+                return { ...wire, ...held.values, c: held.cells };
+            }
+            this.#values.set(wire.i, {
+                version: columns.version, cells: wire.c,
+                values: { ...(wire.k === undefined ? {} : { k: wire.k }), ...(wire.t === undefined ? {} : { t: wire.t }), ...(wire.o === undefined ? {} : { o: wire.o }) },
+            });
+            return wire;
+        }), sequence, columns, clockOffset);
+    }
+
+    /** Takes .NET's answer to the rows the bridge let go: those it let go too, which no message names again. */
+    released(answer: unknown): void {
+        if (!Array.isArray(answer)) throw new TypeError('.NET answered the rows let go with something other than a list.');
+        for (const id of answer) {
+            if (typeof id !== 'number') throw new TypeError(`.NET answered a row let go by ${String(id)}.`);
+            this.#values.delete(id);
+        }
+    }
+
     /** Takes in a message whose rows the grid no longer asks for: no object is made of them, and those of its
      * rows the grid holds no object of are let go, as if made and collected. */
     discard(rows: readonly WireRow[], sequence: number): void {
@@ -440,6 +474,7 @@ export class RowSet {
 
     #rowOf(wire: WireRow, columns: ColumnSet, clockOffset: number): BlazorRow {
         if (!Number.isSafeInteger(wire.i)) throw new TypeError(`.NET sent a row whose id is ${String(wire.i)}.`);
+        if (wire.c === undefined) throw new TypeError(`.NET named row ${String(wire.i)} by its id outside a state.`);
         if (wire.c.length !== columns.count) throw new TypeError(`.NET sent a row of ${wire.c.length} cells for ${columns.count} columns.`);
         for (const [name, perCell] of [['Cell States', wire.s], ['appearances', wire.a], ['change times', wire.h]] as const) {
             if (perCell !== undefined && perCell.length !== columns.count) throw new TypeError(`.NET sent ${perCell.length} ${name} for ${columns.count} columns.`);

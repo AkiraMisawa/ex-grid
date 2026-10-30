@@ -29,6 +29,14 @@ What is slower (ADR-0350 section 15: said here and in the Change Notes, and fixe
 2. The grid on WebAssembly, a push or a tick: 21 to 27 ms over 1,000 and 10,000 rows (the C# core: 3 to 8),
    60 to 74 ms over 100,000 (18 to 31), and a tick every frame drops frames (p95 29 to 86 ms against 17 to
    39). The same slice, written as JSON by the .NET interpreter.
+   Fixed on this branch for 1 and 2 (ADR-0350 section 15's note of 2026-10-30): a row the browser holds, the same
+   instance under the same columns and Row Key reader, crosses as its id and what it paints, and a new Rows list
+   reading the same columns no longer renumbers them. Measured again the same way (rows-and-batches/): a push of
+   one row or a tick crosses 0.6 to 5 KB on Server (the C# core: 0.2 to 12.4) in 5 to 7 ms over 1,000 and 10,000
+   rows (2 to 7) and 14 to 16 ms over 100,000 (10 to 12); on WebAssembly 7 to 14 ms over 1,000 and 10,000 rows (3 to
+   8), a tick every frame keeping every frame there (p95 17 to 24 ms), and 45 to 58 ms over 100,000 (18 to 31).
+   Still slower: a Window of all new rows (11 to 75 ms, as before), and 100,000 rows on WebAssembly, where every
+   push is a new Rows list and so a new in-memory source over every row, built by the .NET interpreter.
 3. Mounting the grid over 100,000 rows: 28 ms on Server (16), 77 to 80 ms on WebAssembly (22 to 25).
 4. The sheet, an edit: A1, which 20,000 cells read, 147 ms on Server (103) and 1,074 ms on WebAssembly
    (641); L1, which nothing reads, 34 ms on Server (13) and 966 ms on WebAssembly (99), ten times slower.
@@ -43,6 +51,14 @@ What is slower (ADR-0350 section 15: said here and in the Change Notes, and fixe
 5. The pivot: one trade amended, 63 ms and 63.5 KB on Server (4 ms, 2.6 KB) and 85 ms on WebAssembly (15);
    the columns swapped, 62 ms on Server (15), the same on WebAssembly (88 against 87). Not profiled: the
    bytes say each question's Leaf Aggregates cross in full.
+   Fixed on this branch in part (ADR-0370 section 3's note of 2026-10-30): the bundled source's Change Batch crosses
+   as the records it removed and added, which the browser folds into the answer it holds. One trade amended now
+   crosses 152 bytes on Server (2.6 KB) and takes 63 ms on WebAssembly (85 before, 15 for the C# core); it still
+   takes 60 ms on Server, where the C# core took 4. A CPU profile of five amendments on Server puts about 50 ms
+   of each in ex-pivot's own script (addLeaf, merge, read: the engine laying the report out again from every
+   leaf), and the circuit's part at under 10 ms. What is left is the Script Core's pivot engine, the same
+   under React, and not the adapter's. Swapping the columns asks a new question, whose answer crosses
+   in full as before.
 
 What is faster, or the same:
 

@@ -76,6 +76,7 @@ ExPivot.Engine.PivotWindowStart.Equals(ExPivot.Engine.PivotWindowStart? other) -
 ExPivot.Engine.PivotWindowStart.PivotWindowStart(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>! rows, int start) -> void
 ExPivot.Engine.PivotWindowStart.Rows.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>!
 ExPivot.Engine.PivotWindowStart.Start.get -> int
+ExPivot.Engine.SnapshotPivotSource.Batched -> System.Action<ExPivot.Engine.PivotServerChangeBatch!>?
 override ExPivot.Engine.FetchingPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 override ExPivot.Engine.FetchingPivotSource.ItemCountsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemCounts!>
 override ExPivot.Engine.LocalPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>

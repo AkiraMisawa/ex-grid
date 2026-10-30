@@ -167,6 +167,14 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
 
     private PivotSource? _source;
     private Action<PivotSourceChanged>? _hearSource;
+    private Action<PivotServerChangeBatch>? _hearBatch;
+    // The Source Version the last Change Batch told the browser of, whose notice it then need not hear: a source may
+    // apply batches on any thread.
+    private readonly Lock _batchGate = new();
+    private string? _batchedTo;
+    // The most records a batch crosses with: past it the browser would ask the question again rather than fold it, as
+    // a fetching source does past one chunk more than its leaves, and the batch crosses as its notice.
+    private const int BatchRecordsCrossed = 4096;
     private int _generation;
     private bool _sourceReplaced;
     private string? _sourceJson;
@@ -252,7 +260,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             var sourceJson = SourceJson(Source, generation);
             if (_source is not null)
             {
-                _source.Changed -= _hearSource;
+                Unhear(_source);
                 _sourceReplaced = true;
             }
             _source = Source;
@@ -262,6 +270,16 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             // Each source's notices carry its own generation, whatever thread it says them on.
             _hearSource = change => OnSourceChanged(generation, change);
             Source.Changed += _hearSource;
+            // A batch of the bundled source crosses as what it removed and added, which the browser folds into the
+            // answer it holds, rather than as a notice after which it asks the whole question again (ADR-0370 section
+            // 3's note of 2026-10-30). An Order Key is answered in .NET for the Items an answer holds, and a batch may
+            // bring an Item no answer held, so a source with one is told by its notice alone.
+            _hearBatch = null;
+            if (Source is SnapshotPivotSource snapshot && !snapshot.Fields.Any(field => field.OrderKey is not null))
+            {
+                _hearBatch = batch => OnSourceBatched(generation, batch);
+                snapshot.Batched += _hearBatch;
+            }
         }
         if (!ReferenceEquals(Layout, _layoutParameter))
         {
@@ -620,11 +638,40 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         json.WriteEndObject();
     });
 
+    private void Unhear(PivotSource source)
+    {
+        source.Changed -= _hearSource;
+        if (source is SnapshotPivotSource snapshot)
+            snapshot.Batched -= _hearBatch;
+    }
+
+    // Raised on the thread that applied the batch, just before its notice: the notice it tells of is then not told again.
+    private void OnSourceBatched(int generation, PivotServerChangeBatch batch)
+    {
+        if (_refreshes.Out(generation) || batch.Removed.Count + batch.Added.Count > BatchRecordsCrossed)
+            return;
+        lock (_batchGate)
+            _batchedTo = batch.To;
+        Tell(generation, PivotJson.Write(batch));
+    }
+
     private void OnSourceChanged(int generation, PivotSourceChanged change)
     {
         if (_refreshes.Out(generation))
             return;
-        var text = PivotJson.Write(change);
+        lock (_batchGate)
+        {
+            if (change.SourceVersion is { } version && string.Equals(_batchedTo, version, StringComparison.Ordinal))
+            {
+                _batchedTo = null;
+                return;
+            }
+        }
+        Tell(generation, PivotJson.Write(change));
+    }
+
+    private void Tell(int generation, string text)
+    {
         // A source may say it changed from any thread: its notices cross from the component's context, in the order
         // it said them.
         _ = InvokeAsync(async () =>
@@ -988,7 +1035,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         _disposed = true;
         Calls.Stopped();
         if (_source is not null)
-            _source.Changed -= _hearSource;
+            Unhear(_source);
         foreach (var asked in _asked.Values.ToArray())
             asked.Cancel();
         // While it attaches, the pivot it makes is stopped once it is made, and the bridge let go after it.

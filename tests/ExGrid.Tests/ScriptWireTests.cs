@@ -29,6 +29,9 @@ public class ScriptWireTests
         => Written(rows, key, null, written);
 
     private static JsonElement Written(ScriptRows<Trade> rows, Func<Trade, object>? key, CellStateOf<Trade>? cellState, params Trade[] written)
+        => Written(rows, key, cellState, state: null, written);
+
+    private static JsonElement Written(ScriptRows<Trade> rows, Func<Trade, object>? key, CellStateOf<Trade>? cellState, RowsRead? state, params Trade[] written)
     {
         var text = rows.Sending(sequence =>
         {
@@ -44,7 +47,7 @@ public class ScriptWireTests
                 json.WriteEndObject();
             }
             return Encoding.UTF8.GetString(buffer.WrittenSpan);
-        });
+        }, state);
         using var document = JsonDocument.Parse(text);
         return document.RootElement.Clone();
     }
@@ -90,6 +93,56 @@ public class ScriptWireTests
         rows.Release([id], seen: 2);
         Assert.Equal(0, rows.Count);
         Assert.Throws<InvalidOperationException>(() => rows.RowOf(id));
+    }
+
+    private static JsonElement State(ScriptRows<Trade> rows, RowsRead read, Trade row, CellStateOf<Trade>? cellState = null)
+        => Written(rows, null, cellState, read, row).GetProperty("rows")[0];
+
+    [Fact] // ADR-0350 s15 (2026-10-30): a row is a new instance when its data changes (ADR-0003), so a state names a row
+           // whose values the bridge holds by its id, and what it paints is asked again each time
+    public void ADR0350_a_state_names_a_row_whose_values_the_bridge_holds_by_its_id_and_what_it_paints()
+    {
+        var rows = new ScriptRows<Trade>();
+        var rates = new Trade("Rates", 1500m);
+        var read = new RowsRead(ColumnsVersion: 1, RowKey: null);
+        Assert.Equal("""{"i":1,"c":["Rates",1500],"t":[null,"1,500.00"]}""", State(rows, read, rates).GetRawText());
+        Assert.Equal("""{"i":1}""", State(rows, read, rates).GetRawText());
+        Assert.Equal("""{"i":1,"s":["stale","normal"]}""", State(rows, read, rates, (_, column) => column.Name == "Book" ? CellState.Stale : CellState.Normal).GetRawText());
+        // Other columns read other values, and another reader of the Row Key another key: whole again, then by its id.
+        Func<Trade, object> book = t => t.Book;
+        Assert.True(State(rows, read with { ColumnsVersion = 2 }, rates).TryGetProperty("c", out _));
+        Assert.True(State(rows, read with { ColumnsVersion = 2, RowKey = book }, rates).TryGetProperty("c", out _));
+        Assert.Equal("""{"i":1}""", State(rows, read with { ColumnsVersion = 2, RowKey = book }, rates).GetRawText());
+    }
+
+    [Fact] // ADR-0350 s15: an answer may cross before a state sent ahead of it, so it carries every row whole, and
+           // seeds no state's; a row let go is answered, and comes back whole under a new id
+    public void ADR0350_an_answer_carries_its_rows_whole_and_a_row_let_go_is_answered()
+    {
+        var rows = new ScriptRows<Trade>();
+        var rates = new Trade("Rates", 1500m);
+        var read = new RowsRead(1, null);
+        Assert.True(Written(rows, rates).TryGetProperty("c", out _));
+        Assert.True(State(rows, read, rates).TryGetProperty("c", out _));
+        Assert.True(Written(rows, rates).TryGetProperty("c", out _));
+        Assert.Equal("""{"i":1}""", State(rows, read, rates).GetRawText());
+        Assert.Empty(rows.Release([1], seen: 3));
+        Assert.Equal([1L], rows.Release([1], seen: 4));
+        var again = State(rows, read, rates);
+        Assert.Equal(2, again.GetProperty("i").GetInt64());
+        Assert.True(again.TryGetProperty("c", out _));
+    }
+
+    [Fact] // ADR-0350 s7/s15: a state that fails half written leaves each row's values as the bridge holds them
+    public void ADR0350_a_state_that_fails_while_written_leaves_what_the_bridge_holds()
+    {
+        var rows = new ScriptRows<Trade>();
+        var rates = new Trade("Rates", 1500m);
+        var read = new RowsRead(1, null);
+        State(rows, read, rates);
+        // Rates is written whole under columns 2, then the next row's key fails: the browser never sees columns 2's values.
+        Assert.Throws<NotSupportedException>(() => Written(rows, t => t.Book == "FX" ? 1.5 : (object)t.Book, null, read with { ColumnsVersion = 2 }, rates, new Trade("FX", 1m)));
+        Assert.Equal("""{"i":1}""", State(rows, read, rates).GetRawText());
     }
 
     [Fact] // ADR-0140: a row crosses with its key, and a key that does not cross is refused by name

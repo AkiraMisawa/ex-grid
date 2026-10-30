@@ -357,7 +357,8 @@ export function attach(
     const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'), claims);
     const columns = new ColumnSet(verdict, (slot, cell) => slots.template(slot, cell));
     columns.take(init.options.columns, init.options.columnsVersion);
-    const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
+    // .NET answers the rows it let go, whose values the bridge then lets go too.
+    const rows: RowSet = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen).then(answer => { rows.released(answer); }); });
     // A Selection Summary is asked of the source numbered `generation`, or of the component's OnSummarize (ADR-0130).
     const summarize: SummarizeOf = (generation, request, signal) => asking(signal, async number => {
         const answer = await dotnet.invokeMethodAsync('Summarize', number, generation === undefined ? null : generation, request);

@@ -182,6 +182,24 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.False(attached.GetProperty("source").GetProperty("summarizes").GetBoolean());
     }
 
+    [Fact] // ADR-0350 s15 (note of 2026-10-30): a new Rows list is a new source, and a row of it the browser holds crosses by its id alone
+    public async Task ADR0350_a_row_of_a_new_rows_list_the_browser_holds_crosses_by_its_id()
+    {
+        var columns = TestRows.Columns();
+        var cut = Grid(columns: columns);
+        var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
+        await cut.InvokeAsync(() => Bridge().NeedRange(generation, 0, _rows.Length));
+        var changed = new TestRow { Book = "Alpha!", Amount = 1m };
+        TestRow[] pushed = [changed, .. _rows.Skip(1)];
+
+        cut.Render(ps => ps.Add(g => g.Rows, pushed).Add(g => g.Columns, columns));
+
+        var state = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("state").GetProperty("window").EnumerateArray().ToArray();
+        Assert.Equal(_rows.Length, state.Length);
+        Assert.True(state[0].TryGetProperty("c", out _));
+        Assert.All(state.Skip(1), row => Assert.False(row.TryGetProperty("c", out _), row.GetRawText()));
+    }
+
     [Fact] // ADR-0440 section 5 / LV-20: the row an open edit follows crosses past the rows sent, at its place in the Window
     public async Task ADR0440_the_row_an_edit_holds_crosses_beyond_the_rows_sent_wherever_the_window_holds_it()
     {
@@ -197,7 +215,8 @@ public class ScriptGridSurfaceTests : BunitContext
         var sent = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
         var beyond = Assert.Single(sent.GetProperty("beyond").EnumerateArray());
         Assert.Equal(999, beyond.GetProperty("at").GetInt32());
-        Assert.Equal("Row 000000", beyond.GetProperty("row").GetProperty("k").GetString());
+        // The row was sent at the top before the sort, so it crosses by its id alone (ADR-0350 section 15).
+        Assert.Equal(first, beyond.GetProperty("row").GetProperty("i").GetInt64());
         Assert.True(sent.GetProperty("window").GetArrayLength() < 1000);
 
         await cut.InvokeAsync(() => Bridge().HoldRow(generation, null));
