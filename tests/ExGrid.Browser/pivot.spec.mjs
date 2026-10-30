@@ -177,7 +177,7 @@ for (const chrome of ['builtin', 'mud']) {
         test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const before = await reportRows(page);
-            await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }));
             await entry(page, 'Desk').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region']);
             await circuitQuiet();
@@ -954,9 +954,9 @@ for (const chrome of ['builtin', 'mud']) {
             await button.click();
             const panel = page.getByRole('dialog', { name: 'Filter Currency' });
             await expect(panel).toBeVisible();
-            await panel.getByRole('checkbox', { name: '(Select All)' }).uncheck();
+            await setTicked(panel.getByRole('checkbox', { name: '(Select All)' }), false);
             await expect(panel.getByRole('button', { name: 'OK' })).toBeDisabled();
-            await panel.getByRole('checkbox', { name: 'USD', exact: true }).check();
+            await setTicked(panel.getByRole('checkbox', { name: 'USD', exact: true }));
             await panel.getByRole('button', { name: 'OK' }).click();
 
             await expect(panel).toHaveCount(0);
@@ -977,7 +977,7 @@ for (const chrome of ['builtin', 'mud']) {
             const box = await panel.boundingBox();
             expect(box.y).toBeGreaterThanOrEqual(at.y + at.height - 1);
             expect(overlaps(box, await report(page).boundingBox())).toBe(true);
-            await panel.getByRole('checkbox', { name: 'USD', exact: true }).uncheck();
+            await setTicked(panel.getByRole('checkbox', { name: 'USD', exact: true }), false);
 
             // A press on the report beside the panel lands on the backdrop: it closes the panel,
             // drops its draft, and the keyboard goes back to the button.
