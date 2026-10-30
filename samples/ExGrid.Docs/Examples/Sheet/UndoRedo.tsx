@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react';
-import { SheetEdit, SheetRefusedError, type WorkbookDocument } from '@ex-grid/sheet-engine';
+import type { SheetHistoryState } from '@ex-grid/sheet';
+import { SheetEdit, SheetRefusedError } from '@ex-grid/sheet-engine';
 import { ExSheet, type ExSheetApi } from '@ex-grid/sheet-react';
 import { expenses } from './Expenses';
 
 export default function UndoRedo(): ReactElement {
     const opened = useMemo(expenses, []);
     const sheet = useRef<ExSheetApi>(null);
-    // Kept so each change renders the buttons again, which read canUndo and canRedo as they stand.
-    const [, setDocument] = useState<WorkbookDocument>(opened);
+    // Whether there is a step to undo and one to redo, heard each time either moves.
+    const [history, setHistory] = useState<SheetHistoryState>({ canUndo: false, canRedo: false });
     const [editing, setEditing] = useState(false);
     const [refused, setRefused] = useState('');
 
@@ -27,12 +28,12 @@ export default function UndoRedo(): ReactElement {
     return (
         <>
             <div className="bar">
-                <button type="button" disabled={editing || sheet.current?.canUndo !== true} onClick={() => { run(api => { api.undo(); }); }}>Undo</button>
-                <button type="button" disabled={editing || sheet.current?.canRedo !== true} onClick={() => { run(api => { api.redo(); }); }}>Redo</button>
+                <button type="button" disabled={editing || !history.canUndo} onClick={() => { run(api => { api.undo(); }); }}>Undo</button>
+                <button type="button" disabled={editing || !history.canRedo} onClick={() => { run(api => { api.redo(); }); }}>Redo</button>
                 <button type="button" disabled={editing} onClick={() => { run(api => { api.do(SheetEdit.insertRows(1)); }); }}>Insert a row above row 2</button>
                 <span>{refused}</span>
             </div>
-            <ExSheet ref={sheet} document={opened} onWorkbookChanged={setDocument} onEditingChanged={setEditing}
+            <ExSheet ref={sheet} document={opened} onHistoryChanged={setHistory} onEditingChanged={setEditing}
                 viewportHeight={280} viewportWidth="stretch" />
         </>
     );

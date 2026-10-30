@@ -1,11 +1,11 @@
 @using global::ExGrid.Chrome
 @using ExPivot.Chrome
-@using ExPivot.Components
+@using ExPivot.Script
 @using ExPivot.Engine
 @using ExPivot.MudBlazor
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
-    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="_chrome" ShowFieldList="false" ViewportHeight="320" />
+    <ExPivot Source="_source" @bind-Layout="_layout" Chrome="_chrome" ShowFieldList="false" ViewportHeight="320" />
 </MudExGridPaper>
 
 @code {
@@ -21,22 +21,25 @@
     // Your own Pivot Toolbar drawn with MudBlazor's buttons; every other part is MudPivotChrome's.
     private sealed class OwnToolbarChrome(IPivotChrome mud) : IPivotChrome
     {
-        public RenderFragment? Toolbar(PivotToolbarContext context) => builder =>
+        public PivotScriptSlots ScriptSlots => mud.ScriptSlots | PivotScriptSlots.Toolbar;
+
+        public RenderFragment? Toolbar(PivotToolbarView view) => builder =>
         {
             builder.OpenComponent<OwnToolbarMudView>(0);
-            builder.AddComponentParameter(1, nameof(OwnToolbarMudView.Context), context);
+            builder.AddComponentParameter(1, nameof(OwnToolbarMudView.View), view);
             builder.CloseComponent();
         };
 
         public IGridChrome? GridChrome(Func<string, string?> commandLabel) => mud.GridChrome(commandLabel);
-        public RenderFragment? FieldList(PivotFieldListContext context) => mud.FieldList(context);
-        public RenderFragment? ReportFilters(PivotReportFiltersContext context) => mud.ReportFilters(context);
-        public RenderFragment? Menu(PivotMenuContext context) => mud.Menu(context);
-        public RenderFragment? ItemFilter(PivotItemFilterContext context) => mud.ItemFilter(context);
-        public RenderFragment? FieldSettings(PivotFieldSettingsContext context) => mud.FieldSettings(context);
-        public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context) => mud.ValueFieldSettings(context);
-        public RenderFragment? DetailsTabs(PivotDetailsTabsContext context) => mud.DetailsTabs(context);
-        public RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => mud.DetailsDialog(context);
-        public RenderFragment? StaleReport(PivotStaleReportContext context) => mud.StaleReport(context);
+        public IReadOnlyList<ChromeStylesheet> Stylesheets => mud.Stylesheets;
+        public RenderFragment? FieldList(PivotFieldListView view) => mud.FieldList(view);
+        public RenderFragment? ReportFilters(PivotReportFiltersView view) => mud.ReportFilters(view);
+        public RenderFragment? Menu(PivotMenuView view) => mud.Menu(view);
+        public RenderFragment? ItemFilter(PivotItemFilterView view) => mud.ItemFilter(view);
+        public RenderFragment? FieldSettings(PivotFieldSettingsView view) => mud.FieldSettings(view);
+        public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view) => mud.ValueFieldSettings(view);
+        public RenderFragment? DetailsTabs(PivotDetailsTabsView view) => mud.DetailsTabs(view);
+        public RenderFragment? DetailsDialog(PivotDetailsDialogView view) => mud.DetailsDialog(view);
+        public RenderFragment? StaleReport(PivotStaleReportView view) => mud.StaleReport(view);
     }
 }

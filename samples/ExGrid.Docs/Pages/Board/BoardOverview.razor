@@ -272,8 +272,9 @@ const output = bound.confirm('chosen');                         // the values ch
 
     <DocsSection Title="A Board drawn in the browser">
         <p>
-            Blazor's ExBoard is moving onto the same TypeScript core as React's, as ExGrid and ExPivot are.
-            <code>ExBoard.Script.ExBoard</code> is that Board, beside the one above while the move is under way: binding,
+            Blazor's ExBoard runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
+            this site draws <code>ExBoard.Script.ExBoard</code>, and the Razor component
+            <code>ExBoard.Components.ExBoard</code> stays in the package only until it is removed in this release. Binding,
             layout, links, the confirm and the Board Diff run in the browser on both hosting models, so on Blazor Server
             a selection, a narrowing or a sort no longer crosses the circuit. It takes the same <code>BoardReading</code>,
             <code>Data</code>, <code>Width</code>, <code>Culture</code>, <code>OnOutput</code>, <code>Diff</code> and
@@ -327,6 +328,6 @@ const output = bound.confirm('chosen');                         // the values ch
         <ApiTable Type="typeof(global::ExBoard.BoardQuery)" />
         <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
         <ApiTable Type="typeof(global::ExBoard.BoardDiff)" />
-        <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
+        <ApiTable Type="typeof(global::ExBoard.Script.ExBoard)" />
     </DocsSection>
 </DocsPage>

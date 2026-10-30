@@ -190,6 +190,29 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
         await vi.waitFor(() => { expect(dotnet.of('workbookChanged')).toEqual([{ workbook: null, sheet: null, documentsSent: 1 }]); });
     });
 
+    it('tells .NET whether there is a step to undo and to redo whenever that moves, heard or not, and none once a document of the Consumer\'s opens', async () => {
+        const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: '1', A2: '2' }]), documentsSent: 1, options: options({ hears: [] }) });
+        await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('1'); });
+
+        select(element, 'A1');
+        key('Delete');
+        await vi.waitFor(() => { expect(dotnet.of('historyChanged')).toEqual([{ canUndo: true, canRedo: false }]); });
+        // A second step moves neither, so nothing crosses for it.
+        select(element, 'A2');
+        key('Delete');
+        await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe(''); });
+        expect(dotnet.of('historyChanged')).toHaveLength(1);
+        expect(dotnet.of('workbookChanged')).toEqual([]);
+
+        expect(sheet.undo()).toEqual({ done: true });
+        await vi.waitFor(() => { expect(dotnet.of('historyChanged')).toHaveLength(2); });
+        expect(dotnet.of('historyChanged')[1]).toEqual({ canUndo: true, canRedo: true });
+
+        sheet.update(JSON.stringify({ options: options({ hears: [] }), document: workbookJson(['Sheet1', { A1: '3' }]), documentsSent: 2 }));
+        await vi.waitFor(() => { expect(dotnet.of('historyChanged')).toHaveLength(3); });
+        expect(dotnet.of('historyChanged')[2]).toEqual({ canUndo: false, canRedo: false });
+    });
+
     it('keeps the user\'s change when the parameters move and no document of the Consumer\'s came, and opens one that did', async () => {
         const { element, sheet, dotnet } = mount({ document: workbookJson(['Sheet1', { A1: 'kept' }]), documentsSent: 1 });
         await vi.waitFor(() => { expect(cellText(element, 0, 0)).toBe('kept'); });

@@ -143,6 +143,27 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(4, Updates()[2].GetProperty("documentsSent").GetInt32());
     }
 
+    [Fact] // ADR-0048: CanUndo and CanRedo are taken as the browser tells them, while a handler ahead of them still awaits
+    public async Task ADR0048_can_undo_and_redo_are_taken_as_told_ahead_of_an_awaiting_handler()
+    {
+        var holding = new TaskCompletionSource();
+        var cut = Sheet(ps => ps.Add(p => p.WorkbookChanged, (WorkbookDocument _) => holding.Task));
+        Assert.False(cut.Instance.CanUndo);
+
+        // The handler of the document awaits, so its call stays under way.
+        var heard = cut.InvokeAsync(() => Bridge().Value.Heard("workbookChanged", Raised(WorkbookOf("typed"), documentsSent: 0)));
+        await cut.InvokeAsync(() => Bridge().Value.Heard("historyChanged", Parsed("""{"canUndo":true,"canRedo":true}""")));
+        Assert.True(cut.Instance.CanUndo);
+        Assert.True(cut.Instance.CanRedo);
+
+        Assert.False(heard.IsCompleted);
+        holding.SetResult();
+        await heard;
+        await cut.InvokeAsync(() => Bridge().Value.Heard("historyChanged", Parsed("""{"canUndo":false,"canRedo":false}""")));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.False(cut.Instance.CanRedo);
+    }
+
     [Fact] // ADR-0331, ADR-0048: Document and Workbook are not set together, and the culture is the Sheet's own once it is open
     public void ADR0331_document_and_workbook_together_and_a_culture_moved_are_refused_by_name()
     {

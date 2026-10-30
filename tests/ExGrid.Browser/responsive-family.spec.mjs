@@ -1,6 +1,7 @@
 import { test, expect, circuitQuiet, settled } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { expectCovers } from './sheet-helpers.mjs';
+import { journalPress, pressFirstCell } from './press-journal.mjs';
 
 test.use({ viewport: { width: 1280, height: 1100 } });
 
@@ -40,33 +41,6 @@ async function expectPreservedFocus(grid) {
     })).toBe('covers the visible cell');
 }
 
-// The press on the first cell put the Focus there. Once on CI's Edge (the MudBlazor Sheet, WebAssembly, PR #497) it
-// left the active descendant empty for good, and over a hundred local runs did not repeat it, so a failure says what
-// the grid held then: the Focus it names whether or not that cell is painted (data-ex-follow-focus), the offset, and
-// what stands at the point pressed.
-async function expectPressedFirstCell(grid) {
-    try {
-        await expectActiveDescendant(grid, /-r0c0$/);
-    } catch (error) {
-        const held = await grid.evaluate(root => {
-            const cell = root.querySelector('[id$="-r0c0"]');
-            const box = cell?.getBoundingClientRect();
-            const at = box === undefined ? null : document.elementFromPoint(box.left + 8, box.top + 8);
-            const name = element => (element === null ? null : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`);
-            return {
-                focus: root.getAttribute('data-ex-follow-focus'),
-                scrollLeft: root.querySelector('.ex-scroller').scrollLeft,
-                settled: root.hasAttribute('data-ex-settled'),
-                busy: root.getAttribute('aria-busy'),
-                pinned: root.querySelector('.ex-row').querySelectorAll('.ex-pinned').length,
-                atPress: name(at),
-                active: name(document.activeElement),
-            };
-        }).catch(reading => ({ unread: String(reading) }));
-        throw new Error(`${error.message}\nThe grid then held: ${JSON.stringify(held)}`, { cause: error });
-    }
-}
-
 // Public consumer fixture: no breakpoint changes product parameters. Only the enclosing box
 // changes. Each case keeps its document through all layouts, widths and supported pin choices.
 for (const product of ['grid', 'sheet', 'pivot']) {
@@ -80,6 +54,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
             const fraction = product === 'sheet' ? '0.000000123456789' : '0.000000000000000123';
             await expect(cell(0)).toBeVisible();
             await settled(grid);
+            await journalPress(grid);
             await cell(0).click({ force: true });
             await settled(grid);
             const windowWidth = await page.evaluate(() => window.innerWidth);
@@ -125,8 +100,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
                         await expect(cell(0)).toBeVisible();
                         await circuitQuiet();
                         await settled(grid);
-                        await cell(0).click({ position: { x: 8, y: 8 }, force: true });
-                        await expectPressedFirstCell(grid);
+                        await pressFirstCell(grid, cell(0), `${pin ? 'pinned' : 'unpinned'} ${layout} ${name}`);
                         await settled(grid);
                         await page.locator(`#family-${name}`).click();
                         const available = width - (layout === 'split' ? 0 : 40);

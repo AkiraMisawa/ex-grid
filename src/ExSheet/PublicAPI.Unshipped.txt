@@ -41,6 +41,8 @@ ExSheet.ISheetChrome.ToolbarItem(ExSheet.SheetToolbarItemView! view) -> Microsof
 ExSheet.Script.ExSheet
 ExSheet.Script.ExSheet.AllowCopyWithHeaders.get -> bool
 ExSheet.Script.ExSheet.AllowCopyWithHeaders.set -> void
+ExSheet.Script.ExSheet.CanRedo.get -> bool
+ExSheet.Script.ExSheet.CanUndo.get -> bool
 ExSheet.Script.ExSheet.CellFormatAtAsync(ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
 ExSheet.Script.ExSheet.CellFormatAtAsync(string! sheet, ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
 ExSheet.Script.ExSheet.Chrome.get -> ExGrid.Chrome.IGridChrome?

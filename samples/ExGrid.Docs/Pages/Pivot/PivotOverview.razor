@@ -32,9 +32,9 @@
 
     <DocsSection Title="A pivot drawn in the browser">
         <p>
-            Blazor's ExPivot is moving onto the same TypeScript core as React's, as ExGrid is.
-            <code>ExPivot.Script.ExPivot</code> is that pivot, beside the one above while the move is under way: the
-            report, the PivotTable Fields pane and the Pivot Toolbar run in the browser on both hosting models, so on
+            Blazor's ExPivot runs on the same TypeScript core as React's, as ExGrid does: every Example on this site
+            draws <code>ExPivot.Script.ExPivot</code>, and the Razor component <code>ExPivot.Components.ExPivot</code>
+            stays in the package only until it is removed in this release. The report, the PivotTable Fields pane and the Pivot Toolbar run in the browser on both hosting models, so on
             Blazor Server a field dragged or a region collapsed no longer crosses the circuit. It takes the same
             <code>PivotSource</code> and <code>PivotLayout</code>. Your source still answers in .NET: each question the
             report asks crosses to it as PivotJson, it answers with the Leaf Aggregates, and the report and its totals
@@ -173,7 +173,7 @@
             and <code>&lt;ExPivotStylesheet /&gt;</code> in your head, as <a href="getting-started#link-the-stylesheets">Installation</a>
             shows. For a MudBlazor application, add <code>ExPivot.MudBlazor</code> as well, place
             <code>&lt;MudExGridStylesheet /&gt;</code> and <code>&lt;MudExPivotStylesheet /&gt;</code> after them, stand the pivot on a
-            <code>MudExGridPaper</code> and pass <code>PivotChrome="MudPivotChrome.Default"</code>. The
+            <code>MudExGridPaper</code> and pass <code>Chrome="MudPivotChrome.Default"</code>. The
             switch above each Example shows both: the behaviour is the same, only the drawing changes.
         </p>
         <p>
@@ -272,7 +272,7 @@
     </DocsSection>
 
     <DocsSection Title="API">
-        <ApiTable Type="typeof(global::ExPivot.Components.ExPivot)" />
+        <ApiTable Type="typeof(global::ExPivot.Script.ExPivot)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotLayout)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotCellItems)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotFields<>)" />

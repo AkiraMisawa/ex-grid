@@ -209,6 +209,12 @@ export interface SheetOptions {
      */
     readonly onSheetsChanged?: (change: SheetsChange) => void;
     /**
+     * Hears whether there is a step to undo and one to redo, each time either changes: as the operation that changed it
+     * ends, before `onWorkbookChanged` hears its document, and when a document opened empties the undo stack (ADR-0048). This is
+     * where an application greys out its own Undo and Redo, as `canUndo` and `canRedo` read the same at any time.
+     */
+    readonly onHistoryChanged?: (history: SheetHistoryState) => void;
+    /**
      * Hears whether an edit is open, each time that changes: `true` when a cell or the Formula Bar is typed in, or
      * opened with F2 or a double click, `false` when the edit is committed, cancelled or discarded (ADR-0048). While
      * one is open the commands that change the Sheet are refused, so this is where an application greys out its own
@@ -276,6 +282,14 @@ export interface SheetOptions {
      * `TODAY()`, not for `NOW()`, which moves on as each minute turns.
      */
     readonly timeZone?: string | undefined;
+}
+
+/** Whether there is a step to undo and one to redo, as `onHistoryChanged` hears it. */
+export interface SheetHistoryState {
+    /** Whether there is a step to undo. */
+    readonly canUndo: boolean;
+    /** Whether there is an undone step to redo. */
+    readonly canRedo: boolean;
 }
 
 /** The Sheets' names before and after a change to the Sheets (ADR-0331 §6), in the Workbook's order. */
@@ -581,6 +595,8 @@ class SheetView {
     readonly #tabs: SheetTabs;
     readonly #notice: HTMLElement;
     readonly #history = new SheetHistory();
+    // The undo stack as `onHistoryChanged` was last raised with: empty, as the Sheet is made.
+    #historyRaised: SheetHistoryState = Object.freeze({ canUndo: false, canRedo: false });
     #options: SheetOptions;
     #words: SheetWords;
     #workbook: Workbook;
@@ -1059,6 +1075,14 @@ class SheetView {
         this.#tell(this.#words.opened, { outlivesMove: true });
     }
 
+    // Whether the undo stack holds a step to undo and one to redo, raised when either moved since it was last raised.
+    #raiseHistory(): void {
+        const { canUndo, canRedo } = this.#history;
+        if (canUndo === this.#historyRaised.canUndo && canRedo === this.#historyRaised.canRedo) return;
+        this.#historyRaised = Object.freeze({ canUndo, canRedo });
+        this.#options.onHistoryChanged?.(this.#historyRaised);
+    }
+
     // A Workbook opened replaces the one shown, from a new document or a file (ADR-0048, ADR-0330 §10): its undo stack
     // and its views go with it, under a new Row Sequence Version, which drops the Selection and refuses what was aimed
     // at the old cells (ADR-0011, ADR-0142).
@@ -1066,6 +1090,7 @@ class SheetView {
         this.#fileOpened = fromFile;
         this.#workbook = opened;
         this.#history.clear();
+        this.#raiseHistory();
         this.#showSheet(opened.shown);
         this.#armTheDay();
         this.#armTheMinute();
@@ -3032,9 +3057,11 @@ class SheetView {
         if (match !== undefined) grid?.placeMatch(match, version);
     }
 
-    // The document, then a change to the Sheets where the names moved. The names are taken as heard before either
+    // The undo stack where it moved, then the document, then a change to the Sheets where the names moved. The stack goes
+    // first so a Consumer that renders its own Undo when it hears the document, as a Blazor one does, reads it as it stands. The names are taken as heard before either
     // handler runs, so one that throws or acts on the Sheet again leaves the next change said against these.
     #raiseDocument(): void {
+        this.#raiseHistory();
         const before = this.#sheetNames;
         const after = this.#workbook.sheets.map(sheet => sheet.name);
         const sheetsChanged = after.length !== before.length || after.some((name, at) => name !== before[at]);
@@ -3178,7 +3205,7 @@ class SheetView {
             }
         }
         const handlers: readonly (readonly [string, unknown])[] = [
-            ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged],
+            ['onWorkbookChanged', options.onWorkbookChanged], ['onSheetsChanged', options.onSheetsChanged], ['onHistoryChanged', options.onHistoryChanged],
             ['onEditingChanged', options.onEditingChanged], ['onSelectionChanged', options.onSelectionChanged],
             ['onShowToolbarChanged', options.onShowToolbarChanged], ['onLinkedColumnColoursChanged', options.onLinkedColumnColoursChanged],
             ['onPointingRefused', options.onPointingRefused], ['onSummaryFiguresChanged', options.onSummaryFiguresChanged],

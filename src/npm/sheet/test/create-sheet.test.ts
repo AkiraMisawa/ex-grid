@@ -132,6 +132,28 @@ describe('createSheet (ADR-0046, ADR-0370 section 1)', () => {
         await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('2'); });
     });
 
+    it('ADR-0048: onHistoryChanged hears the undo stack each time it moves, ahead of the document, and a document opened empties it', async () => {
+        const heard: string[] = [];
+        const options: SheetOptions = {
+            document: documentOf({ A1: '1', A2: '2' }),
+            onWorkbookChanged: () => { heard.push('document'); },
+            onHistoryChanged: ({ canUndo, canRedo }) => { heard.push(`undo ${String(canUndo)}, redo ${String(canRedo)}`); },
+        };
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('Delete');
+        press(element, 1, 0);
+        key('Delete');
+        expect(heard).toEqual(['undo true, redo false', 'document', 'document']);
+        sheet.undo();
+        sheet.undo();
+        expect(heard.slice(3)).toEqual(['undo true, redo true', 'document', 'undo false, redo true', 'document']);
+        expect([sheet.canUndo, sheet.canRedo]).toEqual([false, true]);
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, ...options, document: documentOf({ A1: '2' }) });
+        expect(heard.slice(7)).toEqual(['undo false, redo false']);
+    });
+
     it('ADR-0370 section 10: the notice speaks the Sheet\'s words, Japanese chosen in one line, a Consumer\'s label first', () => {
         const { element, sheet } = sheetOf({ japanese: true });
         expect(sheet.undo()).toBe(false);

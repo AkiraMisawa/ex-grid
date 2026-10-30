@@ -401,6 +401,12 @@ export interface SheetHandle {
 }
 
 // @public
+export interface SheetHistoryState {
+    readonly canRedo: boolean;
+    readonly canUndo: boolean;
+}
+
+// @public
 export type SheetLabel = (id: SheetWordId, english: string) => string | undefined;
 
 // @public
@@ -415,6 +421,7 @@ export interface SheetOptions {
     readonly locale?: string;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onFormatKeyRefused?: (refusal: SheetRefusal) => void;
+    readonly onHistoryChanged?: (history: SheetHistoryState) => void;
     readonly onLinkedColumnColoursChanged?: (columns: readonly LinkedColumnColour[]) => void;
     readonly onPointingRefused?: (refusal: PointingRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
