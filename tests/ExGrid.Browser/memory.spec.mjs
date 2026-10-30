@@ -142,6 +142,8 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     // What the Script grid attaches to its root, each taken off by its dispose:
     // - every input the Input Root holds while a commit is pending, in the capture phase, ahead of
     //   the grid's own listeners (ADR-0380 section 3, ADR-0240): seventeen types;
+    // - the focus a press let through for its drag makes, kept until the press's turn, and the drag's
+    //   start, which ends that keeping (ADR-0362);
     // - the grid's own capture-phase keys, press, release, focus and keyup (ADR-0018/0010, ADR-0080),
     //   the focus leaving it, the two clipboard events (ADR-0005), and the hover band's mousemove
     //   and mouseleave (ADR-0029);
@@ -150,11 +152,12 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     const held = ['auxclick', 'beforeinput', 'click', 'compositionend', 'compositionstart', 'compositionupdate',
         'contextmenu', 'copy', 'cut', 'dblclick', 'input', 'keydown', 'keyup', 'mousedown', 'mousemove', 'mouseup', 'paste']
         .map((t) => `${t} (capture)`);
+    const letThrough = ['focusin (capture)', 'dragstart (capture)'];
     const own = ['keydown (capture)', 'mousedown (capture)', 'mouseup (capture)', 'focus (capture)', 'keyup (capture)',
         'focusout', 'copy', 'paste', 'mousemove', 'mouseleave'];
     const adapter = ['keydown (capture)', 'mousedown (capture)'];
     // Sorted as `attached` is, with the script after each type.
-    expect(attached).toEqual([...held, ...own, ...adapter].map((t) => `${t} @`).sort().map((t) => fromModule(t.slice(0, -2))));
+    expect(attached).toEqual([...held, ...letThrough, ...own, ...adapter].map((t) => `${t} @`).sort().map((t) => fromModule(t.slice(0, -2))));
     // And none on the document: the Script grid follows the editor's caret on the editor itself
     // (its keyup and mouseup), where the C# grid heard `selectionchange` on the document (ADR-0051).
     expect(await moduleOnDocument()).toEqual([]);
