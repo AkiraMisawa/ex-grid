@@ -2,9 +2,9 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 88.1% | 78.5% |
+| ExGrid | 88.2% | 78.6% |
 | ExSheet | 86.2% | 85.8% |
-| ExPivot | 86.1% | 82.1% |
+| ExPivot | 86.2% | 82.1% |
 | ExChart | 91.1% | 85% |
 | ExBoard | 67% | 59.4% |
 | Data | 94.5% | 89.9% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/30/2026 - 07:12:51 |
+| Generated on: | 10/30/2026 - 08:47:39 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1104 |
-| Files: | 493 |
-| **Line coverage:** | 86.9% (60126 of 69158) |
-| Covered lines: | 60126 |
-| Uncovered lines: | 9032 |
-| Coverable lines: | 69158 |
-| Total lines: | 105324 |
-| **Branch coverage:** | 82.8% (36290 of 43779) |
-| Covered branches: | 36290 |
-| Total branches: | 43779 |
+| Classes: | 1106 |
+| Files: | 494 |
+| **Line coverage:** | 86.9% (60292 of 69317) |
+| Covered lines: | 60292 |
+| Uncovered lines: | 9025 |
+| Coverable lines: | 69317 |
+| Total lines: | 105612 |
+| **Branch coverage:** | 82.9% (36378 of 43873) |
+| Covered branches: | 36378 |
+| Total branches: | 43873 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -67,37 +67,37 @@
 |ExBoard.BoundGridView|98.7%|92.1%|
 |ExBoard.BoundPivotView|100%|75%|
 |ExBoard.BoundView|100%||
+|ExBoard.Components.ExBoard|78.9%|71.5%|
+|ExBoard.Components.ExBoard.BoardSlots|100%||
+|ExBoard.Components.ExBoard.HeldPivot|100%||
+|ExBoard.Components.ExBoard<T>|78.9%|71.5%|
+|ExBoard.Components.ScriptBridge|67.2%|33.3%|
+|ExBoard.Components.SourceCrossing|96.2%|77.2%|
+|ExBoard.Components.SourceCrossing.Held|100%||
+|ExBoard.Components.SourceCrossing.HeldKey|100%|50%|
+|ExBoard.Components.SourcePage|100%||
 |ExBoard.DeclaredChartData|100%|87.5%|
 |ExBoard.LinkCondition|90.3%|77.7%|
 |ExBoard.LinkCondition.TupleComparer|86.3%|72.7%|
 |ExBoard.Narrowing|82.1%|65.9%|
-|ExBoard.Script.ExBoard|78.9%|71.5%|
-|ExBoard.Script.ExBoard.BoardSlots|100%||
-|ExBoard.Script.ExBoard.HeldPivot|100%||
-|ExBoard.Script.ExBoard<T>|78.9%|71.5%|
-|ExBoard.Script.ScriptBridge|67.2%|33.3%|
-|ExBoard.Script.SourceCrossing|96.2%|77.2%|
-|ExBoard.Script.SourceCrossing.Held|100%||
-|ExBoard.Script.SourceCrossing.HeldKey|100%|50%|
-|ExBoard.Script.SourcePage|100%||
-|ExChart.Script.ChartRazorSlot|58.2%|50%|
-|ExChart.Script.ChartWire|0%|0%|
-|ExChart.Script.RowKeys|0%|0%|
-|ExChart.Script.SurfaceValues|0%||
-|ExGrid.Script.CrossedText|52%|38.8%|
-|ExGrid.Script.HeldCalls|79.3%|62.5%|
-|ExGrid.Script.HeldCalls<T>|79.3%|62.5%|
-|ExGrid.Script.PivotRefreshes|11.1%|0%|
-|ExGrid.Script.PivotSourceCrossing|27.4%|11.4%|
-|ExGrid.Script.PivotSourceCrossing<T>|27.4%|11.4%|
-|ExGrid.Script.RazorSlot|29.5%|24.1%|
-|ExGrid.Script.RazorSlotHolders|80%|83.3%|
-|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
-|ExGrid.Script.ScriptFunctionJson|0%||
-|ExGrid.Script.ScriptJson|21.6%|25%|
-|ExGrid.Script.SnapshotCrossing|94.8%|81.2%|
-|ExGrid.Script.SnapshotNaming|100%|100%|
-|ExPivot.Script.PivotRazorSlot|24.1%|34.1%|
+|ExChart.Components.ChartRazorSlot|58.2%|50%|
+|ExChart.Components.ChartWire|0%|0%|
+|ExChart.Components.RowKeys|0%|0%|
+|ExChart.Components.SurfaceValues|0%||
+|ExGrid.Components.CrossedText|52%|38.8%|
+|ExGrid.Components.HeldCalls|79.3%|62.5%|
+|ExGrid.Components.HeldCalls<T>|79.3%|62.5%|
+|ExGrid.Components.PivotRefreshes|11.1%|0%|
+|ExGrid.Components.PivotSourceCrossing|27.4%|11.4%|
+|ExGrid.Components.PivotSourceCrossing<T>|27.4%|11.4%|
+|ExGrid.Components.RazorSlot|29.5%|24.1%|
+|ExGrid.Components.RazorSlotHolders|80%|83.3%|
+|ExGrid.Components.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Components.ScriptFunctionJson|0%||
+|ExGrid.Components.ScriptJson|21.6%|25%|
+|ExGrid.Components.SnapshotCrossing|94.8%|81.2%|
+|ExGrid.Components.SnapshotNaming|100%|100%|
+|ExPivot.Components.PivotRazorSlot|24.1%|34.1%|
 
 </details>
 <details><summary>ExChart - 84.3%</summary>
@@ -115,7 +115,17 @@
 |ExChart.Chrome.ChartToolbarWords|100%||
 |ExChart.Chrome.IChartChrome|33.3%||
 |ExChart.ColumnSeries|100%||
+|ExChart.Components.ChartRazorSlot|95.5%|86.1%|
+|ExChart.Components.ChartWire|81%|75%|
+|ExChart.Components.DrawingState|100%||
+|ExChart.Components.ExChart|88%|87.3%|
 |ExChart.Components.ExChartStylesheet|0%||
+|ExChart.Components.ExSurface|79%|62.9%|
+|ExChart.Components.RowKeys|77.5%|71.6%|
+|ExChart.Components.ScriptBridge|86.3%|50%|
+|ExChart.Components.ScriptMount|76.4%|71.1%|
+|ExChart.Components.ScriptMount<T>|76.4%|71.1%|
+|ExChart.Components.SurfaceValues|100%||
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
 |ExChart.GridChartBridge<TRow>|90.2%|61.9%|
@@ -126,26 +136,16 @@
 |ExChart.GridState<TRow>|85.7%||
 |ExChart.KeyedPosition|100%||
 |ExChart.RowSeries|100%||
-|ExChart.Script.ChartRazorSlot|95.5%|86.1%|
-|ExChart.Script.ChartWire|81%|75%|
-|ExChart.Script.DrawingState|100%||
-|ExChart.Script.ExChart|88%|87.3%|
-|ExChart.Script.ExSurface|79%|62.9%|
-|ExChart.Script.RowKeys|77.5%|71.6%|
-|ExChart.Script.ScriptBridge|86.3%|50%|
-|ExChart.Script.ScriptMount|76.4%|71.1%|
-|ExChart.Script.ScriptMount<T>|76.4%|71.1%|
-|ExChart.Script.SurfaceValues|100%||
 |ExChart.SelectionReader|92.1%|73.9%|
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
 |ExChart.SnapshotChartData|100%|100%|
-|ExGrid.Script.CrossedText|92%|66.6%|
-|ExGrid.Script.HeldCalls|80.4%|75%|
-|ExGrid.Script.HeldCalls<T>|80.4%|75%|
-|ExGrid.Script.RazorSlotHolders|92.7%|94.4%|
-|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
-|ExGrid.Script.ScriptFunctionJson|100%||
+|ExGrid.Components.CrossedText|92%|66.6%|
+|ExGrid.Components.HeldCalls|80.4%|75%|
+|ExGrid.Components.HeldCalls<T>|80.4%|75%|
+|ExGrid.Components.RazorSlotHolders|92.7%|94.4%|
+|ExGrid.Components.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Components.ScriptFunctionJson|100%||
 
 </details>
 <details><summary>ExChart.Engine - 97%</summary>
@@ -261,11 +261,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 88%</summary>
+<details><summary>ExGrid - 88.1%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**88%**|**79.6%**|
+|**ExGrid**|**88.1%**|**79.7%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|90%|75%|
@@ -340,10 +340,49 @@
 |ExGrid.Columns.ResolvedHeaderGroup|100%||
 |ExGrid.ColumnViewState|90.9%||
 |ExGrid.ColumnWidthChange|100%||
+|ExGrid.Components.CrossedText|80%|44.4%|
+|ExGrid.Components.ExGrid.ConsumerPopover<TRow>|100%||
+|ExGrid.Components.ExGrid.Heard<TRow>|100%||
+|ExGrid.Components.ExGrid.Turn<TRow>|100%||
+|ExGrid.Components.ExGrid.Work<TRow>|100%||
+|ExGrid.Components.ExGrid<TRow, T>|71.3%|70%|
+|ExGrid.Components.ExGrid<TRow>|71.3%|70%|
+|ExGrid.Components.ExGrid<TRow>|84.2%|76.6%|
 |ExGrid.Components.ExGridStylesheet|100%||
+|ExGrid.Components.FormatNames|100%||
+|ExGrid.Components.GridRefusal.Action<TRow>|0%||
+|ExGrid.Components.GridRefusal.Commit<TRow>|0%||
+|ExGrid.Components.GridRefusal.Copy<TRow>|0%||
+|ExGrid.Components.GridRefusal.Find<TRow>|0%||
+|ExGrid.Components.GridRefusal.Mark<TRow>|0%||
+|ExGrid.Components.GridRefusal.Paste<TRow>|0%||
+|ExGrid.Components.GridRefusal.Placement<TRow>|0%||
+|ExGrid.Components.GridRefusal<TRow>|0%||
 |ExGrid.Components.GridView|40%|0%|
+|ExGrid.Components.HeldCalls|83.5%|75%|
+|ExGrid.Components.HeldCalls<T>|83.5%|75%|
 |ExGrid.Components.PackageStylesheet|100%|100%|
+|ExGrid.Components.PopoverContents|100%|50%|
+|ExGrid.Components.PopoverSlot|100%||
+|ExGrid.Components.RazorSlot|90.1%|74.1%|
+|ExGrid.Components.RazorSlotHolders|90.9%|88.8%|
+|ExGrid.Components.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Components.RowPaint<TRow>|88.3%|84.7%|
 |ExGrid.Components.RowSetStamp|100%||
+|ExGrid.Components.RowsRead|100%|100%|
+|ExGrid.Components.ScriptBridge<TRow>|61.4%|12.5%|
+|ExGrid.Components.ScriptBridge<TRow>|88.5%|50%|
+|ExGrid.Components.ScriptColumns|79.1%|75%|
+|ExGrid.Components.ScriptFunctionJson|100%||
+|ExGrid.Components.ScriptJson|100%|91.6%|
+|ExGrid.Components.ScriptMetricsJson|96.4%|86.6%|
+|ExGrid.Components.ScriptMetricsJson.Written|100%||
+|ExGrid.Components.ScriptRows.Held<TRow>|100%||
+|ExGrid.Components.ScriptRows.Message<TRow>|100%||
+|ExGrid.Components.ScriptRows<TRow>|100%||
+|ExGrid.Components.ScriptRows<TRow>|87.4%|81.2%|
+|ExGrid.Components.ScriptValues|89.7%|85.1%|
+|ExGrid.Components.TemplateCellSlot|100%||
 |ExGrid.DisplayText|100%|87.5%|
 |ExGrid.FetchedShapedGrid|90.9%||
 |ExGrid.FetchingGridSource<TRow>|81.6%|75%|
@@ -366,8 +405,8 @@
 |ExGrid.Finding.GridReplaceResult|100%|100%|
 |ExGrid.Finding.GridReplaceWrite<TRow>|93.3%||
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
-|ExGrid.GridColumn<TRow>|96.9%|88.4%|
 |ExGrid.GridColumn<TRow>|75%||
+|ExGrid.GridColumn<TRow>|96.9%|88.4%|
 |ExGrid.GridFilter|100%||
 |ExGrid.GridFilters|92.5%|86.5%|
 |ExGrid.GridMetrics|95.5%|92.5%|
@@ -418,44 +457,6 @@
 |ExGrid.Rows.RowMarkStep|87.5%||
 |ExGrid.Rows.RowMarkStep.AllOf|100%||
 |ExGrid.Rows.RowMarkStep.OneKey|100%||
-|ExGrid.Script.CrossedText|80%|44.4%|
-|ExGrid.Script.ExGrid.ConsumerPopover<TRow>|100%||
-|ExGrid.Script.ExGrid.Heard<TRow>|100%||
-|ExGrid.Script.ExGrid.Turn<TRow>|100%||
-|ExGrid.Script.ExGrid.Work<TRow>|100%||
-|ExGrid.Script.ExGrid<TRow, T>|71%|69.7%|
-|ExGrid.Script.ExGrid<TRow>|71%|69.7%|
-|ExGrid.Script.ExGrid<TRow>|83.8%|76.3%|
-|ExGrid.Script.FormatNames|100%||
-|ExGrid.Script.GridRefusal.Action<TRow>|0%||
-|ExGrid.Script.GridRefusal.Commit<TRow>|0%||
-|ExGrid.Script.GridRefusal.Copy<TRow>|0%||
-|ExGrid.Script.GridRefusal.Find<TRow>|0%||
-|ExGrid.Script.GridRefusal.Mark<TRow>|0%||
-|ExGrid.Script.GridRefusal.Paste<TRow>|0%||
-|ExGrid.Script.GridRefusal.Placement<TRow>|0%||
-|ExGrid.Script.GridRefusal<TRow>|0%||
-|ExGrid.Script.HeldCalls|83.5%|75%|
-|ExGrid.Script.HeldCalls<T>|83.5%|75%|
-|ExGrid.Script.PopoverContents|100%|50%|
-|ExGrid.Script.PopoverSlot|100%||
-|ExGrid.Script.RazorSlot|90.1%|74.1%|
-|ExGrid.Script.RazorSlotHolders|90.9%|88.8%|
-|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
-|ExGrid.Script.RowPaint<TRow>|88.3%|84.7%|
-|ExGrid.Script.ScriptBridge<TRow>|60.3%|12.5%|
-|ExGrid.Script.ScriptBridge<TRow>|88.5%|50%|
-|ExGrid.Script.ScriptColumns|79.1%|75%|
-|ExGrid.Script.ScriptFunctionJson|100%||
-|ExGrid.Script.ScriptJson|100%|91.6%|
-|ExGrid.Script.ScriptMetricsJson|96.4%|86.6%|
-|ExGrid.Script.ScriptMetricsJson.Written|100%||
-|ExGrid.Script.ScriptRows.Held<TRow>|100%||
-|ExGrid.Script.ScriptRows.Message<TRow>|100%||
-|ExGrid.Script.ScriptRows<TRow>|100%||
-|ExGrid.Script.ScriptRows<TRow>|85.8%|78.5%|
-|ExGrid.Script.ScriptValues|89.7%|85.1%|
-|ExGrid.Script.TemplateCellSlot|100%||
 |ExGrid.Selection.CellPosition|100%||
 |ExGrid.Selection.ColumnRange|100%||
 |ExGrid.Selection.FillExtension|100%||
@@ -732,23 +733,23 @@
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
 
 </details>
-<details><summary>ExPivot - 49.8%</summary>
+<details><summary>ExPivot - 50.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**49.8%**|**45.9%**|
-|ExGrid.Script.CrossedText|52%|38.8%|
-|ExGrid.Script.HeldCalls|74.2%|62.5%|
-|ExGrid.Script.HeldCalls<T>|74.2%|62.5%|
-|ExGrid.Script.PivotRefreshes|94.4%|50%|
-|ExGrid.Script.PivotSourceCrossing|81.3%|73.1%|
-|ExGrid.Script.PivotSourceCrossing<T>|81.3%|73.1%|
-|ExGrid.Script.RazorSlot|0%|0%|
-|ExGrid.Script.RazorSlotHolders|25.4%|33.3%|
-|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|0%||
-|ExGrid.Script.ScriptJson|0%|0%|
-|ExGrid.Script.ScriptMetricsJson|61.9%|40%|
-|ExGrid.Script.ScriptMetricsJson.Written|0%||
+|**ExPivot**|**50.4%**|**46.5%**|
+|ExGrid.Components.CrossedText|52%|38.8%|
+|ExGrid.Components.HeldCalls|74.2%|62.5%|
+|ExGrid.Components.HeldCalls<T>|74.2%|62.5%|
+|ExGrid.Components.PivotRefreshes|94.4%|50%|
+|ExGrid.Components.PivotSourceCrossing|81.3%|73.1%|
+|ExGrid.Components.PivotSourceCrossing<T>|81.3%|73.1%|
+|ExGrid.Components.RazorSlot|0%|0%|
+|ExGrid.Components.RazorSlotHolders|25.4%|33.3%|
+|ExGrid.Components.RazorSlotHolders.RazorSlotHeld|0%||
+|ExGrid.Components.ScriptJson|0%|0%|
+|ExGrid.Components.ScriptMetricsJson|61.9%|40%|
+|ExGrid.Components.ScriptMetricsJson.Written|0%||
 |ExPivot.Chrome.IPivotChrome|7.6%||
 |ExPivot.Chrome.PivotChoiceView|0%||
 |ExPivot.Chrome.PivotDetailsDialogView|0%||
@@ -768,21 +769,21 @@
 |ExPivot.Chrome.PivotStaleReportView|0%||
 |ExPivot.Chrome.PivotToolbarView|0%||
 |ExPivot.Chrome.PivotValueFieldSettingsView|0%||
+|ExPivot.Components.ExPivot|62.4%|51.2%|
 |ExPivot.Components.ExPivotStylesheet|100%||
+|ExPivot.Components.PivotRazorSlot|0%|0%|
+|ExPivot.Components.ScriptBridge|42.4%|19.4%|
 |ExPivot.PivotCaps|0%|0%|
 |ExPivot.PivotCommandIds|20%|13.3%|
 |ExPivot.PivotDetailItem|0%||
 |ExPivot.PivotDetails|73.3%||
-|ExPivot.Script.ExPivot|61%|49.6%|
-|ExPivot.Script.PivotRazorSlot|0%|0%|
-|ExPivot.Script.ScriptBridge|42.4%|19.4%|
 
 </details>
 <details><summary>ExPivot.Engine - 95.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**95.7%**|**88.2%**|
+|**ExPivot.Engine**|**95.7%**|**88.3%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.5%|95.7%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -863,7 +864,7 @@
 |ExPivot.Engine.PivotItemPage|95.8%|60%|
 |ExPivot.Engine.PivotItemPath|100%|100%|
 |ExPivot.Engine.PivotItemsQuery|93.3%|100%|
-|ExPivot.Engine.PivotJson|97.5%|91%|
+|ExPivot.Engine.PivotJson|97.7%|91.7%|
 |ExPivot.Engine.PivotLabelColumn|100%||
 |ExPivot.Engine.PivotLabelSizing|98.1%|95%|
 |ExPivot.Engine.PivotLayout|94.5%|65.7%|
@@ -945,7 +946,7 @@
 |ExPivot.Engine.ReportBuilder.Walk|100%|100%|
 |ExPivot.Engine.RowValues|87.9%|82.6%|
 |ExPivot.Engine.Slicer|92.6%|82.3%|
-|ExPivot.Engine.SnapshotPivotSource|94.6%|86.4%|
+|ExPivot.Engine.SnapshotPivotSource|94.9%|87.1%|
 |ExPivot.Engine.SpanDigits|87.5%|75%|
 |ExPivot.Engine.ValueAccumulator|98.1%|98.5%|
 |ExPivot.Engine.ValueCaptions|96.9%|87.5%|
@@ -975,21 +976,31 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 59.9%</summary>
+<details><summary>ExSheet - 60%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**59.9%**|**50.6%**|
-|ExGrid.Script.CrossedText|92%|72.2%|
-|ExGrid.Script.HeldCalls|80.4%|75%|
-|ExGrid.Script.HeldCalls<T>|80.4%|75%|
-|ExGrid.Script.RazorSlot|29.5%|24.1%|
-|ExGrid.Script.RazorSlotHolders|80%|83.3%|
-|ExGrid.Script.RazorSlotHolders.RazorSlotHeld|100%||
-|ExGrid.Script.ScriptJson|23.3%|29.1%|
-|ExGrid.Script.ScriptMetricsJson|35.7%|33.3%|
-|ExGrid.Script.ScriptMetricsJson.Written|0%||
+|**ExSheet**|**60%**|**50.7%**|
+|ExGrid.Components.CrossedText|92%|72.2%|
+|ExGrid.Components.HeldCalls|80.4%|75%|
+|ExGrid.Components.HeldCalls<T>|80.4%|75%|
+|ExGrid.Components.RazorSlot|29.5%|24.1%|
+|ExGrid.Components.RazorSlotHolders|80%|83.3%|
+|ExGrid.Components.RazorSlotHolders.RazorSlotHeld|100%||
+|ExGrid.Components.ScriptJson|23.3%|29.1%|
+|ExGrid.Components.ScriptMetricsJson|35.7%|33.3%|
+|ExGrid.Components.ScriptMetricsJson.Written|0%||
+|ExSheet.Components.ExSheet|84.2%|78.3%|
+|ExSheet.Components.ExSheet.Opening|100%||
+|ExSheet.Components.ExSheet.Press|100%||
+|ExSheet.Components.ExSheet.Saving|100%||
 |ExSheet.Components.ExSheetStylesheet|100%||
+|ExSheet.Components.ScriptBridge|76.6%|25%|
+|ExSheet.Components.ScriptToolbar|88.1%|76.4%|
+|ExSheet.Components.ScriptToolbarHost|100%|50%|
+|ExSheet.Components.SheetRazorSlot|96.9%|88.8%|
+|ExSheet.Components.SheetRazorSlot.AddFace|100%||
+|ExSheet.Components.ToolbarContentView|100%||
 |ExSheet.DefaultToolbarRow|100%|50%|
 |ExSheet.FormatCellsDraft|0%|0%|
 |ExSheet.FormatCellsOffer|0%|0%|
@@ -1004,16 +1015,6 @@
 |ExSheet.PointingRefusal|100%||
 |ExSheet.PointingScope|57.8%|12.5%|
 |ExSheet.PointingScope<TRow>|57.8%|12.5%|
-|ExSheet.Script.ExSheet|84.1%|78.2%|
-|ExSheet.Script.ExSheet.Opening|100%||
-|ExSheet.Script.ExSheet.Press|100%||
-|ExSheet.Script.ExSheet.Saving|100%||
-|ExSheet.Script.ScriptBridge|76.6%|25%|
-|ExSheet.Script.ScriptToolbar|88.1%|76.4%|
-|ExSheet.Script.ScriptToolbarHost|100%|50%|
-|ExSheet.Script.SheetRazorSlot|96.9%|88.8%|
-|ExSheet.Script.SheetRazorSlot.AddFace|100%||
-|ExSheet.Script.ToolbarContentView|100%||
 |ExSheet.SheetCommandIds|70%|78.5%|
 |ExSheet.SheetFindLabelIds|57.1%|50%|
 |ExSheet.SheetFormatCellsBorder|40%||
@@ -1062,6 +1063,7 @@
 |ExSheet.Engine.ConstantParser|96.4%|81.5%|
 |ExSheet.Engine.DateSerial|100%|100%|
 |ExSheet.Engine.DeclaredFunction|100%|100%|
+|ExSheet.Engine.DocumentChangesReader|91.4%|78.8%|
 |ExSheet.Engine.Entry|91.6%|83.3%|
 |ExSheet.Engine.EntryText|100%|100%|
 |ExSheet.Engine.ErrorValues|100%|90%|
@@ -1190,7 +1192,7 @@
 |ExSheet.Engine.Workbook|97.6%|92.4%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|93.3%|83.3%|
-|ExSheet.Engine.WorkbookDocument|95.7%|86.5%|
+|ExSheet.Engine.WorkbookDocument|95.9%|87%|
 |ExSheet.Engine.WorkbookStep|100%|100%|
 
 </details>
