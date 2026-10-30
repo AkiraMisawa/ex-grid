@@ -37,3 +37,78 @@ override ExGrid.MudBlazor.MudExGridScriptFindPanel.OnParametersSet() -> void
 ~override ExGrid.MudBlazor.MudExGridScriptFilterPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExGrid.MudBlazor.MudExGridScriptFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExGrid.MudBlazor.MudExGridScriptMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*ExGrid.MudBlazor.MudCellEditor
+*REMOVED*ExGrid.MudBlazor.MudCellEditor.Context.get -> ExGrid.Chrome.CellEditorContext!
+*REMOVED*ExGrid.MudBlazor.MudCellEditor.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudCellEditor.MudCellEditor() -> void
+*REMOVED*ExGrid.MudBlazor.MudEditorCompletion
+*REMOVED*ExGrid.MudBlazor.MudEditorCompletion.Context.get -> ExGrid.Chrome.EditorCompletionContext!
+*REMOVED*ExGrid.MudBlazor.MudEditorCompletion.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudEditorCompletion.MudEditorCompletion() -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel.Chrome.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel.Context.get -> ExGrid.Chrome.FilterPanelContext!
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFilterPanel.MudExGridFilterPanel() -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel.Chrome.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel.Context.get -> ExGrid.Chrome.FindContext!
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridFindPanel.MudExGridFindPanel() -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Chrome.get -> ExGrid.MudBlazor.MudGridChrome!
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Chrome.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Close.get -> System.Action!
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Close.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Commands.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>!
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.Commands.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.FocusRequest.get -> int
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.FocusRequest.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.MudExGridMenu() -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.ResolveKey.get -> ExGrid.Chrome.MenuKeyResolver?
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.ResolveKey.set -> void
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.MudBlazor.MudExGridMenu.TakeFocus.set -> void
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText.Context.get -> ExGrid.Chrome.FormulaBarTextContext!
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText.Label.get -> string!
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText.Label.set -> void
+*REMOVED*ExGrid.MudBlazor.MudFormulaBarText.MudFormulaBarText() -> void
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.ColumnMenu(ExGrid.Chrome.ColumnMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.ContextMenu<TRow>(ExGrid.Chrome.ContextMenuContext<TRow>! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.EditorCompletion(ExGrid.Chrome.EditorCompletionContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.FilterPanel(ExGrid.Chrome.FilterPanelContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.FindPanel(ExGrid.Chrome.FindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.FormulaBarText(ExGrid.Chrome.FormulaBarTextContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.LoadingIndicator(ExGrid.Chrome.LoadingContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.NameBox(ExGrid.Chrome.NameBoxContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudGridChrome.SelectionSummary(ExGrid.Chrome.SelectionSummaryContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.MudBlazor.MudNameBox
+*REMOVED*ExGrid.MudBlazor.MudNameBox.Context.get -> ExGrid.Chrome.NameBoxContext!
+*REMOVED*ExGrid.MudBlazor.MudNameBox.Context.set -> void
+*REMOVED*ExGrid.MudBlazor.MudNameBox.Label.get -> string!
+*REMOVED*ExGrid.MudBlazor.MudNameBox.Label.set -> void
+*REMOVED*ExGrid.MudBlazor.MudNameBox.MudNameBox() -> void
+*REMOVED*override ExGrid.MudBlazor.MudCellEditor.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudCellEditor.OnParametersSet() -> void
+*REMOVED*override ExGrid.MudBlazor.MudExGridFilterPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudExGridFilterPanel.OnInitializedAsync() -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudExGridFilterPanel.OnParametersSet() -> void
+*REMOVED*override ExGrid.MudBlazor.MudExGridFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudExGridFindPanel.OnParametersSet() -> void
+*REMOVED*override ExGrid.MudBlazor.MudExGridMenu.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudExGridMenu.OnParametersSet() -> void
+*REMOVED*override ExGrid.MudBlazor.MudFormulaBarText.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.MudBlazor.MudFormulaBarText.OnParametersSet() -> void
+*REMOVED*override ExGrid.MudBlazor.MudNameBox.OnParametersSet() -> void
+*REMOVED*~override ExGrid.MudBlazor.MudCellEditor.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudEditorCompletion.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudExGridFilterPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudExGridFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudExGridMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudFormulaBarText.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.MudBlazor.MudNameBox.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

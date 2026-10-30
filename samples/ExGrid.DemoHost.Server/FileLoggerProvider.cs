@@ -10,9 +10,6 @@ internal sealed class FileLoggerProvider(string path) : ILoggerProvider
 {
     private readonly object _gate = new();
 
-    // ExGrid's InputOrder.JournalCategory, which is internal to the package.
-    internal const string JournalCategory = "ExGrid.InputOrder";
-
     public ILogger CreateLogger(string categoryName) => new FileLogger(this, categoryName);
 
     public void Dispose()
@@ -29,10 +26,8 @@ internal sealed class FileLoggerProvider(string path) : ILoggerProvider
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-        // The core's side of the Input Journal is written at Debug, for a failed layer-3 test to carry
-        // (ADR-0240 section 10); everything else from Warning up, for CON-6.
-        public bool IsEnabled(LogLevel logLevel) =>
-            logLevel >= (category == JournalCategory ? LogLevel.Debug : LogLevel.Warning);
+        // From Warning up, for CON-6.
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
             Func<TState, Exception?, string> formatter)

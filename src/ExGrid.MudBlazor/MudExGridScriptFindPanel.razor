@@ -8,8 +8,8 @@
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
    may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* The find panel's content when the Script Core draws the grid (ADR-0055, ADR-0332, ADR-0410): MudExGridFindPanel's
-   MudBlazor controls, drawn from the core's view and marked for the adapter's script, which hands each change and
+@* The find panel's content when the Script Core draws the grid (ADR-0055, ADR-0332, ADR-0410): MudBlazor's
+   controls, drawn from the core's view and marked for the adapter's script, which hands each change and
    press to the core in the browser. Nothing here searches, keeps a working state, or handles a change, a key or a
    focus: the core's view is drawn again at each change it makes.
 

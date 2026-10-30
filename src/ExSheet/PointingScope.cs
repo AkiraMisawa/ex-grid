@@ -43,8 +43,7 @@ namespace ExSheet;
 /// <para>The Scope serves Blazor's components over the Script Core (<c>ExSheet.Script.ExSheet</c> and
 /// <c>ExGrid.Script.ExGrid</c>). The Scope is held in the browser, which decides all of the above there,
 /// and this object only names it; the function that reads a row as the table's row is asked as each row
-/// crosses to the browser (ADR-0430). The Razor ExGrid, which would decide in C#, is refused by name as
-/// it takes the declaration.</para>
+/// crosses to the browser (ADR-0430).</para>
 /// </summary>
 public sealed class PointingScope
 {
@@ -94,28 +93,11 @@ public sealed class PointingScope
         }
         _declarations += 1;
         var declaration = $"{Id}-{_declarations.ToString(CultureInfo.InvariantCulture)}";
-        return new GridPointedAt<TRow>(_ => throw new InvalidOperationException(
-            "A Pointing Scope is held in the browser, which answers a press on its grids there (ADR-0430)."))
-        {
-            // The grid joins the Scope in the page, and is sent each row as the table's row.
-            InBrowser = new GridPointedInBrowser<TRow>(
-                Id, declaration, table, columns, row => SheetWire.WriteRow(tableRow(row)),
-                inBrowser => Claim(inBrowser, "a Razor ExGrid")),
-        };
+        // The grid joins the Scope in the page, and is sent each row as the table's row.
+        return new GridPointedAt<TRow>(new GridPointedInBrowser<TRow>(
+            Id, declaration, table, columns, row => SheetWire.WriteRow(tableRow(row))));
     }
 
     /// <summary>The Scope's name in the page, which every member drawn by the Script Core names (ADR-0430).</summary>
     internal string Id { get; } = Guid.NewGuid().ToString("N");
-
-    /// <summary>A member joins: one drawn by the Script Core (<paramref name="inBrowser"/>) is taken, and the Razor
-    /// ExGrid, which would decide in C#, is refused by name (ADR-0430).</summary>
-    /// <exception cref="InvalidOperationException">The member is not drawn by the Script Core.</exception>
-    internal void Claim(bool inBrowser, string member)
-    {
-        if (!inBrowser)
-        {
-            throw new InvalidOperationException(
-                $"A Pointing Scope is held in the browser, and {member} cannot join it: give the grid ExGrid.Script.ExGrid (ADR-0430).");
-        }
-    }
 }

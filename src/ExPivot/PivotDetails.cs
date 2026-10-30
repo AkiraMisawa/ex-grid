@@ -24,8 +24,8 @@ public sealed class PivotDetails
     {
     }
 
-    // The records asked of whatever answers them: the report source the Razor component computed the report from, or
-    // the Pivot Source the Script Core's report was computed from (ADR-0370 section 1).
+    // The records asked of whatever answers them: the report source a report was computed from, or the
+    // Pivot Source the Script Core's report was computed from (ADR-0370 section 1).
     internal PivotDetails(
         IReadOnlyList<PivotField> fields,
         Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details,

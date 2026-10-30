@@ -368,6 +368,10 @@ function coreAnswer(canonical: string, parsed: Parsed): string | undefined {
     return undefined;
 }
 
+/** The keys the core answers outside its table (the editor's two and the clipboard's), which a declaration may not
+ * take either: what `tests/cases/keys/keyboard-reference.json` lists for the Keyboard page's check. */
+export const keysAnsweredOutsideTable: readonly string[] = Object.freeze([...answeredOutsideTable.keys()]);
+
 const noneDeclared: ReadonlySet<string> = new Set();
 
 /**

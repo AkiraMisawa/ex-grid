@@ -131,7 +131,7 @@ public static class KeyboardReference
         }
 
         // A key as the grid's key table and a Consumer's declared keys name it: the modifiers Control, Meta, Shift
-        // and Alt in that order, each at most once, then the key as KeyboardEvent.key reports it (GridKeys.Canonical).
+        // and Alt in that order, each at most once, then the key as KeyboardEvent.key reports it (canonicalKey in @ex-grid/core's keys/grid-keys.ts).
         void Canonical(HandValue value)
         {
             if (value.Value is not { } key)
@@ -181,7 +181,7 @@ public static class KeyboardReference
     }
 
     /// <summary>
-    /// Whether <paramref name="key"/> is in the canonical form <c>GridKeys</c> names keys in: the modifiers in its
+    /// Whether <paramref name="key"/> is in the canonical form ExGrid's key table names keys in: the modifiers in its
     /// order, each at most once, then a key that is not a modifier, whose name holds no <c>+</c> unless it is
     /// <c>+</c> itself. <c>Alt+Alt</c>, the Alt key's own press, is the one modifier that may stand as the key.
     /// </summary>

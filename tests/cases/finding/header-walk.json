@@ -1,6 +1,6 @@
 {
   "about": "The order a Find step walks once the headers are searched (ADR-0333 §3): the header rows first, then the data rows by rows, wrapping; backward the reverse. Headers 1 and 3 of five match, and the Focus is row 5, column 1. A cell is written {row, column}. From tests/ExGrid.Tests/HeaderFindWalkTests.cs.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "HeaderFindWalk",
   "cases": [
     {

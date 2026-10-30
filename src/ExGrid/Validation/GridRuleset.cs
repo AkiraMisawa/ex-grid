@@ -181,7 +181,7 @@ public sealed class GridRuleset<TRow> where TRow : class
                 // column's own formatting, not a bare ToString — so a rule written to
                 // the editor's grammar reads the same grammar here (ADR-0034: one
                 // implementation, by edit, paste or program code).
-                var verdict = rule(row, Components.ExGridRow<TRow>.CellText(column, row));
+                var verdict = rule(row, column.Info.TextOf(row));
                 if (verdict.Kind is EditVerdictKind.Accept)
                     continue;
                 (found ??= [])[column.Name] = verdict.Message!;

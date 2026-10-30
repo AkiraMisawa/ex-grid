@@ -1,6 +1,6 @@
 {
   "about": "The keys inside a menu, the column menu or the Context Menu, and what each one means (ADR-0039, ADR-0044). The menu's commands are written {id, enabled}, what the keys read of a command. From tests/ExGrid.Tests/MenuKeysTests.cs. The C# core's MenuKeys is a static class; the Script Core's chrome/menu-keys.ts is its functions under these names. A key that means nothing is checked by its kind alone: its item means nothing, and C#'s MenuKey.Nothing, the default value, holds 0 there.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "MenuKeys",
   "cases": [
     {

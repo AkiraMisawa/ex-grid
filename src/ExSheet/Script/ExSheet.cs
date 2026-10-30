@@ -252,8 +252,6 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     private ElementReference _root;
     private IJSObjectReference? _module;
     private IJSObjectReference? _sheet;
-    // The Pointing Scope last given, which knows this Sheet is drawn in the browser.
-    private PointingScope? _claimedScope;
 
     /// <summary>The browser's calls, in the order it made them, a call too large for a circuit's message among them
     /// (ADR-0005, as amended 2026-10-28).</summary>
@@ -307,12 +305,6 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             _renderedChrome = Chrome;
             _slots.Redrawn();
             _renderOwed |= _slots.Any;
-        }
-        if (!ReferenceEquals(PointingScope, _claimedScope))
-        {
-            // Named to the Scope before the browser is told of it (ADR-0430).
-            PointingScope?.Claim(inBrowser: true, "a Sheet drawn by the Script Core");
-            _claimedScope = PointingScope;
         }
         // The refusal is worded through CommandLabel, which may have changed (ADR-0203).
         if (_refused)

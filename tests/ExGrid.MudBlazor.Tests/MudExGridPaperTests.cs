@@ -1,27 +1,26 @@
 using Bunit;
 using ExGrid.Columns;
-using ExGrid.Components;
 using Microsoft.AspNetCore.Components;
 using Xunit;
+using Grid = global::ExGrid.Script.ExGrid<ExGrid.MudBlazor.Tests.MudTestContext.Trade>;
 
 namespace ExGrid.MudBlazor.Tests;
 
 /// <summary>
-/// The Wrapper's outer element (ADR-0030): its own classes, the presentation it
-/// cascades, and — the promise that matters — that a change on the paper re-renders
-/// nothing inside the grid.
+/// The Wrapper's outer element (ADR-0030): its own classes, and the presentation it cascades to the grid inside it,
+/// which the grid hands the Script Core as <c>presentationDefaults</c> where the Consumer wrote nothing of its own.
+/// What the core paints from them is its own, tested there.
 /// </summary>
 public class MudExGridPaperTests : MudTestContext
 {
     private IRenderedComponent<MudExGridPaper> RenderPaper(
         Action<Bunit.ComponentParameterCollectionBuilder<MudExGridPaper>>? extra = null,
-        Action<Bunit.ComponentParameterCollectionBuilder<ExGrid<Trade>>>? grid = null)
+        Action<Bunit.ComponentParameterCollectionBuilder<Grid>>? grid = null)
         => Render<MudExGridPaper>(ps =>
         {
-            ps.AddChildContent<ExGrid<Trade>>(g =>
+            ps.AddChildContent<Grid>(g =>
             {
-                g.Add(x => x.Window, Rows(5))
-                 .Add(x => x.TotalCount, 5)
+                g.Add(x => x.Rows, Rows(5))
                  .Add(x => x.Columns, Columns())
                  .Add(x => x.ViewportHeight, 200)
                  .Add(x => x.ViewportWidth, 400);
@@ -38,7 +37,9 @@ public class MudExGridPaperTests : MudTestContext
         var paper = cut.Find(".mud-ex-grid");
         Assert.Contains("mud-elevation-2", paper.ClassName);
         Assert.Contains("mud-ex-grid-bordered", paper.ClassName);
-        Assert.NotNull(paper.QuerySelector(".ex-grid"));
+        // The grid's markup is read from its own fragment, so its root is found among the paper's children by what it is.
+        var root = cut.FindComponent<Grid>().Find("div");
+        Assert.Contains(paper.Children, child => child.OuterHtml == root.OuterHtml);
     }
 
     [Fact] // ADR-0030: Outlined suppresses the elevation, as on MudBlazor's tables
@@ -59,71 +60,58 @@ public class MudExGridPaperTests : MudTestContext
         var paper = cut.Find(".mud-ex-grid");
         Assert.Contains("mud-ex-grid-square", paper.ClassName);
         Assert.Contains("my-paper", paper.ClassName);
-        Assert.DoesNotContain("my-paper", cut.Find(".ex-grid").ClassName);
+        Assert.Null(cut.FindComponent<Grid>().Find("div").GetAttribute("class"));
     }
 
-    [Fact] // ADR-0027/0030: Roboto's widths reach the grid — the twelve-digit amount fits
+    [Fact] // ADR-0027/0030: Roboto's widths reach the grid
     public void Roboto_widths_reach_the_grid()
     {
-        var cut = RenderPaper();
+        RenderPaper();
 
-        var amount = cut.FindAll(".ex-row .ex-cell")[1].TextContent;
-        Assert.Equal("123456789012", amount);
+        var sent = Attached().GetProperty("presentationDefaults");
+        Assert.Equal(MudExGridPresentation.Roboto.DigitWidthPx, sent.GetProperty("digitWidthPx").GetDouble());
+        Assert.Equal(MudExGridPresentation.Roboto.OtherWidthPx, sent.GetProperty("otherWidthPx").GetDouble());
     }
 
     [Fact] // ADR-0028/0030: Dense is Compact, not dense is Standard; a Density on the grid wins
     public void Dense_maps_onto_the_presets_and_the_grid_wins()
     {
-        Assert.Contains("--ex-row-height: 32px", RenderPaper().Find(".ex-grid").GetAttribute("style"));
-        Assert.Contains("--ex-row-height: 28px", RenderPaper(ps => ps.Add(p => p.Dense, true)).Find(".ex-grid").GetAttribute("style"));
-        Assert.Contains("--ex-row-height: 20px",
-            RenderPaper(ps => ps.Add(p => p.Dense, true), g => g.Add(x => x.Density, GridDensity.Excel))
-                .Find(".ex-grid").GetAttribute("style"));
+        RenderPaper();
+        Assert.Equal("standard", Attached().GetProperty("presentationDefaults").GetProperty("density").GetString());
+        RenderPaper(ps => ps.Add(p => p.Dense, true));
+        Assert.Equal("compact", Attached().GetProperty("presentationDefaults").GetProperty("density").GetString());
+        RenderPaper(ps => ps.Add(p => p.Dense, true), g => g.Add(x => x.Density, GridDensity.Excel));
+        Assert.Equal("excel", Attached().GetProperty("density").GetString());
     }
 
-    [Fact] // ADR-0029/0030: Hover turns the grid's band on through the cascade
-    public async Task Hover_turns_the_band_on()
+    [Fact] // ADR-0029/0030: Hover turns the grid's band on through the cascade, and without it there is none
+    public void Hover_turns_the_band_on()
     {
-        var cut = RenderPaper(ps => ps.Add(p => p.Hover, true));
-        var grid = cut.FindComponent<ExGrid<Trade>>();
+        RenderPaper(ps => ps.Add(p => p.Hover, true));
+        Assert.True(Attached().GetProperty("presentationDefaults").GetProperty("highlightHoverRow").GetBoolean());
 
-        await cut.InvokeAsync(() => grid.Instance.OnPointerRowAsync(50, 40));
-
-        Assert.NotEmpty(cut.FindAll(".ex-hover-row"));
-    }
-
-    [Fact] // ADR-0029: without Hover no band, whatever the browser reports
-    public async Task Without_hover_there_is_no_band()
-    {
-        var cut = RenderPaper();
-        var grid = cut.FindComponent<ExGrid<Trade>>();
-
-        await cut.InvokeAsync(() => grid.Instance.OnPointerRowAsync(50, 40));
-
-        Assert.Empty(cut.FindAll(".ex-hover-row"));
+        RenderPaper();
+        Assert.False(Attached().GetProperty("presentationDefaults").GetProperty("highlightHoverRow").GetBoolean());
     }
 
     [Fact] // WR-6 / ADR-0038/0030: Striped turns the grid's Row Stripes on through the cascade
     public void Striped_turns_row_stripes_on()
     {
-        Assert.Empty(RenderPaper().FindAll(".ex-row-stripe"));
+        RenderPaper();
+        Assert.False(Attached().GetProperty("presentationDefaults").GetProperty("stripeRows").GetBoolean());
 
-        var striped = RenderPaper(ps => ps.Add(p => p.Striped, true));
-        var rows = striped.FindAll(".ex-row");
-        // A row's position is its aria-rowindex less the one header row, which ARIA counts first (ADR-0033).
-        Assert.Single(striped.FindAll(".ex-header[role=row]"));
-        Assert.All(rows, row => Assert.Equal(
-            (int.Parse(row.GetAttribute("aria-rowindex")!) - 2) % 2 == 1, row.ClassList.Contains("ex-row-stripe")));
-        Assert.NotEmpty(striped.FindAll(".ex-row-stripe"));
+        RenderPaper(ps => ps.Add(p => p.Striped, true));
+        Assert.True(Attached().GetProperty("presentationDefaults").GetProperty("stripeRows").GetBoolean());
+        Assert.False(Attached().TryGetProperty("stripeRows", out _));
     }
 
     [Fact] // WR-6 / ADR-0030: the grid's own StripeRows beats the paper's Striped, either way
     public void The_grids_own_stripe_rows_wins()
     {
-        Assert.Empty(RenderPaper(ps => ps.Add(p => p.Striped, true), g => g.Add(x => x.StripeRows, false))
-            .FindAll(".ex-row-stripe"));
-        Assert.NotEmpty(RenderPaper(ps => ps.Add(p => p.Striped, false), g => g.Add(x => x.StripeRows, true))
-            .FindAll(".ex-row-stripe"));
+        RenderPaper(ps => ps.Add(p => p.Striped, true), g => g.Add(x => x.StripeRows, false));
+        Assert.False(Attached().GetProperty("stripeRows").GetBoolean());
+        RenderPaper(ps => ps.Add(p => p.Striped, false), g => g.Add(x => x.StripeRows, true));
+        Assert.True(Attached().GetProperty("stripeRows").GetBoolean());
     }
 
     [Fact] // ADR-0030: each combination of the paper's words is one cascaded instance, and Striped is part of it
@@ -137,24 +125,20 @@ public class MudExGridPaperTests : MudTestContext
         Assert.True(MudExGridPresentation.For(MudExGridFont.Roboto, false, false, striped: true).StripeRows);
     }
 
-    [Fact] // RR-1 / ADR-0030: a change on the paper re-renders no row, and hands the grid the same defaults
-    public void A_paper_change_re_renders_no_row()
+    [Fact] // RR-1 / ADR-0030: a change on the paper hands the grid the same defaults, and the grid's markup is not drawn again
+    public void A_paper_change_hands_the_grid_the_same_defaults()
     {
         var cut = RenderPaper(ps => ps.Add(p => p.Elevation, 1));
-        var grid = cut.FindComponent<ExGrid<Trade>>();
+        var grid = cut.FindComponent<Grid>();
         var root = grid.RenderCount;
-        var rows = cut.FindComponents<ExGridRow<Trade>>().Select(r => r.RenderCount).ToList();
         var cascaded = cut.FindComponent<CascadingValue<GridPresentationDefaults>>().Instance.Value;
 
         cut.Render(ps => ps.Add(p => p.Elevation, 4).Add(p => p.Outlined, true).Add(p => p.Style, "margin: 8px"));
 
         Assert.Contains("mud-ex-grid-outlined", cut.Find(".mud-ex-grid").ClassName);
-        // A parent's render reaches the child's SetParametersAsync — Blazor's rule, not
-        // the Wrapper's — so the root renders once; what it hands the rows is unchanged
-        // and every row skips (ADR-0003). A THEME change is CSS and reaches no render
-        // at all; the browser suite asserts that one.
-        Assert.InRange(grid.RenderCount, root, root + 1);
-        Assert.Equal(rows, cut.FindComponents<ExGridRow<Trade>>().Select(r => r.RenderCount).ToList());
+        // A parent's render reaches the child's SetParametersAsync — Blazor's rule, not the Wrapper's — and the grid,
+        // handed nothing new, draws nothing. A THEME change is CSS and reaches no render at all.
+        Assert.Equal(root, grid.RenderCount);
         // The same defaults, not merely equal ones: neither Dense nor Hover moved.
         Assert.Same(cascaded, cut.FindComponent<CascadingValue<GridPresentationDefaults>>().Instance.Value);
     }
@@ -168,20 +152,21 @@ public class MudExGridPaperTests : MudTestContext
         var toolbar = paper.QuerySelector(".mud-ex-grid-toolbar");
         Assert.NotNull(toolbar);
         Assert.NotNull(toolbar!.QuerySelector("#title"));
-        Assert.Null(paper.QuerySelector(".ex-grid #title"));
-        Assert.True(toolbar.CompareDocumentPosition(paper.QuerySelector(".ex-grid")!).HasFlag(AngleSharp.Dom.DocumentPositions.Following));
+        var root = cut.FindComponent<Grid>().Find("div");
+        Assert.Null(root.QuerySelector("#title"));
+        Assert.True(toolbar.CompareDocumentPosition(root).HasFlag(AngleSharp.Dom.DocumentPositions.Following));
     }
 
     [Fact] // ADR-0027/0030: another font brings its widths in the same value, and the paper writes both
     public void Another_font_brings_its_widths_in_one_value()
     {
-        // A font with a 10px digit: twelve digits plus padding is 136px, past the 116px column.
+        // A font with a 10px digit.
         var inter = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14);
         var cut = RenderPaper(ps => ps.Add(p => p.Font, inter).Add(p => p.Style, "margin: 4px"));
 
         Assert.Contains("--ex-font-family: Inter, sans-serif;", cut.Find(".mud-ex-grid").GetAttribute("style"));
         Assert.Contains("margin: 4px", cut.Find(".mud-ex-grid").GetAttribute("style"));
-        Assert.StartsWith("#", cut.FindAll(".ex-row .ex-cell")[1].TextContent);
+        Assert.Equal(10, Attached().GetProperty("presentationDefaults").GetProperty("digitWidthPx").GetDouble());
         // Roboto is the stylesheet's, so nothing is written inline for it.
         Assert.DoesNotContain("--ex-font-family", RenderPaper().Find(".mud-ex-grid").GetAttribute("style") ?? "");
     }

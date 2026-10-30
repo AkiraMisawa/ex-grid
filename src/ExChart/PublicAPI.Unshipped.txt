@@ -172,8 +172,6 @@ ExChart.GridChartBridge<TRow>.CellOf(ExChart.GridChart! chart, ExChart.ChartPoin
 ExChart.GridChartBridge<TRow>.Commands(ExGrid.Chrome.ContextMenuContext<TRow!>! context) -> System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!
 ExChart.GridChartBridge<TRow>.Declarations.get -> ExChart.GridChartDeclarations<TRow!>!
 ExChart.GridChartBridge<TRow>.Draw(ExChart.GridChart! chart) -> ExChart.Engine.ChartDefinition!
-ExChart.GridChartBridge<TRow>.Grid.get -> ExGrid.Components.ExGrid<TRow!>?
-ExChart.GridChartBridge<TRow>.Grid.set -> void
 ExChart.GridChartBridge<TRow>.GridChartBridge(ExChart.GridChartDeclarations<TRow!>! declarations) -> void
 ExChart.GridChartBridge<TRow>.OnAdded.get -> System.Func<ExChart.ChartTarget!, ExChart.GridChart!, System.Threading.Tasks.Task!>?
 ExChart.GridChartBridge<TRow>.OnAdded.set -> void

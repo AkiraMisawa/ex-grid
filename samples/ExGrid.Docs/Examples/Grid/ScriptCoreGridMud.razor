@@ -6,8 +6,7 @@
    field, and Enter there gives it back. MudGridChrome draws the column menu, the filter panel (a value list on
    Trader, conditions elsewhere), the Context Menu, the loading bar, Book's Cell Editor and the Formula Bar's fields
    with MudBlazor's
-   components inside the grid the browser draws, and MudExGridPaper hands it Roboto's widths with the font, as it
-   hands the Razor grid. *@
+   components inside the grid the browser draws, and MudExGridPaper hands it Roboto's widths with the font. *@
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
     <label for="trade-note">@(_noteFor is null ? "Double-click a Trader for its note" : $"Note for trade {_noteFor.Id}")</label>
     <input id="trade-note" placeholder="Enter to go back to the grid" style="flex: 1"

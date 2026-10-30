@@ -49,7 +49,7 @@ an upgrade brings the new files.
 
 ```razor
 @using ExGrid
-@using ExGrid.Components
+@using ExGrid.Script
 @using ExGrid.MudBlazor
 
 <MudExGridPaper Elevation="1" Hover="true" Striped="true">

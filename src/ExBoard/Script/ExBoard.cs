@@ -190,7 +190,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             RefuseWhatIsNotCarried(Board, Sources);
         if (boardMoved)
         {
-            // Written before anything moves; a new one binds again, as the Razor component's does.
+            // Written before anything moves; a new one binds again.
             _boardJson = BoardSpec.Write(Board);
             _board = Board;
             _boardOwed = true;
@@ -551,7 +551,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         if (!double.IsFinite(Width) || Width <= 0)
             throw new ArgumentOutOfRangeException(nameof(Width), Width, "A Board's width is a number of CSS pixels above 0.");
         json.WriteNumber("width", Width);
-        // The culture the Razor component reads, the invariant one unless set (ADR-0370 section 10).
+        // The culture the component reads, the invariant one unless set (ADR-0370 section 10).
         var culture = (Culture ?? CultureInfo.InvariantCulture).Name;
         json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
         json.WriteStartArray("hears");
@@ -672,7 +672,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     }
 
     // One question to a source, under the number the browser asked it by, cancelled when the browser says it no longer
-    // waits; the source is the Consumer's, called as the Razor component calls it, and what it is asked is read as the
+    // waits; the source is the Consumer's, and what it is asked is read as the
     // Board that numbered it declares the input.
     private async Task<T> AskAsync<T>(int number, long call, Func<SourceCrossing.Held, CancellationToken, Task<T>> ask)
     {
@@ -813,7 +813,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            // A source whose Pivot fails fails the component, as it does the Razor component's binding, and the
+            // A source whose Pivot fails fails the component, and the
             // pivot's questions are refused with why.
             _pivotsFailed[pivot] = ex;
             await DispatchExceptionAsync(ex);

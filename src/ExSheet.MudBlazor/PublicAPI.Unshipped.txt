@@ -64,3 +64,14 @@ override ExSheet.MudBlazor.MudScriptToolbarItem.ShouldRender() -> bool
 *REMOVED*~override ExSheet.MudBlazor.MudToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 *REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.DisposeAsync() -> System.Threading.Tasks.ValueTask
 *REMOVED*override ExSheet.MudBlazor.MudFormatCellsDialog.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.CellMessage(ExGrid.Chrome.CellMessageContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.ColumnMenu(ExGrid.Chrome.ColumnMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.ContextMenu<TRow>(ExGrid.Chrome.ContextMenuContext<TRow>! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.EditorCompletion(ExGrid.Chrome.EditorCompletionContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FilterPanel(ExGrid.Chrome.FilterPanelContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FindPanel(ExGrid.Chrome.FindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FormulaBarText(ExGrid.Chrome.FormulaBarTextContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.LoadingIndicator(ExGrid.Chrome.LoadingContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.NameBox(ExGrid.Chrome.NameBoxContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.SelectionSummary(ExGrid.Chrome.SelectionSummaryContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?

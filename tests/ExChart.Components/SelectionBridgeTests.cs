@@ -118,7 +118,7 @@ public class SelectionBridgeTests
     {
         var bridge = new GridChartBridge<Day>(Declarations()) { StateOf = State };
         string[] Ids(params SelectionRange[] ranges) =>
-            bridge.Commands(new ContextMenuContext<Day>(_rows[0], "date", ColumnType.Date, ranges, _version, [], () => { })).Select(c => c.Id).ToArray();
+            bridge.Commands(new ContextMenuContext<Day>(_rows[0], "date", ColumnType.Date, ranges, _version, () => { })).Select(c => c.Id).ToArray();
         Assert.Equal([GridChartCommands.Chart], Ids(R(0, 0, 3, 3)));
         Assert.Equal([GridChartCommands.Chart], Ids(R(0, 5, 3, 2)));
         Assert.Equal([GridChartCommands.InColumns, GridChartCommands.InRows], Ids(R(0, 0, 3, 7)));

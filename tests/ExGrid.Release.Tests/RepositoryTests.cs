@@ -159,14 +159,9 @@ public partial class RepositoryTests
         var allowed = Skips.Allowed.Where(a => a.Kind == AllowedKind.Skipped)
             .Select(a => a.Test.Split('(')[0] is var method ? $"{a.Project}: {method[..method.LastIndexOf('.')]}: {a.Reason}" : "");
         Assert.Equal(allowed.Order(StringComparer.Ordinal), found.Order(StringComparer.Ordinal));
-        // ST-1's 10⁶ case is the Theory's one row at a million, with the seed the allowed name gives.
-        var consistency = Tree.ReadText("tests/ExGrid.Components/ConsistencyTests.cs")!;
-        Assert.Single(Regex.Matches(consistency, @"\[InlineData\(\d+, 1_000_000\)\]"));
-        Assert.Contains("[InlineData(20260901, 1_000_000)]", consistency);
-        Assert.Contains("public async Task Five_hundred_random_operations_leave_every_invariant_standing(int seed, int totalRows)", consistency);
     }
 
-    [Fact] // DoD §22 Step 2: the release tool's list is the one Step 2 writes: the ten explicit measurements by their classes, ST-1's case and CsvClockTests'
+    [Fact] // DoD §22 Step 2: the release tool's list is the one Step 2 writes: the ten explicit measurements by their classes and CsvClockTests'
     public void The_allowed_tests_are_the_ones_step_2_names()
     {
         var dod = Tree.ReadText(ByHandTable.DefinitionOfDone)!;

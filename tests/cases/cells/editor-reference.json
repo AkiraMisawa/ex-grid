@@ -1,6 +1,6 @@
 {
   "about": "One Reference in the text being edited (ADR-0057): a span of at least one character, and the cells it names or a key, never both. From tests/ExGrid.Tests/ReferenceColouringTests.cs.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "EditorReference",
   "cases": [
     {

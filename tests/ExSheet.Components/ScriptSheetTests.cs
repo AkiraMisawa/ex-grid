@@ -646,39 +646,17 @@ public class ScriptSheetTests : BunitContext
         var scope = new PointingScope();
         IReadOnlyList<Value?> Read(Keyed row) => [Value.FromText(row.Id), null];
 
-        var inBrowser = scope.RegisterGrid<Keyed>("Positions", Read).InBrowser
-            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
+        var inBrowser = scope.RegisterGrid<Keyed>("Positions", Read).InBrowser;
 
         Assert.Equal(scope.Id, inBrowser.Scope);
         Assert.Equal("Positions", inBrowser.Table);
         Assert.Equal(SheetWire.WriteRows([Read(new Keyed("R-1"))]), $"[{inBrowser.TableRow(new Keyed("R-1"))}]");
     }
 
-    [Fact] // ADR-0430: a Scope is held in the browser: a Sheet and a grid drawn by the Script Core join it, and a Razor ExGrid is refused by name
-    public void ADR0430_a_Razor_grid_is_refused_by_name()
-    {
-        var scope = new PointingScope();
-        var grid = scope.RegisterGrid<Keyed>("Positions", row => [Value.FromText(row.Id)]).InBrowser
-            ?? throw new InvalidOperationException("A Scope's declaration says where it stands in the page.");
-        Sheet(ps => ps.Add(p => p.PointingScope, scope));
-        grid.Take(inBrowser: true);
-
-        var thrown = Assert.Throws<InvalidOperationException>(() => grid.Take(inBrowser: false));
-        Assert.Contains("a Razor ExGrid cannot join it", thrown.Message, StringComparison.Ordinal);
-    }
-
     /// <summary>A Chrome of the Consumer's own that fills the Context Menu and the find panel over the Script Core.</summary>
     private sealed class MenuChrome : IGridChrome
     {
         public ScriptSlots ScriptSlots => ScriptSlots.ContextMenu | ScriptSlots.FindPanel;
-
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 
         public RenderFragment? ContextMenu(GridMenuView view) => builder =>
         {
@@ -715,14 +693,6 @@ public class ScriptSheetTests : BunitContext
     private sealed class ToolbarChrome : ISheetChrome
     {
         public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem | SheetScriptSlots.SheetTab | SheetScriptSlots.SheetTabAdd;
-
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 
         public RenderFragment? ToolbarItem(SheetToolbarItemView view) => builder =>
         {
@@ -769,13 +739,6 @@ public class ScriptSheetTests : BunitContext
     {
         public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.ToolbarItem;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
     }
 
     [Fact] // ADR-0410, the spine's first rule: a slot the Chrome names and draws nothing for is refused, never left empty
@@ -795,14 +758,6 @@ public class ScriptSheetTests : BunitContext
     private sealed class FormatCellsChrome : ISheetChrome
     {
         public SheetScriptSlots SheetScriptSlots => SheetScriptSlots.FormatCells;
-
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 
         public RenderFragment? FormatCells(SheetFormatCellsView view) => builder => builder.AddContent(0, string.Join(" | ",
             view.Title, view.Labels.Ok, string.Join(",", view.Tabs.Select(tab => tab.Value)),

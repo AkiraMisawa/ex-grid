@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ExGrid.Keys;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,8 +10,9 @@ namespace ExGrid.Docs.Generator.Tests;
 /// <summary>
 /// The Keyboard reference held against the keys the products take (ADR-0110: a reference page's facts are read
 /// from a named source, and the Keyboard page lists every key in the three products). The rows are the site's own
-/// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (<c>GridKeys</c>, KB-2),
-/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet takes, as
+/// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (KB-2), every key claimed on
+/// a grid that edits, undoes, redoes and finds, as <c>tests/cases/keys/keyboard-reference.json</c> lists it, which
+/// <c>@ex-grid/core</c>'s table is held to, and the keys ExSheet takes, as
 /// <c>tests/cases/sheet/sheet-keys.json</c> lists them, which <c>@ex-grid/sheet</c>'s declared keys are held to; ExPivot
 /// declares none. A key a menu,
 /// a panel or an open edit answers in its own handler is in no table, and is not checked here.
@@ -24,9 +24,7 @@ public class KeyboardCompletenessTests
     [Fact] // ADR-0110, ADR-0012: every key ExGrid's table takes is named by an ExGrid row of the Keyboard page
     public void Every_key_ExGrid_takes_is_named_by_an_ExGrid_row()
     {
-        var taken = GridKeys.TakenFor(new GridKeyClaims(CanEdit: true, CanUndo: true, CanRedo: true, CanFind: true));
-
-        AssertNamed("ExGrid", taken);
+        AssertNamed("ExGrid", Listed("taken"));
     }
 
     [Fact] // ADR-0110, ADR-0071, ADR-0100: every key ExSheet takes is named by an ExSheet row
@@ -92,33 +90,44 @@ public class KeyboardCompletenessTests
     // The keys ExSheet takes, as the shared list names them: those it declares to its grid and its toolbar's own.
     private static IReadOnlyCollection<string> SheetDeclared()
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
-            directory = directory.Parent;
-        Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
-        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(directory!.FullName, "tests", "cases", "sheet", "sheet-keys.json")))!;
+        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(Repository(), "tests", "cases", "sheet", "sheet-keys.json")))!;
         return [.. listed["declared"]!.AsArray().Concat(listed["toolbar"]!.AsArray()).Select(key => key!.GetValue<string>())];
     }
 
-    // Whether ExGrid's core answers `key` itself: its table, the editor's keys, or the clipboard's. The core
-    // refuses a Consumer's declaration of exactly those keys, by name (GridKeys.Declare, ADR-0050 item 14).
+    // One list of tests/cases/keys/keyboard-reference.json: the keys the core's table takes, or those it answers outside it.
+    private static IReadOnlyCollection<string> Listed(string list)
+    {
+        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(Repository(), "tests", "cases", "keys", "keyboard-reference.json")))!;
+        return [.. listed[list]!.AsArray().Select(key => key!.GetValue<string>())];
+    }
+
+    // Whether ExGrid's core answers `key` itself, as @ex-grid/core's declareKeys refuses a Consumer's declaration of
+    // it (ADR-0050 item 14): its table, the keys it answers outside the table, and typing — a character or F2 with
+    // nothing but Shift, or a character with Control and Alt together, AltGr's (ADR-0010).
     private static bool CoreAnswers(string key)
     {
         Assert.True(KeyboardReference.IsCanonicalForm(key), $"'{key}' is not in the canonical form.");
-        try
-        {
-            GridKeys.Declare([key]);
-            return false;
-        }
-        catch (ArgumentException refused) when (refused.Message.Contains("one the core answers itself", StringComparison.Ordinal))
-        {
+        if (Listed("taken").Contains(key) || Listed("answeredOutsideTable").Contains(key))
             return true;
-        }
+        var rest = key;
+        var control = Take(ref rest, "Control+");
+        var meta = Take(ref rest, "Meta+");
+        Take(ref rest, "Shift+");
+        var alt = Take(ref rest, "Alt+");
+        return (!control && !meta && !alt && (rest.Length == 1 || rest == "F2")) || (control && alt && rest.Length == 1);
+    }
+
+    private static bool Take(ref string rest, string prefix)
+    {
+        if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
+            return false;
+        rest = rest[prefix.Length..];
+        return true;
     }
 
     /// <summary>
     /// A key as the rows and the tables are compared: a letter in either case, and a character typed with Control
-    /// with Shift or without, are one key, since the tables take both forms — the first for CapsLock (GridKeys), the
+    /// with Shift or without, are one key, since the tables take both forms — the first for CapsLock (ExGrid's table), the
     /// second for the layouts that need Shift to type the character (SheetFormatKeys, SheetStructureKeys).
     /// </summary>
     private static string Fold(string key)
@@ -133,14 +142,6 @@ public class KeyboardCompletenessTests
         else if (rest.Length == 1 && control && !meta && !alt)
             shift = false;
         return (control ? "Control+" : "") + (meta ? "Meta+" : "") + (shift ? "Shift+" : "") + (alt ? "Alt+" : "") + rest;
-
-        static bool Take(ref string rest, string prefix)
-        {
-            if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
-                return false;
-            rest = rest[prefix.Length..];
-            return true;
-        }
     }
 
     // KeyboardByHand's rows, read by the generator's own reader from the site's source, with the record they

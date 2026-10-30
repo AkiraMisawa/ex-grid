@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using global::MudBlazor.Services;
 using ExGrid;
 using ExGrid.Chrome;
-using ExGrid.Finding;
 using ExGrid.MudBlazor;
 using Xunit;
 using Color = global::MudBlazor.Color;
@@ -160,22 +159,20 @@ public class MudSheetPackageTests : BunitContext
     [Fact] // ADR-0071 / ADR-0030 / WR-3: a seam of the grid's draws what the Grid Chrome draws, in its words
     public void A_seam_of_the_grids_is_the_grid_chromes()
     {
-        var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null } };
-        var context = new FindContext(
-            "", MatchCase: false, WholeCell: false, FindOutcome.None,
-            _ => { }, _ => Task.CompletedTask, _ => Task.CompletedTask, () => Task.CompletedTask, () => Task.CompletedTask, () => { }, FocusRequest: 1);
+        var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == GridCommandIds.Pin ? "Anheften" : null } };
 
-        var cut = Render(chrome.FindPanel(context)!);
-
-        Assert.Contains("Weiter", cut.Find(".mud-ex-grid-find-next").TextContent);
+        Assert.Equal(["Anheften"], MenuItems(chrome.ColumnMenu(MenuOf(GridCommandIds.Pin))!, this));
         Assert.Same(MudGridChrome.Default, MudSheetChrome.Default.Grid);
     }
 
+    // The items as the Script Core draws them: one control per item, marked with its index (ADR-0410).
     private static IReadOnlyList<string> MenuItems(RenderFragment menu, BunitContext context) =>
-        [.. context.Render(menu).FindAll("[role=menuitem]").Select(item => item.TextContent.Trim())];
+        [.. context.Render(menu).FindAll($"[{ScriptSlotAttributes.MenuItem}]").Select(item => item.TextContent.Trim())];
 
-    private static ColumnMenuContext MenuOf(params string[] ids) =>
-        new("A", ColumnType.Text, [.. ids.Select(id => new GridCommand(id, true, () => Task.CompletedTask))], () => { });
+    // A menu whose items the Script Core named by their ids alone, so what is read is the Chrome's words; Copy as the
+    // core words it.
+    private static GridMenuView MenuOf(params string[] ids) =>
+        new("A", ColumnType.Text, [.. ids.Select(id => new GridMenuItemView(id, id == GridCommandIds.Copy ? "Copy" : id, true))]);
 
     [Fact] // ADR-0036 / ADR-0071: the menus word ExSheet's commands — "Format Cells…", not its id — and the grid's own as the Wrapper does
     public void The_menus_word_exsheets_commands()

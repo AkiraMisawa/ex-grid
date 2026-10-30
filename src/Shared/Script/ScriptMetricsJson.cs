@@ -9,7 +9,7 @@ namespace ExGrid.Script;
 /// The widths a Consumer hands a grid, written as the Script Core takes them (ADR-0016, ADR-0030): a component's
 /// <see cref="CellTextMetrics"/> and a Wrapper's cascaded <see cref="GridPresentationDefaults"/>, each whole, as numbers
 /// (src/npm/blazor/src/wire-metrics.ts reads them). Whoever sets the font owes its widths (ADR-0027), so a Script grid
-/// in a Wrapper that sets one judges <c>####</c> by them, as the C# core does. Only the metrics' public surface is read,
+/// in a Wrapper that sets one judges <c>####</c> by them. Only the metrics' public surface is read,
 /// so every adapter it is compiled into writes them alike. A Wrapper's glyph table holds hundreds of glyphs and the
 /// options are written on every render, so each value is written once and its text kept while the value lives.
 /// </summary>

@@ -52,14 +52,12 @@ public static class Skips
     private static readonly XNamespace Trx = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010";
 
     /// <summary>
-    /// What Step 2 allows, as it names them: ST-1's 10⁶-row case; the ten explicit measurements, DA-17's two,
+    /// What Step 2 allows, as it names them: the ten explicit measurements, DA-17's two,
     /// ADR-0065's one, PV-21's four and SH-19's three; and <c>CsvClockTests</c>' one test where the platform does
     /// not let a process move its time zone through <c>TZ</c>.
     /// </summary>
     public static readonly IReadOnlyList<AllowedSkip> Allowed =
     [
-        new("ExGrid.Components", "ExGrid.Components.Tests.ConsistencyTests.Five_hundred_random_operations_leave_every_invariant_standing(seed: 20260901, totalRows: 1000000)",
-            AllowedKind.Skipped, "ST-1", "ST-1 at 10⁶ rows runs with EXGRID_ST1_MILLION=1 (Definition of Done §22 Step 5)"),
         new("ExGrid.Data.Tests", "ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects", AllowedKind.Explicit, "DA-17"),
         new("ExGrid.Data.Tests", "ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV", AllowedKind.Explicit, "DA-17"),
         new("ExGrid.Data.Arrow.Tests", "ExGrid.Data.Arrow.Tests.MeasureTests.Measure_a_million_trades", AllowedKind.Explicit, "ADR-0065"),

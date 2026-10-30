@@ -34,36 +34,3 @@ public enum FindRefusalReason
     /// The panel names the cells and why.</summary>
     ReplaceRefused,
 }
-
-/// <summary>What the last Find step, or Replace, came to, for the panel to show (ADR-0055,
-/// ADR-0332).</summary>
-public enum FindOutcome
-{
-    /// <summary>No step has been answered since the panel opened.</summary>
-    None,
-
-    /// <summary>The Focus moved to a match.</summary>
-    Found,
-
-    /// <summary>Nothing matched.</summary>
-    NotFound,
-
-    /// <summary>The order changed while the step was out; nothing moved.</summary>
-    OrderChanged,
-
-    /// <summary>The <c>Source</c> was replaced by another instance while the step was out; nothing
-    /// moved.</summary>
-    SourceChanged,
-
-    /// <summary>A Replace All replaced every match: <c>FindContext.ReplacedCount</c> cells, as one
-    /// write (ADR-0332 §2).</summary>
-    Replaced,
-
-    /// <summary>A Replace or a Replace All wrote nothing, because a match could not be written:
-    /// <c>FindContext.ReplaceRefusedCells</c> names them and why (ADR-0332 §2).</summary>
-    ReplaceRefused,
-
-    /// <summary>A match was found in a column header or a Header Group label, which is now the
-    /// current match; the Focus did not move, as a header is not a cell (ADR-0333 §1).</summary>
-    FoundInHeader,
-}

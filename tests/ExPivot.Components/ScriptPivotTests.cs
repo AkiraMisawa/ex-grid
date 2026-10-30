@@ -115,13 +115,6 @@ public class ScriptPivotTests : BunitContext
     {
         public IReadOnlyList<global::ExGrid.Chrome.ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", BringsOne.Stamp)];
 
-        public RenderFragment? FilterPanel(global::ExGrid.Chrome.FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(global::ExGrid.Chrome.ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(global::ExGrid.Chrome.CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(global::ExGrid.Chrome.LoadingContext context) => null;
     }
 
     [Fact] // ADR-0060, ADR-0370 section 10: a label whose answers change crosses again though its delegate is the same, and one whose answers stay the same does not

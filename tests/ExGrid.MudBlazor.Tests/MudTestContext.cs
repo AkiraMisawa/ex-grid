@@ -7,19 +7,33 @@ using MudBlazor.Services;
 namespace ExGrid.MudBlazor.Tests;
 
 /// <summary>
-/// MudBlazor's services, and a loose JavaScript seam: the grid's module answers nothing
-/// but the stamp this build was made with (ADR-0123), so the grid attaches to a handle
-/// that answers nothing — enough for what these tests read, which is markup and render
-/// counts. A module answering no stamp would be refused, and the rows not painted.
+/// MudBlazor's services, and a loose JavaScript seam: the Script Core's module answers the stamp this
+/// build was made with (ADR-0123), and the grid attaches to a handle that answers nothing — enough for
+/// what these tests read, which is the markup .NET draws and what it hands the browser at attach
+/// (<see cref="Attached"/>). A module answering no stamp would be refused, and no grid made.
 /// </summary>
 public abstract class MudTestContext : BunitContext
 {
+    private readonly BunitJSModuleInterop _module;
+
     protected MudTestContext()
     {
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
-        JSInterop.SetupModule(global::ExGrid.Testing.ShippedScript.Address)
-            .Setup<string>("stamp").SetResult(global::ExGrid.Testing.ShippedScript.Stamp);
+        _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        var grid = _module.SetupModule("attach", _ => true);
+        grid.SetupVoid("update", _ => true).SetVoidResult();
+        grid.SetupVoid("state", _ => true).SetVoidResult();
+        grid.SetupVoid("slotRendered", _ => true).SetVoidResult();
+    }
+
+    /// <summary>The options the last grid attached was made with, as the browser was handed them.</summary>
+    protected System.Text.Json.JsonElement Attached()
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(
+            Xunit.Assert.IsType<string>(_module.Invocations["attach"].Last().Arguments[2]));
+        return document.RootElement.GetProperty("options").Clone();
     }
 
     // An interactive renderer, as a Consumer's page has once connected; the grid reads it

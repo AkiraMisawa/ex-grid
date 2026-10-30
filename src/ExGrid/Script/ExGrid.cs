@@ -26,8 +26,7 @@ namespace ExGrid.Script;
 /// stay the Consumer's, in .NET, behind an <see cref="IGridSource{TRow}"/>.
 /// </summary>
 /// <remarks>
-/// It stands beside <see cref="Components.ExGrid{TRow}"/>, the C# core, until every product that draws through
-/// that one has moved (ADR-0350 section 7). Find is the source's: Ctrl+F asks
+/// Find is the source's: Ctrl+F asks
 /// <see cref="IGridSource{TRow}.FindAsync"/> where the source <see cref="IGridSource{TRow}.CanFind"/>, and is refused as
 /// a Find with nothing to answer it where it does not; Replace All is <see cref="OnReplace"/>'s. The Selection Summary is
 /// the source's <see cref="IGridSource{TRow}.SummarizeAsync"/> where it <see cref="IGridSource{TRow}.CanSummarize"/>, or
@@ -93,7 +92,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>What a Wrapper hands down (ADR-0030): the widths of the font its Theme sets, and the Density, hover band
     /// and Row Stripes its words map onto. Read only where the corresponding parameter was not written: an explicit
-    /// parameter still wins, per value (ADR-0028), as on the C# core.</summary>
+    /// parameter still wins, per value (ADR-0028).</summary>
     [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
 
     /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
@@ -220,14 +219,14 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// Cell Metadata, asked for by (row, column) and answered as one of the five states the grid understands
-    /// (ADR-0006), as the C# core's <c>CellState</c> is: a Flag's <see cref="CellState.Error"/> paints through it
+    /// (ADR-0006): a Flag's <see cref="CellState.Error"/> paints through it
     /// (ADR-0034). It is asked for each cell of each row as the row crosses to the browser, so it stays a cheap
     /// lookup. Hold it in a field and hand over a new one when the metadata changes: the delegate's identity is the
     /// change signal, and the rows the browser shows are sent again with their states.
     /// </summary>
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
-    /// <summary>A cell's message, asked for by (row, column), as the C# core's <c>CellMessageOf</c> is (ADR-0034):
+    /// <summary>A cell's message, asked for by (row, column) (ADR-0034):
     /// asked of .NET at the moment a popover would open, once the Focus or the pointer has settled on the cell,
     /// never while painting (ED-17), and the popover opens once it has answered. Null means nothing opens.</summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, string?>? CellMessageOf { get; set; }
@@ -254,8 +253,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public Func<string, int, ValueTask<EditorCompletion?>>? CompleteEditorText { get; set; }
 
     /// <summary>
-    /// Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051), as the Razor component's
-    /// <c>PointAt</c> answers it: the Consumer's own script (ADR-0431), since the browser asks it as it decides an
+    /// Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051): the Consumer's own
+    /// script (ADR-0431), since the browser asks it as it decides an
     /// arrow's key. The function is called with the editor's text and the caret, and answers true or false. While it
     /// answers true in Overwrite, an arrow points instead of committing, Home points at the row's first column, and a
     /// press on a cell points in any editing state. Needs <see cref="ReferenceText"/>. Null — the default — never points.
@@ -268,16 +267,16 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public ScriptFunction? PointAt { get; set; }
 
     /// <summary>
-    /// The Reference text for a pointed range, written at the caret while pointing (ADR-0051), as the Razor
-    /// component's <c>ReferenceText</c> answers it: the Consumer's own script (ADR-0431). The function is called with
+    /// The Reference text for a pointed range, written at the caret while pointing (ADR-0051): the Consumer's
+    /// own script (ADR-0431). The function is called with
     /// the range, <c>{ topRow, leftColumn, rowCount, columnCount }</c>, and answers its text, <c>A3</c> or
     /// <c>B7:C9</c> on a Sheet. Required with <see cref="PointAt"/>.
     /// </summary>
     [Parameter] public ScriptFunction? ReferenceText { get; set; }
 
     /// <summary>
-    /// What F4 makes of the editor's text (ADR-0051), as the Razor component's <c>CycleReference</c> answers it: the
-    /// Consumer's own script (ADR-0431). The function is called with the text and the selection's start and end in the
+    /// What F4 makes of the editor's text (ADR-0051): the Consumer's own
+    /// script (ADR-0431). The function is called with the text and the selection's start and end in the
     /// surface typed in, and answers the whole new text and the selection in it,
     /// <c>{ text, selectionStart, selectionEnd }</c>, or null for nothing to change. Given, F4 is taken while an edit
     /// is open, and only then.
@@ -285,8 +284,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public ScriptFunction? CycleReference { get; set; }
 
     /// <summary>
-    /// The References in the editor's text (ADR-0057), as the Razor component's <c>ReferencesIn</c> answers them: the
-    /// Consumer's own script (ADR-0431), since the browser asks it as each key changes the text. The function is called
+    /// The References in the editor's text (ADR-0057): the Consumer's own
+    /// script (ADR-0431), since the browser asks it as each key changes the text. The function is called
     /// with the text, and answers a list of <c>{ start, length, range }</c>, naming cells on this grid, or
     /// <c>{ start, length, key }</c>, naming what the grid does not hold, or null for none. References naming the
     /// same cells, or carrying the same key, share a colour the grid hands out; each range is outlined.
@@ -295,14 +294,14 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// Tells the Consumer the colour each key <see cref="ReferencesIn"/> answered was given (ADR-0057): each key once,
-    /// in order of first appearance, whenever that set changes, and an empty list when the edit ends, as the Razor
-    /// component tells it. The Consumer outlines what a key names wherever it shows it, through a grid's
+    /// in order of first appearance, whenever that set changes, and an empty list when the edit ends. The
+    /// Consumer outlines what a key names wherever it shows it, through a grid's
     /// <see cref="OutlinedColumns"/>.
     /// </summary>
     [Parameter] public EventCallback<IReadOnlyList<ReferenceKeyColour>> OnReferenceKeyColoursChanged { get; set; }
 
     /// <summary>
-    /// Columns to outline, each in a colour it was told (ADR-0057), as the Razor component outlines them: a Reference
+    /// Columns to outline, each in a colour it was told (ADR-0057): a Reference
     /// Outline over the column's body, across all its rows, with or without an edit or a Selection. A column is named
     /// as <see cref="GridColumn{TRow}.Name"/> names it; a name the grid does not show is outlined nowhere, and a column
     /// listed twice is outlined twice, the later over the earlier. Null or empty — the default — outlines nothing.
@@ -320,12 +319,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// The Consumer's own Context Menu commands, after the Script Core's (ADR-0036, ADR-0421): handed the row the menu
-    /// opened on, the column, and the Selection as rectangles in the version they are written in, as the Razor
-    /// component's are. The menu is drawn in the browser, so it asks .NET as it opens and stands once .NET has
+    /// opened on, the column, and the Selection as rectangles in the version they are written in. The menu is drawn in the browser, so it asks .NET as it opens and stands once .NET has
     /// answered; what the user types meanwhile is held and reaches it then. A command's <c>Invoke</c> runs in its
     /// turn among the grid's events, and every input made after the press is held until it completes, so a menu
-    /// opened next is asked of what it left. The context's <see cref="ContextMenuContext{TRow}.Commands"/> is
-    /// empty here: the core's own run in the browser.
+    /// opened next is asked of what it left. The Script Core's own commands run in the browser, ahead of these.
     /// </summary>
     [Parameter] public Func<ContextMenuContext<TRow>, IEnumerable<GridCommand>>? ContextCommands { get; set; }
 
@@ -347,9 +344,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// Scope's function reads of it as the table's row.
     ///
     /// <para>Set as the grid is made, as a Scope's grids are registered once, as the page is made: another declaration
-    /// later is refused. A declaration a Consumer made itself, whose <see cref="GridPointedAt{TRow}.OnPress"/> is a
-    /// .NET function, is not carried, and is refused by name; so is a Scope's declaration whose Scope already holds the
-    /// Razor components.</para>
+    /// later is refused.</para>
     /// </summary>
     [Parameter] public GridPointedAt<TRow>? PointedAt { get; set; }
 
@@ -529,7 +524,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _toldCulture = culture;
             if (!sameColumns)
             {
-                // The source sorts and filters by the columns' values, read in .NET, as the C# core tells it (ADR-0001).
+                // The source sorts and filters by the columns' values, read in .NET (ADR-0001).
                 source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
                 _toldColumns = Columns;
                 // A Template cell standing is drawn by the fragment its column now declares: the core mounts it again
@@ -579,11 +574,6 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private void TakePointedAt()
     {
         var given = PointedAt?.InBrowser;
-        if (PointedAt is not null && given is null)
-        {
-            throw new NotSupportedException("PointedAt is carried by Blazor's ExGrid over the Script Core only as a Pointing Scope's RegisterGrid made it; "
-                + "a GridPointedAt whose OnPress is a .NET function of the Consumer's own is not (ADR-0430).");
-        }
         if (_parametersSet)
         {
             if (!ReferenceEquals(given, _pointedAt))
@@ -594,7 +584,6 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             return;
         }
         _parametersSet = true;
-        given?.Take(inBrowser: true);
         _pointedAt = given;
     }
 
@@ -781,8 +770,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// it is granted while DOM focus is on <paramref name="from"/> too, so the frame gives the keyboard back
     /// before it is removed (DC-61, ADR-0070). A frame not yet drawn has no element to name, and the grid's own
     /// condition stands. Keys typed on the frame before the request lands are the frame's: this grid joins no
-    /// surface to its order, so it has no keys typed on the way to hand on, unlike
-    /// <c>ExGrid.Components.ExGrid</c>'s overload that collects them.
+    /// surface to its order, so it has no keys typed on the way to hand on.
     /// </summary>
     /// <param name="from">The frame's element that holds the keyboard, or that holds the element that does.</param>
     /// <returns>A task that completes once the request has been made.</returns>
@@ -948,7 +936,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         _stateScheduled = true;
         // A source may say it changed from any thread, and many times in one handler's writes: the state is sent
         // from the component's context once what is running there now is done, so a paste of 500 rows crosses
-        // as one Window, as the C# core takes a handler's writes in once.
+        // as one Window.
         _ = InvokeAsync(async () =>
         {
             await Task.Yield();
@@ -1037,7 +1025,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WritePropertyName("columns");
         ScriptColumns.Write(json, Columns, _formats, _toldCulture ?? throw new InvalidOperationException("Internal: options written before the parameters were set."));
         json.WriteNumber("columnsVersion", _columnsVersion);
-        // The culture the component reads, as the C# core reads it (ADR-0370 section 10).
+        // The culture the component reads (ADR-0370 section 10).
         var culture = CultureInfo.CurrentCulture.Name;
         json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
         if (Density is { } density)
@@ -1417,8 +1405,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // The source's own failure, or a value refused as it crossed, fails the component as the C# core's copy
-            // fails on it; the browser's question is answered by the same failure, so nothing waits on it.
+            // The source's own failure, or a value refused as it crossed, fails the component; the browser's
+            // question is answered by the same failure, so nothing waits on it.
             await DispatchExceptionAsync(ex);
             throw;
         }
@@ -1622,7 +1610,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             var declared = Declared(column)
                 ?? throw new InvalidOperationException($"Internal: the browser opened the Context Menu on column '{column}', which the columns do not declare.");
-            var context = new ContextMenuContext<TRow>(asked, column, declared.Type, ranges, rowSequenceVersion, [], CloseMenu);
+            var context = new ContextMenuContext<TRow>(asked, column, declared.Type, ranges, rowSequenceVersion, CloseMenu);
             var commands = ContextCommands is { } answer ? answer(context).ToList() : [];
             _menu = (number, commands);
             return Json(json =>

@@ -182,7 +182,7 @@ public sealed class ExSurface : ComponentBase, IAsyncDisposable
     });
 
     // A slice's value as the browser holds it: the axis' own value at its place, else the value as it crosses, which
-    // the browser holds no slice at and says so, as the Razor component does.
+    // the browser holds no slice at and says so.
     private void WriteSliceValue(Utf8JsonWriter json, SurfaceSlice slice)
     {
         var definition = _definition ?? throw new InvalidOperationException("Internal: the surface has no definition.");

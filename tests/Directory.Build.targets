@@ -46,7 +46,7 @@
   <ItemGroup Condition=" '@(PackageReference->WithMetadataValue('Identity', 'bunit'))' != '' ">
     <Compile Include="$(MSBuildThisFileDirectory)BunitWaits.cs" Link="BunitWaits.cs" />
     <!-- The address and the stamp a stand-in for ExGrid's script answers to (ADR-0123). -->
-    <Compile Include="$(MSBuildThisFileDirectory)ShippedScript.cs" Link="ShippedScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ShippedFiles.cs" Link="ShippedFiles.cs" />
     <!-- CON-7 / WR-9: an UnobservedTaskException handler for the whole suite, and a forced
          collection at its end that fails the run on any event. -->
     <Compile Include="$(MSBuildThisFileDirectory)UnobservedTaskWatch.cs" Link="UnobservedTaskWatch.cs" />

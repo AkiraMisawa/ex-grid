@@ -373,12 +373,5 @@ public class ScriptGridSurfaceTests : BunitContext
 
         public IReadOnlyList<ChromeStylesheet> Stylesheets { get; } = [new("acme-grid.css", Stamp)];
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
     }
 }

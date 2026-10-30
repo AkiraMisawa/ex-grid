@@ -1,6 +1,6 @@
 {
   "about": "What formula entry's own operations do to the editor's text (ADR-0051): a candidate accepted, a span replaced, the caret after what was written. From tests/ExGrid.Tests/EditorTextRulesTests.cs. The C# core's EditorTextRules is a static class; the Script Core's cells/editor-text.ts has replaceSpan and acceptCandidate.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "EditorTextRules",
   "cases": [
     {

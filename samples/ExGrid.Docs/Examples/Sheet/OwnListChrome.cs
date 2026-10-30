@@ -22,17 +22,4 @@ public sealed class OwnListChrome : ISheetChrome
         builder.AddComponentParameter(1, nameof(OwnListButton.View), view);
         builder.CloseComponent();
     };
-
-    // Every other part is the built-in Chrome's.
-    /// <inheritdoc />
-    public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-    /// <inheritdoc />
-    public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-    /// <inheritdoc />
-    public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-    /// <inheritdoc />
-    public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 }

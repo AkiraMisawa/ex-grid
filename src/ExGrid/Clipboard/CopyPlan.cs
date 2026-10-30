@@ -1,0 +1,105 @@
+using ExGrid.Selection;
+
+namespace ExGrid.Clipboard;
+
+/// <summary>
+/// Why a copy is refused — say which one when refusing (ADR-0005 / 0011 / 0014).
+/// <see cref="MisalignedShape"/>: the selected ranges do not line up.
+/// <see cref="TooLarge"/>: past the cap — point at export instead.
+/// <see cref="EmptySelection"/>: nothing to copy; the clipboard is left as it was, the safe side to
+/// fall on, and the grid says so in its live region as it says every refusal (ADR-0203).
+/// <see cref="RowsUnavailable"/>: the selection runs beyond the Window and nobody can
+/// be asked for the rows — a push Consumer that passed no provider, or one whose
+/// answer did not cover the selection. Component-level, never produced by the pure
+/// rules: refusing by name beats copying the fraction in hand (ADR-0005).
+/// <see cref="ClipboardUnavailable"/>: the browser rejected the write — nothing landed,
+/// and the clipboard still holds whatever it held before. Raised after the fact, from
+/// the asynchronous route: a user told nothing would paste the old contents believing
+/// they were the copy (ADR-0005).
+/// <see cref="RefusedByConsumer"/>: a declared copy answer refused, with its own sentence
+/// (ADR-0050, item 9).
+/// </summary>
+public enum CopyRefusalReason
+{
+    /// <summary>Nothing is selected, so there is nothing to copy.</summary>
+    EmptySelection,
+
+    /// <summary>The ranges do not line up into one block: they neither share a column
+    /// span with disjoint rows nor share a row span with disjoint columns (ADR-0011).</summary>
+    MisalignedShape,
+
+    /// <summary>The block, with its header row when one is asked for, is past the cell
+    /// cap; point at export instead (ADR-0005).</summary>
+    TooLarge,
+
+    /// <summary>The selection runs beyond the Window and the rows could not be had.
+    /// Raised by the component, never by the copy rules that plan a copy.</summary>
+    RowsUnavailable,
+
+    /// <summary>The browser rejected the clipboard write, so nothing landed and the
+    /// clipboard still holds what it held before. Raised by the component, after the
+    /// fact (ADR-0005).</summary>
+    ClipboardUnavailable,
+
+    /// <summary>The Consumer's declared copy answer refused the copy (ADR-0050, item 9):
+    /// nothing landed, and the Consumer's own sentence has been announced through the
+    /// root's live region. Raised by the component, never by the copy rules that plan a copy,
+    /// and never for a grid that declared no copy answer.</summary>
+    RefusedByConsumer,
+}
+
+/// <summary>
+/// How the aligned segments combine into one block (ADR-0011): ranges sharing a column
+/// span stack vertically; ranges sharing a row span concatenate horizontally. A single
+/// range is canonically <see cref="Vertical"/> — the choice is unobservable there.
+/// </summary>
+public enum CopyOrientation
+{
+    /// <summary>The segments share a column span and stack top to bottom.</summary>
+    Vertical,
+
+    /// <summary>The segments share a row span and sit side by side, left to right.</summary>
+    Horizontal,
+}
+
+/// <summary>
+/// The approved copy, ready for the assembler: which rectangles to emit, in which order,
+/// forming a block of <see cref="TotalRows"/> × <see cref="TotalColumns"/>. Segments
+/// come in position order — by top row when vertical, by left column when horizontal —
+/// never creation order, so the pasted block reads as the screen does; gaps between
+/// segments close up, as in Excel (ADR-0011). Alignment admits no overlap, so
+/// <c>TotalRows * TotalColumns</c> always equals the selection's cell count.
+///
+/// Positional, like the selection it came from: meaningful only under the Row Sequence
+/// Version the selection was made under (ADR-0011).
+/// </summary>
+public sealed class CopyPlan
+{
+    internal CopyPlan(
+        IReadOnlyList<SelectionRange> segments,
+        CopyOrientation orientation,
+        int totalRows,
+        int totalColumns)
+    {
+        // Read-only wrapped so no caller can cast back to the array (the
+        // FilterOperators pattern).
+        Segments = segments is SelectionRange[] array ? Array.AsReadOnly(array) : segments;
+        Orientation = orientation;
+        TotalRows = totalRows;
+        TotalColumns = totalColumns;
+    }
+
+    /// <summary>The rectangles to emit, in position order: by top row when
+    /// <see cref="CopyOrientation.Vertical"/>, by left column when
+    /// <see cref="CopyOrientation.Horizontal"/>.</summary>
+    public IReadOnlyList<SelectionRange> Segments { get; }
+
+    /// <summary>How the segments combine into one block.</summary>
+    public CopyOrientation Orientation { get; }
+
+    /// <summary>The block's height in rows, not counting a header row.</summary>
+    public int TotalRows { get; }
+
+    /// <summary>The block's width in columns.</summary>
+    public int TotalColumns { get; }
+}

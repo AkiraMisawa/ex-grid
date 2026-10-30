@@ -59,27 +59,6 @@ public sealed class MudSheetChrome : ISheetChrome
         Label = grid.Label is { } label ? id => label(id) ?? SheetCommandIds.EnglishFor(id) : SheetCommandIds.EnglishFor,
     };
 
-    /// <summary>The filter panel: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? FilterPanel(FilterPanelContext context) => GridSeams.FilterPanel(context);
-
-    /// <summary>The column menu: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? ColumnMenu(ColumnMenuContext context) => GridSeams.ColumnMenu(context);
-
-    /// <summary>The Context Menu, with ExSheet's commands in it: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context) => GridSeams.ContextMenu(context);
-
-    /// <summary>A cell's message: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? CellMessage(CellMessageContext context) => GridSeams.CellMessage(context);
-
-    /// <summary>The Cell Editor: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? CellEditor(CellEditorContext context) => GridSeams.CellEditor(context);
-
-    /// <summary>The find panel: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? FindPanel(FindContext context) => GridSeams.FindPanel(context);
-
-    /// <summary>The loading bar: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? LoadingIndicator(LoadingContext context) => GridSeams.LoadingIndicator(context);
-
     /// <summary>The slots the Grid Chrome fills over the Script Core (ADR-0410), forwarded, except the find panel:
     /// a Sheet's is its own, with Within (ADR-0332 section 5), and a grid's panel drawn in its place would search
     /// the Sheet shown alone; and except the Cell Editor and the Formula Bar's text, whose own fields colour a
@@ -152,18 +131,6 @@ public sealed class MudSheetChrome : ISheetChrome
             builder.CloseComponent();
         };
     }
-
-    /// <summary>The Formula Bar's Name Box: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? NameBox(NameBoxContext context) => GridSeams.NameBox(context);
-
-    /// <summary>The Formula Bar's text field: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? FormulaBarText(FormulaBarTextContext context) => GridSeams.FormulaBarText(context);
-
-    /// <summary>The completion list and argument hint: <see cref="Grid"/>'s.</summary>
-    public RenderFragment? EditorCompletion(EditorCompletionContext context) => GridSeams.EditorCompletion(context);
-
-    /// <summary>The Selection Summary (ADR-0130), as the Grid Chrome draws it.</summary>
-    public RenderFragment? SelectionSummary(SelectionSummaryContext context) => GridSeams.SelectionSummary(context);
 
     /// <summary>The stylesheets the Sheet's grid is dressed with (ADR-0123): ExSheet.MudBlazor's own,
     /// <c>mud-ex-sheet.css</c>, and <see cref="Grid"/>'s, <c>mud-ex-grid.css</c>, each with the stamp

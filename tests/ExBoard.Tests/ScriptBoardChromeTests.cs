@@ -41,14 +41,6 @@ public sealed class ScriptBoardChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => slots;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? ContextMenu(GridMenuView view) => builder => builder.AddContent(0, $"{whose}'s menu: {view.Items[0].Label}");
 
         public RenderFragment? LoadingIndicator(GridLoadingView view) => builder => builder.AddContent(0, $"{whose}'s loading bar");

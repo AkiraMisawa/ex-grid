@@ -6,8 +6,8 @@ namespace ExGrid.Docs;
 /// key goes here only once a page explains it; the build checks that the section exists and that each cited
 /// record does. The selection page's own key table is drawn from the rows that link it, so the two are one
 /// list. A row says what its page and its decision say: change those first, and this row with them.
-/// <para>Each row names the keys it explains as the products' key tables do (<c>Canonical</c>): ExGrid's
-/// <c>GridKeys</c>, and the keys ExSheet and ExPivot declare to their grids. A key one of those tables takes and
+/// <para>Each row names the keys it explains as the products' key tables do (<c>Canonical</c>): ExGrid's,
+/// <c>@ex-grid/core</c>'s <c>keys/grid-keys.ts</c>, and the keys ExSheet and ExPivot declare to their grids. A key one of those tables takes and
 /// no row of its product names fails <c>KeyboardCompletenessTests</c>, so a key added to a table is added
 /// here, with the page that explains it.</para>
 /// </summary>
@@ -64,7 +64,7 @@ internal static class KeyboardByHand
         new("Clipboard", "[Ctrl] + [C] / [Ctrl] + [Insert]",
             "Copy the selection: the text each cell shows, and its full values for Excel. Rows off screen are copied too, or the copy is refused.",
             "exgrid/clipboard#copy", ["ADR-0005"], Canonical: ["Control+c", "Control+Insert"]),
-        // Outside GridKeys' table, and answered only on the grid the Script Core draws, where the item is offered (ADR-0005).
+        // Outside ExGrid's key table, and answered only on the grid the Script Core draws, where the item is offered (ADR-0005).
         new("Clipboard", "[Ctrl] + [Shift] + [C]",
             "Copy with headers: the selection with each column's header as its first row, as the Context Menu's item copies it. Only on a grid that offers the item.",
             "exgrid/clipboard#copy", ["ADR-0005"]),

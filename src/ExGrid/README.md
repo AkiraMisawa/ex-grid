@@ -76,7 +76,7 @@ version's stylesheet shows a notice of its own. The
 
 ```razor
 @using ExGrid
-@using ExGrid.Components
+@using ExGrid.Script
 
 <ExGrid TRow="Trade" Source="_source" Columns="_columns" />
 
@@ -96,10 +96,9 @@ version's stylesheet shows a notice of its own. The
 
 `GridSource.From` is the bundled in-memory source. It sorts and filters a list you already hold,
 and its behaviour is the reference for what sorting and filtering mean. When the rows live
-elsewhere, you push a `Window` of rows instead and answer the grid's `OnRangeNeeded`,
-`OnSortChanged` and `OnFilterChanged`. When your answers read ahead, `RangeRequestMargin` has the
-grid ask that many rows before the Viewport runs out of rows, so the next Window can land before
-it is needed.
+elsewhere, `GridSource.Fetch` asks your function for each range of rows the grid needs, with the
+Sorts and the Filter in force, and reads `readAheadRows` ahead so the next Window can land before
+the Viewport runs out of rows.
 
 For data that changes while it is read, give the source a Row Key:
 `GridSource.From(trades, t => t.TradeId)` takes Change Batches (`Apply`) and whole new lists

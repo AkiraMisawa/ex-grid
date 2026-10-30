@@ -1,6 +1,6 @@
 {
   "about": "The keys the core claims while a cell is being edited, one set per editing mode (ADR-0010, ADR-0051, ADR-0058). The C# core's GridEditingKeys.ByMode; the Script Core's editingKeysByMode. A map is compared whole: C# reads a dictionary's entries by no member name.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "GridEditingKeys",
   "cases": [
     {
