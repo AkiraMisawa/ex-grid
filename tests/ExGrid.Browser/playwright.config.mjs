@@ -62,8 +62,8 @@ const reactHost = REACT
 
 // The part of the suite the Script Core passes on the React host (ADR-0350 step 1), which grows with each
 // slice until it is the whole suite and this goes. Named by the tests' ids, so a test it holds that fails
-// again fails the run, and one outside it is not yet claimed. PF-1 counts calls into ex-grid.js, a Blazor
-// host's interop, and is not a React test as written; nor are keyboard-return.spec, which imports ex-grid.js, FD-1's
+// again fails the run, and one outside it is not yet claimed. PF-1 counts calls across a Blazor host's interop,
+// and is not a React test as written; nor are FD-1's
 // and CON-2's races, which hold DotNet's replies and call Blazor.navigateTo, and CON-8, a .NET payload that fails. Of ExChart's Showcases, the tests that read a recorded table
 // of decimal figures are not claimed: a C# decimal keeps the places it was written with (3.30), which a
 // TypeScript number does not (3.3), so those records change when Blazor draws through the Script Core

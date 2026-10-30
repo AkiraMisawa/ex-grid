@@ -94,11 +94,26 @@ public class KeyboardCompletenessTests
         return [.. listed["declared"]!.AsArray().Concat(listed["toolbar"]!.AsArray()).Select(key => key!.GetValue<string>())];
     }
 
-    // One list of tests/cases/keys/keyboard-reference.json: the keys the core's table takes, or those it answers outside it.
-    private static IReadOnlyCollection<string> Listed(string list)
+    [Fact] // ADR-0010, ADR-0050 item 14: the typing rules read here answer the samples the Script Core's declareKeys is held to
+    public void The_typing_rules_answer_the_samples_the_core_is_held_to()
+    {
+        var answered = Listed("typing", "answered");
+        var free = Listed("typing", "free");
+
+        Assert.NotEmpty(answered);
+        Assert.NotEmpty(free);
+        Assert.All(answered, key => Assert.True(CoreAnswers(key), $"'{key}' is typing the core answers."));
+        Assert.All(free, key => Assert.False(CoreAnswers(key), $"'{key}' is left free by the core."));
+    }
+
+    // One list of tests/cases/keys/keyboard-reference.json: the keys the core's table takes, those it answers outside it,
+    // or a sample of the typing rules.
+    private static IReadOnlyCollection<string> Listed(params string[] path)
     {
         var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(Repository(), "tests", "cases", "keys", "keyboard-reference.json")))!;
-        return [.. listed[list]!.AsArray().Select(key => key!.GetValue<string>())];
+        foreach (var step in path)
+            listed = listed[step]!;
+        return [.. listed.AsArray().Select(key => key!.GetValue<string>())];
     }
 
     // Whether ExGrid's core answers `key` itself, as @ex-grid/core's declareKeys refuses a Consumer's declaration of

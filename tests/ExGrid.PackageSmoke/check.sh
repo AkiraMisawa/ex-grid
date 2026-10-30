@@ -93,7 +93,6 @@ for p in ExGrid ExGrid.MudBlazor ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBl
   grep -qE '^staticwebassets/.*\.min\.css\.map$' <<<"$(entries "$p")" || fail "$p ships no source map for its stylesheet"
   if grep -qiE '(^|/)Assets/' <<<"$(entries "$p")"; then fail "$p packs its Assets sources"; fi
 done
-grep -qxF 'staticwebassets/ex-grid.min.js.map' <<<"$(entries ExGrid)" || fail "ExGrid ships no source map for its script"
 # The Script Core's module is bundled as ExGrid builds, never committed (ADR-0350 section 7): a pack that
 # found no Node, or ran before the bundle, would ship without it.
 grep -qxF 'staticwebassets/ex-grid-core.min.js' <<<"$(entries ExGrid)" || fail "ExGrid ships no Script Core module"
@@ -207,7 +206,7 @@ done
 # application links nothing itself: its eight stylesheets are the packages' components.
 if grep -q '_content/Ex' "$out/wwwroot/index.html"; then fail "the application's index.html still links a package's file itself"; fi
 utf16() { LC_ALL=C tr -d '\000'; }
-for pair in ExGrid:ex-grid.min.css ExGrid:ex-grid.min.js ExGrid.MudBlazor:mud-ex-grid.min.css \
+for pair in ExGrid:ex-grid.min.css ExGrid:ex-grid-core.min.js ExGrid.MudBlazor:mud-ex-grid.min.css \
             ExSheet:ex-sheet.min.css ExSheet.MudBlazor:mud-ex-sheet.min.css \
             ExPivot:ex-pivot.min.css ExPivot.MudBlazor:mud-ex-pivot.min.css \
             ExChart:ex-chart.min.css ExChart.MudBlazor:mud-ex-chart.min.css; do

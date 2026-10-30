@@ -15,11 +15,13 @@ import { fileURLToPath } from 'node:url';
 // browser can show the address beat it.
 //
 // freshness-app/ is a standalone application as small as one grid. It is published twice, from two
-// copies of src/ExGrid whose shipped files are two versions': each copy's script answers a stamp of
-// its own and marks itself, each stylesheet hides its notice for a stamp of its own and marks itself,
-// and each copy's ShippedAssets.g.cs records them, as tools/assets/minify.mjs would. Nothing is
-// built in this checkout: a running DemoHost is never rebuilt under itself. The first version is
-// served and loaded, the files are replaced by the second's in place, and the page is reloaded.
+// copies of src/ExGrid that are two versions': each copy's Script Core module is bundled from a source
+// that marks itself, so it answers a stamp of its own, and the build records that stamp and the module's
+// version as it bundles (ADR-0350 section 7); each stylesheet hides its notice for a stamp of its own and
+// marks itself, and each copy's ShippedAssets.g.cs and the Script Core's shipped-stylesheet.ts record them,
+// as tools/assets/minify.mjs would.
+// Nothing is built in this checkout: a running DemoHost is never rebuilt under itself. The first version
+// is served and loaded, the files are replaced by the second's in place, and the page is reloaded.
 //
 // It drives a host of its own, so it needs neither DemoHost, and it runs the same beside either: SRV-2
 // lets a test skip on the Server host only for its four named exceptions, and this is none of them.
@@ -60,17 +62,15 @@ function publish(work, mark) {
     }
     fs.symlinkSync(path.join(repository, 'src/npm/node_modules'), path.join(root, 'src/npm/node_modules'), 'dir');
 
-    // This version's script: it answers a stamp of its own, and says which version it is.
-    const wwwroot = path.join(root, 'src/ExGrid/wwwroot');
-    const scriptFile = path.join(wwwroot, 'ex-grid.min.js');
-    const shippedScript = fs.readFileSync(scriptFile, 'utf8');
-    const [, ownStamp] = /return"([0-9a-f]{64})"/.exec(shippedScript);
-    const scriptStamp = sha256(`${mark} ${ownStamp}`);
-    const script = beforeMapComment(shippedScript.replace(`return"${ownStamp}"`, `return"${scriptStamp}"`),
-        `globalThis.__exFreshness="${mark}";`);
-    fs.writeFileSync(scriptFile, script);
+    // This version's script: a source that says which version it is, so the module bundled from it answers a
+    // stamp of its own.
+    const entry = path.join(root, 'src/npm/blazor/src/index.ts');
+    fs.appendFileSync(entry, `\n(globalThis as Record<string, unknown>)['__exFreshness'] = '${mark}';\n`);
+    // The module this checkout bundled is not this version's: the copy's build bundles its own.
+    for (const built of ['ex-grid-core.min.js', 'ex-grid-core.min.js.map']) fs.rmSync(path.join(root, 'src/ExGrid/wwwroot', built), { force: true });
 
     // This version's stylesheet: its notice hidden for a stamp of its own, and a mark to read.
+    const wwwroot = path.join(root, 'src/ExGrid/wwwroot');
     const stylesheetFile = path.join(wwwroot, 'ex-grid.min.css');
     const shippedStylesheet = fs.readFileSync(stylesheetFile, 'utf8');
     const [, ownStylesheetStamp] = /\[data-ex-stylesheet="ex-grid\.css"\]\[data-ex-stamp="([0-9a-f]{64})"\]/.exec(shippedStylesheet);
@@ -81,8 +81,6 @@ function publish(work, mark) {
 
     // And what this build of ExGrid records of them, as minify.mjs writes it.
     const recorded = {
-        ScriptVersion: sha256(script).slice(0, 12),
-        ScriptStamp: scriptStamp,
         StylesheetVersion: sha256(stylesheet).slice(0, 12),
         StylesheetStamp: stylesheetStamp,
     };
@@ -94,6 +92,12 @@ function publish(work, mark) {
         source = written;
     }
     fs.writeFileSync(shippedAssets, source);
+    // The Script Core draws its notice against the stamp it is bundled with, which minify.mjs writes beside it.
+    const coreStamp = path.join(root, 'src/npm/core/src/dom/shipped-stylesheet.ts');
+    const core = fs.readFileSync(coreStamp, 'utf8');
+    const stamped = core.replace(/(export const stylesheetStamp = ')[0-9a-f]{64}(';)/, `$1${stylesheetStamp}$2`);
+    expect(stamped, 'shipped-stylesheet.ts records the stylesheet\'s stamp').not.toBe(core);
+    fs.writeFileSync(coreStamp, stamped);
 
     // A Debug build, uncompressed: nothing here is measured, and the minutes a Release publish
     // takes buy nothing the browser's cache can tell apart.
@@ -104,7 +108,10 @@ function publish(work, mark) {
     } catch (error) {
         throw new Error(`publishing freshness-app as ${mark} failed:\n${error.stdout}\n${error.stderr}`);
     }
-    return { wwwroot: path.join(output, 'wwwroot'), ...recorded };
+    // What the build recorded of the module it bundled, as it bundled it.
+    const asset = fs.readFileSync(path.join(root, 'src/ExGrid/obj/ScriptCore/ScriptCoreAsset.g.cs'), 'utf8');
+    const constant = (name) => new RegExp(`internal const string ${name} = "([0-9a-f]+)";`).exec(asset)[1];
+    return { wwwroot: path.join(output, 'wwwroot'), ScriptVersion: constant('Version'), ScriptStamp: constant('Stamp'), ...recorded };
 }
 
 const TYPES = {
@@ -176,6 +183,7 @@ test.beforeAll(async ({ }, testInfo) => {
     second = publish(work, 'v2');
     expect(second.ScriptVersion).not.toBe(first.ScriptVersion);
     expect(second.StylesheetVersion).not.toBe(first.StylesheetVersion);
+    expect(second.ScriptStamp).not.toBe(first.ScriptStamp);
 });
 
 test.afterAll(() => {
@@ -214,7 +222,7 @@ test('ERR-9 / ADR-0123: a deploy over GitHub Pages\' headers is met with the new
         expect(await running(page)).toEqual({
             assembly: second.ScriptStamp, script: 'v2', stylesheet: 'v2', attached: true, refused: false, noticeShown: false,
         });
-        expect(host.asked).toContain(`/_content/ExGrid/ex-grid.min.js?v=${second.ScriptVersion}`);
+        expect(host.asked).toContain(`/_content/ExGrid/ex-grid-core.min.js?v=${second.ScriptVersion}`);
         expect(host.asked).toContain(`/_content/ExGrid/ex-grid.min.css?v=${second.StylesheetVersion}`);
         // And the cache stood: the framework's script, which the deploy did not change, was not asked
         // for again. Within it, a plain address would have kept the first version's files.

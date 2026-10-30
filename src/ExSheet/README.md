@@ -159,10 +159,12 @@ more to write. For a grid in no Scope, you pass the list on yourself. It is empt
 
 ```razor
 @using ExGrid.Cells
+@using ExGrid.Script
 @using ExSheet
+@using ExSheet.Script
 
 <ExSheet @bind-Document="_document" OnLinkedColumnColoursChanged="Outline" />
-<ExGrid TRow="Position" Window="_positions" Columns="_columns" OutlinedColumns="_outlined" />
+<ExGrid TRow="Position" Rows="_positions" Columns="_columns" OutlinedColumns="_outlined" />
 
 @code {
     private IReadOnlyList<OutlinedColumn> _outlined = [];
@@ -194,10 +196,12 @@ and pass the declaration the Scope gives back to the grid:
 
 ```razor
 @using ExGrid.Cells
+@using ExGrid.Script
 @using ExSheet
+@using ExSheet.Script
 
 <ExSheet @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused" />
-<ExGrid TRow="Position" Window="_positions" Columns="_columns" PointedAt="_pointedAt" />
+<ExGrid TRow="Position" Rows="_positions" Columns="_columns" PointedAt="_pointedAt" />
 <p>@_why</p>
 
 @code {

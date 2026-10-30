@@ -283,10 +283,11 @@ public class ApiSurfaceTests
     public void The_real_packages_hidden_types_are_not_the_contract()
     {
         var source = Real.Value;
-        // None is hidden since the grid drawn in .NET and its parts were removed (ADR-0370); one hidden again is listed
-        // as not the contract.
-        foreach (var type in ShippedAssemblies().SelectMany(a => a.GetExportedTypes())
-            .Where(t => t.GetCustomAttribute<EditorBrowsableAttribute>() is { State: EditorBrowsableState.Never }))
+        var exported = ShippedAssemblies().SelectMany(a => a.GetExportedTypes()).ToList();
+        Assert.NotEmpty(exported);
+        // None of these packages hides a type since the grid drawn in .NET and its parts were removed (ADR-0370); the
+        // Wrappers' hidden slot parts are not read here. One hidden again is listed as not the contract.
+        foreach (var type in exported.Where(t => t.GetCustomAttribute<EditorBrowsableAttribute>() is { State: EditorBrowsableState.Never }))
             Assert.Contains(", false, typeof(", LineOf(source, "\"T:" + type.FullName!.Replace('+', '.') + "\""));
         Assert.Contains("\"T:ExGrid.Script.ExGrid`1\", \"component\", true", source);
     }

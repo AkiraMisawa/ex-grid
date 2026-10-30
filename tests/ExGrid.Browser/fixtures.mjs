@@ -47,7 +47,7 @@ export function record(project, entries) {
 }
 
 // Whose a console message is (CON-3). ExGrid's own code is what the packages serve —
-// ex-grid.js and anything else under _content/ExGrid* — and a message that names
+// the Script Core's modules and anything else under _content/ExGrid* — and a message that names
 // itself: the module prefixes every write with [ex-grid], and a .NET log line carries
 // its category, so one from inside the component says ExGrid.Something. The demo
 // pages and their hosts live in ExGrid.DemoPages and ExGrid.DemoHost and are not the
