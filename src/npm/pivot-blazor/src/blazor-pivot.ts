@@ -6,7 +6,7 @@
 
 import { builtInLabelIds, type AggregateResult, type GridSelection, type GridSummaryRequest, type GridSummaryResult, type SelectionSummary } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
-import { crossingCalls, HeldMessages, WireMetrics, type WireCellMetrics, type WirePresentationDefaults } from '@ex-grid/blazor-shared';
+import { crossingCalls, HeldMessages, takeMount, WireMetrics, type WireCellMetrics, type WirePresentationDefaults } from '@ex-grid/blazor-shared';
 import { createPivot, type PivotChrome, type PivotChromeStylesheet, type PivotHandle, type PivotShowDetailsEvent, type PivotViewOptions } from '@ex-grid/pivot';
 import { PivotJson, pivotWordIdList, readPivotLayoutJson, writePivotLayoutJson, type PivotLabel, type PivotLayout } from '@ex-grid/pivot-engine';
 import { DotNetPivotSource, type DotNetHandle, type WireSource } from './dotnet-pivot-source';
@@ -101,6 +101,7 @@ const heldPivotCalls: ReadonlySet<string> = new Set(['Heard', 'Aggregate', 'Item
  */
 export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, makeCollector = browserCollector): BlazorPivot {
     const init = parsed<WireAttach>(json);
+    takeMount(root);
     let stopped = false;
     // A call too large for a message of its own, a layout's query over many items or a large selection, is held, and
     // .NET takes it in its turn: the hub would otherwise close the circuit.

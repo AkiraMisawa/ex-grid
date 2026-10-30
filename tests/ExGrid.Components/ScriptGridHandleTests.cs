@@ -58,6 +58,22 @@ public class ScriptGridHandleTests : BunitContext
     private void ReadsView(int number) => _grid.Setup<JsonElement>("readView", _ => true).SetResult(Json(
         $$"""{"number":{{number}},"rowSequenceVersion":4,"selection":{{FocusOnRowTwo}},"scrollTopPx":480,"scrollLeftPx":12}"""));
 
+    [Fact] // A11Y-20's note of 2026-10-30: the element the script mounts on is Busy and says it is mounting until the script attaches, and a refused script's says neither
+    public void A11Y20_the_mount_is_busy_until_the_script_attaches_and_a_refused_one_is_not()
+    {
+        var stamp = _module.Setup<string?>("stamp");
+        var cut = Grid();
+
+        var mount = cut.Find("[data-ex-mounting='grid']");
+        Assert.Equal("true", mount.GetAttribute("aria-busy"));
+
+        stamp.SetResult(new string('0', 64));
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[data-ex-notice='script']")));
+        Assert.Empty(cut.FindAll("[data-ex-mounting]"));
+        Assert.Empty(cut.FindAll("[aria-busy]"));
+    }
+
     [Fact] // ADR-0331 / ADR-0441 section 1: a view is read from the browser, and handed back by the number it keeps it under, ahead of the state that brings its rows
     public async Task ADR0441_a_view_read_crosses_back_by_its_number_ahead_of_the_rows()
     {

@@ -62,6 +62,22 @@ public class ScriptPivotTests : BunitContext
         return Parsed(payload);
     }
 
+    [Fact] // A11Y-20's note of 2026-10-30: the element the script mounts on is Busy and says it is mounting until the script attaches, and a refused script's says neither
+    public void A11Y20_the_mount_is_busy_until_the_script_attaches_and_a_refused_one_is_not()
+    {
+        var stamp = _module.Setup<string?>("stamp");
+        var cut = Pivot(PivotTestContext.Bundled());
+
+        var mount = cut.Find("[data-ex-mounting='pivot']");
+        Assert.Equal("true", mount.GetAttribute("aria-busy"));
+
+        stamp.SetResult(new string('0', 64));
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("[data-ex-notice='script']")));
+        Assert.Empty(cut.FindAll("[data-ex-mounting]"));
+        Assert.Empty(cut.FindAll("[aria-busy]"));
+    }
+
     [Fact] // ADR-0060, ADR-0370 section 10: the attach carries the Consumer's word for each id the module names, and none it does not answer
     public void ADR0370_the_attach_carries_the_words_Label_answers()
     {

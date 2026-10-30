@@ -238,9 +238,14 @@ function hostLogFrom(offset) {
 // no chart busy before its pointer entry holds its first drawing, ADR-0255). On
 // WebAssembly this used to be skipped as immediate; it is not: rows paint before the import
 // resolves, and a test that clicked and typed in that gap lost its keys on a slow runner.
+// Blazor's Script grids, Sheets and pivots are drawn by their script, and until it has attached
+// the element it mounts on is all there is, marked mounting (A11Y-20's note of 2026-10-30): a
+// page holding several attaches them in no set order, and on the Server host the second grid of
+// /cells?second=1 stood alone on the page first, so a test's first grid was that one, and the
+// press it made never reached the grid it then read (KB-23, CI's Chrome, PR #500).
 async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
-    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy]'));
+    await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy], [data-ex-mounting]'));
     // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
     // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
     // Server host a round trip after the page is interactive. Until it has, the head is not the

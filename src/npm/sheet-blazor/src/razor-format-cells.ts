@@ -5,7 +5,7 @@
 // reached is never drawn over, and OK, made at once after a choice, sets that choice (the spine's sixth rule). Nothing
 // a key means waits on the circuit.
 
-import type { RazorSlotKind } from '@ex-grid/blazor-shared';
+import { drawnVersionAttribute, type RazorSlotKind } from '@ex-grid/blazor-shared';
 import {
     formatCellsLineStroke, formatCellsOffer, isDisabledCategory, type BorderEdge, type BorderPreset, type ColourTarget, type FontStyle,
     type FormatCellsDraft, type FormatCellsLabel, type FormatCellsTab, type NumberFormatCategory, type PaletteSwatch, type SheetFormatCellsSlotContext,
@@ -79,7 +79,7 @@ export const formatCellsKind: RazorSlotKind<SheetFormatCellsSlotContext> = {
         opening.again = again;
         return () => { opening.again = undefined; };
     },
-    wire: (contents, context, answered) => wireFormatCells(contents, context, answered),
+    wire: (contents, context, answered, _drawn, later) => wireFormatCells(contents, context, answered, later),
 };
 
 /** A colour as a swatch and a preview paint it: Automatic is the Ink of the text around it. */
@@ -359,8 +359,10 @@ function heardOn(control: HTMLElement): 'input' | 'change' | 'click' {
     return 'click';
 }
 
-/** Wires Format Cells' contents as .NET drew them: the tabs, every choice, OK and Cancel. */
-function wireFormatCells(contents: HTMLElement, context: SheetFormatCellsSlotContext, answered: boolean): () => void {
+/** Wires Format Cells' contents as .NET drew them: the tabs, every choice, OK and Cancel. An OK made on contents newer
+ * than this wiring is taken `later`, by the wiring of what they show; it holds its place in the Sheet's Input Order, so
+ * the inputs after it wait for it there. */
+function wireFormatCells(contents: HTMLElement, context: SheetFormatCellsSlotContext, answered: boolean, later: (take: () => void) => void): () => void {
     const opening = openingOf(context);
     const { draft } = context;
     const unwire: (() => void)[] = [];
@@ -433,8 +435,18 @@ function wireFormatCells(contents: HTMLElement, context: SheetFormatCellsSlotCon
         if (isField(element)) listen(element, 'blur', () => { if (!opening.kept.has(element)) element.value = fieldText(draft, control); });
     }
     // OK, its fields checked first on every tab: one the browser holds invalid is shown on its tab and reported there.
+    // Contents .NET patched since this wiring stand a round trip before their wiring does (the render, then .NET's word
+    // that it rendered), and a field they added holds no text of the draft's until then: the Decimal places a choice of
+    // Percentage draws stood empty, so an OK pressed in that round trip was refused as a field left blank, and Format
+    // Cells stayed open (SH-45, CI's Edge on the Server host). That OK is taken by the wiring of what they show, once it
+    // stands, which has set every field from the draft; the inputs after it wait for it (ADR-0240, the spine's sixth rule).
+    const wiredFor = contents.getAttribute(drawnVersionAttribute);
     listen(form, 'submit', event => {
         event.preventDefault();
+        if (contents.getAttribute(drawnVersionAttribute) !== wiredFor) {
+            later(() => { if (form.isConnected) form.requestSubmit(); });
+            return;
+        }
         const invalid = [...form.querySelectorAll('input, select, textarea')]
             .find((field): field is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement =>
                 (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) && !field.checkValidity());

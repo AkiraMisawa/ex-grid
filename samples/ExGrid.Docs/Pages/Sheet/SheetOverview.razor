@@ -335,6 +335,9 @@
             reads. Text typed into the Cell Editor, Formula Bar and Name Box is covered too: the next
             grid command takes the full field text, and the mark waits for its rendered answer.
             A press on the Sheet Toolbar still needs an expectation that waits for its effect.
+            On Blazor, until its script has attached, the Sheet's element is marked <code>aria-busy="true"</code> and
+            <code>data-ex-mounting="sheet"</code>, and several on a page attach in no set order: wait until nothing is
+            mounting before finding one (see <MudLink Href="exgrid/selection">the grid</MudLink>).
         </p>
         <p>
             On Blazor Server, input made while the connection is lost never reaches the Sheet. Once the connection is

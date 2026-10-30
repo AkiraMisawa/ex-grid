@@ -613,6 +613,14 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         _renderOwed = false;
         builder.OpenElement(0, "div");
+        // The element the script mounts on says it is Busy until the script has attached, which lifts it: before then
+        // there is nothing to press, and a page holding several reads which have come (A11Y-20's note of 2026-10-30).
+        // Constant in this tree until a refusal, so no later render writes either back over the script's own.
+        if (!_refused && _scriptRefusal is null)
+        {
+            builder.AddAttribute(12, "data-ex-mounting", "grid");
+            builder.AddAttribute(13, "aria-busy", "true");
+        }
         builder.AddElementReferenceCapture(1, element => _root = element);
         if (_refused)
         {

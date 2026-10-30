@@ -24,6 +24,14 @@ export function stampAgainst(own: string, expected: string): string {
     return shared === expected ? own : `the Shared Script ${shared}, not ${expected}`;
 }
 
+/** Takes the element a Blazor component rendered for its script: the component marks it Busy and mounting until the
+ * script has attached (A11Y-20's note of 2026-10-30), and the script, now attaching, lifts both before it draws, so
+ * what it writes on the element is its own. */
+export function takeMount(root: HTMLElement): void {
+    root.removeAttribute('data-ex-mounting');
+    root.removeAttribute('aria-busy');
+}
+
 export { crossingCalls, HeldMessages, inlineBytes, mostHeldBytes, type DotNetCalls, type WireHeld } from './held-messages';
 export { HeldSnapshots, type DotNetStream, type SnapshotsRead } from './snapshots';
 export { awaitPointingScope, holdPointingScope, type PagePointingScope } from './pointing-scopes';
