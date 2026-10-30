@@ -61,7 +61,7 @@ public static class MudExGridWords
 
     /// <summary>A condition's number that is not a number as the culture writes it (ticket 96).
     /// Without the Chrome's word for it, the panel says what was typed and why, in the core's
-    /// English (<see cref="FilterPanelChoices.RefusalText"/>).</summary>
+    /// English.</summary>
     public const string OperandNotReadable = "operand-not-readable";
 
     /// <summary>A condition's number that reads as two numbers, refused rather than guessed

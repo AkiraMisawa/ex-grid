@@ -1,6 +1,6 @@
 {
   "about": "What the paste event's flavours parse into (ADR-0005, ADR-0014, ADR-0050 items 9 and 10): Excel's HTML table preferred for precision, TSV as the fallback, nothing when nothing tabular is there, and where each field came from. The Excel samples are the shape Excel for Windows puts on the clipboard as CF_HTML, as the browser's paste event hands it over. From tests/ExGrid.Tests/ClipboardParseTests.cs, PasteOriginTests.cs and PasteMarkTests.cs.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "ClipboardParse",
   "cases": [
     {

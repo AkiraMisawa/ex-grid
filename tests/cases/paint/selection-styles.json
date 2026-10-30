@@ -1,6 +1,6 @@
 {
   "about": "Where a selected rectangle is painted, as an inline style (ADR-0008, ADR-0053, ADR-0206, ADR-0170): the selection layers' contract, the same under every Framework Adapter (ADR-0350). The C# core's SelectionStyles is a static class; the Script Core's paint/selection-styles.ts has its functions, Focus under the name focusStyle. Every case runs on four columns 100, 80, 120 and 90 px wide, the first pinned, in a 400 px Viewport: column edges at 0, 100, 180, 300 and 390. Rows are 24 px, and the painted slice is rows 10 to 29. The fill handle's cases give it 8 px a side, and name where the readable area begins.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "SelectionStyles",
   "cases": [
     {

@@ -104,8 +104,6 @@ jobs:
         run: dotnet build ExGrid.slnx -p:DocsVersion="$DOCS_VERSION"
 
       - name: Layers 1 and 2, with coverage
-        env:
-          EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           dotnet test ExGrid.slnx --no-build
           -p:TestingPlatformCommandLineArguments="--coverage --coverage-output-format cobertura
@@ -189,7 +187,10 @@ jobs:
       - name: Build, and hold each package's public surface to its report
         run: npm run build
 
+      # The long run takes ST-1 at 10⁶ rows too (grid-consistency.test.ts, ADR-0205).
       - name: Layers 1 and 2
+        env:
+          EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: npm test
 
       # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): tools/pivot-oracle

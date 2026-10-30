@@ -1,10 +1,11 @@
 @using System.Globalization
-@using global::ExPivot.Components
+@using global::ExPivot.Script
 @using global::ExPivot.Engine
 @* The core comparison's pivot (/core/pivot, ADR-0350 section 15): the real ExPivot over 20,000
    trades held in this process, P&L by book and trade date (about 2,700 rows) across currencies or
-   products. Its engine answers in C#, and under the Script Core its report crosses into the browser
-   after every redraw. The redraw interval and the Change Highlight are ExPivot's defaults.
+   products. Its source answers Leaf Aggregates in C#, and the Script Core builds the report in the browser
+   (ADR-0370 section 1). The C# core's arm, the Razor ExPivot, is measured from a commit before it was removed
+   (ADR-0370 section 6, step 3). The redraw interval and the Change Highlight are ExPivot's defaults.
 
      #core-amend   one trade of the first book on its first date gains 1,000,003 in a Change Batch
      #core-layout  swaps the columns between Currency and Product

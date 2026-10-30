@@ -34,7 +34,7 @@ public static class GridChartCommands
 
 /// <summary>
 /// The grid's side of a chart, ready-made (ADR-0258): context-menu commands a Consumer adds to an
-/// <see cref="ExGrid{TRow}"/> in one line, which turn the selection into a <see cref="GridChart"/>, and
+/// <see cref="global::ExGrid.Script.ExGrid{TRow}"/> in one line, which turn the selection into a <see cref="GridChart"/>, and
 /// the reading of that chart, by Row Key from the Consumer's data, into the Chart Definition an
 /// <c>ExChart</c> draws. ExGrid does not know it exists; where the chart is shown is the Consumer's.
 /// </summary>
@@ -58,12 +58,8 @@ public sealed class GridChartBridge<TRow>
     /// <summary>What the Consumer declared for the grid's selections.</summary>
     public GridChartDeclarations<TRow> Declarations { get; }
 
-    /// <summary>The grid whose selections are charted, set with <c>@ref</c>.</summary>
-    public ExGrid<TRow>? Grid { get; set; }
-
-    /// <summary>The grid drawn by the Script Core whose selections are charted, set with <c>@ref</c> in place of
-    /// <see cref="Grid"/>: give <see cref="Commands"/> to its <c>ContextCommands</c> and
-    /// <see cref="GridChartCommands.Label"/> to its <c>ContextCommandLabel</c> (ADR-0421).</summary>
+    /// <summary>The grid whose selections are charted, set with <c>@ref</c>: give <see cref="Commands"/> to its
+    /// <c>ContextCommands</c> and <see cref="GridChartCommands.Label"/> to its <c>ContextCommandLabel</c> (ADR-0421).</summary>
     public global::ExGrid.Script.ExGrid<TRow>? ScriptGrid { get; set; }
 
     /// <summary>The open charts the menu offers "Add to chart" for (ADR-0258, U7), in the menu's order.</summary>
@@ -111,7 +107,7 @@ public sealed class GridChartBridge<TRow>
     public ChartDefinition Draw(GridChart chart)
     {
         ArgumentNullException.ThrowIfNull(chart);
-        var g = State() ?? throw new InvalidOperationException("The bridge has no grid; set Grid with @ref before drawing.");
+        var g = State() ?? throw new InvalidOperationException("The bridge has no grid; set ScriptGrid with @ref before drawing.");
         var drawn = SelectionReader.Draw(g.Columns, g.Groups, chart, Declarations);
         if (_drawn.TryGetValue(chart, out var last) && last.Axis == drawn.Axis
             && last.Series.SequenceEqual(drawn.Series) && last.Notes.SequenceEqual(drawn.Notes))
@@ -177,33 +173,19 @@ public sealed class GridChartBridge<TRow>
         return await place(new SelectionRange(row, column, 1, 1), at, g.RowSequenceVersion);
     }
 
-    /// <summary>The grid as tests hand it in, in place of <see cref="Grid"/>.</summary>
+    /// <summary>The grid as tests hand it in, in place of <see cref="ScriptGrid"/>.</summary>
     internal Func<GridState<TRow>>? StateOf { get; set; }
 
     private GridState<TRow>? State() => Charted()?.State;
 
-    /// <summary>The grid the bridge charts, as it stands, and how a cell of it is placed: the one of
-    /// <see cref="Grid"/> and <see cref="ScriptGrid"/> that is set, refusing both; none before either is set.</summary>
+    /// <summary>The grid the bridge charts, as it stands, and how a cell of it is placed; none before
+    /// <see cref="ScriptGrid"/> is set.</summary>
     private (GridState<TRow> State, Func<SelectionRange, CellPosition, int, Task<bool>>? Place)? Charted()
     {
         if (StateOf is { } of) return (of(), null);
-        if (Grid is not null && ScriptGrid is not null)
-            throw new InvalidOperationException("The bridge charts one grid: set Grid or ScriptGrid, not both.");
-        if (ScriptGrid is { } script)
-        {
-            if (script.RowSource is not { } rows) return null;
-            return (new GridState<TRow>(script.Columns, script.HeaderGroups ?? [], rows.RowSequenceVersion, rows.Window, rows.WindowStart,
-                range => rows.GetRowsAsync(range, CancellationToken.None)), script.PlaceSelectionAsync);
-        }
-        if (Grid is not { } grid) return null;
-        var source = grid.Source;
-        return (new GridState<TRow>(
-            grid.Columns,
-            grid.HeaderGroups ?? [],
-            source?.RowSequenceVersion ?? grid.RowSequenceVersion,
-            source?.Window ?? grid.Window,
-            source?.WindowStart ?? grid.WindowStart,
-            source is null ? null : range => source.GetRowsAsync(range, CancellationToken.None)), grid.PlaceSelectionAsync);
+        if (ScriptGrid is not { } script || script.RowSource is not { } rows) return null;
+        return (new GridState<TRow>(script.Columns, script.HeaderGroups ?? [], rows.RowSequenceVersion, rows.Window, rows.WindowStart,
+            range => rows.GetRowsAsync(range, CancellationToken.None)), script.PlaceSelectionAsync);
     }
 
     private async Task MakeAsync(ContextMenuContext<TRow> context, ChartOrientation? orientation, ChartTarget? target)

@@ -1,7 +1,6 @@
 using Bunit;
 using ExGrid.Data;
 using ExGrid.Selection;
-using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -130,38 +129,4 @@ public sealed class BoardOutputTests : BunitContext
         Assert.False(board.CanConfirm("chosen"));
     }
 
-    [Fact] // ADR-0340 Q6: the confirm is drawn under its grid and raises the output for the selection it follows
-    public async Task The_confirm_raises_the_output()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("WebAssembly", isInteractive: true));
-        var reading = BoardSpec.Read(Board(Chosen));
-        BoardOutput? raised = null;
-        var cut = Render<BoardComponent>(ps => ps
-            .Add(b => b.Board, reading)
-            .Add(b => b.Data, new Dictionary<string, Snapshot> { ["trades"] = Trades(reading) })
-            .Add(b => b.OnOutput, output => raised = output));
-        var confirm = () => cut.Find("[data-ex-view=blotter] button.ex-board-confirm[data-ex-output=chosen]");
-
-        var status = () => cut.Find("[data-ex-view=blotter] .ex-board-confirm-status").TextContent;
-
-        Assert.Equal("Book these trades", confirm().TextContent);
-        // Never disabled; with nothing selected it raises nothing, and says so.
-        Assert.False(confirm().HasAttribute("disabled"));
-        await cut.InvokeAsync(() => confirm().Click());
-        Assert.Null(raised);
-        Assert.Equal("Select the rows to hand on first.", status());
-
-        // A press on the grid's second row, so the grid itself holds the selection the confirm reads; the
-        // stretched viewport's size is the browser's to report.
-        var grid = cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>();
-        await cut.InvokeAsync(() => grid.Instance.OnViewportReportAsync(0, 0, 400, 200));
-        await cut.Find("[data-ex-view=blotter] .ex-viewport").MouseDownAsync(
-            new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 10, OffsetY = 30 });
-        Assert.Null(raised);
-
-        await cut.InvokeAsync(() => confirm().Click());
-        Assert.Equal("", status());
-        Assert.Equal([["T-2", new DateTime(2026, 10, 20)]], raised!.Condition.Values);
-    }
 }

@@ -8,12 +8,12 @@
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
    may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* The filter panel's content when the Script Core draws the grid (ADR-0009, ADR-0410): MudExGridFilterPanel's
-   MudBlazor controls, drawn from the core's view and marked for the adapter's script, which hands each change to
+@* The filter panel's content when the Script Core draws the grid (ADR-0009, ADR-0410): MudBlazor's
+   controls, drawn from the core's view and marked for the adapter's script, which hands each change to
    the core in the browser. Nothing here decides what a choice means, keeps a working state, or handles a change,
    a key or a focus: the core's view is drawn again at each change it makes.
 
-   Three things differ from the panel over the C# core, each so that no choice reaches the core later than an
+   Three things differ from a panel that answers in .NET alone, each so that no choice reaches the core later than an
    Enter or an OK the browser has already handed it (spine rule 6). The operators are native selects, as the MUI
    Wrapper's are: MudSelect answers a choice in .NET only after closing its list, a round trip behind the browser.
    A condition's value is a text field for every type, read by the core as ADR-0023 reads it, as the MUI Wrapper's
@@ -27,7 +27,7 @@
 <div class="mud-ex-grid-filter">
     @* The form's default button: the first submit button, which implicit submission clicks. *@
     <button type="submit" class="mud-ex-grid-filter-default" hidden tabindex="-1" aria-hidden="true"></button>
-    @* While the value list is on its way, the bar alone, as over the C# core: the list takes the condition form's place
+    @* While the value list is on its way, the bar alone: the list takes the condition form's place
        as it arrives, and the adapter's script hands the panel no input until it has (spine rule 6). *@
     @if (View.Fetching)
     {
@@ -123,7 +123,7 @@
     private string Own(string id, string core) => Chrome.Label?.Invoke(id) ?? core;
 
     /// <summary>An operator's words: MudBlazor's where it has them for the column's type, the Chrome's own for the
-    /// rest, and the core's for an operator the C# core does not name.</summary>
+    /// rest, and the core's for an operator neither names.</summary>
     private string OperatorWord(GridFilterOperatorView op)
     {
         if (!Enum.TryParse<global::ExGrid.FilterOperator>(op.Id, ignoreCase: true, out var known))

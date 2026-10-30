@@ -3,6 +3,9 @@
 // paints is the core's, tested there; here, that the Sheet answers the grid's intents as one step each on one undo
 // stack (ADR-0048), hands back new instances only for the rows a change names (ADR-0003), and says in its own words
 // what it refuses (ADR-0370 section 10).
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, type CellFormat, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, GridPresentationDefaults, type GridHandle } from '@ex-grid/core';
@@ -11,6 +14,7 @@ import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sh
 import type { SheetFormatCellsSlotContext, SheetTabSlotContext } from '../src/sheet-chrome-slots';
 import { PointingScope } from '../src/pointing-scope';
 import type { PointingRefusal } from '../src/pointing-refusal';
+import { stylesheetStamp } from '../src/shipped-stylesheet';
 
 const mounted: SheetHandle[] = [];
 
@@ -1406,6 +1410,42 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(told).toEqual([false, true]);
     });
 
+    it('ADR-0110: the toolbar keys tests/cases/sheet/sheet-keys.json lists, which the Docs Site reads, are each answered by the Sheet Toolbar', async () => {
+        const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/sheet/sheet-keys.json');
+        const listed = (JSON.parse(fs.readFileSync(file, 'utf8')) as { readonly toolbar: readonly string[] }).toolbar;
+        const told: boolean[] = [];
+        const { element } = sheetOf({ showToolbar: true, onShowToolbarChanged: shown => { told.push(shown); } });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        const keyTipsShown = (): void => {
+            expect(document.activeElement).toBe(band);
+            expect(element.querySelectorAll('.ex-sheet-keytip').length).toBeGreaterThan(0);
+            key('Escape');
+            expect(document.activeElement).toBe(grid);
+        };
+        // What each key does, as the Keyboard page says it: a key listed and not answered, or answered and not listed
+        // here, fails.
+        const answers: Record<string, () => void> = {
+            'Alt+Alt': () => {
+                key('Alt', { altKey: true });
+                grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+                keyTipsShown();
+            },
+            F10: () => {
+                key('F10');
+                keyTipsShown();
+            },
+            'Control+F1': () => {
+                key('F1', { ctrlKey: true });
+                expect(told).toEqual([false]);
+            },
+        };
+        expect(listed.toSorted()).toEqual(Object.keys(answers).toSorted());
+        for (const listedKey of listed) answers[listedKey]?.();
+    });
+
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
         const { element } = sheetOf({ showToolbar: true });
         await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
@@ -2276,5 +2316,33 @@ describe("a Wrapper's widths (ADR-0030)", () => {
     it('takes only the defaults a Wrapper makes', () => {
         expect(() => sheetOf({ presentationDefaults: { digitWidthPx: 20 } as unknown as GridPresentationDefaults }))
             .toThrow('presentationDefaults is a GridPresentationDefaults, as a Wrapper makes one (ADR-0030).');
+    });
+});
+
+/** The stylesheet notices standing directly in `root`: each one's stylesheet, stamp, inline display and words. */
+function notices(root: Element): readonly (readonly [string | null, string | null, string, string | null])[] {
+    return [...root.querySelectorAll<HTMLElement>(':scope > [data-ex-notice="stylesheet"]')]
+        .map(notice => [notice.getAttribute('data-ex-stylesheet'), notice.getAttribute('data-ex-stamp'), notice.style.display, notice.textContent] as const);
+}
+
+describe('ExSheet\'s stylesheet notices (ADR-0123, ERR-11)', () => {
+    const words = 'This page holds another version\'s stylesheet. Reload the page.';
+
+    it('ExSheet\'s own stands last in its root, hidden until a stylesheet\'s rules decide, and is worded through commandLabel', () => {
+        const { element, sheet } = sheetOf();
+        expect(notices(element)).toEqual([['ex-sheet.css', stylesheetStamp, 'none', words]]);
+        expect(element.lastElementChild?.getAttribute('data-ex-stylesheet')).toBe('ex-sheet.css');
+
+        sheet.update({ locale: 'en-US', viewportWidth: 600, viewportHeight: 300, commandLabel: id => (id === 'reload-notice-stylesheet' ? 'Bitte neu laden.' : undefined) });
+        expect(notices(element)).toEqual([['ex-sheet.css', stylesheetStamp, 'none', 'Bitte neu laden.']]);
+    });
+
+    it('the stylesheets a Chrome brings have their notices in the Sheet\'s grid, beside ExGrid\'s own', () => {
+        const mud = { name: 'mud-ex-sheet.css', stamp: 'a'.repeat(64) };
+        const { element } = sheetOf({ chrome: { stylesheets: [mud] } });
+        const grid = element.querySelector('.ex-grid');
+        expect(grid).not.toBeNull();
+        expect(notices(grid ?? element).map(([name, stamp]) => [name, stamp])).toEqual([['ex-grid.css', expect.any(String)], ['mud-ex-sheet.css', mud.stamp]]);
+        expect(notices(element).map(([name]) => name)).toEqual(['ex-sheet.css']);
     });
 });

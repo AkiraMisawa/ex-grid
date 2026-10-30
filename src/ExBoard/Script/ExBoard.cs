@@ -39,9 +39,7 @@ namespace ExBoard.Script;
 /// of rows crosses as its Arrow stream. A pivot over one reads the Pivot Source it makes (<see cref="BoardSource.Pivot"/>)
 /// through .NET, as ExPivot's adapter reads one: the engine in the browser builds the report and its totals from the
 /// Leaf Aggregates the source answers (ADR-0370 section 3).</para>
-/// <para>It stands beside <see cref="Components.ExBoard"/>, the Razor component, until ExBoard's Blazor step holds
-/// (ADR-0370 section 11).</para>
-/// <para>Its views are dressed by the Chromes it is handed as the Razor component's are: <see cref="Chrome"/> draws the
+/// <para>Its views are dressed by the Chromes it is handed: <see cref="Chrome"/> draws the
 /// grids and the pivots' report grids, <see cref="PivotChrome"/> the pivots, its grid Chrome the report grids where no
 /// <see cref="Chrome"/> is given, and <see cref="ChartChrome"/> the charts. Each slot a Chrome names in its <c>ScriptSlots</c> is filled with Razor (ADR-0410),
 /// rendered beside the Board's root and moved into the slot the Script Core made; the rest are the Script Core's
@@ -70,8 +68,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     /// at a width it is told). Grids and pivots stretch to their share.</summary>
     [Parameter] public double Width { get; set; } = 1200;
 
-    /// <summary>The culture a view's text is written in; the invariant culture unless set, as the Razor component has
-    /// it (ADR-0370 section 10).</summary>
+    /// <summary>The culture a view's text is written in; the invariant culture unless set (ADR-0370 section 10).</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>Raised when the user confirms an output the Board declares (ADR-0340, Q6), and only then: a selection on
@@ -96,8 +93,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
 
     /// <summary>The pivot Chrome the pivots are drawn with; the Script Core's own markup by default. Each slot its
     /// <see cref="IPivotChrome.ScriptSlots"/> names is drawn by its view overload, and its grid Chrome
-    /// (<see cref="IPivotChrome.GridChrome"/>) draws the report grids where no <see cref="Chrome"/> is given, as the Razor
-    /// component has it (ADR-0410). Which slots are filled is read as the Board attaches.</summary>
+    /// (<see cref="IPivotChrome.GridChrome"/>) draws the report grids where no <see cref="Chrome"/> is given (ADR-0410). Which slots are filled is read as the Board attaches.</summary>
     [Parameter] public IPivotChrome? PivotChrome { get; set; }
 
     /// <summary>The chart Chrome the charts are drawn with; the Script Core's own markup by default. Each slot its
@@ -194,7 +190,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             RefuseWhatIsNotCarried(Board, Sources);
         if (boardMoved)
         {
-            // Written before anything moves; a new one binds again, as the Razor component's does.
+            // Written before anything moves; a new one binds again.
             _boardJson = BoardSpec.Write(Board);
             _board = Board;
             _boardOwed = true;
@@ -555,7 +551,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         if (!double.IsFinite(Width) || Width <= 0)
             throw new ArgumentOutOfRangeException(nameof(Width), Width, "A Board's width is a number of CSS pixels above 0.");
         json.WriteNumber("width", Width);
-        // The culture the Razor component reads, the invariant one unless set (ADR-0370 section 10).
+        // The culture the component reads, the invariant one unless set (ADR-0370 section 10).
         var culture = (Culture ?? CultureInfo.InvariantCulture).Name;
         json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
         json.WriteStartArray("hears");
@@ -676,7 +672,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
     }
 
     // One question to a source, under the number the browser asked it by, cancelled when the browser says it no longer
-    // waits; the source is the Consumer's, called as the Razor component calls it, and what it is asked is read as the
+    // waits; the source is the Consumer's, and what it is asked is read as the
     // Board that numbered it declares the input.
     private async Task<T> AskAsync<T>(int number, long call, Func<SourceCrossing.Held, CancellationToken, Task<T>> ask)
     {
@@ -817,7 +813,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            // A source whose Pivot fails fails the component, as it does the Razor component's binding, and the
+            // A source whose Pivot fails fails the component, and the
             // pivot's questions are refused with why.
             _pivotsFailed[pivot] = ex;
             await DispatchExceptionAsync(ex);

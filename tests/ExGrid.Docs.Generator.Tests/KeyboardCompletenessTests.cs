@@ -1,58 +1,39 @@
 using System.Collections.Immutable;
-using Bunit;
-using ExGrid.Keys;
-using ExPivot.Engine;
-using Microsoft.AspNetCore.Components;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
-using PivotComponent = global::ExPivot.Components.ExPivot;
-using PivotGrid = global::ExGrid.Components.ExGrid<global::ExPivot.Engine.PivotDisplayRow>;
-using SheetComponent = global::ExSheet.Components.ExSheet;
-using SheetGrid = global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>;
+using System.Text.Json.Nodes;
 
 namespace ExGrid.Docs.Generator.Tests;
 
 /// <summary>
 /// The Keyboard reference held against the keys the products take (ADR-0110: a reference page's facts are read
 /// from a named source, and the Keyboard page lists every key in the three products). The rows are the site's own
-/// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (<c>GridKeys</c>, KB-2),
-/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet and ExPivot declare to
-/// their grids, read off the components as they render with everything that adds a key turned on. A key a menu,
+/// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (KB-2), every key claimed on
+/// a grid that edits, undoes, redoes and finds, as <c>tests/cases/keys/keyboard-reference.json</c> lists it, which
+/// <c>@ex-grid/core</c>'s table is held to, and the keys ExSheet takes, as
+/// <c>tests/cases/sheet/sheet-keys.json</c> lists them, which <c>@ex-grid/sheet</c>'s declared keys are held to; ExPivot
+/// declares none. A key a menu,
 /// a panel or an open edit answers in its own handler is in no table, and is not checked here.
 /// </summary>
-public class KeyboardCompletenessTests : BunitContext
+public class KeyboardCompletenessTests
 {
     private static readonly ImmutableArray<HandRow> Rows = ReadRows();
-
-    public KeyboardCompletenessTests()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-        SetRendererInfo(new RendererInfo("Server", isInteractive: true));
-    }
 
     [Fact] // ADR-0110, ADR-0012: every key ExGrid's table takes is named by an ExGrid row of the Keyboard page
     public void Every_key_ExGrid_takes_is_named_by_an_ExGrid_row()
     {
-        var taken = GridKeys.TakenFor(new GridKeyClaims(CanEdit: true, CanUndo: true, CanRedo: true, CanFind: true));
-
-        AssertNamed("ExGrid", taken);
+        AssertNamed("ExGrid", Listed("taken"));
     }
 
-    [Fact] // ADR-0110, ADR-0071, ADR-0100: every key ExSheet declares to its grid is named by an ExSheet row
-    public void Every_key_ExSheet_declares_is_named_by_an_ExSheet_row()
+    [Fact] // ADR-0110, ADR-0071, ADR-0100: every key ExSheet takes is named by an ExSheet row
+    public void Every_key_ExSheet_takes_is_named_by_an_ExSheet_row()
     {
         var declared = SheetDeclared();
 
         Assert.NotEmpty(declared);
         AssertNamed("ExSheet", declared);
-    }
-
-    [Fact] // ADR-0110, ADR-0059: every key ExPivot declares to its grids is named by an ExPivot row
-    public void Every_key_ExPivot_declares_is_named_by_an_ExPivot_row()
-    {
-        AssertNamed("ExPivot", PivotDeclared());
     }
 
     [Fact] // ADR-0110: every key a row names is one its product answers, so a row cannot name a key nothing takes
@@ -62,7 +43,9 @@ public class KeyboardCompletenessTests : BunitContext
         {
             ["ExGrid"] = [],
             ["ExSheet"] = SheetDeclared(),
-            ["ExPivot"] = PivotDeclared(),
+            // ExPivot declares no key of its own to its grids (@ex-grid/pivot's report grid takes no declaredKeys):
+            // every key an ExPivot row names is one the core answers.
+            ["ExPivot"] = [],
         };
         var unanswered = (
             from row in Rows
@@ -104,53 +87,62 @@ public class KeyboardCompletenessTests : BunitContext
             + $". Add a KeyRow to KeyboardByHand.{product} that explains each, linking the section of the page that does, with the key in its Canonical list.");
     }
 
-    // The keys ExSheet declares to its grid where the most are declared: the toolbar shown, with its toggle bound.
-    private IReadOnlyCollection<string> SheetDeclared()
+    // The keys ExSheet takes, as the shared list names them: those it declares to its grid and its toolbar's own.
+    private static IReadOnlyCollection<string> SheetDeclared()
     {
-        var sheet = Render<SheetComponent>(ps => ps
-            .Add(s => s.ShowToolbar, true)
-            .Add(s => s.ShowToolbarChanged, EventCallback.Factory.Create<bool>(this, (bool _) => { })));
-        return [.. sheet.FindComponents<SheetGrid>().SelectMany(g => g.Instance.DeclaredKeys ?? [])];
+        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(Repository(), "tests", "cases", "sheet", "sheet-keys.json")))!;
+        return [.. listed["declared"]!.AsArray().Concat(listed["toolbar"]!.AsArray()).Select(key => key!.GetValue<string>())];
     }
 
-    private sealed record Sale(string Region, decimal Amount);
-
-    // The keys ExPivot declares to every grid it renders.
-    private IReadOnlyCollection<string> PivotDeclared()
+    [Fact] // ADR-0010, ADR-0050 item 14: the typing rules read here answer the samples the Script Core's declareKeys is held to
+    public void The_typing_rules_answer_the_samples_the_core_is_held_to()
     {
-        var source = PivotSource.From<Sale>(
-            [new("East", 100m), new("West", 70m)],
-            [
-                new("Region", PivotFieldType.Text, r => r.Region),
-                new("Amount", PivotFieldType.Number, r => r.Amount),
-            ]);
-        var pivot = Render<PivotComponent>(ps => ps
-            .Add(p => p.Source, source)
-            .Add(p => p.Layout, new PivotLayout { Rows = [new("Region")], Values = [new("Amount", PivotAggregation.Sum)] }));
-        var grids = pivot.FindComponents<PivotGrid>();
-        Assert.NotEmpty(grids);
-        return [.. grids.SelectMany(g => g.Instance.DeclaredKeys ?? [])];
+        var answered = Listed("typing", "answered");
+        var free = Listed("typing", "free");
+
+        Assert.NotEmpty(answered);
+        Assert.NotEmpty(free);
+        Assert.All(answered, key => Assert.True(CoreAnswers(key), $"'{key}' is typing the core answers."));
+        Assert.All(free, key => Assert.False(CoreAnswers(key), $"'{key}' is left free by the core."));
     }
 
-    // Whether ExGrid's core answers `key` itself: its table, the editor's keys, or the clipboard's. The core
-    // refuses a Consumer's declaration of exactly those keys, by name (GridKeys.Declare, ADR-0050 item 14).
+    // One list of tests/cases/keys/keyboard-reference.json: the keys the core's table takes, those it answers outside it,
+    // or a sample of the typing rules.
+    private static IReadOnlyCollection<string> Listed(params string[] path)
+    {
+        var listed = JsonNode.Parse(File.ReadAllText(Path.Combine(Repository(), "tests", "cases", "keys", "keyboard-reference.json")))!;
+        foreach (var step in path)
+            listed = listed[step]!;
+        return [.. listed.AsArray().Select(key => key!.GetValue<string>())];
+    }
+
+    // Whether ExGrid's core answers `key` itself, as @ex-grid/core's declareKeys refuses a Consumer's declaration of
+    // it (ADR-0050 item 14): its table, the keys it answers outside the table, and typing — a character or F2 with
+    // nothing but Shift, or a character with Control and Alt together, AltGr's (ADR-0010).
     private static bool CoreAnswers(string key)
     {
         Assert.True(KeyboardReference.IsCanonicalForm(key), $"'{key}' is not in the canonical form.");
-        try
-        {
-            GridKeys.Declare([key]);
-            return false;
-        }
-        catch (ArgumentException refused) when (refused.Message.Contains("one the core answers itself", StringComparison.Ordinal))
-        {
+        if (Listed("taken").Contains(key) || Listed("answeredOutsideTable").Contains(key))
             return true;
-        }
+        var rest = key;
+        var control = Take(ref rest, "Control+");
+        var meta = Take(ref rest, "Meta+");
+        Take(ref rest, "Shift+");
+        var alt = Take(ref rest, "Alt+");
+        return (!control && !meta && !alt && (rest.Length == 1 || rest == "F2")) || (control && alt && rest.Length == 1);
+    }
+
+    private static bool Take(ref string rest, string prefix)
+    {
+        if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
+            return false;
+        rest = rest[prefix.Length..];
+        return true;
     }
 
     /// <summary>
     /// A key as the rows and the tables are compared: a letter in either case, and a character typed with Control
-    /// with Shift or without, are one key, since the tables take both forms — the first for CapsLock (GridKeys), the
+    /// with Shift or without, are one key, since the tables take both forms — the first for CapsLock (ExGrid's table), the
     /// second for the layouts that need Shift to type the character (SheetFormatKeys, SheetStructureKeys).
     /// </summary>
     private static string Fold(string key)
@@ -165,14 +157,6 @@ public class KeyboardCompletenessTests : BunitContext
         else if (rest.Length == 1 && control && !meta && !alt)
             shift = false;
         return (control ? "Control+" : "") + (meta ? "Meta+" : "") + (shift ? "Shift+" : "") + (alt ? "Alt+" : "") + rest;
-
-        static bool Take(ref string rest, string prefix)
-        {
-            if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
-                return false;
-            rest = rest[prefix.Length..];
-            return true;
-        }
     }
 
     // KeyboardByHand's rows, read by the generator's own reader from the site's source, with the record they

@@ -16,8 +16,8 @@ using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExGrid.Script;
 
-// What the C# core's component carried for its Consumers beyond the first slice of this adapter, carried over the Script
-// Core (ADR-0440): what the core asks as it paints comes with each row, a question the Consumer answers later is asked in
+// What the grid carries for its Consumers beyond the first slice of this adapter, carried over the Script Core
+// (ADR-0440): what the core asks as it paints comes with each row, a question the Consumer answers later is asked in
 // its turn among the grid's events, and a function the browser asks by position as it paints or decides a key is the
 // Consumer's own script.
 public sealed partial class ExGrid<TRow>

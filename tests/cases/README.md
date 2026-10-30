@@ -12,6 +12,11 @@ C# core will not take before it is removed, goes in on the Script Core alone: it
 no C# runner reads, and its `about` says the case is the Script Core's alone (ADR-0350 section 5's note
 of 2026-10-27).
 
+*(2026-10-30: the grid drawn in .NET was removed with the logic only it used (ADR-0370), and its
+runners went with it, as above: `clipboard`, `operand`, `edgeBand` and `held` are read by Vitest
+alone now, as `selection`'s `headingMarks` is, and the sixteen `calls` files whose subjects left .NET
+say `scriptCalls`. The cases are unchanged.)*
+
 A runner never fills in a key a case leaves out: every key a gesture's table row names is written, and
 a missing one fails the case, where a default would let a misspelt key pass on a value nobody chose.
 The one exception is said where it applies (`times`).
@@ -35,7 +40,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, ExPivot's (`pivot/`), and `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, ExPivot's (`pivot/`), `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core), `sheetKeys`, no runner's: the keys ExSheet takes, which `@ex-grid/sheet` and the Docs Site's Keyboard page are both held to (`sheet/sheet-keys.json`), and `keyboardReference`, no runner's either: the keys the Script Core's table takes and answers, which the Docs Site's Keyboard page is held to (`keys/keyboard-reference.json`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 

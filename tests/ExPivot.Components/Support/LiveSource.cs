@@ -7,7 +7,7 @@ namespace ExPivot.Components.Tests.Support;
 /// the given sales its data — a new Source Version — and raises <c>Changed</c>, as the bundled
 /// source does when it folds a Change Batch in, or a server's source when the Consumer says its
 /// data moved on. Its answers are the reference's — the bundled source over the data current when
-/// the question was asked — given at once, or held for the test like <see cref="OnDemandSource"/>'s.
+/// the question was asked — given at once, or held for the test like a source a test holds.
 /// It can refuse or fail every question, as a server over its cap or out of reach does. A field's
 /// Items and a cell's records are answered under the version they name, while it is held.
 /// </summary>
@@ -19,7 +19,7 @@ internal sealed class LiveSource : PivotSource
 
     public LiveSource(IReadOnlyList<Sale>? records = null, bool canRefresh = false)
     {
-        _current = PivotTestContext.Bundled(records);
+        _current = SalesData.Bundled(records);
         _features = new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh);
     }
 
@@ -64,7 +64,7 @@ internal sealed class LiveSource : PivotSource
     /// the new version when <paramref name="sayVersion"/>, as a server's notice may.</summary>
     public void Publish(IReadOnlyList<Sale> records, bool sayVersion = false)
     {
-        _current = PivotTestContext.Bundled(records);
+        _current = SalesData.Bundled(records);
         OnChanged(new PivotSourceChanged(sayVersion ? VersionOf(_current) : null));
     }
 
@@ -74,7 +74,7 @@ internal sealed class LiveSource : PivotSource
 
     /// <summary>The data moves on to <paramref name="records"/>, and the source says nothing: the
     /// next question asked for any other reason brings it.</summary>
-    public void Replace(IReadOnlyList<Sale> records) => _current = PivotTestContext.Bundled(records);
+    public void Replace(IReadOnlyList<Sale> records) => _current = SalesData.Bundled(records);
 
     /// <summary>The source answers only <paramref name="aggregations"/> from now on, as a server
     /// reconfigured under the report might.</summary>

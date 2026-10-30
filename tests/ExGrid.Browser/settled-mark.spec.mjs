@@ -1,6 +1,5 @@
 import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
-import { sheet, openSheet, cell, clickCell, pressCell, editor, expectFocusAt, CIRCUIT_SHEET } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, clickCell, pressCell, editor, expectFocusAt } from './sheet-helpers.mjs';
 
 // The Settled Mark (ADR-0220): the root carries `data-ex-settled` once every input its key gate has
 // taken has been handled and its effect is in the DOM. These tests drive at machine speed and read
@@ -29,35 +28,22 @@ const focusNow = (grid) => grid.evaluate((root) => root.querySelector('.ex-cell.
     ?? root.getAttribute('aria-activedescendant') ?? root.querySelector('.ex-key-field')?.getAttribute('aria-activedescendant'));
 
 test('ADR-0220: a key takes the mark off at once, and it comes back once the key\'s move is painted', async ({ page }) => {
-    // On the Server host, the Razor component, whose keys cross the circuit (CIRCUIT_SHEET's reason).
-    if (CIRCUIT_SHEET !== undefined) await openSheet(page, 'builtin', CIRCUIT_SHEET);
     const grid = sheet(page);
-    // A round trip longer than the reading after the key takes, so that the key cannot be answered
-    // before it on the Server host.
-    await setRoundTrip(150);
     await pressCell(grid, 'A2');
     await settled(grid);
     const changes = await countMarkChanges(grid);
 
+    // The Sheet answers the key in the browser, on either host: the mark is taken off in the keydown and back once the
+    // move is painted.
     await page.keyboard.press('ArrowDown');
-    // Off in the keydown itself: a reading straight after the key never finds the mark of before. On
-    // WebAssembly the key is answered, and painted, before the press returns, so the mark is back.
-    if (SERVER) {
-        // spec-lint: early-read: early on purpose: the test is that the mark is off in the keydown itself, before any answer
-        expect(await grid.evaluate((root) => root.hasAttribute('data-ex-settled'))).toBe(false);
-    }
     await settled(grid);
     await expectFocusAt(grid, 'A3');
     // Off and back on: once each.
     expect(await changes()).toBe(2);
-    await setRoundTrip(0);
 });
 
 test('ADR-0220: twenty arrows typed at once, read once after the mark, find the Focus where the last one left it', async ({ page }) => {
-    // On the Server host, the Razor component, whose keys cross the circuit (CIRCUIT_SHEET's reason).
-    if (CIRCUIT_SHEET !== undefined) await openSheet(page, 'builtin', CIRCUIT_SHEET);
     const grid = sheet(page);
-    await setRoundTrip(150);
     await pressCell(grid, 'B2');
     await settled(grid);
     const changes = await countMarkChanges(grid);
@@ -70,14 +56,8 @@ test('ADR-0220: twenty arrows typed at once, read once after the mark, find the 
     const name = await grid.locator('.ex-name-box').inputValue();
     expect(name, 'the Name Box read once, straight after the mark').toBe('B22');
     expect(active).not.toBe('');
-    // The mark goes once as the burst starts and once as it ends, with a round trip to hold the
-    // keys together; with none, each key may be a burst of its own.
-    if (SERVER) {
-        expect(await changes()).toBe(2);
-    } else {
-        expect(await changes()).toBeLessThanOrEqual(40);
-    }
-    await setRoundTrip(0);
+    // Each key answered in the browser may be a burst of its own: off and back on at most once a key.
+    expect(await changes()).toBeLessThanOrEqual(40);
 });
 
 test('ADR-0220: after Ctrl+Down twice reveals a far cell, the offset read once after the mark is the reveal\'s, never the repaint\'s pixel', async ({ page }) => {

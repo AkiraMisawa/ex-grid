@@ -27,20 +27,10 @@
     <!-- bunit 2.x carries no test-framework dependency of its own, so it composes
          with xunit.v3 on Microsoft.Testing.Platform. -->
     <PackageReference Include="bunit" Version="2.9.0" />
-    <!-- FakeTimeProvider drives the settle delay (ADR-0004) deterministically. The
-         abstraction it fakes, TimeProvider, is in the BCL, so the core stays
-         dependency-free (ADR-0019) and only the tests take this package. -->
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- What a coloured-text layer colours, read off what the core writes on it (ADR-0057, note of
-         2026-10-01): its text is one run, coloured by highlights. -->
-    <Compile Include="..\ReferenceText\ColouredText.cs" Link="ReferenceText\ColouredText.cs" />
   </ItemGroup>
 
 </Project>

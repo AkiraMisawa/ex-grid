@@ -20,7 +20,7 @@
 @code {
     private static readonly Sale[] Records = Sales.Sample();
 
-    // The same source as ExPivot.Components.ExPivot's: it answers in .NET, and the report is built in the browser.
+    // The source answers in .NET, and the report is built in the browser.
     private readonly PivotSource _source = PivotSource.From(Records, Sales.Fields);
 
     // The regions ordered by the size of their market, largest first, by an Order Key in C#: .NET answers each

@@ -18,33 +18,60 @@ ExSheet.MudBlazor.MudSheetChrome.FormulaBarText(ExGrid.Chrome.GridFormulaBarText
 ExSheet.MudBlazor.MudSheetChrome.LoadingIndicator(ExGrid.Chrome.GridLoadingView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.NameBox(ExGrid.Chrome.GridNameBoxView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.ScriptSlots.get -> ExGrid.Chrome.ScriptSlots
-ExSheet.MudBlazor.MudSheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetScriptSlots.get -> ExSheet.SheetScriptSlots
 ExSheet.MudBlazor.MudSheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
-ExSheet.MudBlazor.MudSheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.MudBlazor.MudSheetChrome.ToolbarItem(ExSheet.SheetToolbarItemView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExSheet.MudBlazor.MudSheetFindPanel
-ExSheet.MudBlazor.MudSheetFindPanel.Context.get -> ExSheet.SheetFindContext!
-ExSheet.MudBlazor.MudSheetFindPanel.Context.set -> void
-ExSheet.MudBlazor.MudSheetFindPanel.MudSheetFindPanel() -> void
-ExSheet.MudBlazor.MudSheetTabMenu
-ExSheet.MudBlazor.MudSheetTabMenu.Context.get -> ExSheet.SheetTabMenuContext!
-ExSheet.MudBlazor.MudSheetTabMenu.Context.set -> void
-ExSheet.MudBlazor.MudSheetTabMenu.MudSheetTabMenu() -> void
-ExSheet.MudBlazor.MudToolbarItem.DisposeAsync() -> System.Threading.Tasks.ValueTask
 override ExSheet.MudBlazor.MudScriptFormatCells.OnAfterRender(bool firstRender) -> void
 override ExSheet.MudBlazor.MudScriptFormatCells.ShouldRender() -> bool
 override ExSheet.MudBlazor.MudScriptToolbarItem.OnAfterRender(bool firstRender) -> void
 override ExSheet.MudBlazor.MudScriptToolbarItem.ShouldRender() -> bool
-override ExSheet.MudBlazor.MudSheetFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExSheet.MudBlazor.MudSheetFindPanel.OnInitialized() -> void
-override ExSheet.MudBlazor.MudSheetFindPanel.OnParametersSet() -> void
 ~override ExSheet.MudBlazor.MudScriptFormatCells.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudScriptToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExSheet.MudBlazor.MudSheetFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExSheet.MudBlazor.MudSheetTabMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 *REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.get -> System.Func<System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task<bool>!>!, System.Threading.Tasks.Task!>?
 *REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.set -> void
 *REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.get -> System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>?
 *REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.set -> void
+*REMOVED*const ExSheet.MudBlazor.MudFormatCellsDialog.Title = "Format Cells" -> string!
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Closing.get -> System.Func<bool, System.Threading.Tasks.Task<bool>!>?
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Closing.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Context.get -> ExSheet.FormatCellsContext!
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Context.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Drawn.get -> System.Action?
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.Drawn.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.get -> System.Action?
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.MudFormatCellsDialog() -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsFrame
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsFrame.Context.get -> ExSheet.FormatCellsContext!
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsFrame.Context.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsFrame.Dispose() -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsFrame.MudFormatCellsFrame() -> void
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FormatCells(ExSheet.FormatCellsContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.ToolbarItem(ExSheet.ToolbarItemContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudToolbarItem
+*REMOVED*ExSheet.MudBlazor.MudToolbarItem.Context.get -> ExSheet.ToolbarItemContext!
+*REMOVED*ExSheet.MudBlazor.MudToolbarItem.Context.set -> void
+*REMOVED*ExSheet.MudBlazor.MudToolbarItem.MudToolbarItem() -> void
+*REMOVED*override ExSheet.MudBlazor.MudFormatCellsDialog.OnInitialized() -> void
+*REMOVED*override ExSheet.MudBlazor.MudFormatCellsFrame.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExSheet.MudBlazor.MudFormatCellsFrame.ShouldRender() -> bool
+*REMOVED*override ExSheet.MudBlazor.MudToolbarItem.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExSheet.MudBlazor.MudToolbarItem.OnInitialized() -> void
+*REMOVED*~override ExSheet.MudBlazor.MudFormatCellsDialog.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExSheet.MudBlazor.MudFormatCellsFrame.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExSheet.MudBlazor.MudToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.DisposeAsync() -> System.Threading.Tasks.ValueTask
+*REMOVED*override ExSheet.MudBlazor.MudFormatCellsDialog.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.CellMessage(ExGrid.Chrome.CellMessageContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.ColumnMenu(ExGrid.Chrome.ColumnMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.ContextMenu<TRow>(ExGrid.Chrome.ContextMenuContext<TRow>! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.EditorCompletion(ExGrid.Chrome.EditorCompletionContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FilterPanel(ExGrid.Chrome.FilterPanelContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FindPanel(ExGrid.Chrome.FindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.FormulaBarText(ExGrid.Chrome.FormulaBarTextContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.LoadingIndicator(ExGrid.Chrome.LoadingContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.NameBox(ExGrid.Chrome.NameBoxContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExSheet.MudBlazor.MudSheetChrome.SelectionSummary(ExGrid.Chrome.SelectionSummaryContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?

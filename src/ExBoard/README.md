@@ -17,7 +17,7 @@ views over typed Board Inputs.
 
 ```razor
 @using ExBoard
-@using ExBoard.Components
+@using ExBoard.Script
 
 <ExBoard Board="board" Data="data" />
 

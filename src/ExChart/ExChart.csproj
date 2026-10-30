@@ -35,8 +35,7 @@
 
   <!-- ExChart's Script Core's module for ExChart.Script.ExChart and ExSurface (ADR-0370 section 1): the bridge and
        @ex-grid/chart, bundled from their sources in src/npm as this project builds, never committed, as ExPivot's is
-       (ADR-0350 section 7). Named ex-chart-core, since ex-chart.min.js is the Razor component's pointer script. The
-       module goes to wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
+       (ADR-0350 section 7). The module goes to wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
        ScriptCoreAsset. src/npm's dependencies are ExGrid's build's to install: the bundle is built once the project
        references are, so the two never run npm in the workspace at once. -->
   <PropertyGroup>

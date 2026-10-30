@@ -1,8 +1,8 @@
 @page "/sheet"
 @implements IDisposable
 @using System.Globalization
-@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). ExSheet.Components
-   is not imported: there the name ExSheet is the Razor component, and ExSheet.Script.ExSheet would not resolve. *@
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). The components are
+   named in full, ExSheet.Script.ExSheet and ExGrid.Script.ExGrid, beside the namespaces of the same names. *@
 @using global::ExSheet
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
@@ -15,7 +15,7 @@
    text's contract (no padding, no ground, filling the core's box) only through that stylesheet,
    and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
    Wrapper's shape is required…"; ADR-0030). Its Chrome is ExSheet.MudBlazor's, which is the
-   Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0071). *@
+   Wrapper's in every seam of the grid and draws Format Cells' tabs in the grid's frame (ADR-0071, ADR-0410). *@
 @* ?scheme=dark shows the page in the dark scheme, where the Sheet's Paper stays white and its frame
    darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
    Sheet (SheetCases), for Part C to put beside Excel's screenshots. ?pin=N pins N leading columns,
@@ -23,8 +23,7 @@
    Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100); a case opens without it unless
    ?toolbar=on asks. *@
 @* The Sheet is ExSheet.Script.ExSheet, Blazor's ExSheet over the Script Core, and the positions grid
-   ExGrid.Script.ExGrid beside it (ADR-0370 step 2). ?component=razor draws both with the Razor
-   components instead, for the tests of what only they do, under either Chrome. *@
+   ExGrid.Script.ExGrid beside it (ADR-0370). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
@@ -85,16 +84,8 @@
         @Sheet
     }
     <div id="sheet-positions">
-        @if (Razor)
-        {
-            <ExGrid.Components.ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
-        }
-        else
-        {
-            <ExGrid.Script.ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
-                                  ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
-        }
+        <ExGrid.Script.ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
+                              ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
     </div>
 </div>
 
@@ -147,13 +138,6 @@
 </p>
 
 @code {
-    /// <summary><c>razor</c> draws the Sheet and the positions grid with the Razor components, in place of Blazor's
-    /// components over the Script Core.</summary>
-    [SupplyParameterFromQuery(Name = "component")]
-    public string? Component { get; set; }
-
-    private bool Razor => DemoChrome.DrawsRazor(Component);
-
     /// <summary>Which Chrome the Sheet runs with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
@@ -198,20 +182,7 @@
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
-    private RenderFragment Sheet => Razor ? RazorSheet : ScriptCoreSheet;
-
-    private RenderFragment RazorSheet => @<ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
-                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
-                                              SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
-                                              PointingScope="@(_inScope ? _scope : null)" OnPointingRefused="ShowPointingRefusal"
-                                              @bind-ShowToolbar="_toolbarShown">
-                                         <ToolbarContent>
-                                             <DefaultToolbarRow />
-                                             <ToolbarRow KeyTip="Y" Label="This page">
-                                                 <ToolbarButton Text="Mark reviewed" OnClick="MarkReviewedAsync" KeyTip="R" />
-                                             </ToolbarRow>
-                                         </ToolbarContent>
-                                     </ExSheet.Components.ExSheet>;
+    private RenderFragment Sheet => ScriptCoreSheet;
 
     private RenderFragment ScriptCoreSheet => @<ExSheet.Script.ExSheet @ref="_script" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
                                               EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
@@ -243,7 +214,7 @@
     // The Sheet's height includes its toolbar (ADR-0100) and its Sheet Tabs (ADR-0331). The page adds
     // the toolbar's two rows and the tabs' strip, each the Formula Bar's height, so that the grid keeps
     // the rows it showed before either came.
-    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.Components.ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
+    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.Script.ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
 
     private double SheetHeight => 420 + ToolbarRowPx + (_toolbarShown ? 2 * ToolbarRowPx : 0);
 
@@ -288,8 +259,7 @@
     // the table by key, whatever order the grid shows (ADR-0049's second rule).
     private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
 
-    // The Sheet, as whichever component draws it.
-    private ExSheet.Components.ExSheet? _sheet;
+    // The Sheet, once drawn.
     private ExSheet.Script.ExSheet? _script;
     private SheetDocument? _document;
     // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
@@ -373,9 +343,8 @@
         {
             // Declaring what the document already declares changes nothing; a page that opens a
             // document without it declares it here.
-            if (_sheet is not null) await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
-            else if (_script is not null) await _script.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
-            else return;
+            if (_script is null) return;
+            await _script.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
             // Long enough to see #GETTING_DATA: the data is "on its way".
             await Task.Delay(TimeSpan.FromSeconds(1.5), closing);
             await PushAsync();
@@ -396,9 +365,7 @@
     }
 
     private Task PushAsync() =>
-        _sheet is not null ? _sheet.PushLinkedTableAsync(Table, _positions.Select(TableRow))
-            : _script is not null ? _script.PushLinkedTableAsync(Table, _positions.Select(TableRow))
-            : Task.CompletedTask;
+        _script is not null ? _script.PushLinkedTableAsync(Table, _positions.Select(TableRow)) : Task.CompletedTask;
 
     // A position as the table's row, in the declared column order: what the page pushes, and what
     // the Scope reads a pressed row's key from.
@@ -418,31 +385,29 @@
         _pointingStatus = "";
     }
 
-    private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync(), sheet => sheet.UndoAsync());
+    private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync());
 
-    private Task RedoAsync() => CommandAsync(sheet => sheet.RedoAsync(), sheet => sheet.RedoAsync());
+    private Task RedoAsync() => CommandAsync(sheet => sheet.RedoAsync());
 
     // The page's own action on the Sheet Toolbar (ADR-0100): Excel's light green under the Selection.
     private static readonly CellFormatChange Reviewed = new() { Fill = CellFill.Solid(CellColour.FromRgb(0xE2EFDA)) };
 
-    private Task MarkReviewedAsync() => CommandAsync(sheet => sheet.SetCellFormatAsync(Reviewed), sheet => sheet.SetCellFormatAsync(Reviewed));
+    private Task MarkReviewedAsync() => CommandAsync(sheet => sheet.SetCellFormatAsync(Reviewed));
 
-    private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)), sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
+    private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
 
     // The Consumer's own button for Format Cells (ADR-0071), beside the Context Menu's command.
-    private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync(), sheet => sheet.OpenFormatCellsAsync());
+    private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync());
 
     // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
     // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed
-    // out then, but a press can still land before the render that greys them does. The command is
-    // given as each component takes it.
-    private async Task CommandAsync(Func<ExSheet.Components.ExSheet, Task> razor, Func<ExSheet.Script.ExSheet, Task> script)
+    // out then, but a press can still land before the render that greys them does.
+    private async Task CommandAsync(Func<ExSheet.Script.ExSheet, Task> command)
     {
         try
         {
-            if (_sheet is not null) await razor(_sheet);
-            else if (_script is not null) await script(_script);
-            else return;
+            if (_script is null) return;
+            await command(_script);
             await Count();
         }
         catch (SheetRefusedException refused)
@@ -476,10 +441,6 @@
             if (_selection.IsEmpty)
             {
                 _focusFont = _focusNumberFormat = "";
-            }
-            else if (_sheet is not null)
-            {
-                ShowFocus(_sheet.CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column)));
             }
             else if (_script is not null)
             {

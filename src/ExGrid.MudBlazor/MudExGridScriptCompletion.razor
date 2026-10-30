@@ -6,8 +6,8 @@
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
    may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* The completion list and the argument hint when the Script Core draws the grid (ADR-0410): the same
-   Material list as MudEditorCompletion, each candidate marked with its index, and nothing else. The
+@* The completion list and the argument hint when the Script Core draws the grid (ADR-0410): a
+   Material list, each candidate marked with its index, and nothing else. The
    chosen candidate is marked aria-selected by the adapter's script, in the browser, as ↑ and ↓ move it,
    and the stylesheet paints it in the primary colour as mud-selected-item does; a click accepts a
    candidate there too, so no handler is drawn here. *@

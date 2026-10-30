@@ -52,7 +52,7 @@ public class ScriptGridChartBridgeTests : BunitContext
     private static int Version(global::ExGrid.Script.ExGrid<Day> grid) => Assert.IsAssignableFrom<IGridSource<Day>>(grid.RowSource).RowSequenceVersion;
 
     private static ContextMenuContext<Day> Opened(global::ExGrid.Script.ExGrid<Day> grid, Day row, params SelectionRange[] selection) =>
-        new(row, "epe", ColumnType.Number, selection, Version(grid), [], () => { });
+        new(row, "epe", ColumnType.Number, selection, Version(grid), () => { });
 
     [Fact] // ADR-0258 / ADR-0421: "Chart" over the Script grid reads the selected rows from the source it reads, and the chart follows them
     public async Task ADR0421_a_selection_of_the_script_grid_is_charted_from_the_rows_its_source_holds()
@@ -83,15 +83,5 @@ public class ScriptGridChartBridgeTests : BunitContext
         Assert.True(placed);
         var asked = Assert.Single(_grid.Invocations["placeSelection"]);
         Assert.Equal(Version(grid), asked.Arguments[2]);
-    }
-
-    [Fact] // ADR-0421: a bridge charts one grid, and says so when handed two
-    public void ADR0421_a_bridge_handed_both_grids_is_refused()
-    {
-        var grid = Grid();
-        var bridge = Bridge(grid);
-        bridge.Grid = new global::ExGrid.Components.ExGrid<Day>();
-
-        Assert.Throws<InvalidOperationException>(() => bridge.Commands(Opened(grid, _rows[0], new SelectionRange(0, 0, 1, 1))).ToList());
     }
 }

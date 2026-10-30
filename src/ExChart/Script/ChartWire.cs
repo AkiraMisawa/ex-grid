@@ -25,16 +25,37 @@ namespace ExChart.Script;
 /// </remarks>
 internal static class ChartWire
 {
+    // Why the chart in the browser cannot be handed the definition's Formats, or null when it can: a Format the chart
+    // would ask of a value the definition does not hold, which a .NET function cannot answer there (ADR-0420).
+    private static string? Refusal(ChartDefinition definition)
+    {
+        if (definition.Axis.Format is not null)
+        {
+            return "The chart's axis has a Format, a .NET function the chart in the browser would ask to write the position under the pointer and "
+                + "a range's ends, which it cannot call (ADR-0420). Give the axis a FormatCode or a FormatScript in its place.";
+        }
+        foreach (var s in definition.Series)
+        {
+            if (s.Sampler is not null && s.Format is not null)
+            {
+                return $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write the values it samples, which it does not hold, "
+                    + "and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place.";
+            }
+            if (s.Format is not null && s.Kind == SeriesKind.PriceRange)
+            {
+                return $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write a candle's change and a merged candle's volume, "
+                    + "values it does not hold, and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place.";
+            }
+        }
+        return null;
+    }
+
     /// <summary>The definition as JSON, and the Row Keys its points carry.</summary>
     /// <exception cref="NotSupportedException">The definition holds what the chart in the browser cannot be handed.</exception>
     public static (string Json, RowKeys Rows) Definition(ChartDefinition definition)
     {
-        if (definition.Axis.Format is not null)
-        {
-            throw new NotSupportedException(
-                "The chart's axis has a Format, a .NET function the chart in the browser would ask to write the position under the pointer and "
-                + "a range's ends, which it cannot call (ADR-0420). Give the axis a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
-        }
+        if (Refusal(definition) is { } refused)
+            throw new NotSupportedException(refused);
         var rows = new RowKeys();
         var json = Json(w =>
         {
@@ -140,7 +161,7 @@ internal static class ChartWire
                 throw new NotSupportedException(
                     $"The surface's Format for {Name(definition.ZTitle, "its values")} would be asked to write the values a slice through its "
                     + "triangles reads between its nodes, and the surface in the browser cannot call that .NET function (ADR-0420). "
-                    + "Give the surface a ZFormatCode or a ZFormatScript in its place, or draw it with ExChart.Components.ExSurface.");
+                    + "Give the surface a ZFormatCode or a ZFormatScript in its place.");
             }
             // A code is written by the Script Core's own reader, so it needs no texts (ADR-0420).
             var zTexts = definition.ZFormatCode is not null || definition.ZFormatScript is not null ? null
@@ -184,18 +205,6 @@ internal static class ChartWire
 
     private static void WriteSeries(Utf8JsonWriter w, ChartSeries s, RowKeys rows)
     {
-        if (s.Sampler is not null && s.Format is not null)
-        {
-            throw new NotSupportedException(
-                $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write the values it samples, which it does not hold, "
-                + "and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
-        }
-        if (s.Format is not null && s.Kind == SeriesKind.PriceRange)
-        {
-            throw new NotSupportedException(
-                $"'{s.Name}' has a Format, a .NET function the chart in the browser would ask to write a candle's change and a merged candle's volume, "
-                + "values it does not hold, and cannot call (ADR-0420). Give the series a FormatCode or a FormatScript in its place, or draw it with ExChart.Components.ExChart.");
-        }
         w.WriteStartObject();
         w.WriteString("id", s.Id);
         w.WriteString("name", s.Name);
@@ -435,8 +444,7 @@ internal static class ChartWire
                 throw new NotSupportedException(
                     $"'{s.Name}' is sampled from a .NET function, which the chart in the browser would ask for a value at every pixel and cannot call "
                     + "(ADR-0420). Make it with ExChart.Engine.Interpolation.Interpolate or ExChart.Engine.Fitting.Fit, whose curves the chart makes "
-                    + "again from what they were made from, sample a ScriptFunction of your own script, hand it in as its points, or draw it with "
-                    + "ExChart.Components.ExChart.");
+                    + "again from what they were made from, sample a ScriptFunction of your own script, or hand it in as its points.");
         }
         w.WriteEndObject();
         w.WriteEndObject();
@@ -612,8 +620,7 @@ internal static class ChartWire
                 return "plain";
             throw new NotSupportedException(
                 $"The surface's axis {Name(axis.Title, "")} has a Format, which would be asked to write the ticks between its values, and the surface in "
-                + "the browser cannot call that .NET function (ADR-0420). Give the axis a FormatCode or a FormatScript in its place, space it evenly as categories, "
-                + "or draw it with ExChart.Components.ExSurface.");
+                + "the browser cannot call that .NET function (ADR-0420). Give the axis a FormatCode or a FormatScript in its place, or space it evenly as categories.");
         }
         var texts = new List<(object Value, string Text)>(values.Length);
         var differs = false;

@@ -7,10 +7,6 @@ namespace ExGrid.Chrome;
 /// (<c>ExGrid.Script.ExGrid</c>, ADR-0410): each named here is asked for through its view overload, and
 /// the Script Core draws its own part for every slot not named.
 /// </summary>
-/// <remarks>
-/// It stands beside the C# core's contexts until the C# core is removed (ADR-0350 section 7, ADR-0410
-/// section 4's note of 2026-10-28): a Chrome answers both while both cores draw.
-/// </remarks>
 [Flags]
 public enum ScriptSlots
 {
@@ -149,7 +145,7 @@ public static class ScriptSlotAttributes
 }
 
 /// <summary>One command of a menu, as the Script Core hands it (ADR-0010, ADR-0036).</summary>
-/// <param name="Id">The command's id, the one <see cref="GridCommand.Id"/> carries under the C# core.</param>
+/// <param name="Id">The command's id, the one <see cref="GridCommand.Id"/> carries.</param>
 /// <param name="Label">The command's words, the Consumer's <c>commandLabel</c> else the built-in English.
 /// A Wrapper with words of its own may show those instead.</param>
 /// <param name="Enabled">Whether the command runs; a disabled one is shown and runs nothing.</param>

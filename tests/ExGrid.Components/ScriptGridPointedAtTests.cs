@@ -8,13 +8,12 @@ namespace ExGrid.Components.Tests;
 
 /// <summary>
 /// ADR-0430: Blazor's ExGrid over the Script Core takes the declaration a Pointing Scope made for it, names the Scope
-/// in the page, and sends each row with what the Scope's function reads of it as the table's row. It refuses a
-/// declaration of the Consumer's own, and another declaration later, by name.
+/// in the page, and sends each row with what the Scope's function reads of it as the table's row. It refuses another
+/// declaration later, by name.
 /// </summary>
 public class ScriptGridPointedAtTests : BunitContext
 {
     private readonly BunitJSModuleInterop _module;
-    private readonly List<bool> _taken = [];
 
     public ScriptGridPointedAtTests()
     {
@@ -25,12 +24,8 @@ public class ScriptGridPointedAtTests : BunitContext
         grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
-    private GridPointedAt<TestRow> Declared(string declaration = "scope-1") => new(_ => Task.CompletedTask)
-    {
-        InBrowser = new GridPointedInBrowser<TestRow>(
-            "scope", declaration, "Trades", new Dictionary<string, string> { ["Book"] = "Trade" },
-            row => $"[\"{row.Book}\"]", _taken.Add),
-    };
+    private static GridPointedAt<TestRow> Declared(string declaration = "scope-1") => new(new GridPointedInBrowser<TestRow>(
+        "scope", declaration, "Trades", new Dictionary<string, string> { ["Book"] = "Trade" }, row => $"[\"{row.Book}\"]"));
 
     private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(GridPointedAt<TestRow>? pointedAt) =>
         Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
@@ -57,7 +52,6 @@ public class ScriptGridPointedAtTests : BunitContext
         Assert.Equal("Trade", pointedAt.GetProperty("tableColumns").GetProperty("Book").GetString());
         var first = options.GetProperty("state").GetProperty("window")[0];
         Assert.Equal(first.GetProperty("c")[0].GetString(), first.GetProperty("p")[0].GetString());
-        Assert.Equal([true], _taken);
     }
 
     [Fact] // ADR-0430 section 2: a grid in no Scope sends no table rows
@@ -70,14 +64,6 @@ public class ScriptGridPointedAtTests : BunitContext
         Assert.False(options.GetProperty("state").GetProperty("window")[0].TryGetProperty("p", out _));
     }
 
-    [Fact] // ADR-0430 section 3: a declaration whose OnPress is the Consumer's .NET function is refused by name
-    public void ADR0430_a_declaration_of_the_Consumers_own_is_refused()
-    {
-        var thrown = Assert.Throws<NotSupportedException>(() => Grid(new GridPointedAt<TestRow>(_ => Task.CompletedTask)));
-
-        Assert.Contains("RegisterGrid", thrown.Message, StringComparison.Ordinal);
-    }
-
     [Fact] // ADR-0430 section 3: the declaration is set as the grid is made, and another later is refused
     public void ADR0430_another_declaration_later_is_refused()
     {
@@ -86,19 +72,5 @@ public class ScriptGridPointedAtTests : BunitContext
         var thrown = Assert.Throws<NotSupportedException>(() => cut.Render(ps => ps.Add(g => g.PointedAt, Declared("scope-2"))));
 
         Assert.Contains("set as the grid is made", thrown.Message, StringComparison.Ordinal);
-        Assert.Equal([true], _taken);
-    }
-
-    [Fact] // ADR-0430 section 3: the Scope is told a grid drawn in the browser took it, and may refuse it
-    public void ADR0430_the_Scope_may_refuse_the_grid_as_it_takes_the_declaration()
-    {
-        var refused = new GridPointedAt<TestRow>(_ => Task.CompletedTask)
-        {
-            InBrowser = new GridPointedInBrowser<TestRow>(
-                "scope", "scope-1", "Trades", new Dictionary<string, string>(), row => "[]",
-                _ => throw new InvalidOperationException("Razor only")),
-        };
-
-        Assert.Throws<InvalidOperationException>(() => Grid(refused));
     }
 }

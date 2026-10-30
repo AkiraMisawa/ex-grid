@@ -16,8 +16,7 @@ namespace ExChart.Script;
 /// the Script Core's, in the browser, on both hosting models.
 /// </summary>
 /// <remarks>
-/// It stands beside <see cref="Components.ExSurface"/>, the Razor component, until ExChart's Blazor step holds
-/// (ADR-0370 section 11). Formats cross as the texts they write each value the surface holds, as
+/// Formats cross as the texts they write each value the surface holds, as
 /// <see cref="ExChart"/>'s do: a Format the surface would ask of a tick between its values, on an axis placed by value
 /// or on a mesh, is refused by name, a <see cref="NotSupportedException"/> raised as the parameter is set.
 /// </remarks>
@@ -183,7 +182,7 @@ public sealed class ExSurface : ComponentBase, IAsyncDisposable
     });
 
     // A slice's value as the browser holds it: the axis' own value at its place, else the value as it crosses, which
-    // the browser holds no slice at and says so, as the Razor component does.
+    // the browser holds no slice at and says so.
     private void WriteSliceValue(Utf8JsonWriter json, SurfaceSlice slice)
     {
         var definition = _definition ?? throw new InvalidOperationException("Internal: the surface has no definition.");

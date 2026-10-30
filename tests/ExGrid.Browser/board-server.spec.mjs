@@ -92,7 +92,8 @@ test('ADR-0345: a desk selected in the pivot over the server narrows the chart; 
 
     await pivotCell('FX').click({ force: true });
     await expect.poll(() => line(page)).not.toBe(whole);
-    await expect(view(page, 'byDesk').locator('.ex-board-link-status')).toHaveCount(0);
+    // Nothing is said under the pivot: the desks under the cell were answered.
+    await expect(view(page, 'byDesk').locator('.ex-board-link-status')).toHaveText('');
 
     await pivotCell('Grand Total').click({ force: true });
     await expect.poll(() => line(page)).toBe(whole);

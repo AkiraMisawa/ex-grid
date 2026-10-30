@@ -38,8 +38,7 @@ internal sealed class ScriptMount(
     IJSRuntime js, Func<Func<Task>, Task> invoke, Func<Exception, Task> fail, Func<string, JsonElement, Func<Task>?> prepare,
     RazorSlotHolders? slots = null, Action? slotsChanged = null)
 {
-    /// <summary>The script's address under the application's base: ExChart's minified Script Core and bridge. Not
-    /// <c>ex-chart.min.js</c>, which is the Razor component's pointer script.</summary>
+    /// <summary>The script's address under the application's base: ExChart's minified Script Core and bridge.</summary>
     private const string ScriptPath = "_content/ExChart/ex-chart-core.min.js";
 
     private readonly Queue<Func<Task>> _heard = new();
@@ -64,7 +63,7 @@ internal sealed class ScriptMount(
 
     /// <summary>
     /// Renders the root: an element the Script Core draws in, or, once the script was refused, the notice in the
-    /// built-in words, as the Razor component says it (ADR-0123). A <paramref name="refusal"/> is said in the chart's
+    /// built-in words (ADR-0123). A <paramref name="refusal"/> is said in the chart's
     /// place, in a box of the chart's own <paramref name="width"/> and <paramref name="height"/> under its tokens, and
     /// the root is hidden beside it, as a spec its sources cannot answer is (ADR-0344): beside the root, whose children
     /// are the Script Core's. <paramref name="busy"/> marks the root Busy while an answer is awaited.

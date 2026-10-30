@@ -6,16 +6,11 @@ using Microsoft.AspNetCore.Components;
 namespace ExChart.MudBlazor;
 
 /// <summary>
-/// ExChart's Chrome under MudBlazor (ADR-0281): the chart's toolbar — Chart Filters' toggle, Reset
-/// range and View as table as text <c>MudButton</c>s, the downloads as a <c>MudMenu</c>, and Chart
-/// Filters' range in MudBlazor's inputs (a <c>MudDatePicker</c> on a date axis, a <c>MudSelect</c> of
-/// the categories on a category axis) with the axis switch — and the content of the chart's context
-/// menu.
-///
-/// <para>Over the Script Core (<c>ExChart.Script.ExChart</c>) it draws the same toolbar and menu in the chart's slots
-/// (ADR-0410), with the downloads as a <c>MudButtonGroup</c> and Chart Filters' ends as native fields in MudBlazor's
-/// outline, which the chart's script writes and reads: text in the axis' own writing, or a select of the categories
-/// on a category axis.</para>
+/// ExChart's Chrome under MudBlazor (ADR-0281, ADR-0410), in the chart's slots: the toolbar — Chart Filters'
+/// toggle, Reset range and View as table as text <c>MudButton</c>s, the downloads as a <c>MudButtonGroup</c>, and
+/// Chart Filters' ends as native fields in MudBlazor's outline, which the chart's script writes and reads (text in the
+/// axis' own writing, or a select of the categories on a category axis), with the axis switch — and the content of
+/// the chart's context menu.
 ///
 /// <para>It draws what ExChart hands it and calls back. Which commands there are, what a typed range
 /// means, what is refused and where the menu opens are ExChart's; swapping this Chrome for the
@@ -44,30 +39,10 @@ public sealed class MudChartChrome : IChartChrome
     /// <summary>A Material icon for a command's id (<see cref="ChartCommandIds"/>), or null for the Wrapper's own.</summary>
     public Func<string, string?>? Icon { get; init; }
 
-    /// <summary>The toolbar (<see cref="MudChartToolbar"/>).</summary>
-    public RenderFragment? Toolbar(ChartToolbarContext context) => b =>
-    {
-        b.OpenComponent<MudChartToolbar>(0);
-        b.AddComponentParameter(1, nameof(MudChartToolbar.Context), context);
-        b.AddComponentParameter(2, nameof(MudChartToolbar.Chrome), this);
-        b.CloseComponent();
-    };
-
-    /// <summary>The context menu's content (<see cref="MudChartMenu"/>).</summary>
-    public RenderFragment? Menu(ChartMenuContext context) => b =>
-    {
-        b.OpenComponent<MudChartMenu>(0);
-        b.AddComponentParameter(1, nameof(MudChartMenu.Context), context);
-        b.AddComponentParameter(2, nameof(MudChartMenu.Chrome), this);
-        b.CloseComponent();
-    };
-
-    /// <summary>Over the Script Core (<c>ExChart.Script.ExChart</c>, ADR-0410), the toolbar and the context menu's
-    /// content are this Chrome's too.</summary>
+    /// <summary>The toolbar and the context menu's content are this Chrome's (ADR-0410).</summary>
     public ChartScriptSlots ScriptSlots => ChartScriptSlots.Toolbar | ChartScriptSlots.Menu;
 
-    /// <summary>The toolbar over the Script Core (<see cref="MudChartScriptToolbar"/>): MudBlazor's controls, wired in
-    /// the browser.</summary>
+    /// <summary>The toolbar (<see cref="MudChartScriptToolbar"/>): MudBlazor's controls, wired in the browser.</summary>
     public RenderFragment? Toolbar(ChartToolbarView view) => b =>
     {
         b.OpenComponent<MudChartScriptToolbar>(0);
@@ -76,7 +51,7 @@ public sealed class MudChartChrome : IChartChrome
         b.CloseComponent();
     };
 
-    /// <summary>The context menu's content over the Script Core (<see cref="MudChartScriptMenu"/>).</summary>
+    /// <summary>The context menu's content (<see cref="MudChartScriptMenu"/>).</summary>
     public RenderFragment? Menu(ChartMenuView view) => b =>
     {
         b.OpenComponent<MudChartScriptMenu>(0);

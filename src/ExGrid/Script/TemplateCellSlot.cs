@@ -15,7 +15,7 @@ internal sealed record TemplateCellSlot(long Row, string Column, int FocusReques
     public const string Name = "templateCell";
 
     /// <summary>Whether this cell's fragment was drawn once: the request is handed on that drawing, and zero on every
-    /// later one, as the C# core hands it (ADR-0037).</summary>
+    /// later one (ADR-0037).</summary>
     public bool Drawn { get; set; }
 
     /// <summary>The cell the script's data name.</summary>

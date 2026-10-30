@@ -143,138 +143,25 @@ public sealed record NumberFormatCategoryOffer(NumberFormatCategory Category, st
 }
 
 /// <summary>
-/// The context of ExSheet's Format Cells seam (ADR-0071, ADR-0010's note of 2026-09-30). ExSheet
-/// decides what is offered and what OK means; the Chrome draws it, in a frame of its own choosing,
-/// and calls back.
-///
-/// <para><see cref="Draft"/> is what Format Cells opens on — the Focus cell's Cell Format, with the
-/// parts that differ across the Selection shown as Excel shows them — and records what the user
-/// touches. Every Chrome sets its controls through it, so what a choice means, and what OK sets, is
-/// ExSheet's under every Chrome. <see cref="Tab"/> is the tab to open on, the last one shown in
-/// this Sheet; the Chrome reports each tab it shows through <see cref="TabShown"/>.</para>
-///
-/// <para><see cref="Ok"/> sets the parts the user touched on the Selection as one undo step, and
-/// answers whether Format Cells is done: false while the draft holds a <see cref="FormatCellsDraft.Refusal"/>,
-/// which the Chrome shows, and Format Cells stays open. With nothing touched it sets nothing.
-/// <see cref="Cancel"/> sets nothing. Either one ends Format Cells: ExSheet stops rendering the
-/// Chrome's fragment, or closes the grid's popover under the built-in Chrome.</para>
-///
-/// <para><see cref="ReturnKeyboard"/> is the core's focus function (ADR-0021's note of 2026-09-30).
-/// A Chrome whose frame lies outside the grid — a page-level dialog — calls it as that frame closes,
-/// so the keyboard is the Sheet's again; it is granted only while DOM focus is inside the grid, on
-/// nothing, or in a surface of the frame's joined to the Sheet's Input Order (<see cref="JoinSurface"/>),
-/// which therefore gives the keyboard back before it goes, in the turn of the input that closed it
-/// (ADR-0240 section 6). ExSheet keeps the frame on the page after <see cref="Ok"/> or <see cref="Cancel"/>
-/// until it has been called. Under the built-in Chrome the grid's popover returns the keyboard itself.</para>
-/// </summary>
-/// <param name="Draft">What Format Cells opens on, and what the user has touched.</param>
-/// <param name="Tab">The tab to open on.</param>
-/// <param name="TabShown">The Chrome reports each tab it shows.</param>
-/// <param name="Ok">Sets what was touched, and answers whether Format Cells is done.</param>
-/// <param name="Cancel">Sets nothing, and ends Format Cells.</param>
-/// <param name="ReturnKeyboard">The core's focus function.</param>
-public sealed record FormatCellsContext(
-    FormatCellsDraft Draft,
-    FormatCellsTab Tab,
-    Action<FormatCellsTab> TabShown,
-    Func<Task<bool>> Ok,
-    Action Cancel,
-    Func<Task> ReturnKeyboard)
-{
-    /// <summary>
-    /// The Sheet's Input Order (ADR-0240 section 6, ticket 06): the handler of a control of the Chrome's
-    /// frame that claims its event (<c>data-ex-claims</c>) — OK, Cancel, the form's submission, a popup's
-    /// opener — runs in its place in the order, as the grid's <c>InOrderAsync</c> has it. Null for a
-    /// context ExSheet did not make.
-    /// </summary>
-    public Func<GridInputKind, Func<Task>, Task>? InOrder { get; init; }
-
-    /// <summary>
-    /// A surface of the Chrome's frame that its design system draws outside the Sheet — a page-level
-    /// dialog, a popup at the page's body — joins the Sheet's Input Order while it is open (ADR-0240
-    /// section 6, ticket 06), as the grid's <c>JoinSurfaceAsync</c> has it: the element, the CSS selector of
-    /// the surface around it or null, and what an Escape typed in it does, in its turn. Dispose the answer
-    /// as the surface closes. Joined, the keyboard in it is the Sheet's: <see cref="ReturnKeyboard"/> and
-    /// <see cref="TakeKeyboard"/> are granted from it, and the keys typed in it while an input is still
-    /// being answered — an arrow typed as its Escape closes it — are held and handed on where that answer
-    /// left the keyboard. Null for a context ExSheet did not make.
-    /// </summary>
-    public Func<ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>>? JoinSurface { get; init; }
-
-    /// <summary>
-    /// The keyboard is going to a control of the frame not drawn yet — the dialog's tab as Format Cells
-    /// opens, a popup's field as its opener is pressed — as the grid's <c>HandKeyboardToFrameAsync</c> has
-    /// it (ADR-0050 item 16): the keys typed until that control takes it through <see cref="TakeKeyboard"/>
-    /// are held, and handed to it in order. With an element, the keyboard waits on that element of the
-    /// frame's own, inside the Sheet and marked <c>data-ex-claims=""</c>, which takes DOM focus now: a frame
-    /// whose design system hands the keyboard back, as it closes, to whatever held it as it opened waits
-    /// there, so that it hands it back to nothing. Call it in the turn of the input that opens the control,
-    /// before that turn's first await. Null for a context ExSheet did not make.
-    /// </summary>
-    public Func<ElementReference?, Task>? HandKeyboardToFrame { get; init; }
-
-    /// <summary>
-    /// Gives a popup's drawn control the keyboard held for it, through the grid's conditional
-    /// hand-off (ADR-0039/0050). A container names its first enabled text field, whose value is
-    /// selected before the held keys arrive. A control the user has already chosen keeps the
-    /// keyboard. Null for a context ExSheet did not make.
-    /// </summary>
-    public Func<ElementReference, Task>? TakeKeyboard { get; init; }
-}
-
-/// <summary>
-/// ExSheet's Chrome seam (ADR-0071, ADR-0010's note of 2026-09-30): Format Cells, the one seam whose
-/// frame is the Chrome's. A Chrome handed to <c>ExSheet.Chrome</c> that is also an
-/// <see cref="ISheetChrome"/> draws Format Cells as well as the grid's seams.
+/// ExSheet's Chrome seam (ADR-0071, ADR-0410): the Sheet's own parts the Script Core leaves to Razor — the Toolbar
+/// Items, Format Cells' contents and the Sheet Tabs' faces — named by <see cref="SheetScriptSlots"/>. A Chrome handed
+/// to <c>ExSheet.Chrome</c> that is also an <see cref="ISheetChrome"/> draws them as well as the grid's slots.
 /// </summary>
 public interface ISheetChrome : IGridChrome
 {
     /// <summary>
-    /// Format Cells in a frame of the Chrome's own, such as a page-level dialog. ExSheet renders the
-    /// fragment beside the grid, outside its root, from the opening until <see cref="FormatCellsContext.Ok"/>
-    /// or <see cref="FormatCellsContext.Cancel"/> ends it. Null falls back to the built-in Format
-    /// Cells, shown in the grid's popover frame (ADR-0050, item 16).
-    /// </summary>
-    RenderFragment? FormatCells(FormatCellsContext context) => null;
-
-    /// <summary>
-    /// A Toolbar Item of the Sheet Toolbar, drawn in this Chrome's controls (ADR-0100). The item's
-    /// meaning — whether it is pressed or available, what pressing it and each choice does — is
-    /// ExSheet's, in <paramref name="context"/>; the Chrome draws it and calls back. A pointer press
-    /// must not take DOM focus, so the keyboard stays on the Sheet. Null draws the built-in item.
-    /// </summary>
-    RenderFragment? ToolbarItem(ToolbarItemContext context) => null;
-
-    /// <summary>
-    /// The face of a Sheet Tab, drawn in this Chrome's controls (ADR-0331 §4): what stands inside the
-    /// tab ExSheet keeps, which takes the keyboard and hears every press. The face shows the Sheet's name
-    /// as its only text, takes no keyboard and hears nothing. Null draws the built-in face, the name.
+    /// The face of a Sheet Tab, drawn in this Chrome's controls (ADR-0331 §4) for a Chrome that names
+    /// <see cref="SheetScriptSlots.SheetTab"/>: what stands inside the tab ExSheet keeps, which takes the keyboard
+    /// and hears every press. The face shows the Sheet's name as its only text, takes no keyboard and hears nothing.
     /// </summary>
     RenderFragment? SheetTab(SheetTabContext context) => null;
 
     /// <summary>
-    /// The face of the button that adds a Sheet after the one shown (ADR-0331 §4), inside the button
-    /// ExSheet keeps. It takes no keyboard and hears nothing. Null draws the built-in face, <c>+</c>.
+    /// The face of the button that adds a Sheet after the one shown (ADR-0331 §4), for a Chrome that names
+    /// <see cref="SheetScriptSlots.SheetTabAdd"/>, inside the button ExSheet keeps. It takes no keyboard and hears
+    /// nothing.
     /// </summary>
     RenderFragment? SheetTabAdd() => null;
-
-    /// <summary>
-    /// A Sheet Tab's menu — its surface and its commands — drawn in this Chrome's controls (ADR-0331 §4),
-    /// inside the element ExSheet keeps, which holds the keyboard and answers the menu's keys. Each
-    /// command's element carries its <see cref="SheetTabCommand.Id"/>, the role <c>menuitem</c> and
-    /// <c>aria-disabled</c> while it cannot be done; a pointer press on it must not take DOM focus, and its
-    /// click calls <see cref="SheetTabCommand.Invoke"/>. Null draws the built-in menu.
-    /// </summary>
-    RenderFragment? SheetTabMenu(SheetTabMenuContext context) => null;
-
-    /// <summary>
-    /// The find panel's contents in this Chrome's controls (ADR-0332 §5): the grid's panel, drawn from
-    /// <see cref="SheetFindContext.Find"/> as <see cref="IGridChrome.FindPanel(FindContext)"/> draws it, with a control for
-    /// <see cref="SheetFindContext.Within"/> added. ExSheet always draws the Sheet's find panel itself, through
-    /// the grid's own seam; this is asked in place of <see cref="IGridChrome.FindPanel(FindContext)"/>, which a Sheet does not
-    /// ask. Null draws ExSheet's built-in panel.
-    /// </summary>
-    RenderFragment? SheetFindPanel(SheetFindContext context) => null;
 
     /// <summary>The Sheet's own slots this Chrome fills with Razor when the Script Core draws the Sheet
     /// (<c>ExSheet.Script.ExSheet</c>, ADR-0410): each is asked for through its view overload, or through the overload

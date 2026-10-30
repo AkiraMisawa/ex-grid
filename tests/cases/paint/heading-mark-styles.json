@@ -1,6 +1,6 @@
 {
   "about": "Where the Heading Mark is painted, as an inline style (ADR-0008, 2026-10-13, ADR-0053): one rectangle per run of marked Headings, a column's in the header band's layer on its side of the pinned boundary, a row's over the Row Headings in the painted slice's coordinates. The C# core's HeadingMarkStyles is a static class; the Script Core's paint/heading-mark-styles.ts has its functions, Column under the name columnMark and Row under rowMark. The column cases run on four columns 100, 80, 120 and 90 px wide, the first pinned, in a 400 px Viewport: column edges at 0, 100, 180, 300 and 390.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "HeadingMarkStyles",
   "cases": [
     {

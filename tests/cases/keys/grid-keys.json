@@ -1,6 +1,6 @@
 {
   "about": "The key table (ADR-0010: the core arbitrates the keys; ADR-0012's keyboard; ADR-0050 item 14's declared keys). From tests/ExGrid.Tests/GridKeyTests.cs and DeclaredKeyTests.cs. The C# core's GridKeys is a static class; the Script Core's keys/grid-keys.ts is its functions under these names.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "GridKeys",
   "cases": [
     {

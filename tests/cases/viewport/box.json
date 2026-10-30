@@ -1,6 +1,6 @@
 {
   "about": "What a scrollbar takes out of the Viewport, and what it must not take. From tests/ExGrid.Tests/ViewportBoxTests.cs.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "ViewportBox",
   "cases": [
     {

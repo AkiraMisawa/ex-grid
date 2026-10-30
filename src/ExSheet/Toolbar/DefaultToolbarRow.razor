@@ -1,59 +1,17 @@
 @namespace ExSheet
 @implements IDisposable
-@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
-   Every product using is written with global::. A component in ExSheet.Components would look a
-   plain "ExSheet.Engine" up against the ExSheet component class first, and a plain "ExGrid.X"
-   against sibling types (the CS0426 trap recorded in AGENTS.md). The Web namespace makes @on...
-   handlers compile as event handlers rather than as plain HTML attributes. *@
 @using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Web
-@using global::ExGrid
-@using global::ExGrid.Cells
-@using global::ExGrid.Chrome
-@using global::ExGrid.Components
-@using global::ExGrid.Keys
-@using global::ExGrid.Selection
-@using global::ExSheet.Engine
 
 @*
-    The Sheet Toolbar's default row (ADR-0100), shown when the Consumer declares no ToolbarContent: the
-    formatting commands in the order Excel's Home tab has them. It is only an example — the order is
-    the Consumer's to declare — and its KeyTip is H, Excel's Home.
+    The Sheet Toolbar's default row (ADR-0100), declared whole: the Script Core draws its own default row, in its words,
+    the formatting commands in the order Excel's Home tab has them, under the KeyTip H.
 *@
-@* On the Script ExSheet the row is declared whole, and the Script Core draws its own default row, in its words. *@
-@if (Script is null)
-{
-<CascadingValue Value="_place" IsFixed="true">
-<ToolbarRow KeyTip="H" Label="Home">
-    <BoldItem />
-    <ItalicItem />
-    <UnderlineItem />
-    <StrikethroughItem />
-    <ToolbarSeparator />
-    <FontColourItem />
-    <FillItem />
-    <ToolbarSeparator />
-    <BordersItem />
-    <ToolbarSeparator />
-    <AlignLeftItem />
-    <AlignCenterItem />
-    <AlignRightItem />
-    <ToolbarSeparator />
-    <NumberFormatItem />
-    <PercentItem />
-    <CommaItem />
-    <ToolbarSeparator />
-    <FormatCellsItem />
-</ToolbarRow>
-</CascadingValue>
-}
 
 @code {
     /// <summary>The scope the row takes its place from. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
-    /// <summary>The Script ExSheet's toolbar, where the row declares itself; null on the Razor component's. Internal, as
-    /// its type is (ADR-0201).</summary>
+    /// <summary>The ExSheet's toolbar, where the row declares itself. Internal, as its type is (ADR-0201).</summary>
     [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
 
     private ToolbarOrder _place = new();
@@ -62,7 +20,12 @@
     protected override void OnInitialized() => _place = Order?.Next() ?? _place;
 
     /// <inheritdoc />
-    protected override void OnParametersSet() => Script?.JoinDefault(this, _place);
+    protected override void OnParametersSet()
+    {
+        var script = Script
+            ?? throw new InvalidOperationException("DefaultToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
+        script.JoinDefault(this, _place);
+    }
 
     /// <inheritdoc />
     public void Dispose() => Script?.LeaveDefault(this);

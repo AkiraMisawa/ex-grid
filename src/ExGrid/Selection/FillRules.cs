@@ -3,135 +3,6 @@ using ExGrid.Clipboard;
 namespace ExGrid.Selection;
 
 /// <summary>
-/// Where a fill-handle drag reaches, and whether it may be raised (ADR-0050, item 5): the
-/// gesture is the core's, the meaning is the Consumer's. Pure and stateless — the component
-/// holds the drag, and this answers what it has reached.
-///
-/// <para>The only shape is one rectangle extended along one axis. A disjoint Selection has
-/// no handle, as in Excel. The axis is the one the pointer has travelled further along past
-/// the source, counted in cells; a tie goes down or up, Excel's usual fill. A pointer back
-/// inside the source reaches nothing, and a release there raises nothing.</para>
-/// </summary>
-internal static class FillRules
-{
-    /// <summary>
-    /// The range the handle stands on, or null when there is none: the Selection's last
-    /// range, only while it is the one range — a disjoint Selection shows no handle
-    /// (ADR-0050, item 5).
-    /// </summary>
-    public static SelectionRange? HandleRange(GridSelection selection)
-    {
-        ArgumentNullException.ThrowIfNull(selection);
-        return selection.Ranges.Count == 1 ? selection.Ranges[^1] : null;
-    }
-
-    /// <summary>
-    /// Which corner of <paramref name="range"/> the handle stands at (ADR-0050, item 5; 2026-10-12,
-    /// decided with the user: the handle on a whole axis follows Excel, from the seventeenth Windows
-    /// run's h3), or null where there is none.
-    /// A range spanning every row of <paramref name="extent"/> (whole columns) at its first row's
-    /// top-right corner, beside the column's Heading; one spanning every column (whole rows) at its
-    /// first column's bottom-left, beside the row's Heading — a bottom-right corner a million rows
-    /// down, or sixteen thousand columns across, is one nobody can reach. Several whole columns put
-    /// it at the last one's top-right and several whole rows at the last one's bottom-left (observed,
-    /// the readings of 2026-10-12 (R5): columns B:D and rows 2:4, each selected from its first
-    /// Heading). A range spanning both, every cell (Ctrl+A), has none: Excel showed none in view
-    /// (observed, R5), and there is nowhere left to fill to. Every other range keeps its
-    /// bottom-right corner.
-    /// </summary>
-    internal static FillHandleCorner? HandleCorner(SelectionRange range, GridExtent extent)
-    {
-        var everyRow = range.SpansEveryRow(extent);
-        var everyColumn = range.SpansEveryColumn(extent);
-        return everyRow && everyColumn ? null
-            : everyRow ? FillHandleCorner.TopRight
-            : everyColumn ? FillHandleCorner.BottomLeft
-            : FillHandleCorner.BottomRight;
-    }
-
-    /// <summary>
-    /// What a drag from <paramref name="source"/>'s handle has reached with the pointer over
-    /// <paramref name="pointer"/>: the cells a release would fill — never the source itself
-    /// — and the direction. Null while the pointer is inside the source.
-    /// </summary>
-    public static FillExtension? ExtensionFor(SelectionRange source, CellPosition pointer)
-    {
-        var rows = Beyond(pointer.Row, source.TopRow, source.BottomRow);
-        var columns = Beyond(pointer.Column, source.LeftColumn, source.RightColumn);
-        if (rows == 0 && columns == 0)
-            return null;
-
-        // One axis only, the one the pointer went further along (ADR-0050); a tie is the
-        // vertical fill, the one Excel users make most.
-        if (Math.Abs(rows) >= Math.Abs(columns))
-        {
-            return rows > 0
-                ? new FillExtension(
-                    new SelectionRange(source.BottomRow + 1, source.LeftColumn, rows, source.ColumnCount),
-                    GridDirection.Down)
-                : new FillExtension(
-                    new SelectionRange(pointer.Row, source.LeftColumn, -rows, source.ColumnCount),
-                    GridDirection.Up);
-        }
-        return columns > 0
-            ? new FillExtension(
-                new SelectionRange(source.TopRow, source.RightColumn + 1, source.RowCount, columns),
-                GridDirection.Right)
-            : new FillExtension(
-                new SelectionRange(source.TopRow, pointer.Column, source.RowCount, -columns),
-                GridDirection.Left);
-    }
-
-    /// <summary>
-    /// The release (ADR-0050, item 5): null when the pointer is inside the source and
-    /// nothing is filled; otherwise approved with the extension, or refused whole as
-    /// <see cref="PasteRefusalReason.TargetNotEditable"/> when the target covers a column
-    /// that is not Editable. Paste and fill go through one gate, and it is judged before
-    /// anything is raised (ADR-0035). <paramref name="columnIsEditable"/> is required for
-    /// the reason <see cref="ClipboardRules.PlanPaste"/> requires it.
-    /// </summary>
-    public static FillDecision? PlanFill(
-        SelectionRange source, CellPosition pointer, Func<int, bool> columnIsEditable)
-    {
-        ArgumentNullException.ThrowIfNull(columnIsEditable);
-        if (ExtensionFor(source, pointer) is not { } extension)
-            return null;
-        for (var column = extension.Target.LeftColumn; column <= extension.Target.RightColumn; column++)
-        {
-            if (!columnIsEditable(column))
-                return FillDecision.RefuseNotEditable(column);
-        }
-        return FillDecision.Approve(extension);
-    }
-
-    /// <summary>How far past <paramref name="first"/>..<paramref name="last"/> a position
-    /// lies: positive after, negative before, zero inside.</summary>
-    private static int Beyond(int position, int first, int last) =>
-        position > last ? position - last
-        : position < first ? position - first
-        : 0;
-}
-
-/// <summary>
-/// The corner of its range the fill handle stands at (ADR-0050, item 5): the bottom-right, but
-/// for a range of whole columns or whole rows, whose bottom-right lies where nobody can reach it.
-/// </summary>
-internal enum FillHandleCorner
-{
-    /// <summary>The range's last row and last column: every range but the two below.</summary>
-    BottomRight,
-
-    /// <summary>The first row's top-right corner, beside the column's Heading: whole columns. Held at
-    /// the readable area's top while that row is scrolled above it.</summary>
-    TopRight,
-
-    /// <summary>The first column's bottom-left corner, beside the row's Heading: whole rows. Held at
-    /// the readable area's left while that column is scrolled under the Row Headings or the Pinned
-    /// Columns.</summary>
-    BottomLeft,
-}
-
-/// <summary>
 /// What a fill-handle drag has reached (ADR-0050, item 5): the cells a release would fill,
 /// which never include the source, and the direction they lie in from it.
 /// </summary>
@@ -139,49 +10,6 @@ internal enum FillHandleCorner
 /// wide (or as tall) as it.</param>
 /// <param name="Direction">Which way from the source the target lies.</param>
 internal readonly record struct FillExtension(SelectionRange Target, GridDirection Direction);
-
-/// <summary>
-/// A fill-handle release approved with its extension, or refused with a reason — never
-/// both, never neither. Reading the absent half throws rather than answering something
-/// plausible (ADR-0014's shape, for a fill).
-/// </summary>
-internal sealed class FillDecision
-{
-    private readonly FillExtension? _extension;
-    private readonly PasteRefusalReason _reason;
-
-    private FillDecision(FillExtension? extension, PasteRefusalReason reason, int refusedColumn = -1)
-    {
-        _extension = extension;
-        _reason = reason;
-        RefusedColumn = refusedColumn;
-    }
-
-    internal static FillDecision Approve(FillExtension extension) => new(extension, default);
-
-    internal static FillDecision Refuse(PasteRefusalReason reason) => new(null, reason);
-
-    /// <summary>A <see cref="PasteRefusalReason.TargetNotEditable"/> refusal, naming the first
-    /// target column that is not Editable — the column the words name (ADR-0203).</summary>
-    internal static FillDecision RefuseNotEditable(int column) => new(null, PasteRefusalReason.TargetNotEditable, column);
-
-    /// <summary>The column a <see cref="PasteRefusalReason.TargetNotEditable"/> refusal was for, by
-    /// position in the current order; -1 for every other answer.</summary>
-    internal int RefusedColumn { get; }
-
-    /// <summary>Whether the fill is refused: read <see cref="Reason"/> if so, and
-    /// <see cref="Extension"/> if not.</summary>
-    public bool IsRefused => _extension is null;
-
-    /// <summary>Why the fill is refused. Throws when it was approved.</summary>
-    public PasteRefusalReason Reason => _extension is null
-        ? _reason
-        : throw new InvalidOperationException("The fill was approved; there is no refusal reason.");
-
-    /// <summary>The approved extension. Throws when the fill was refused.</summary>
-    public FillExtension Extension => _extension
-        ?? throw new InvalidOperationException("The fill was refused; read Reason instead (ADR-0035).");
-}
 
 /// <summary>
 /// The Fill Intent (ADR-0050, item 5): a fill-handle drag, released. The grid writes
@@ -223,8 +51,7 @@ public sealed class GridFillIntent
 
     /// <summary>Cancelled when the user cancels the fill with Escape while the Consumer is answering it (ADR-0380
     /// section 3): nothing is filled, and a handler that writes after the token is cancelled writes a fill the user
-    /// took back. Only ExGrid over the Script Core waits for an answer this way; the C# core's is never
-    /// cancelled.</summary>
+    /// took back.</summary>
     public CancellationToken CancellationToken { get; internal init; }
 
     /// <summary>Whether the Consumer refused the fill through <see cref="Refuse"/>.</summary>

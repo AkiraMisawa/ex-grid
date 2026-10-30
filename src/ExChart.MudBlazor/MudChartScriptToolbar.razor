@@ -7,9 +7,8 @@
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudChartChrome draws this part, and no Consumer places it. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* The chart's toolbar under MudBlazor when the Script Core draws the chart (ADR-0281, ADR-0410):
-   MudChartToolbar's look, drawn from the view and wired in the browser from the attributes each
-   control writes, so a press means what the chart now says and a download is saved inside the click
+@* The chart's toolbar under MudBlazor (ADR-0281, ADR-0410): text MudButtons, drawn from the view and
+   wired in the browser from the attributes each control writes, so a press means what the chart now says and a download is saved inside the click
    that asked for it. The downloads are one MudButtonGroup, not a MudMenu, whose list would open
    outside the chart, where nothing wires it. Chart Filters' ends are native fields in MudBlazor's
    outline, which the script writes the range into and reads as Apply is pressed: text, the axis'

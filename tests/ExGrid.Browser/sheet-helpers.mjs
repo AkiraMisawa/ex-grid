@@ -1,5 +1,4 @@
 import { expect, circuitQuiet } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 
 // What the Sheet's specs share — sheet, declarations, sheets, edit-stands and pointing-scope:
@@ -28,29 +27,15 @@ export function positions(page) {
  * opens, and every change to the Sheet clears ExSheet's notice, a Consumer's push included
  * (ExSheet.ChangedAsync), so a refusal read before the push lands can be wiped by it: B12 shows
  * its value once the push has landed.
- *
- * Under either Chrome the page draws ExSheet over the Script Core; `component` 'razor' asks for the
- * Razor component, which still ships, for a test of a mechanism only it has (ADR-0370 section 6,
- * step 2), such as the Wrapper's MudDialog Format Cells or its find panel.
  */
-export async function openSheet(page, chrome = 'builtin', component = undefined) {
-    const query = [chrome === 'builtin' ? undefined : `chrome=${chrome}`, component === undefined ? undefined : `component=${component}`]
-        .filter((part) => part !== undefined);
-    await page.goto(query.length === 0 ? '/sheet' : `/sheet?${query.join('&')}`);
+export async function openSheet(page, chrome = 'builtin') {
+    await page.goto(chrome === 'builtin' ? '/sheet' : `/sheet?chrome=${chrome}`);
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     if (chrome !== 'builtin') {
         await expect(page.locator('.mud-ex-formula-bar-text, .mud-ex-name-box').first()).toBeAttached();
     }
     await expect(cell(sheet(page), 'B12')).toHaveText('318.25', { timeout: 10_000 });
 }
-
-/**
- * The component a test of a circuit's own window opens /sheet with: on the Server host the Razor component, whose keys
- * and presses .NET answers a round trip after they are made; elsewhere the page's own. ExSheet over the Script Core
- * answers them in the browser on either host, as the Razor component does on WebAssembly, so no such window opens over
- * it, and those tests' WebAssembly branch is what it meets (ADR-0370 section 6, step 2).
- */
-export const CIRCUIT_SHEET = SERVER ? 'razor' : undefined;
 
 /** 'B7' → { row: 6, column: 1 }, zero-based, as the grid's cell ids count. */
 export function at(address) {

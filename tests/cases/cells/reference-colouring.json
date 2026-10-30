@@ -1,6 +1,6 @@
 {
   "about": "Who wears which colour among the References in one text (ADR-0057, DC-46): the same cells or the same key share a colour, colours are handed out in order of first appearance, round a palette of seven; an answer that would colour the wrong characters is refused by name. A colour is its place in the palette, 1 to 7. From tests/ExGrid.Tests/ReferenceColouringTests.cs.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "ReferenceColouring",
   "cases": [
     {

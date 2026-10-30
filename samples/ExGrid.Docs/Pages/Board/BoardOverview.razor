@@ -273,10 +273,9 @@ const output = bound.confirm('chosen');                         // the values ch
     <DocsSection Title="A Board drawn in the browser">
         <p>
             Blazor's ExBoard runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
-            this site draws <code>ExBoard.Script.ExBoard</code>, and the Razor component
-            <code>ExBoard.Components.ExBoard</code> stays in the package only until it is removed in this release. Binding,
+            this site draws <code>ExBoard.Script.ExBoard</code>. Binding,
             layout, links, the confirm and the Board Diff run in the browser on both hosting models, so on Blazor Server
-            a selection, a narrowing or a sort no longer crosses the circuit. It takes the same <code>BoardReading</code>,
+            a selection, a narrowing or a sort never crosses the circuit. It takes a <code>BoardReading</code>,
             <code>Data</code>, <code>Width</code>, <code>Culture</code>, <code>OnOutput</code>, <code>Diff</code> and
             <code>OnDiff</code>. The Board crosses as its JSON. Each Snapshot crosses once, as the Arrow stream
             <code>ExGrid.Data.Arrow</code> writes; a new <code>Data</code> holding the same Snapshot sends nothing again. An

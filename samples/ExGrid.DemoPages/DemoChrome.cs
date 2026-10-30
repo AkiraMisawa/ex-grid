@@ -18,21 +18,6 @@ public static class DemoChrome
     /// <summary>Whether <paramref name="name"/> asks for ExGrid.MudBlazor's Chrome.</summary>
     public static bool IsMud(string? name) => name == "mud";
 
-    /// <summary>
-    /// Whether a sheet page draws the Razor components, as <c>?component=</c> asks, in place of Blazor's components
-    /// over the Script Core (ADR-0370 step 2): <c>razor</c> asks for them, and <c>script</c> or nothing for the Script
-    /// ones, under either Chrome.
-    /// </summary>
-    /// <exception cref="ArgumentException">The component is none of these.</exception>
-    public static bool DrawsRazor(string? component) => component switch
-    {
-        "razor" => true,
-        "script" or null => false,
-        _ => throw new ArgumentException(
-            $"Unknown component '{component}': this page runs with ?component=razor or ?component=script, or without it.",
-            nameof(component)),
-    };
-
     /// <summary>The Chrome <paramref name="name"/> asks for: null for the core's own,
     /// <see cref="MudGridChrome.Default"/> for <c>mud</c>.</summary>
     /// <exception cref="ArgumentException">The name is neither.</exception>

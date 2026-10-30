@@ -32,18 +32,15 @@ async function figures(page) {
     return { first: await firstValue(page).textContent(), total: await grandTotal(page).textContent() };
 }
 
-test('ADR-0370 section 1: the report built in the browser from .NET\'s Leaf Aggregates is the Razor component\'s, and a new source is asked again', async ({ page }) => {
-    await open(page, '/pivot?chrome=builtin&component=razor');
-    const razor = await figures(page);
-
+test('ADR-0370 section 1: a new source of the Consumer\'s in .NET is asked again, and the report built in the browser follows it', async ({ page }) => {
     await open(page, '/script-pivot');
-    expect(await figures(page)).toEqual(razor);
+    const before = await figures(page);
 
     await page.locator('#script-pivot-revalue').click();
-    await expect(firstValue(page)).not.toHaveText(razor.first);
+    await expect(firstValue(page)).not.toHaveText(before.first);
     await expect(pivot(page)).not.toHaveAttribute('aria-busy');
     await settled(report(page));
-    expect((await figures(page)).total).not.toBe(razor.total);
+    expect((await figures(page)).total).not.toBe(before.total);
 });
 
 test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layout in .NET, and the Consumer\'s own layout replaces it', async ({ page }) => {

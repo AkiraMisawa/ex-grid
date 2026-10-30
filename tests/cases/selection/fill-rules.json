@@ -1,6 +1,6 @@
 {
   "about": "Where a fill-handle drag reaches (ADR-0050, item 5): the corner the handle stands at, and what a drag from it has reached. The C# core's FillRules is a static class; the Script Core's selection/fill-rules.ts has its functions, HandleCorner as fillHandleCorner and ExtensionFor as fillExtensionFor. Every drag here is from rows 2 to 3, columns 1 to 2.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "FillRules",
   "cases": [
     {

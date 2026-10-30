@@ -47,7 +47,7 @@ export function record(project, entries) {
 }
 
 // Whose a console message is (CON-3). ExGrid's own code is what the packages serve —
-// ex-grid.js and anything else under _content/ExGrid* — and a message that names
+// the Script Core's modules and anything else under _content/ExGrid* — and a message that names
 // itself: the module prefixes every write with [ex-grid], and a .NET log line carries
 // its category, so one from inside the component says ExGrid.Something. The demo
 // pages and their hosts live in ExGrid.DemoPages and ExGrid.DemoHost and are not the
@@ -795,18 +795,16 @@ async function readJournals(page, testInfo) {
     }))).catch((error) => [{ unread: String(error) }]);
 }
 
-// With the core's side, which the Server host writes to its log under the journal's category; on
-// WebAssembly the core runs in the page and logs nothing (CON-8), so the script's side is the record.
-async function attachJournals(testInfo, journals, hostLog) {
+// Attached to the test, and printed in the run's own output, on one line, where a failure's report prints it: a
+// run's log can be read where its artifacts cannot be fetched. The core runs in the page on both hosts, so the
+// script's side is the whole record.
+async function attachJournals(testInfo, journals) {
     if (journals === null) {
         return;
     }
-    const core = hostLog.filter((line) => line.includes(' ExGrid.InputOrder: '));
-    const body = JSON.stringify({ script: journals, core }, null, 1);
+    const body = JSON.stringify({ script: journals }, null, 1);
     await testInfo.attach('input-journal.json', { contentType: 'application/json', body });
-    // And in the run's own output, on one line, where a failure's report prints it: a run's log can be
-    // read where its artifacts cannot be fetched.
-    console.log(`input-journal ${JSON.stringify({ script: journals, core })}`);
+    console.log(`input-journal ${JSON.stringify({ script: journals })}`);
 }
 
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.
@@ -832,7 +830,7 @@ async function ownPage(app, page, use, options, testInfo) {
         expect.soft(false, `the harness named ${pattern}: a document of the test's own is not checked`).toBe(true);
     }
     const hostLog = app.hostLog();
-    await attachJournals(testInfo, journals, hostLog);
+    await attachJournals(testInfo, journals);
     verdict(sink, hostLog, options, testInfo);
 }
 
@@ -934,7 +932,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     expect.soft(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
         'nothing left outside the test\'s own page (ADR-0056)').toEqual([]);
     const hostLog = app.hostLog();
-    await attachJournals(testInfo, journals, hostLog);
+    await attachJournals(testInfo, journals);
     verdict(sink, hostLog, options, testInfo);
     if (!handOn || leaks.length > 0 || testInfo.errors.length > errorsBefore) {
         await app.close();

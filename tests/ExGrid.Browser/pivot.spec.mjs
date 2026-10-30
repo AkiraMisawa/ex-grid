@@ -1198,37 +1198,12 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-// The Razor component's Value Field Settings draws a MudSelect; the Script one's, a native select, whose list is the
-// browser's (ADR-0410). Run against the Razor component, which ships until step 3 (ADR-0370 section 6).
-test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape before its panel', async ({ page }) => {
-    await open(page, 'mud', '&component=razor');
-    await entry(page, 'Sum of P&L').click();
-    await page.getByRole('menuitem', { name: 'Value Field Settings…' }).click();
-    const panel = page.getByRole('dialog', { name: 'Value Field Settings…' });
-    await expect(panel).toBeVisible();
-
-    // The list is the select's, drawn in MudBlazor's provider outside ExPivot's root (ADR-0039).
-    await panel.locator('.mud-ex-pivot-aggregation').first().click();
-    const list = page.locator('.mud-popover-open');
-    await expect(list.locator('.mud-list-item').first()).toBeVisible();
-    await expect(pivot(page).locator('.mud-popover-open')).toHaveCount(0);
-    await page.keyboard.press('Escape');
-
-    await expect(list).toHaveCount(0);
-    await circuitQuiet();
-    await expect(panel).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(panel).toHaveCount(0);
-    await expect(entry(page, 'Sum of P&L')).toBeFocused();
-});
-
-// The Script component under either Chrome, and the Razor one under MudBlazor's, whose box the script focuses into
-// (ADR-0360), until the Razor one goes (ADR-0370 section 6, step 3).
-for (const [chrome, component] of [['builtin', 'script'], ['mud', 'script'], ['mud', 'razor']]) {
-    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome}${component === 'razor' ? ', Razor component' : ''})`, async ({ page }) => {
+// Under either Chrome (ADR-0360).
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
         // The source's first answer waits for the page's button: the pane stands, and no report grid
         // does, so the keyboard cannot be handed on through one.
-        await page.goto(`/pivot?chrome=${chrome}&first=held${component === 'razor' ? '&component=razor' : ''}`);
+        await page.goto(`/pivot?chrome=${chrome}&first=held`);
         await stylesheetsLoaded(page);
         await expect(entry(page, 'Region')).toBeVisible({ timeout: 30_000 });
         await expect(report(page)).toHaveCount(0);
@@ -1243,10 +1218,8 @@ for (const [chrome, component] of [['builtin', 'script'], ['mud', 'script'], ['m
         await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
         const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
         await expect(settings).toBeVisible();
-        // The panel's first control: under the Razor component's MudBlazor Chrome the sort order's
-        // select, inside the `display: contents` box the Chrome named, which cannot take focus itself;
-        // under the Script component, in either Chrome, the first subtotals choice.
-        const first = component === 'razor' ? settings.locator('.mud-ex-pivot-sort input') : settings.getByRole('radio').first();
+        // The panel's first control, in either Chrome: the first subtotals choice.
+        const first = settings.getByRole('radio').first();
         await expect(first).toBeFocused();
 
         await page.keyboard.press('Escape');

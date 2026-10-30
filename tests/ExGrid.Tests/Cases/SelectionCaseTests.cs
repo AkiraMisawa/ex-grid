@@ -16,10 +16,6 @@ public class SelectionCaseTests
 
     public static TheoryData<string, string> RangeCases() => SharedCases.Of(Area, "range");
 
-    public static TheoryData<string, string> EdgeBandCases() => SharedCases.Of(Area, "edgeBand");
-
-    public static TheoryData<string, string> HeldCases() => SharedCases.Of(Area, "held");
-
     [Theory, MemberData(nameof(SelectionCases))] // ADR-0350: a selection case holds on the C# core
     public void Selection(string file, string name)
     {
@@ -198,7 +194,8 @@ public class SelectionCaseTests
                     Assert.Equal(value.EnumerateArray().Select(c => c.GetInt32()), selection.WholeColumns(extent));
                     break;
                 case "headingMarks":
-                    HoldsMarks(selection, value, extent);
+                    // The Heading Mark is painted by the Script Core alone, which holds it to these cases (ADR-0008);
+                    // the C# logic that drew it went with the Razor ExGrid (ADR-0370 step 3).
                     break;
                 case "topLeftOfRangeMadeLast":
                     Nullable(value, () => selection.TopLeftOfRangeMadeLast, SharedCases.Cell);
@@ -215,30 +212,6 @@ public class SelectionCaseTests
                 default:
                     throw new InvalidOperationException($"The expectation \"{property.Name}\" is not one this runner knows.");
             }
-        }
-    }
-
-    /// <summary>The Heading Mark's runs (ADR-0008): <c>columns</c> and <c>rows</c> it marks, and
-    /// <c>wholeColumns</c> and <c>wholeRows</c> it covers whole under the case's extent, or under
-    /// <c>under</c> when the case names another. Each run is <c>[start, count]</c>.</summary>
-    private static void HoldsMarks(GridSelection selection, JsonElement expected, GridExtent extent)
-    {
-        var under = expected.TryGetProperty("under", out var pair) ? SharedCases.Extent(pair) : extent;
-        static (int, int)[] Runs(JsonElement runs)
-            => runs.EnumerateArray().Select(run => (run[0].GetInt32(), run[1].GetInt32())).ToArray();
-        foreach (var property in expected.EnumerateObject())
-        {
-            var actual = property.Name switch
-            {
-                "under" => null,
-                "columns" => HeadingMarks.Columns(selection).Select(run => (run.Start, run.Count)).ToArray(),
-                "rows" => HeadingMarks.Rows(selection).Select(run => (run.Start, run.Count)).ToArray(),
-                "wholeColumns" => HeadingMarks.WholeColumns(selection, under).Select(run => (run.Start, run.Count)).ToArray(),
-                "wholeRows" => HeadingMarks.WholeRows(selection, under).Select(run => (run.Start, run.Count)).ToArray(),
-                var other => throw new InvalidOperationException($"The Heading Mark expectation \"{other}\" is not one this runner knows."),
-            };
-            if (actual is not null)
-                Assert.Equal(Runs(property.Value), actual);
         }
     }
 
@@ -292,53 +265,6 @@ public class SelectionCaseTests
         else
         {
             throw new InvalidOperationException($"The case \"{name}\" names nothing this runner knows.");
-        }
-    }
-
-    [Theory, MemberData(nameof(EdgeBandCases))] // ADR-0350: an edge band case holds on the C# core
-    public void EdgeBandRate(string file, string name)
-    {
-        var (_, entry) = SharedCases.Find(Area, file, name);
-        Assert.Equal(
-            entry.GetProperty("expect").GetInt32(),
-            EdgeBand.RowsPerTick(
-                entry.GetProperty("positionPx").GetDouble(),
-                entry.GetProperty("lengthPx").GetDouble(),
-                entry.GetProperty("rowsPerViewport").GetInt32()));
-    }
-
-    [Theory, MemberData(nameof(HeldCases))] // ADR-0350: a held selection case holds on the C# core
-    public void Held(string file, string name)
-    {
-        var (document, entry) = SharedCases.Find(Area, file, name);
-        var extent = SharedCases.Extent(document.GetProperty("extent"));
-        var held = HeldSelection.Empty(entry.GetProperty("version").GetInt32());
-        var before = held;
-        foreach (var step in entry.GetProperty("steps").EnumerateArray())
-        {
-            if (step.TryGetProperty("click", out var cell))
-            {
-                before = held;
-                held = held.With(held.Selection.Click(SharedCases.Cell(cell), extent));
-            }
-            else if (step.TryGetProperty("under", out var version))
-            {
-                before = held;
-                held = held.Under(version.GetInt32());
-            }
-            else
-            {
-                var expected = step.GetProperty("expect");
-                foreach (var key in expected.EnumerateObject())
-                    if (key.Name is not ("version" or "empty" or "sameAsBefore"))
-                        throw new InvalidOperationException($"A held case expects \"{key.Name}\", which this runner does not know.");
-                if (expected.TryGetProperty("version", out var v))
-                    Assert.Equal(v.GetInt32(), held.RowSequenceVersion);
-                if (expected.TryGetProperty("empty", out var empty))
-                    Assert.Equal(empty.GetBoolean(), held.Selection.IsEmpty);
-                if (expected.TryGetProperty("sameAsBefore", out var same))
-                    Assert.Equal(same.GetBoolean(), held == before);
-            }
         }
     }
 }

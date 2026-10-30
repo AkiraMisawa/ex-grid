@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip, holdAnswers, circuitQuiet, alterPage, settled } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth, CIRCUIT_SHEET } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
 import { resolvedColour } from './pixels.mjs';
@@ -36,11 +36,10 @@ function activeItemName(page) {
 
 /**
  * The toolbar's lists that stand open, under either Chrome: the built-in one in the grid's popover;
- * MudBlazor's, over the Script Core, the Wrapper's list the adapter's script shows (ADR-0410), drawn
- * closed inside every item, and, in the Razor component a circuit's specs open, an open MudPopover.
+ * MudBlazor's, the Wrapper's list the adapter's script shows (ADR-0410), drawn closed inside every item.
  */
 function openLists(page) {
-    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden]), .mud-popover-open .mud-ex-sheet-toolbar-choices');
+    return page.locator('.ex-sheet-choices, .mud-ex-sheet-script-toolbar-list:not([hidden])');
 }
 
 /** Format Cells: the grid's popover under either Chrome, over the Script Core (ADR-0410). */
@@ -772,18 +771,15 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await keyTips(page, 'h', 'h');
             await expect(openLists(page)).toHaveCount(1);
             await expect(page.locator(':focus')).toContainText('No Fill');
-            const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across both keys, so the list stands for the 1 however fast it is
-            // typed: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across both keys, so nothing .NET answers lands between them. The Script
+            // Core closes the list as the Escape is typed, on either host; the window in which the 1 met a list
+            // still standing was the Razor component's, a round trip long on a circuit.
+            await holdAnswers(true);
 
             await page.keyboard.press('Escape');
             await page.keyboard.press('1');
@@ -796,10 +792,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
             await expect(cell(grid, 'A4')).toHaveText('Plums');
             await expectKeyboardOn(grid);
-            if (circuit) {
-                // On a circuit the 1 was typed while the list still stood: the case the hold is for.
-                expect(await landed()).toEqual([{ key: 'Escape', where: 'list' }, { key: '1', where: 'list' }]);
-            }
             await page.keyboard.press('Control+z');
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
@@ -925,15 +917,10 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'B3');
-            const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the keys, so the list has not taken the keyboard when the
-            // arrows are typed, however slowly: a round trip of 80ms only made that likely (ADR-0220).
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the keys, so nothing .NET answers lands between them.
+            await holdAnswers(true);
 
             await keyTips(page, 'h', 'h', 'ArrowDown', 'ArrowRight', 'Enter');
             await holdAnswers(false);
@@ -946,12 +933,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid);
             await page.keyboard.press('ArrowDown');
             await expectFocusAt(grid, 'B4');
-            if (circuit) {
-                // On a circuit the list took the keyboard a round trip after the second H: the arrows and Enter
-                // were typed before it had, outside the list.
-                const keys = await landed();
-                expect(keys.find((k) => k.key === 'ArrowDown')?.where).not.toBe('list');
-            }
         });
 
         test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome})`, async ({ page }) => {
@@ -1017,9 +998,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (${chrome})`, async ({ page }) => {
-            // On the Server host, the Razor component, whose list closes a round trip after the key (CIRCUIT_SHEET's
-            // reason): over the Script Core it closes as the key is typed, as on WebAssembly.
-            if (CIRCUIT_SHEET !== undefined) await openSheet(page, chrome, CIRCUIT_SHEET);
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'h');
@@ -1028,14 +1006,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('ArrowDown');
             await page.keyboard.press('ArrowRight');
             await expect(page.locator(':focus')).toHaveAttribute('aria-label', 'Black, Text 1');
-            const landed = await watchWhereKeysLand(page);
-            // The host's answers are held across the three keys, so the list the first Enter closes still
-            // stands when the other two are typed however slowly the runner types them (ADR-0220); a round
-            // trip of 80ms only made that likely, and a slow runner typed the ↓ after the list had gone.
-            const circuit = await holdAnswers(true);
+            // The host's answers are held across the three keys, so the fill's answer has not come when the second
+            // Enter and the ↓ are typed: they are the Sheet's, under either Chrome, and nothing chooses again.
+            await holdAnswers(true);
 
-            // The second Enter and the ↓ at once, while the list the first Enter closes still stands: under
-            // either Chrome they are held, from the list itself, and are the Sheet's once the keyboard is back.
             await page.keyboard.press('Enter');
             await page.keyboard.press('Enter');
             await page.keyboard.press('ArrowDown');
@@ -1048,13 +1022,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'B4')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await expect(cell(grid, 'B5')).not.toHaveCSS('background-color', 'rgb(0, 0, 0)');
             await expectKeyboardOn(grid);
-            if (circuit) {
-                // On a circuit all three were typed in the list, a round trip before it could close: without
-                // the hold the second Enter chose again or was lost, the ↓ moved in the list, and the Focus
-                // stayed on B3.
-                expect(await landed()).toEqual([
-                    { key: 'Enter', where: 'list' }, { key: 'Enter', where: 'list' }, { key: 'ArrowDown', where: 'list' }]);
-            }
         });
     });
 }

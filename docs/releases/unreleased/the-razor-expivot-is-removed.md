@@ -1,0 +1,5 @@
+Product: ExPivot
+Kind: Breaking
+ADR: 0370
+
+The Razor component drawn in .NET, `ExPivot.Components.ExPivot`, is removed: `ExPivot.Script.ExPivot` takes the same `PivotSource` and `PivotLayout`, and its `Chrome` takes the Pivot Chrome that `PivotChrome` took. Its `ReportSource`, the report Windows a server computed (ADR-0151), goes with it: a server answers Leaf Aggregates through `PivotSource.Fetch`, and the report is built in the browser. `IPivotChrome` keeps `GridChrome`, `Stylesheets`, `ScriptSlots` and the view overloads; the context overloads (`Toolbar(PivotToolbarContext)` and the rest) and their records are removed, since a Chrome now fills only the Script Core's slots, from a view of data, its controls marked with `PivotScriptSlotAttributes`. In ExPivot.MudBlazor, the parts drawn for the Razor component (`MudPivotToolbar`, `MudPivotFieldList`, `MudPivotMenu` and the rest, with `MudPivotButton` and `MudPivotIconButton`) are removed; `MudPivotChrome` draws the same surfaces over the Script Core.

@@ -271,7 +271,7 @@ builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 
 ```razor
 @using ExGrid
-@using ExGrid.Components
+@using ExGrid.Script
 
 <ExGrid TRow="Trade" Source="_source" Columns="_columns" />
 

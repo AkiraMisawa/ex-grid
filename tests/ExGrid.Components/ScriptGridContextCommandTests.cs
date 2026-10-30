@@ -77,8 +77,7 @@ public class ScriptGridContextCommandTests : BunitContext
         Assert.Same(_rows[2], asked.Row);
         Assert.Equal(("Amount", ColumnType.Number, 0), (asked.Column, asked.Type, asked.RowSequenceVersion));
         Assert.Equal([new SelectionRange(1, 0, 2, 2)], asked.Selection);
-        // The core's own commands run in the browser, and the menu closes itself.
-        Assert.Empty(asked.Commands);
+        // The menu closes itself in the browser.
         Assert.Throws<NotSupportedException>(asked.Close);
     }
 

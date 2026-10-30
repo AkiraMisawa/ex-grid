@@ -62,15 +62,14 @@ const reactHost = REACT
 
 // The part of the suite the Script Core passes on the React host (ADR-0350 step 1), which grows with each
 // slice until it is the whole suite and this goes. Named by the tests' ids, so a test it holds that fails
-// again fails the run, and one outside it is not yet claimed. PF-1 counts calls into ex-grid.js, a Blazor
-// host's interop, and is not a React test as written; nor are keyboard-return.spec, which imports ex-grid.js, FD-1's
+// again fails the run, and one outside it is not yet claimed. PF-1 counts calls across a Blazor host's interop,
+// and is not a React test as written; nor are FD-1's
 // and CON-2's races, which hold DotNet's replies and call Blazor.navigateTo, and CON-8, a .NET payload that fails. Of ExChart's Showcases, the tests that read a recorded table
 // of decimal figures are not claimed: a C# decimal keeps the places it was written with (3.30), which a
 // TypeScript number does not (3.3), so those records change when Blazor draws through the Script Core
 // (ADR-0370, step 2). Of ExPivot's, /pivot and /pivot-risk under their own markup, Find in the report included,
 // /pivot-db's PV-20, whose server pivot asks the Leaf Aggregates, /pivot-csv, and /pivot-live under its own markup;
-// /pivot-db's and /pivot-live's report Windows (LV-) are the Razor component's, shown with ?report=windows on the
-// Blazor hosts until it goes (ADR-0412 section 4), and /pivot-live's code is the Blazor page's.
+// /pivot-live's code is the Blazor page's.
 // Of ExSheet's (ADR-0370 section 6, step 1), every spec file the Sheet's pages run, but for DC-60's race held
 // on DotNet's reply to Ctrl+1.
 // A test run once per Chrome claims its built-in run alone: the React host has no MudBlazor Chrome,

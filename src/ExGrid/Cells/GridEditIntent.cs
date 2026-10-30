@@ -39,8 +39,7 @@ public sealed record GridEditIntent<TRow>(TRow Row, string Column, string Value)
 
     /// <summary>Cancelled when the user cancels the commit with Escape while the Consumer is answering the intent
     /// (ADR-0380 section 3): the editor stays open with the text, and a handler that writes after the token is
-    /// cancelled writes an edit the user took back. Only ExGrid over the Script Core waits for an answer this way;
-    /// the C# core's is never cancelled.</summary>
+    /// cancelled writes an edit the user took back.</summary>
     public CancellationToken CancellationToken { get; init; }
 
     /// <summary>The message the Consumer refused the intent with (<see cref="Refuse"/>), or null

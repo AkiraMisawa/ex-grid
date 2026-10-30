@@ -3,14 +3,14 @@
    stylesheet is a root component, so it is not displaced (ADR-0123). *@
 <HeadContent><meta name="freshness-page" content="the page's own head" /></HeadContent>
 <p id="assembly-stamp">@AssemblyStamp</p>
-<ExGrid TRow="Row" Window="_rows" TotalCount="_rows.Length" Columns="_columns" ViewportHeight="200" />
+<ExGrid TRow="Row" Rows="_rows" Columns="_columns" ViewportHeight="200" />
 
 @code {
     private sealed record Row(int Id, string Name);
 
     private static readonly string AssemblyStamp = (string)typeof(ExGrid<>).Assembly
-        .GetType("ExGrid.ShippedAssets", throwOnError: true)!
-        .GetField("ScriptStamp", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+        .GetType("ExGrid.Script.ScriptCoreAsset", throwOnError: true)!
+        .GetField("Stamp", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
         .GetRawConstantValue()!;
 
     private readonly Row[] _rows = Enumerable.Range(1, 50).Select(i => new Row(i, "Row " + i)).ToArray();

@@ -1,5 +1,5 @@
 import { test, expect, settled } from './fixtures.mjs';
-import { sheet, cell, clickCell, CIRCUIT_SHEET } from './sheet-helpers.mjs';
+import { sheet, cell, clickCell } from './sheet-helpers.mjs';
 
 // Opening and saving an .xlsx at its place in the Input Order (ADR-0330 §10; exsheet-xlsx ticket 06), on
 // /xlsx under both Chromes. The page opens the file it is given through ExSheet's OpenAsync, reading it
@@ -21,9 +21,8 @@ async function fileOf(page, link, name) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`ADR-0330 .xlsx in the Input Order (${chrome})`, () => {
-        async function openPage(page, hold, component = undefined) {
-            const query = [hold ? 'hold=1' : null, chrome === 'builtin' ? null : `chrome=${chrome}`, component === undefined ? null : `component=${component}`]
-                .filter(Boolean).join('&');
+        async function openPage(page, hold) {
+            const query = [hold ? 'hold=1' : null, chrome === 'builtin' ? null : `chrome=${chrome}`].filter(Boolean).join('&');
             await page.goto(query ? `/xlsx?${query}` : '/xlsx');
             await expect(cell(sheet(page), 'A1')).toHaveText('Before the file');
             // Enabled once InputFile's script is attached: on the Server host a file set before then is never heard.
@@ -35,18 +34,17 @@ for (const chrome of ['builtin', 'mud']) {
         const notice = (page) => page.locator('.ex-sheet-notice');
 
         test('XL-1: a key typed while a file opens waits for it, and lands on the Workbook it opened', async ({ page }) => {
-            // On the Server host, the Razor component, whose key crosses the circuit behind the file's choice and so
-            // after the page's call to OpenAsync. Over the Script Core the opening takes its place when that call
-            // reaches the browser, a round trip after the choice, and a key typed before it means the Workbook the
-            // page still showed (ADR-0240 §12, ADR-0350 section 6), as XL-2 reads for Escape.
-            await openPage(page, true, CIRCUIT_SHEET);
+            await openPage(page, true);
             const grid = sheet(page);
             const sample = await fileOf(page, '#xlsx-sample', 'sample.xlsx');
 
-            // At machine speed, nothing waited for between them: the key is typed as the file is chosen, while it is
-            // still to be read. The Workbook before has one Sheet, the one opened two.
+            // The key is typed against a page that shows the opening (data-ex-work-placed), as XL-2's Escape is: one typed
+            // before the Settled Stamp names it means the Workbook the page still showed (ADR-0240 §12, ADR-0350 section
+            // 6). The read is held (hold=1), so the opening is still under way; no clock decides it. The Workbook before
+            // has one Sheet, the one opened two.
             await clickCell(grid, 'A1');
             await page.locator('#xlsx-file').setInputFiles(sample);
+            await expect(grid.locator(':scope > [data-ex-work-placed]')).toBeAttached();
             await page.keyboard.press('Control+PageDown');
             await page.locator('#xlsx-release').click();
 

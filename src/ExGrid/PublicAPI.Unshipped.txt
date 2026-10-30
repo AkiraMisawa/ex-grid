@@ -4,7 +4,6 @@ const ExGrid.Chrome.FindPanelLabelIds.CountPlaceholder = "{count}" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.FoundInHeader = "find-found-in-header" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.NotEditable = "find-not-editable" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.ReasonPlaceholder = "{reason}" -> string!
-const ExGrid.Chrome.FindPanelLabelIds.RefusedCellsNamed = 5 -> int
 const ExGrid.Chrome.FindPanelLabelIds.Replace = "find-replace" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.ReplaceAll = "find-replace-all" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.Replaced = "find-replaced" -> string!
@@ -41,20 +40,17 @@ const ExGrid.Chrome.ScriptSlotAttributes.NameBoxField = "data-ex-name-box-field"
 ExGrid.Cells.CommitRefusalReason.Cancelled = 2 -> ExGrid.Cells.CommitRefusalReason
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
-ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>?
-ExGrid.Cells.GridPointedAt<TRow>.InBrowser.init -> void
+ExGrid.Cells.GridPointedAt<TRow>.GridPointedAt(ExGrid.Cells.GridPointedInBrowser<TRow!>! inBrowser) -> void
+ExGrid.Cells.GridPointedAt<TRow>.InBrowser.get -> ExGrid.Cells.GridPointedInBrowser<TRow!>!
 ExGrid.Cells.GridPointedInBrowser<TRow>
 ExGrid.Cells.GridPointedInBrowser<TRow>.Declaration.get -> string!
-ExGrid.Cells.GridPointedInBrowser<TRow>.GridPointedInBrowser(string! scope, string! declaration, string! table, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! tableColumns, System.Func<TRow!, string!>! tableRow, System.Action<bool>! taken) -> void
+ExGrid.Cells.GridPointedInBrowser<TRow>.GridPointedInBrowser(string! scope, string! declaration, string! table, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! tableColumns, System.Func<TRow!, string!>! tableRow) -> void
 ExGrid.Cells.GridPointedInBrowser<TRow>.Scope.get -> string!
 ExGrid.Cells.GridPointedInBrowser<TRow>.Table.get -> string!
 ExGrid.Cells.GridPointedInBrowser<TRow>.TableColumns.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 ExGrid.Cells.GridPointedInBrowser<TRow>.TableRow.get -> System.Func<TRow!, string!>!
-ExGrid.Cells.GridPointedInBrowser<TRow>.Take(bool inBrowser) -> void
-ExGrid.Chrome.FindContext.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell, out ExGrid.Finding.FindOutcome Outcome, out System.Action<string!>! TextChanged, out System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, out System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, out System.Func<System.Threading.Tasks.Task!>! Next, out System.Func<System.Threading.Tasks.Task!>! Previous, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
-ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCell, ExGrid.Finding.FindOutcome Outcome, System.Action<string!>! TextChanged, System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, System.Func<System.Threading.Tasks.Task!>! Next, System.Func<System.Threading.Tasks.Task!>! Previous, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
-ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
-ExGrid.Chrome.FindContext.WholeCellChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
+ExGrid.Chrome.ContextMenuContext<TRow>.ContextMenuContext(TRow Row, string! Column, ExGrid.ColumnType Type, System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! Selection, int RowSequenceVersion, System.Action! Close) -> void
+ExGrid.Chrome.ContextMenuContext<TRow>.Deconstruct(out TRow Row, out string! Column, out ExGrid.ColumnType Type, out System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! Selection, out int RowSequenceVersion, out System.Action! Close) -> void
 ExGrid.Chrome.GridCellEditorView
 ExGrid.Chrome.GridCellEditorView.<Clone>$() -> ExGrid.Chrome.GridCellEditorView!
 ExGrid.Chrome.GridCellEditorView.Column.get -> string!
@@ -314,44 +310,12 @@ ExGrid.Columns.HiddenMark.Reason.get -> string!
 ExGrid.Columns.HiddenMark.Reason.init -> void
 ExGrid.Columns.HiddenMark.State.get -> ExGrid.Cells.CellState
 ExGrid.Columns.HiddenMark.State.init -> void
-ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
-ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
-ExGrid.Components.ExGrid<TRow>.CancelRowClick(int ticket) -> void
-ExGrid.Components.ExGrid<TRow>.EndRowClickDispatch(int ticket) -> System.Threading.Tasks.Task!
 const ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay = "key-refusal-lost-on-the-way" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteCancelled = "refused-paste-cancelled" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable" -> string!
 const ExGrid.ShapedGrid.DateFormat = "yyyy-mm-dd" -> string!
 const ExGrid.ShapedGrid.DateTimeFormat = "yyyy-mm-dd hh:mm:ss" -> string!
 const ExGrid.ShapedGrid.IntegerFormat = "#,##0" -> string!
-ExGrid.Chrome.FindContext.FoundHeader.get -> string!
-ExGrid.Chrome.FindContext.FoundHeader.init -> void
-ExGrid.Chrome.FindContext.Replace.get -> System.Func<System.Threading.Tasks.Task!>?
-ExGrid.Chrome.FindContext.Replace.init -> void
-ExGrid.Chrome.FindContext.ReplaceAll.get -> System.Func<System.Threading.Tasks.Task!>?
-ExGrid.Chrome.FindContext.ReplaceAll.init -> void
-ExGrid.Chrome.FindContext.ReplacedCount.get -> int
-ExGrid.Chrome.FindContext.ReplacedCount.init -> void
-ExGrid.Chrome.FindContext.ReplaceRefusedCells.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.FindPanelRefusedCell!>!
-ExGrid.Chrome.FindContext.ReplaceRefusedCells.init -> void
-ExGrid.Chrome.FindContext.ReplaceShown.get -> bool
-ExGrid.Chrome.FindContext.ReplaceShown.init -> void
-ExGrid.Chrome.FindContext.ReplaceText.get -> string!
-ExGrid.Chrome.FindContext.ReplaceText.init -> void
-ExGrid.Chrome.FindContext.ReplaceTextChanged.get -> System.Action<string!>?
-ExGrid.Chrome.FindContext.ReplaceTextChanged.init -> void
-ExGrid.Chrome.FindPanelRefusedCell
-ExGrid.Chrome.FindPanelRefusedCell.<Clone>$() -> ExGrid.Chrome.FindPanelRefusedCell!
-ExGrid.Chrome.FindPanelRefusedCell.Column.get -> string!
-ExGrid.Chrome.FindPanelRefusedCell.Column.init -> void
-ExGrid.Chrome.FindPanelRefusedCell.Deconstruct(out int RowNumber, out string! Column, out string? Reason) -> void
-ExGrid.Chrome.FindPanelRefusedCell.Equals(ExGrid.Chrome.FindPanelRefusedCell? other) -> bool
-ExGrid.Chrome.FindPanelRefusedCell.FindPanelRefusedCell(int RowNumber, string! Column, string? Reason) -> void
-ExGrid.Chrome.FindPanelRefusedCell.Reason.get -> string?
-ExGrid.Chrome.FindPanelRefusedCell.Reason.init -> void
-ExGrid.Chrome.FindPanelRefusedCell.RowNumber.get -> int
-ExGrid.Chrome.FindPanelRefusedCell.RowNumber.init -> void
 ExGrid.Chrome.GridInputKind
 ExGrid.Chrome.GridInputKind.Click = 0 -> ExGrid.Chrome.GridInputKind
 ExGrid.Chrome.GridInputKind.ContextMenu = 2 -> ExGrid.Chrome.GridInputKind
@@ -366,49 +330,6 @@ ExGrid.Chrome.GridPopoverContext.InOrder.get -> System.Func<ExGrid.Chrome.GridIn
 ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
-ExGrid.Components.ExGrid<TRow>.HandKeyboardToFrameAsync(Microsoft.AspNetCore.Components.ElementReference waitingAt) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.FindsHeaders.get -> bool
-ExGrid.Components.ExGrid<TRow>.FindsHeaders.set -> void
-ExGrid.Components.ExGrid<TRow>.ForgetCurrentMatch() -> void
-ExGrid.Components.ExGrid<TRow>.CancellableInOrderAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! handling, System.Func<bool, System.Threading.Tasks.Task!>! cancelledTooLate) -> System.Threading.Tasks.Task<bool>!
-ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
-ExGrid.Components.ExGrid<TRow>.FindMatch.set -> void
-ExGrid.Components.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.InOrderAsync(System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
-ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
-ExGrid.Components.ExGrid<TRow>.JoinSurfaceAsync(Microsoft.AspNetCore.Components.ElementReference element, string? around = null, System.Func<System.Threading.Tasks.Task!>? escape = null) -> System.Threading.Tasks.Task<System.IAsyncDisposable!>!
-ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnCopyLandedAsync(int landing, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnCopyWriteRejectedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnHeldTabRefusedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<bool>!
-ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnSurfaceEscapeAsync(int surface, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0, ExGrid.Components.GridInputText? fieldText = null) -> void
-ExGrid.Components.ExGrid<TRow>.RememberRowClick(int ticket, int paint, int row, int column, int action, bool mark, bool wasMarked) -> void
-ExGrid.Components.GridInputText
-ExGrid.Components.GridInputText.Caret.get -> int
-ExGrid.Components.GridInputText.Caret.set -> void
-ExGrid.Components.GridInputText.GridInputText() -> void
-ExGrid.Components.GridInputText.Revision.get -> long
-ExGrid.Components.GridInputText.Revision.set -> void
-ExGrid.Components.GridInputText.Surface.get -> string!
-ExGrid.Components.GridInputText.Surface.set -> void
-ExGrid.Components.GridInputText.Text.get -> string!
-ExGrid.Components.GridInputText.Text.set -> void
-ExGrid.Components.GridScriptFocus
-ExGrid.Components.GridScriptFocus.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExGrid.Components.GridScriptFocus.FocusBoxAsync(Microsoft.AspNetCore.Components.ElementReference box) -> System.Threading.Tasks.Task<bool>!
-ExGrid.Components.GridScriptFocus.GridScriptFocus(Microsoft.JSInterop.IJSRuntime! js, Microsoft.AspNetCore.Components.ResourceAssetCollection! assets) -> void
-ExGrid.Components.GridScriptFocus.LoadAsync() -> System.Threading.Tasks.Task<bool>!
 ExGrid.GridColumn<TRow>.IsQueryable.init -> void
 ExGrid.GridColumn<TRow>.ValidateAsync.get -> System.Func<TRow, string!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditVerdict>>?
 ExGrid.GridColumn<TRow>.ValidateAsync.init -> void
@@ -424,19 +345,6 @@ ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalRea
 *REMOVED*ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0) -> System.Threading.Tasks.Task!
 *REMOVED*ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1, int input = 0) -> System.Threading.Tasks.Task<bool>!
 *REMOVED*ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync(int input = 0) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnReplace.get -> System.Func<ExGrid.Finding.GridReplaceRequest!, System.Threading.Tasks.Task<ExGrid.Finding.GridReplaceResult!>!>?
-ExGrid.Components.ExGrid<TRow>.OnReplace.set -> void
-ExGrid.Components.ExGrid<TRow>.OnWorkCancelAsync(int work, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.ReadEditText() -> string?
-ExGrid.Components.ExGrid<TRow>.ReadView() -> ExGrid.Components.GridView
-ExGrid.Components.ExGrid<TRow>.SelectionAfterInputsAsync() -> System.Threading.Tasks.Task<ExGrid.Selection.GridSelection!>!
-ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view) -> void
-ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view, ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus) -> void
-ExGrid.Components.ExGrid<TRow>.ShowViewWithMatch(ExGrid.Components.GridView view, ExGrid.Selection.CellPosition match) -> void
-ExGrid.Components.ExGridRow<TRow>.CurrentMatch.get -> int
-ExGrid.Components.ExGridRow<TRow>.CurrentMatch.set -> void
-ExGrid.Components.ExGridRow<TRow>.MatchMarks.get -> ExGrid.Components.MatchMarks<TRow!>?
-ExGrid.Components.ExGridRow<TRow>.MatchMarks.set -> void
 ExGrid.Components.GridView
 ExGrid.Components.GridView.Deconstruct(out int RowSequenceVersion, out ExGrid.Selection.GridSelection! Selection, out double ScrollTopPx, out double ScrollLeftPx) -> void
 ExGrid.Components.GridView.Equals(ExGrid.Components.GridView other) -> bool
@@ -450,7 +358,6 @@ ExGrid.Components.GridView.ScrollTopPx.get -> double
 ExGrid.Components.GridView.ScrollTopPx.init -> void
 ExGrid.Components.GridView.Selection.get -> ExGrid.Selection.GridSelection!
 ExGrid.Components.GridView.Selection.init -> void
-ExGrid.Components.MatchMarks<TRow>
 ExGrid.FetchedShapedGrid
 ExGrid.FetchedShapedGrid.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
 ExGrid.FetchedShapedGrid.PinnedColumnCount.get -> int
@@ -461,9 +368,6 @@ ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.Cancel
 ExGrid.FetchingGridSource<TRow>.Shape.set -> void
 ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 ExGrid.Finding.FindMatchOf<TRow>
-ExGrid.Finding.FindOutcome.FoundInHeader = 7 -> ExGrid.Finding.FindOutcome
-ExGrid.Finding.FindOutcome.Replaced = 5 -> ExGrid.Finding.FindOutcome
-ExGrid.Finding.FindOutcome.ReplaceRefused = 6 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindRefusalReason.ReplaceRefused = 5 -> ExGrid.Finding.FindRefusalReason
 ExGrid.Finding.FindRefusalReason.ReplaceUnavailable = 4 -> ExGrid.Finding.FindRefusalReason
 ExGrid.Finding.GridFindPattern
@@ -856,9 +760,6 @@ ExGrid.Validation.GridRuleset<TRow>.Breaches.get -> System.Collections.Generic.I
 ExGrid.Validation.GridRuleset<TRow>.FindError(ExGrid.Validation.GridErrorStepRequest! request, System.Collections.Generic.IReadOnlyList<TRow!>! rowsInOrder) -> ExGrid.Finding.GridFindResult!
 ExGrid.Validation.GridRuleset<TRow>.GridRuleset(System.Func<TRow!, object!>! rowKey) -> void
 ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.IReadOnlyList<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Validation.Breach!>!>! rule) -> ExGrid.Validation.GridRuleset<TRow!>!
-override ExGrid.Chrome.FindPanelRefusedCell.Equals(object? obj) -> bool
-override ExGrid.Chrome.FindPanelRefusedCell.GetHashCode() -> int
-override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
 override ExGrid.Chrome.GridCellEditorView.Equals(object? obj) -> bool
 override ExGrid.Chrome.GridCellEditorView.GetHashCode() -> int
 override ExGrid.Chrome.GridCellEditorView.ToString() -> string!
@@ -974,9 +875,6 @@ override sealed ExGrid.Script.GridRefusal<TRow>.Mark.Equals(ExGrid.Script.GridRe
 override sealed ExGrid.Script.GridRefusal<TRow>.Paste.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 override sealed ExGrid.Script.GridRefusal<TRow>.Placement.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 static ExGrid.Cells.ReferenceColour.Reported(int place) -> ExGrid.Cells.ReferenceColour
-static ExGrid.Chrome.FindPanelLabelIds.OutcomeText(ExGrid.Chrome.FindContext! context, System.Func<string!, string!>! words) -> string!
-static ExGrid.Chrome.FindPanelRefusedCell.operator !=(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
-static ExGrid.Chrome.FindPanelRefusedCell.operator ==(ExGrid.Chrome.FindPanelRefusedCell? left, ExGrid.Chrome.FindPanelRefusedCell? right) -> bool
 static ExGrid.Chrome.GridCellEditorView.operator !=(ExGrid.Chrome.GridCellEditorView? left, ExGrid.Chrome.GridCellEditorView? right) -> bool
 static ExGrid.Chrome.GridCellEditorView.operator ==(ExGrid.Chrome.GridCellEditorView? left, ExGrid.Chrome.GridCellEditorView? right) -> bool
 static ExGrid.Chrome.GridEditorCompletionView.operator !=(ExGrid.Chrome.GridEditorCompletionView? left, ExGrid.Chrome.GridEditorCompletionView? right) -> bool
@@ -1097,3 +995,927 @@ virtual ExGrid.Script.GridRefusal<TRow>.PrintMembers(System.Text.StringBuilder! 
 ~static ExGrid.Script.GridRefusal<TRow>.Placement.operator !=(ExGrid.Script.GridRefusal<TRow>.Placement? left, ExGrid.Script.GridRefusal<TRow>.Placement? right) -> bool
 ~static ExGrid.Script.GridRefusal<TRow>.Placement.operator ==(ExGrid.Script.GridRefusal<TRow>.Placement? left, ExGrid.Script.GridRefusal<TRow>.Placement? right) -> bool
 ~virtual ExGrid.Script.GridRefusal<TRow>.Equals(ExGrid.Script.GridRefusal<TRow>? other) -> bool
+*REMOVED*const ExGrid.Components.ExGrid<TRow>.DefaultPasteByteCap = 16777216 -> long
+*REMOVED*ExGrid.Components.CellEngagement
+*REMOVED*ExGrid.Components.CellEngagement.Action.get -> int
+*REMOVED*ExGrid.Components.CellEngagement.Action.init -> void
+*REMOVED*ExGrid.Components.CellEngagement.CellEngagement() -> void
+*REMOVED*ExGrid.Components.CellEngagement.CellEngagement(int Column, int Action, int FocusRequest) -> void
+*REMOVED*ExGrid.Components.CellEngagement.Column.get -> int
+*REMOVED*ExGrid.Components.CellEngagement.Column.init -> void
+*REMOVED*ExGrid.Components.CellEngagement.Deconstruct(out int Column, out int Action, out int FocusRequest) -> void
+*REMOVED*ExGrid.Components.CellEngagement.Equals(ExGrid.Components.CellEngagement other) -> bool
+*REMOVED*ExGrid.Components.CellEngagement.FocusRequest.get -> int
+*REMOVED*ExGrid.Components.CellEngagement.FocusRequest.init -> void
+*REMOVED*ExGrid.Components.ColumnStyles
+*REMOVED*ExGrid.Components.ColumnStyles.Cell(int columnIndex) -> string!
+*REMOVED*ExGrid.Components.ColumnStyles.Gap(int firstScrollableColumn) -> string!
+*REMOVED*ExGrid.Components.ColumnStyles.HasGap(int firstScrollableColumn) -> bool
+*REMOVED*ExGrid.Components.ColumnStyles.PinnedCell(int columnIndex) -> string!
+*REMOVED*ExGrid.Components.ExGrid<TRow>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ActionPressTakenAt(int paint, int row = -1, int column = -1, int action = -1) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.BuildCopyPayload() -> ExGrid.Clipboard.ClipboardPayload!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CanSummarize.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellAlign.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, ExGrid.Columns.CellAlign>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellAlign.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellAppearance.get -> ExGrid.Cells.CellAppearanceOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellAppearance.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellChangedAt.get -> ExGrid.Cells.CellChangeOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellChangedAt.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellMessageOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellMessageOf.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellMetrics.get -> ExGrid.Columns.CellTextMetrics
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellMetrics.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellState.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellType.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, ExGrid.ColumnType>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CellType.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ChangeHighlightDuration.get -> System.TimeSpan
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ChangeHighlightDuration.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Chrome.get -> ExGrid.Chrome.IGridChrome?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Chrome.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Clock.get -> System.TimeProvider?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Clock.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ClosePopoverAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Columns.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CommandLabel.get -> System.Func<string!, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CommandLabel.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CompleteEditorText.get -> System.Func<string!, int, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditorCompletion?>>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CompleteEditorText.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ContextCommands.get -> System.Func<ExGrid.Chrome.ContextMenuContext<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Chrome.GridCommand!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ContextCommands.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyAnswer.get -> System.Func<ExGrid.Clipboard.GridCopyRequest!, ExGrid.Clipboard.GridCopyAnswer!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyAnswer.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyAnswerAsync.get -> System.Func<ExGrid.Clipboard.GridCopyRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Clipboard.GridCopyAnswer!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyAnswerAsync.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyCellCap.get -> long
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CopyCellCap.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CycleReference.get -> System.Func<string!, int, int, ExGrid.Cells.EditorRewrite?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.CycleReference.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DataEdge.get -> System.Func<ExGrid.Selection.CellPosition, ExGrid.Selection.GridDirection, ExGrid.Selection.CellPosition>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DataEdge.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DeclaredKeys.get -> System.Collections.Generic.IReadOnlyCollection<string!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DeclaredKeys.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Density.get -> ExGrid.GridDensity
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Density.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DiscardEditAsync(string! reason) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EdgeBorder.get -> ExGrid.Cells.EdgeBorderOf?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EdgeBorder.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EditorAppearance.get -> ExGrid.Cells.CellAppearanceOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EditorAppearance.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EditorTextOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.EditorTextOf.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ExGrid() -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Filters.get -> ExGrid.GridFilter?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Filters.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.FormulaBarBorrowedTextOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.FormulaBarBorrowedTextOf.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.GetFocusedValue() -> object?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HandKeyboardToFrameAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderClickSelects.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderClickSelects.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderGroups.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Columns.HeaderGroup!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderGroups.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderHeight.get -> double?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HeaderHeight.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideColumnMenu.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideColumnMenu.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideCopyWithHeaders.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideCopyWithHeaders.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideHeader.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HideHeader.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HighlightFocusRow.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HighlightFocusRow.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.HighlightHoverRow.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.IsLoading.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.IsLoading.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.KeysTypedOnTheWay(int ticket) -> System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.MarkPressTakenAt(int paint, int pageStart = -1, int row = -1, int pageRows = -1) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Marks.get -> ExGrid.Rows.IRowMarks<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Marks.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.NameBoxLabel.get -> System.Func<ExGrid.Selection.CellPosition, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.NameBoxLabel.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.NameBoxSizeLabel.get -> System.Func<ExGrid.Selection.SelectionRange, string?>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.NameBoxSizeLabel.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnAction.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridActionEventArgs<TRow!>>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnAction.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnActionRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridActionRefusal<TRow!>>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnActionRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnBrowserTimeZone.get -> Microsoft.AspNetCore.Components.EventCallback<string!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnBrowserTimeZone.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCellDoubleClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.CellPosition>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCellDoubleClick.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnClear.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.GridClearIntent!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnClear.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnClipboardChangedAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnHidden.get -> Microsoft.AspNetCore.Components.EventCallback<string!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnHidden.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnOrderChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyList<string!>!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnOrderChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnWidthChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.ColumnWidthChange!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnColumnWidthChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCommitRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridCommitRefusal>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCommitRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.CopyRefusalReason>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyRowsNeeded.get -> System.Func<ExGrid.RowRange, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TRow!>!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyRowsNeeded.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnDeclaredKey.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Keys.GridDeclaredKeyPress>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnDeclaredKey.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnDevicePixelAsync(double devicePixelRatio) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnDistinctValuesNeeded.get -> System.Func<string!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnDistinctValuesNeeded.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEdit.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridEditIntent<TRow!>!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEdit.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEditDiscarded.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.EditDiscardReason>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEditDiscarded.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEditingChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnEditorCaretAsync(string! text, int caret, bool moved = false) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFill.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridFillIntent!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFill.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFilterChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.GridFilter?>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFilterChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFind.get -> System.Func<ExGrid.Finding.GridFindRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Finding.GridFindResult!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFind.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFindRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Finding.FindRefusalReason>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnFindRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnLayoutCeilingAsync(double ceilingPx) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnLeave.get -> Microsoft.AspNetCore.Components.EventCallback
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnLeave.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnMarkRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Rows.MarkRefusalReason>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnMarkRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnNameBoxEntered.get -> Microsoft.AspNetCore.Components.EventCallback<string!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnNameBoxEntered.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnOverwriteNotice.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridOverwriteNotice>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnOverwriteNotice.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPaste.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.GridPasteIntent!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPaste.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPasteRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Clipboard.PasteRefusalReason>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPasteRefused.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPasteStreamsAsync(Microsoft.JSInterop.IJSStreamReference? text, Microsoft.JSInterop.IJSStreamReference? html, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPinnedCountChanged.get -> Microsoft.AspNetCore.Components.EventCallback<int>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPinnedCountChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointArrowFromOutside.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.GridPointArrow!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointArrowFromOutside.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointerAwayAsync(bool bandOnly) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointerRestAsync(double x, double y) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointerRowAsync(double x, double y) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointStateChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Cells.PointState>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnPointStateChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnRangeNeeded.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.RowRange>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnRangeNeeded.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnRedo.get -> Microsoft.AspNetCore.Components.EventCallback
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnRedo.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnReferenceKeyColoursChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyList<ExGrid.Cells.ReferenceKeyColour!>!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnReferenceKeyColoursChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSelectionSummaryChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSortChanged.get -> Microsoft.AspNetCore.Components.EventCallback<System.Collections.Generic.IReadOnlyList<ExGrid.SortSpec!>!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSortChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSummarize.get -> System.Func<ExGrid.Summarizing.GridSummaryRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Summarizing.GridSummaryResult!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnSummarize.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnTimeZoneAsync(string! zone) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnUndo.get -> Microsoft.AspNetCore.Components.EventCallback
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnUndo.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnViewportReportAsync(double gutterWidthPx, double gutterHeightPx, double widthPx, double heightPx) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OpenPopoverAsync(Microsoft.AspNetCore.Components.RenderFragment<ExGrid.Chrome.GridPopoverContext!>! content, string! label, System.Func<System.Threading.Tasks.Task!>! closedByEscape) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OutlinedColumns.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PageSize.get -> int?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PageSize.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PaintedText.get -> ExGrid.Cells.PaintedTextOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PaintedText.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PassKeysOutAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PasteByteCap.get -> long
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PasteByteCap.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PasteMaySpill.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PasteMaySpill.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Ping() -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PinnedColumnCount.get -> int
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PinnedColumnCount.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PlaceSelectionAsync(ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PointAt.get -> System.Func<string!, int, bool>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PointAt.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PointedAt.get -> ExGrid.Cells.GridPointedAt<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PointedAt.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Presentation.get -> ExGrid.GridPresentationDefaults?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Presentation.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PressHandedOnAsync(int press, bool inTurn) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PressInTurn(int press) -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.get -> int
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RangeRequestMargin.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReadSelection() -> ExGrid.Selection.HeldSelection
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReferencesIn.get -> System.Func<string!, System.Collections.Generic.IReadOnlyList<ExGrid.Cells.EditorReference!>!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReferencesIn.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReferenceText.get -> System.Func<ExGrid.Selection.SelectionRange, string!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReferenceText.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RefreshSummaryAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! typedOnTheWay) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RootId.get -> string!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeadings.get -> System.Func<int, string!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeadings.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeadingWidth.get -> double?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeadingWidth.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeight.get -> double
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowHeight.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowKey.get -> System.Func<TRow!, object!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowKey.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowKind.get -> System.Func<TRow!, ExGrid.Rows.RowKind>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowKind.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowSequenceVersion.get -> int
+*REMOVED*ExGrid.Components.ExGrid<TRow>.RowSequenceVersion.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SelectionChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowFillHandle.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowFillHandle.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowFormulaBar.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowFormulaBar.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowSelectionSummary.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ShowSelectionSummary.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Sorts.get -> System.Collections.Generic.IReadOnlyList<ExGrid.SortSpec!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Sorts.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Source.get -> ExGrid.IGridSource<TRow!>?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Source.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.StripeRows.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.StripeRows.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SummaryFigures.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
+*REMOVED*ExGrid.Components.ExGrid<TRow>.SummaryFiguresChanged.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.TakeBackPointedTextAsync() -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.TotalCount.get -> int?
+*REMOVED*ExGrid.Components.ExGrid<TRow>.TotalCount.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ViewportHeight.get -> ExGrid.ViewportSize
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ViewportHeight.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ViewportWidth.get -> ExGrid.ViewportSize
+*REMOVED*ExGrid.Components.ExGrid<TRow>.ViewportWidth.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.VirtualiseColumns.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.VirtualiseColumns.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.VouchesDistinctRows.get -> bool
+*REMOVED*ExGrid.Components.ExGrid<TRow>.VouchesDistinctRows.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Window.get -> System.Collections.Generic.IReadOnlyList<TRow!>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.Window.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.WindowStart.get -> int
+*REMOVED*ExGrid.Components.ExGrid<TRow>.WindowStart.set -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.WritePointedTextAsync(string! text) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGridRow<TRow>
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Appearance.get -> ExGrid.Components.RowAppearance?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Appearance.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellAlign.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, ExGrid.Columns.CellAlign>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellAlign.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellChangedAt.get -> ExGrid.Cells.CellChangeOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellChangedAt.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellState.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellType.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, ExGrid.ColumnType>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.CellType.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightDuration.get -> System.TimeSpan
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightDuration.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightNow.get -> System.DateTimeOffset
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightNow.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightPainted.get -> System.Action<object!, System.DateTimeOffset?>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ChangeHighlightPainted.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Columns.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Dispose() -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Engagement.get -> ExGrid.Components.CellEngagement
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Engagement.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.ExGridRow() -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.get -> int
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.HeaderRowCount.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Heading.get -> string?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Heading.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.HeadingStyle.get -> string?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.HeadingStyle.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.IdPrefix.get -> string!
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.IdPrefix.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Marked.get -> bool
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Marked.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Metrics.get -> ExGrid.Columns.CellTextMetrics
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Metrics.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.OnAction.get -> System.Func<ExGrid.Cells.GridActionEventArgs<TRow!>, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.OnAction.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.OnMark.get -> System.Func<TRow!, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.OnMark.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.PaintedText.get -> ExGrid.Cells.PaintedTextOf<TRow!>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.PaintedText.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Placeholder.get -> bool
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Placeholder.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Row.get -> TRow!
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Row.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.RowIndex.get -> int
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.RowIndex.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.RowKind.get -> System.Func<TRow!, ExGrid.Rows.RowKind>?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.RowKind.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Scrollable.get -> ExGrid.Selection.ColumnRange?
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Scrollable.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Stripe.get -> bool
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Stripe.set -> void
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Styles.get -> ExGrid.Components.ColumnStyles!
+*REMOVED*ExGrid.Components.ExGridRow<TRow>.Styles.set -> void
+*REMOVED*ExGrid.Components.RowAppearance
+*REMOVED*ExGrid.Components.SummaryFiguresMenu
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Label.get -> System.Func<string!, string!>!
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Label.set -> void
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Popover.get -> ExGrid.Chrome.GridPopoverContext!
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Popover.set -> void
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Shown.get -> ExGrid.Summarizing.SummaryFigures
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Shown.set -> void
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.SummaryFiguresMenu() -> void
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.TakeFocus.set -> void
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Toggle.get -> System.Func<ExGrid.Summarizing.SummaryFigures, System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Components.SummaryFiguresMenu.Toggle.set -> void
+*REMOVED*override ExGrid.Components.CellEngagement.GetHashCode() -> int
+*REMOVED*override ExGrid.Components.ExGrid<TRow>.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.Components.ExGrid<TRow>.OnParametersSet() -> void
+*REMOVED*override ExGrid.Components.ExGrid<TRow>.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView parameters) -> System.Threading.Tasks.Task!
+*REMOVED*override ExGrid.Components.ExGrid<TRow>.ShouldRender() -> bool
+*REMOVED*override ExGrid.Components.ExGridRow<TRow>.OnInitialized() -> void
+*REMOVED*override ExGrid.Components.ExGridRow<TRow>.ShouldRender() -> bool
+*REMOVED*override ExGrid.Components.SummaryFiguresMenu.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+*REMOVED*static ExGrid.Components.CellEngagement.Chosen(int column, int action) -> ExGrid.Components.CellEngagement
+*REMOVED*static ExGrid.Components.CellEngagement.None.get -> ExGrid.Components.CellEngagement
+*REMOVED*static ExGrid.Components.CellEngagement.operator !=(ExGrid.Components.CellEngagement left, ExGrid.Components.CellEngagement right) -> bool
+*REMOVED*static ExGrid.Components.CellEngagement.operator ==(ExGrid.Components.CellEngagement left, ExGrid.Components.CellEngagement right) -> bool
+*REMOVED*static ExGrid.Components.CellEngagement.Request(int column, int focusRequest) -> ExGrid.Components.CellEngagement
+*REMOVED*static readonly ExGrid.Components.ExGrid<TRow>.DefaultCellMetrics -> ExGrid.Columns.CellTextMetrics
+*REMOVED*~override ExGrid.Components.CellEngagement.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Components.CellEngagement.ToString() -> string
+*REMOVED*~override ExGrid.Components.ExGrid<TRow>.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.Components.ExGridRow<TRow>.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*~override ExGrid.Components.SummaryFiguresMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*ExGrid.Chrome.IGridChrome.CellEditor(ExGrid.Chrome.CellEditorContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.CellMessage(ExGrid.Chrome.CellMessageContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.ColumnMenu(ExGrid.Chrome.ColumnMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.ContextMenu<TRow>(ExGrid.Chrome.ContextMenuContext<TRow>! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.EditorCompletion(ExGrid.Chrome.EditorCompletionContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.FilterPanel(ExGrid.Chrome.FilterPanelContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.FindPanel(ExGrid.Chrome.FindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.FormulaBarText(ExGrid.Chrome.FormulaBarTextContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.LoadingIndicator(ExGrid.Chrome.LoadingContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.NameBox(ExGrid.Chrome.NameBoxContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.IGridChrome.SelectionSummary(ExGrid.Chrome.SelectionSummaryContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.CellEditorContext
+*REMOVED*ExGrid.Chrome.CellEditorContext.<Clone>$() -> ExGrid.Chrome.CellEditorContext!
+*REMOVED*ExGrid.Chrome.CellEditorContext.Cancel.get -> System.Action!
+*REMOVED*ExGrid.Chrome.CellEditorContext.Cancel.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.CellEditorContext(string! Column, ExGrid.ColumnType Type, string! InitialText, ExGrid.Chrome.CellEditMode Mode, string? Error, System.Action<string!>! TextChanged, System.Action! Commit, System.Action! Cancel, string? MessageId = null, int FocusRequest = 0, System.Func<System.Threading.Tasks.Task!>? TakeFocus = null) -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Column.get -> string!
+*REMOVED*ExGrid.Chrome.CellEditorContext.Column.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Commit.get -> System.Action!
+*REMOVED*ExGrid.Chrome.CellEditorContext.Commit.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Deconstruct(out string! Column, out ExGrid.ColumnType Type, out string! InitialText, out ExGrid.Chrome.CellEditMode Mode, out string? Error, out System.Action<string!>! TextChanged, out System.Action! Commit, out System.Action! Cancel, out string? MessageId, out int FocusRequest, out System.Func<System.Threading.Tasks.Task!>? TakeFocus) -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Equals(ExGrid.Chrome.CellEditorContext? other) -> bool
+*REMOVED*ExGrid.Chrome.CellEditorContext.Error.get -> string?
+*REMOVED*ExGrid.Chrome.CellEditorContext.Error.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.CellEditorContext.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.InitialText.get -> string!
+*REMOVED*ExGrid.Chrome.CellEditorContext.InitialText.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.MessageId.get -> string?
+*REMOVED*ExGrid.Chrome.CellEditorContext.MessageId.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Mode.get -> ExGrid.Chrome.CellEditMode
+*REMOVED*ExGrid.Chrome.CellEditorContext.Mode.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.ReferenceText.get -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.CellEditorContext.ReferenceText.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.TakeFocus.get -> System.Func<System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.CellEditorContext.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.TextChanged.get -> System.Action<string!>!
+*REMOVED*ExGrid.Chrome.CellEditorContext.TextChanged.init -> void
+*REMOVED*ExGrid.Chrome.CellEditorContext.Type.get -> ExGrid.ColumnType
+*REMOVED*ExGrid.Chrome.CellEditorContext.Type.init -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext
+*REMOVED*ExGrid.Chrome.CellMessageContext.<Clone>$() -> ExGrid.Chrome.CellMessageContext!
+*REMOVED*ExGrid.Chrome.CellMessageContext.CellMessageContext(string! Column, string! Message, bool IsEditorError, System.Action! Close) -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext.Close.get -> System.Action!
+*REMOVED*ExGrid.Chrome.CellMessageContext.Close.init -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext.Column.get -> string!
+*REMOVED*ExGrid.Chrome.CellMessageContext.Column.init -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext.Deconstruct(out string! Column, out string! Message, out bool IsEditorError, out System.Action! Close) -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext.Equals(ExGrid.Chrome.CellMessageContext? other) -> bool
+*REMOVED*ExGrid.Chrome.CellMessageContext.IsEditorError.get -> bool
+*REMOVED*ExGrid.Chrome.CellMessageContext.IsEditorError.init -> void
+*REMOVED*ExGrid.Chrome.CellMessageContext.Message.get -> string!
+*REMOVED*ExGrid.Chrome.CellMessageContext.Message.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.<Clone>$() -> ExGrid.Chrome.ColumnMenuContext!
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Close.get -> System.Action!
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Close.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Column.get -> string!
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Column.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.ColumnMenuContext(string! Column, ExGrid.ColumnType Type, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! Commands, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, ExGrid.Chrome.MenuKeyResolver? ResolveKey = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Commands.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>!
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Commands.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Deconstruct(out string! Column, out ExGrid.ColumnType Type, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! Commands, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out ExGrid.Chrome.MenuKeyResolver? ResolveKey, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Equals(ExGrid.Chrome.ColumnMenuContext? other) -> bool
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.InnerPopupChanged.get -> System.Action<bool>?
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.InnerPopupChanged.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.ResolveKey.get -> ExGrid.Chrome.MenuKeyResolver?
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.ResolveKey.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Type.get -> ExGrid.ColumnType
+*REMOVED*ExGrid.Chrome.ColumnMenuContext.Type.init -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.Commands.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>!
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.Commands.init -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.ContextMenuContext(TRow Row, string! Column, ExGrid.ColumnType Type, System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! Selection, int RowSequenceVersion, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! Commands, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, ExGrid.Chrome.MenuKeyResolver? ResolveKey = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.Deconstruct(out TRow Row, out string! Column, out ExGrid.ColumnType Type, out System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! Selection, out int RowSequenceVersion, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! Commands, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out ExGrid.Chrome.MenuKeyResolver? ResolveKey, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.InnerPopupChanged.get -> System.Action<bool>?
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.InnerPopupChanged.init -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.ResolveKey.get -> ExGrid.Chrome.MenuKeyResolver?
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.ResolveKey.init -> void
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.ContextMenuContext<TRow>.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.<Clone>$() -> ExGrid.Chrome.EditorCompletionContext!
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Accept.get -> System.Action<int>!
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Accept.init -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Candidates.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.CompletionCandidate!>!
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Candidates.init -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExGrid.Cells.CompletionCandidate!>! Candidates, out int Selected, out ExGrid.Cells.EditorHint? Hint, out System.Action<int>! Accept, out string! OptionIdPrefix) -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.EditorCompletionContext(System.Collections.Generic.IReadOnlyList<ExGrid.Cells.CompletionCandidate!>! Candidates, int Selected, ExGrid.Cells.EditorHint? Hint, System.Action<int>! Accept, string! OptionIdPrefix) -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Equals(ExGrid.Chrome.EditorCompletionContext? other) -> bool
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Hint.get -> ExGrid.Cells.EditorHint?
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Hint.init -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.OptionIdPrefix.get -> string!
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.OptionIdPrefix.init -> void
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Selected.get -> int
+*REMOVED*ExGrid.Chrome.EditorCompletionContext.Selected.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext
+*REMOVED*ExGrid.Chrome.FilterPanelContext.<Clone>$() -> ExGrid.Chrome.FilterPanelContext!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Allowed.get -> System.Collections.Generic.IReadOnlyList<ExGrid.FilterOperator>!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Allowed.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Apply.get -> System.Action<ExGrid.FilterSpec?>!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Apply.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Clear.get -> System.Action!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Clear.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Close.get -> System.Action!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Close.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Column.get -> string!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Column.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Current.get -> ExGrid.FilterSpec?
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Current.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.DateType.get -> ExGrid.DateType
+*REMOVED*ExGrid.Chrome.FilterPanelContext.DateType.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Deconstruct(out string! Column, out ExGrid.ColumnType Type, out ExGrid.FilterSpec? Current, out System.Collections.Generic.IReadOnlyList<ExGrid.FilterOperator>! Allowed, out ExGrid.Chrome.FilterUiMode Mode, out System.Func<System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues!>!>! RequestDistinctValues, out System.Action<ExGrid.FilterSpec?>! Apply, out System.Action! Clear, out System.Action! Close, out int FocusRequest, out System.Func<object!, string!>? Format, out System.Action<bool>? InnerPopupChanged, out int FocusLastRequest, out System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task!>? ValueListKey, out int SearchRequest, out ExGrid.DateType DateType, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Equals(ExGrid.Chrome.FilterPanelContext? other) -> bool
+*REMOVED*ExGrid.Chrome.FilterPanelContext.FilterPanelContext(string! Column, ExGrid.ColumnType Type, ExGrid.FilterSpec? Current, System.Collections.Generic.IReadOnlyList<ExGrid.FilterOperator>! Allowed, ExGrid.Chrome.FilterUiMode Mode, System.Func<System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues!>!>! RequestDistinctValues, System.Action<ExGrid.FilterSpec?>! Apply, System.Action! Clear, System.Action! Close, int FocusRequest = 0, System.Func<object!, string!>? Format = null, System.Action<bool>? InnerPopupChanged = null, int FocusLastRequest = 0, System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task!>? ValueListKey = null, int SearchRequest = 0, ExGrid.DateType DateType = ExGrid.DateType.DateTime, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.FocusLastRequest.get -> int
+*REMOVED*ExGrid.Chrome.FilterPanelContext.FocusLastRequest.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.FilterPanelContext.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Format.get -> System.Func<object!, string!>?
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Format.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.InnerPopupChanged.get -> System.Action<bool>?
+*REMOVED*ExGrid.Chrome.FilterPanelContext.InnerPopupChanged.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Mode.get -> ExGrid.Chrome.FilterUiMode
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Mode.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.RequestDistinctValues.get -> System.Func<System.Threading.Tasks.Task<ExGrid.Chrome.DistinctValues!>!>!
+*REMOVED*ExGrid.Chrome.FilterPanelContext.RequestDistinctValues.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.SearchRequest.get -> int
+*REMOVED*ExGrid.Chrome.FilterPanelContext.SearchRequest.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.FilterPanelContext.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Type.get -> ExGrid.ColumnType
+*REMOVED*ExGrid.Chrome.FilterPanelContext.Type.init -> void
+*REMOVED*ExGrid.Chrome.FilterPanelContext.ValueListKey.get -> System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.FilterPanelContext.ValueListKey.init -> void
+*REMOVED*ExGrid.Chrome.FindContext
+*REMOVED*ExGrid.Chrome.FindContext.<Clone>$() -> ExGrid.Chrome.FindContext!
+*REMOVED*ExGrid.Chrome.FindContext.Close.get -> System.Action!
+*REMOVED*ExGrid.Chrome.FindContext.Close.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.Equals(ExGrid.Chrome.FindContext? other) -> bool
+*REMOVED*ExGrid.Chrome.FindContext.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.FindContext.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.InnerPopupChanged.get -> System.Action<bool>?
+*REMOVED*ExGrid.Chrome.FindContext.InnerPopupChanged.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.MatchCase.get -> bool
+*REMOVED*ExGrid.Chrome.FindContext.MatchCase.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.MatchCaseChanged.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.Next.get -> System.Func<System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Chrome.FindContext.Next.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.Outcome.get -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Chrome.FindContext.Outcome.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.Previous.get -> System.Func<System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Chrome.FindContext.Previous.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.TakeFocus.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.FindContext.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.Text.get -> string!
+*REMOVED*ExGrid.Chrome.FindContext.Text.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.TextChanged.get -> System.Action<string!>!
+*REMOVED*ExGrid.Chrome.FindContext.TextChanged.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.WholeCell.get -> bool
+*REMOVED*ExGrid.Chrome.FindContext.WholeCell.init -> void
+*REMOVED*ExGrid.Chrome.FindContext.WholeCellChanged.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.<Clone>$() -> ExGrid.Chrome.FormulaBarTextContext!
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Borrowed.get -> bool
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Borrowed.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Deconstruct(out string! Text, out bool ReadOnly, out System.Func<System.Threading.Tasks.Task!>! Focused, out System.Action<string!>! TextChanged, out int FocusRequest, out System.Func<System.Threading.Tasks.Task!>? TakeFocus) -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Equals(ExGrid.Chrome.FormulaBarTextContext? other) -> bool
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Focused.get -> System.Func<System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Focused.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.FocusRequest.get -> int
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.FocusRequest.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.FormulaBarTextContext(string! Text, bool ReadOnly, System.Func<System.Threading.Tasks.Task!>! Focused, System.Action<string!>! TextChanged, int FocusRequest = 0, System.Func<System.Threading.Tasks.Task!>? TakeFocus = null) -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.ReadOnly.get -> bool
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.ReadOnly.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.ReferenceText.get -> Microsoft.AspNetCore.Components.RenderFragment?
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.ReferenceText.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.TakeFocus.get -> System.Func<System.Threading.Tasks.Task!>?
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.TakeFocus.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Text.get -> string!
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.Text.init -> void
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.TextChanged.get -> System.Action<string!>!
+*REMOVED*ExGrid.Chrome.FormulaBarTextContext.TextChanged.init -> void
+*REMOVED*ExGrid.Chrome.LoadingContext
+*REMOVED*ExGrid.Chrome.LoadingContext.<Clone>$() -> ExGrid.Chrome.LoadingContext!
+*REMOVED*ExGrid.Chrome.LoadingContext.Deconstruct(out bool IsLoading, out int PlaceholderRowCount) -> void
+*REMOVED*ExGrid.Chrome.LoadingContext.Equals(ExGrid.Chrome.LoadingContext? other) -> bool
+*REMOVED*ExGrid.Chrome.LoadingContext.IsLoading.get -> bool
+*REMOVED*ExGrid.Chrome.LoadingContext.IsLoading.init -> void
+*REMOVED*ExGrid.Chrome.LoadingContext.LoadingContext(bool IsLoading, int PlaceholderRowCount) -> void
+*REMOVED*ExGrid.Chrome.LoadingContext.PlaceholderRowCount.get -> int
+*REMOVED*ExGrid.Chrome.LoadingContext.PlaceholderRowCount.init -> void
+*REMOVED*ExGrid.Chrome.MenuKeyResolver
+*REMOVED*ExGrid.Chrome.NameBoxContext
+*REMOVED*ExGrid.Chrome.NameBoxContext.<Clone>$() -> ExGrid.Chrome.NameBoxContext!
+*REMOVED*ExGrid.Chrome.NameBoxContext.Blurred.get -> System.Action!
+*REMOVED*ExGrid.Chrome.NameBoxContext.Blurred.init -> void
+*REMOVED*ExGrid.Chrome.NameBoxContext.Deconstruct(out string! Text, out System.Action<string!>! TextChanged, out System.Func<System.Threading.Tasks.Task!>! Focused, out System.Action! Blurred) -> void
+*REMOVED*ExGrid.Chrome.NameBoxContext.Equals(ExGrid.Chrome.NameBoxContext? other) -> bool
+*REMOVED*ExGrid.Chrome.NameBoxContext.Focused.get -> System.Func<System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Chrome.NameBoxContext.Focused.init -> void
+*REMOVED*ExGrid.Chrome.NameBoxContext.NameBoxContext(string! Text, System.Action<string!>! TextChanged, System.Func<System.Threading.Tasks.Task!>! Focused, System.Action! Blurred) -> void
+*REMOVED*ExGrid.Chrome.NameBoxContext.Text.get -> string!
+*REMOVED*ExGrid.Chrome.NameBoxContext.Text.init -> void
+*REMOVED*ExGrid.Chrome.NameBoxContext.TextChanged.get -> System.Action<string!>!
+*REMOVED*ExGrid.Chrome.NameBoxContext.TextChanged.init -> void
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.<Clone>$() -> ExGrid.Chrome.SelectionSummaryContext!
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.DeclineReason.get -> string?
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.DeclineReason.init -> void
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Deconstruct(out ExGrid.Summarizing.SelectionSummaryStatus Status, out System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.SummaryFigureText!>! Figures, out string? DeclineReason) -> void
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Equals(ExGrid.Chrome.SelectionSummaryContext? other) -> bool
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Figures.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.SummaryFigureText!>!
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Figures.init -> void
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.SelectionSummaryContext(ExGrid.Summarizing.SelectionSummaryStatus Status, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.SummaryFigureText!>! Figures, string? DeclineReason) -> void
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Status.get -> ExGrid.Summarizing.SelectionSummaryStatus
+*REMOVED*ExGrid.Chrome.SelectionSummaryContext.Status.init -> void
+*REMOVED*ExGrid.Chrome.SummaryFigureText
+*REMOVED*ExGrid.Chrome.SummaryFigureText.<Clone>$() -> ExGrid.Chrome.SummaryFigureText!
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Deconstruct(out ExGrid.Summarizing.SummaryFigures Figure, out string! LabelId, out string! Text) -> void
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Equals(ExGrid.Chrome.SummaryFigureText? other) -> bool
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Figure.get -> ExGrid.Summarizing.SummaryFigures
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Figure.init -> void
+*REMOVED*ExGrid.Chrome.SummaryFigureText.LabelId.get -> string!
+*REMOVED*ExGrid.Chrome.SummaryFigureText.LabelId.init -> void
+*REMOVED*ExGrid.Chrome.SummaryFigureText.SummaryFigureText(ExGrid.Summarizing.SummaryFigures Figure, string! LabelId, string! Text) -> void
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Text.get -> string!
+*REMOVED*ExGrid.Chrome.SummaryFigureText.Text.init -> void
+*REMOVED*override ExGrid.Chrome.CellEditorContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.CellEditorContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.CellEditorContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.CellMessageContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.CellMessageContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.CellMessageContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.ColumnMenuContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.ColumnMenuContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.ColumnMenuContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.EditorCompletionContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.EditorCompletionContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.EditorCompletionContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.FilterPanelContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.FilterPanelContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.FilterPanelContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.FindContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.FindContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.FindContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.FormulaBarTextContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.FormulaBarTextContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.FormulaBarTextContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.LoadingContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.LoadingContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.LoadingContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.NameBoxContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.NameBoxContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.NameBoxContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.SelectionSummaryContext.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.SelectionSummaryContext.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.SelectionSummaryContext.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.SummaryFigureText.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Chrome.SummaryFigureText.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.SummaryFigureText.ToString() -> string!
+*REMOVED*static ExGrid.Chrome.CellEditorContext.operator !=(ExGrid.Chrome.CellEditorContext? left, ExGrid.Chrome.CellEditorContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.CellEditorContext.operator ==(ExGrid.Chrome.CellEditorContext? left, ExGrid.Chrome.CellEditorContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.CellMessageContext.operator !=(ExGrid.Chrome.CellMessageContext? left, ExGrid.Chrome.CellMessageContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.CellMessageContext.operator ==(ExGrid.Chrome.CellMessageContext? left, ExGrid.Chrome.CellMessageContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.ColumnMenuContext.operator !=(ExGrid.Chrome.ColumnMenuContext? left, ExGrid.Chrome.ColumnMenuContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.ColumnMenuContext.operator ==(ExGrid.Chrome.ColumnMenuContext? left, ExGrid.Chrome.ColumnMenuContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.EditorCompletionContext.operator !=(ExGrid.Chrome.EditorCompletionContext? left, ExGrid.Chrome.EditorCompletionContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.EditorCompletionContext.operator ==(ExGrid.Chrome.EditorCompletionContext? left, ExGrid.Chrome.EditorCompletionContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelContext.operator !=(ExGrid.Chrome.FilterPanelContext? left, ExGrid.Chrome.FilterPanelContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelContext.operator ==(ExGrid.Chrome.FilterPanelContext? left, ExGrid.Chrome.FilterPanelContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FindContext.operator !=(ExGrid.Chrome.FindContext? left, ExGrid.Chrome.FindContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FindContext.operator ==(ExGrid.Chrome.FindContext? left, ExGrid.Chrome.FindContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FindPanelLabelIds.For(ExGrid.Finding.FindOutcome outcome) -> string?
+*REMOVED*static ExGrid.Chrome.FormulaBarTextContext.operator !=(ExGrid.Chrome.FormulaBarTextContext? left, ExGrid.Chrome.FormulaBarTextContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.FormulaBarTextContext.operator ==(ExGrid.Chrome.FormulaBarTextContext? left, ExGrid.Chrome.FormulaBarTextContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.LoadingContext.operator !=(ExGrid.Chrome.LoadingContext? left, ExGrid.Chrome.LoadingContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.LoadingContext.operator ==(ExGrid.Chrome.LoadingContext? left, ExGrid.Chrome.LoadingContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.NameBoxContext.operator !=(ExGrid.Chrome.NameBoxContext? left, ExGrid.Chrome.NameBoxContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.NameBoxContext.operator ==(ExGrid.Chrome.NameBoxContext? left, ExGrid.Chrome.NameBoxContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.SelectionSummaryContext.operator !=(ExGrid.Chrome.SelectionSummaryContext? left, ExGrid.Chrome.SelectionSummaryContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.SelectionSummaryContext.operator ==(ExGrid.Chrome.SelectionSummaryContext? left, ExGrid.Chrome.SelectionSummaryContext? right) -> bool
+*REMOVED*static ExGrid.Chrome.SummaryFigureText.operator !=(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
+*REMOVED*static ExGrid.Chrome.SummaryFigureText.operator ==(ExGrid.Chrome.SummaryFigureText? left, ExGrid.Chrome.SummaryFigureText? right) -> bool
+*REMOVED*virtual ExGrid.Chrome.MenuKeyResolver.Invoke(string! key, bool shift, bool controlAltOrMeta) -> ExGrid.Chrome.MenuKey
+*REMOVED*ExGrid.Cells.ChangeHighlightRules
+*REMOVED*ExGrid.Cells.EditorReference
+*REMOVED*ExGrid.Cells.EditorReference.<Clone>$() -> ExGrid.Cells.EditorReference!
+*REMOVED*ExGrid.Cells.EditorReference.EditorReference(int start, int length, ExGrid.Selection.SelectionRange range) -> void
+*REMOVED*ExGrid.Cells.EditorReference.EditorReference(int start, int length, string! key) -> void
+*REMOVED*ExGrid.Cells.EditorReference.Equals(ExGrid.Cells.EditorReference? other) -> bool
+*REMOVED*ExGrid.Cells.EditorReference.Key.get -> string?
+*REMOVED*ExGrid.Cells.EditorReference.Length.get -> int
+*REMOVED*ExGrid.Cells.EditorReference.Range.get -> ExGrid.Selection.SelectionRange?
+*REMOVED*ExGrid.Cells.EditorReference.Start.get -> int
+*REMOVED*ExGrid.Cells.EditorRewrite
+*REMOVED*ExGrid.Cells.EditorRewrite.<Clone>$() -> ExGrid.Cells.EditorRewrite!
+*REMOVED*ExGrid.Cells.EditorRewrite.Deconstruct(out string! Text, out int SelectionStart, out int SelectionEnd) -> void
+*REMOVED*ExGrid.Cells.EditorRewrite.EditorRewrite(string! Text, int SelectionStart, int SelectionEnd) -> void
+*REMOVED*ExGrid.Cells.EditorRewrite.Equals(ExGrid.Cells.EditorRewrite? other) -> bool
+*REMOVED*ExGrid.Cells.EditorRewrite.SelectionEnd.get -> int
+*REMOVED*ExGrid.Cells.EditorRewrite.SelectionEnd.init -> void
+*REMOVED*ExGrid.Cells.EditorRewrite.SelectionStart.get -> int
+*REMOVED*ExGrid.Cells.EditorRewrite.SelectionStart.init -> void
+*REMOVED*ExGrid.Cells.EditorRewrite.Text.get -> string!
+*REMOVED*ExGrid.Cells.EditorRewrite.Text.init -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.ActionName.get -> string!
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.ActionName.init -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.ColumnName.get -> string!
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.ColumnName.init -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Deconstruct(out TRow? Row, out string! ColumnName, out string! ActionName, out ExGrid.Cells.ActionRefusalReason Reason) -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Equals(ExGrid.Cells.GridActionRefusal<TRow> other) -> bool
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.GridActionRefusal() -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.GridActionRefusal(TRow? Row, string! ColumnName, string! ActionName, ExGrid.Cells.ActionRefusalReason Reason) -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Reason.get -> ExGrid.Cells.ActionRefusalReason
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Reason.init -> void
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Row.get -> TRow?
+*REMOVED*ExGrid.Cells.GridActionRefusal<TRow>.Row.init -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Cell.get -> ExGrid.Selection.CellPosition
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Cell.init -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Column.get -> string!
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Column.init -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Deconstruct(out ExGrid.Selection.CellPosition Cell, out string! Column, out ExGrid.Cells.CommitRefusalReason Reason) -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Equals(ExGrid.Cells.GridCommitRefusal other) -> bool
+*REMOVED*ExGrid.Cells.GridCommitRefusal.GridCommitRefusal() -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal.GridCommitRefusal(ExGrid.Selection.CellPosition Cell, string! Column, ExGrid.Cells.CommitRefusalReason Reason) -> void
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Reason.get -> ExGrid.Cells.CommitRefusalReason
+*REMOVED*ExGrid.Cells.GridCommitRefusal.Reason.init -> void
+*REMOVED*ExGrid.Cells.GridPointArrow
+*REMOVED*ExGrid.Cells.GridPointArrow.<Clone>$() -> ExGrid.Cells.GridPointArrow!
+*REMOVED*ExGrid.Cells.GridPointArrow.Deconstruct(out ExGrid.Selection.GridDirection Direction, out bool Extends, out bool ToEdge) -> void
+*REMOVED*ExGrid.Cells.GridPointArrow.Direction.get -> ExGrid.Selection.GridDirection
+*REMOVED*ExGrid.Cells.GridPointArrow.Direction.init -> void
+*REMOVED*ExGrid.Cells.GridPointArrow.Equals(ExGrid.Cells.GridPointArrow? other) -> bool
+*REMOVED*ExGrid.Cells.GridPointArrow.Extends.get -> bool
+*REMOVED*ExGrid.Cells.GridPointArrow.Extends.init -> void
+*REMOVED*ExGrid.Cells.GridPointArrow.GridPointArrow(ExGrid.Selection.GridDirection Direction, bool Extends = false, bool ToEdge = false) -> void
+*REMOVED*ExGrid.Cells.GridPointArrow.ToEdge.get -> bool
+*REMOVED*ExGrid.Cells.GridPointArrow.ToEdge.init -> void
+*REMOVED*ExGrid.Cells.GridPointDashes<TRow>
+*REMOVED*ExGrid.Cells.GridPointDashes<TRow>.Column.get -> string!
+*REMOVED*ExGrid.Cells.GridPointDashes<TRow>.Row.get -> System.Func<TRow!, bool>?
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.Dashes.get -> ExGrid.Cells.GridPointDashes<TRow!>?
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.Dashes.set -> void
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.GridPointedAt(System.Func<ExGrid.Cells.GridPointedPress<TRow!>!, System.Threading.Tasks.Task!>! onPress) -> void
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.IsPointedAt.get -> bool
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.IsPointedAt.set -> void
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.OnPress.get -> System.Func<ExGrid.Cells.GridPointedPress<TRow!>!, System.Threading.Tasks.Task!>!
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.OutlinedColumns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Cells.OutlinedColumn!>?
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.OutlinedColumns.set -> void
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.PointingRootId.get -> string?
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.PointingRootId.set -> void
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.RevealAsync(System.Func<TRow!, bool>! isRow, string! column) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.RevealColumnAsync(string! column) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.StepAsync(System.Func<TRow!, bool>! isRow, string! column, ExGrid.Selection.GridDirection direction, System.Func<string!, bool>! isColumn) -> System.Threading.Tasks.Task<ExGrid.Cells.GridPointedStep<TRow!>!>!
+*REMOVED*ExGrid.Cells.GridPointedAt<TRow>.StepFromColumnAsync(string! column, ExGrid.Selection.GridDirection direction, System.Func<string!, bool>! isColumn) -> System.Threading.Tasks.Task<ExGrid.Cells.GridPointedStep<TRow!>!>!
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Column.get -> string?
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Column.init -> void
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Deconstruct(out ExGrid.Cells.GridPointedPressKind Kind, out TRow? Row, out string? Column, out bool Dragged) -> void
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Dragged.get -> bool
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Dragged.init -> void
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.GridPointedPress(ExGrid.Cells.GridPointedPressKind Kind, TRow? Row = null, string? Column = null, bool Dragged = false) -> void
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Kind.get -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Kind.init -> void
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Row.get -> TRow?
+*REMOVED*ExGrid.Cells.GridPointedPress<TRow>.Row.init -> void
+*REMOVED*ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPressKind.Cell = 0 -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPressKind.ColumnHeader = 1 -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPressKind.HeaderGroup = 4 -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPressKind.SeveralCells = 2 -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedPressKind.SeveralColumns = 3 -> ExGrid.Cells.GridPointedPressKind
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Column.get -> string?
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Column.init -> void
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Deconstruct(out ExGrid.Cells.GridPointedStepKind Kind, out TRow? Row, out string? Column) -> void
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.GridPointedStep(ExGrid.Cells.GridPointedStepKind Kind, TRow? Row = null, string? Column = null) -> void
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Kind.get -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Kind.init -> void
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Row.get -> TRow?
+*REMOVED*ExGrid.Cells.GridPointedStep<TRow>.Row.init -> void
+*REMOVED*ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStepKind.Cell = 0 -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStepKind.Column = 4 -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStepKind.Edge = 1 -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStepKind.NotHeld = 3 -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.GridPointedStepKind.RowNotArrived = 2 -> ExGrid.Cells.GridPointedStepKind
+*REMOVED*ExGrid.Cells.PointState
+*REMOVED*ExGrid.Cells.PointState.InPoint = 1 -> ExGrid.Cells.PointState
+*REMOVED*ExGrid.Cells.PointState.None = 0 -> ExGrid.Cells.PointState
+*REMOVED*ExGrid.Cells.PointState.WrittenFromOutside = 2 -> ExGrid.Cells.PointState
+*REMOVED*ExGrid.Chrome.FilterPanelChoices
+*REMOVED*ExGrid.Chrome.MenuKey
+*REMOVED*ExGrid.Chrome.MenuKey.Deconstruct(out ExGrid.Chrome.MenuKeyKind Kind, out int Item) -> void
+*REMOVED*ExGrid.Chrome.MenuKey.Equals(ExGrid.Chrome.MenuKey other) -> bool
+*REMOVED*ExGrid.Chrome.MenuKey.Item.get -> int
+*REMOVED*ExGrid.Chrome.MenuKey.Item.init -> void
+*REMOVED*ExGrid.Chrome.MenuKey.Kind.get -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKey.Kind.init -> void
+*REMOVED*ExGrid.Chrome.MenuKey.MenuKey() -> void
+*REMOVED*ExGrid.Chrome.MenuKey.MenuKey(ExGrid.Chrome.MenuKeyKind Kind, int Item = -1) -> void
+*REMOVED*ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.Close = 3 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.FilterFirst = 4 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.FilterLast = 5 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.FilterSearch = 6 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.Move = 1 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.None = 0 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeyKind.Run = 2 -> ExGrid.Chrome.MenuKeyKind
+*REMOVED*ExGrid.Chrome.MenuKeys
+*REMOVED*ExGrid.Chrome.OperandReading
+*REMOVED*ExGrid.Chrome.OperandReading.Deconstruct(out object? Value, out ExGrid.Chrome.OperandRefusal Refusal, out (object! CultureReading, object! OtherReading)? OtherValue) -> void
+*REMOVED*ExGrid.Chrome.OperandReading.Equals(ExGrid.Chrome.OperandReading other) -> bool
+*REMOVED*ExGrid.Chrome.OperandReading.IsRefused.get -> bool
+*REMOVED*ExGrid.Chrome.OperandReading.OperandReading() -> void
+*REMOVED*ExGrid.Chrome.OperandReading.OperandReading(object? Value, ExGrid.Chrome.OperandRefusal Refusal, (object! CultureReading, object! OtherReading)? OtherValue = null) -> void
+*REMOVED*ExGrid.Chrome.OperandReading.OtherValue.get -> (object! CultureReading, object! OtherReading)?
+*REMOVED*ExGrid.Chrome.OperandReading.OtherValue.init -> void
+*REMOVED*ExGrid.Chrome.OperandReading.Refusal.get -> ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Chrome.OperandReading.Refusal.init -> void
+*REMOVED*ExGrid.Chrome.OperandReading.Value.get -> object?
+*REMOVED*ExGrid.Chrome.OperandReading.Value.init -> void
+*REMOVED*ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Chrome.OperandRefusal.None = 0 -> ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Chrome.OperandRefusal.NotReadable = 1 -> ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Chrome.OperandRefusal.NotTheColumnsDateForm = 3 -> ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Chrome.OperandRefusal.ReadsTwoWays = 2 -> ExGrid.Chrome.OperandRefusal
+*REMOVED*ExGrid.Clipboard.ClipboardParse
+*REMOVED*ExGrid.Clipboard.ClipboardPayload
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.<Clone>$() -> ExGrid.Clipboard.ClipboardPayload!
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.ClipboardPayload(string! Kind, string? Text = null, string? Html = null, int Landing = 0) -> void
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Deconstruct(out string! Kind, out string? Text, out string? Html, out int Landing) -> void
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Equals(ExGrid.Clipboard.ClipboardPayload? other) -> bool
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Html.get -> string?
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Html.init -> void
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Kind.get -> string!
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Kind.init -> void
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Landing.get -> int
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Landing.init -> void
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Text.get -> string?
+*REMOVED*ExGrid.Clipboard.ClipboardPayload.Text.init -> void
+*REMOVED*ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Finding.FindOutcome.Found = 1 -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Finding.FindOutcome.None = 0 -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Finding.FindOutcome.NotFound = 2 -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Finding.FindOutcome.OrderChanged = 3 -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Finding.FindOutcome.SourceChanged = 4 -> ExGrid.Finding.FindOutcome
+*REMOVED*ExGrid.Selection.HeldSelection
+*REMOVED*ExGrid.Selection.HeldSelection.Deconstruct(out int RowSequenceVersion, out ExGrid.Selection.GridSelection! Selection) -> void
+*REMOVED*ExGrid.Selection.HeldSelection.Equals(ExGrid.Selection.HeldSelection other) -> bool
+*REMOVED*ExGrid.Selection.HeldSelection.HeldSelection() -> void
+*REMOVED*ExGrid.Selection.HeldSelection.HeldSelection(int RowSequenceVersion, ExGrid.Selection.GridSelection! Selection) -> void
+*REMOVED*ExGrid.Selection.HeldSelection.RowSequenceVersion.get -> int
+*REMOVED*ExGrid.Selection.HeldSelection.RowSequenceVersion.init -> void
+*REMOVED*ExGrid.Selection.HeldSelection.Selection.get -> ExGrid.Selection.GridSelection!
+*REMOVED*ExGrid.Selection.HeldSelection.Selection.init -> void
+*REMOVED*ExGrid.Selection.HeldSelection.Under(int currentRowSequenceVersion) -> ExGrid.Selection.HeldSelection
+*REMOVED*ExGrid.Summarizing.HeldSummaryFigures
+*REMOVED*ExGrid.Summarizing.HeldSummaryFigures.Adopt(ExGrid.Summarizing.SummaryFigures handed) -> bool
+*REMOVED*ExGrid.Summarizing.HeldSummaryFigures.Choose(ExGrid.Summarizing.SummaryFigures figures) -> void
+*REMOVED*ExGrid.Summarizing.HeldSummaryFigures.HeldSummaryFigures() -> void
+*REMOVED*ExGrid.Summarizing.HeldSummaryFigures.Shown.get -> ExGrid.Summarizing.SummaryFigures
+*REMOVED*override ExGrid.Cells.EditorReference.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.EditorReference.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.EditorReference.ToString() -> string!
+*REMOVED*override ExGrid.Cells.EditorRewrite.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.EditorRewrite.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.EditorRewrite.ToString() -> string!
+*REMOVED*override ExGrid.Cells.GridActionRefusal<TRow>.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridCommitRefusal.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridPointArrow.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.GridPointArrow.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridPointArrow.ToString() -> string!
+*REMOVED*override ExGrid.Cells.GridPointDashes<TRow>.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.GridPointDashes<TRow>.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridPointDashes<TRow>.ToString() -> string!
+*REMOVED*override ExGrid.Cells.GridPointedPress<TRow>.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.GridPointedPress<TRow>.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridPointedPress<TRow>.ToString() -> string!
+*REMOVED*override ExGrid.Cells.GridPointedStep<TRow>.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Cells.GridPointedStep<TRow>.GetHashCode() -> int
+*REMOVED*override ExGrid.Cells.GridPointedStep<TRow>.ToString() -> string!
+*REMOVED*override ExGrid.Chrome.MenuKey.GetHashCode() -> int
+*REMOVED*override ExGrid.Chrome.OperandReading.GetHashCode() -> int
+*REMOVED*override ExGrid.Clipboard.ClipboardPayload.Equals(object? obj) -> bool
+*REMOVED*override ExGrid.Clipboard.ClipboardPayload.GetHashCode() -> int
+*REMOVED*override ExGrid.Clipboard.ClipboardPayload.ToString() -> string!
+*REMOVED*override ExGrid.Selection.HeldSelection.GetHashCode() -> int
+*REMOVED*static ExGrid.Cells.ChangeHighlightRules.DefaultDuration.get -> System.TimeSpan
+*REMOVED*static ExGrid.Cells.EditorReference.operator !=(ExGrid.Cells.EditorReference? left, ExGrid.Cells.EditorReference? right) -> bool
+*REMOVED*static ExGrid.Cells.EditorReference.operator ==(ExGrid.Cells.EditorReference? left, ExGrid.Cells.EditorReference? right) -> bool
+*REMOVED*static ExGrid.Cells.EditorRewrite.operator !=(ExGrid.Cells.EditorRewrite? left, ExGrid.Cells.EditorRewrite? right) -> bool
+*REMOVED*static ExGrid.Cells.EditorRewrite.operator ==(ExGrid.Cells.EditorRewrite? left, ExGrid.Cells.EditorRewrite? right) -> bool
+*REMOVED*static ExGrid.Cells.GridActionRefusal<TRow>.operator !=(ExGrid.Cells.GridActionRefusal<TRow> left, ExGrid.Cells.GridActionRefusal<TRow> right) -> bool
+*REMOVED*static ExGrid.Cells.GridActionRefusal<TRow>.operator ==(ExGrid.Cells.GridActionRefusal<TRow> left, ExGrid.Cells.GridActionRefusal<TRow> right) -> bool
+*REMOVED*static ExGrid.Cells.GridCommitRefusal.operator !=(ExGrid.Cells.GridCommitRefusal left, ExGrid.Cells.GridCommitRefusal right) -> bool
+*REMOVED*static ExGrid.Cells.GridCommitRefusal.operator ==(ExGrid.Cells.GridCommitRefusal left, ExGrid.Cells.GridCommitRefusal right) -> bool
+*REMOVED*static ExGrid.Cells.GridPointArrow.operator !=(ExGrid.Cells.GridPointArrow? left, ExGrid.Cells.GridPointArrow? right) -> bool
+*REMOVED*static ExGrid.Cells.GridPointArrow.operator ==(ExGrid.Cells.GridPointArrow? left, ExGrid.Cells.GridPointArrow? right) -> bool
+*REMOVED*static ExGrid.Cells.GridPointDashes<TRow>.OverCell(System.Func<TRow!, bool>! isRow, string! column) -> ExGrid.Cells.GridPointDashes<TRow!>!
+*REMOVED*static ExGrid.Cells.GridPointDashes<TRow>.OverCell(TRow! row, string! column) -> ExGrid.Cells.GridPointDashes<TRow!>!
+*REMOVED*static ExGrid.Cells.GridPointDashes<TRow>.OverColumn(string! column) -> ExGrid.Cells.GridPointDashes<TRow!>!
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.CanApply(ExGrid.FilterSpec? spec) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.FromConditions(ExGrid.FilterOperator first, object? firstOperand, ExGrid.FilterCombinator combinator, ExGrid.FilterOperator? second, object? secondOperand) -> ExGrid.FilterSpec?
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.FromValueList(ExGrid.Chrome.DistinctValues! domain, System.Collections.Generic.IReadOnlySet<object?>! chosen) -> ExGrid.FilterSpec?
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.FromValueList(ExGrid.Chrome.DistinctValues! domain, System.Collections.Generic.IReadOnlySet<object?>! chosen, System.Func<object?, string!>! textOf, string! search, bool addToCurrent, ExGrid.FilterSpec? current) -> ExGrid.FilterSpec?
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.InitiallyChosen(ExGrid.FilterSpec? current, ExGrid.Chrome.DistinctValues! domain) -> System.Collections.Generic.HashSet<object?>!
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.InitialOperand(ExGrid.FilterSpec? current) -> object?
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.InitialOperator(ExGrid.ColumnType type, ExGrid.FilterSpec? current, bool tooMany) -> ExGrid.FilterOperator
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.InitialSecond(ExGrid.FilterSpec? current) -> (ExGrid.FilterOperator? Operator, object? Operand, ExGrid.FilterCombinator Combinator)
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.Matches(string! search, string! text) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.OffersAddToFilter(ExGrid.FilterSpec? current, string! search) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.OperandText(object? operand, System.Globalization.CultureInfo! culture) -> string!
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.ReadOperand(ExGrid.ColumnType type, string! text, System.Globalization.CultureInfo! culture, ExGrid.DateType dateType = ExGrid.DateType.DateTime) -> ExGrid.Chrome.OperandReading
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.RefusalText(ExGrid.Chrome.OperandReading reading, string! text, System.Globalization.CultureInfo! culture) -> string?
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.StateOfAll(System.Collections.Generic.IEnumerable<object?>! shown, System.Collections.Generic.IReadOnlySet<object?>! chosen) -> ExGrid.Chrome.SelectAllState
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.TakesOperand(ExGrid.FilterOperator op) -> bool
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.ToggleAll(System.Collections.Generic.IEnumerable<object?>! shown, System.Collections.Generic.ISet<object?>! chosen) -> void
+*REMOVED*static ExGrid.Chrome.FilterPanelChoices.ValueText(object! value, System.Func<object!, string!>? format) -> string!
+*REMOVED*static ExGrid.Chrome.MenuKey.Nothing.get -> ExGrid.Chrome.MenuKey
+*REMOVED*static ExGrid.Chrome.MenuKey.operator !=(ExGrid.Chrome.MenuKey left, ExGrid.Chrome.MenuKey right) -> bool
+*REMOVED*static ExGrid.Chrome.MenuKey.operator ==(ExGrid.Chrome.MenuKey left, ExGrid.Chrome.MenuKey right) -> bool
+*REMOVED*static ExGrid.Chrome.MenuKeys.First(System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! commands) -> int
+*REMOVED*static ExGrid.Chrome.MenuKeys.Last(System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! commands) -> int
+*REMOVED*static ExGrid.Chrome.MenuKeys.LetterOf(string! commandId) -> char?
+*REMOVED*static ExGrid.Chrome.MenuKeys.Resolve(string! key, bool shift, bool controlAltOrMeta, System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.GridCommand!>! commands, int current) -> ExGrid.Chrome.MenuKey
+*REMOVED*static ExGrid.Chrome.MenuKeys.SplitAtLetter(string! label, char letter) -> (string! Before, string! Letter, string! After)
+*REMOVED*static ExGrid.Chrome.OperandReading.operator !=(ExGrid.Chrome.OperandReading left, ExGrid.Chrome.OperandReading right) -> bool
+*REMOVED*static ExGrid.Chrome.OperandReading.operator ==(ExGrid.Chrome.OperandReading left, ExGrid.Chrome.OperandReading right) -> bool
+*REMOVED*static ExGrid.Clipboard.ClipboardParse.Parse(string? html, string? text) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<string!>!>?
+*REMOVED*static ExGrid.Clipboard.ClipboardPayload.Async.get -> ExGrid.Clipboard.ClipboardPayload!
+*REMOVED*static ExGrid.Clipboard.ClipboardPayload.Data(string! text, string! html) -> ExGrid.Clipboard.ClipboardPayload!
+*REMOVED*static ExGrid.Clipboard.ClipboardPayload.None.get -> ExGrid.Clipboard.ClipboardPayload!
+*REMOVED*static ExGrid.Clipboard.ClipboardPayload.operator !=(ExGrid.Clipboard.ClipboardPayload? left, ExGrid.Clipboard.ClipboardPayload? right) -> bool
+*REMOVED*static ExGrid.Clipboard.ClipboardPayload.operator ==(ExGrid.Clipboard.ClipboardPayload? left, ExGrid.Clipboard.ClipboardPayload? right) -> bool
+*REMOVED*static ExGrid.Selection.HeldSelection.operator !=(ExGrid.Selection.HeldSelection left, ExGrid.Selection.HeldSelection right) -> bool
+*REMOVED*static ExGrid.Selection.HeldSelection.operator ==(ExGrid.Selection.HeldSelection left, ExGrid.Selection.HeldSelection right) -> bool
+*REMOVED*~ExGrid.Cells.GridPointDashes<TRow>.<Clone>$() -> ExGrid.Cells.GridPointDashes<TRow>!
+*REMOVED*~ExGrid.Cells.GridPointDashes<TRow>.Equals(ExGrid.Cells.GridPointDashes<TRow>? other) -> bool
+*REMOVED*~ExGrid.Cells.GridPointedPress<TRow>.<Clone>$() -> ExGrid.Cells.GridPointedPress<TRow>!
+*REMOVED*~ExGrid.Cells.GridPointedPress<TRow>.Equals(ExGrid.Cells.GridPointedPress<TRow>? other) -> bool
+*REMOVED*~ExGrid.Cells.GridPointedStep<TRow>.<Clone>$() -> ExGrid.Cells.GridPointedStep<TRow>!
+*REMOVED*~ExGrid.Cells.GridPointedStep<TRow>.Equals(ExGrid.Cells.GridPointedStep<TRow>? other) -> bool
+*REMOVED*~override ExGrid.Cells.GridActionRefusal<TRow>.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Cells.GridActionRefusal<TRow>.ToString() -> string
+*REMOVED*~override ExGrid.Cells.GridCommitRefusal.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Cells.GridCommitRefusal.ToString() -> string
+*REMOVED*~override ExGrid.Chrome.MenuKey.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Chrome.MenuKey.ToString() -> string
+*REMOVED*~override ExGrid.Chrome.OperandReading.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Chrome.OperandReading.ToString() -> string
+*REMOVED*~override ExGrid.Selection.HeldSelection.Equals(object obj) -> bool
+*REMOVED*~override ExGrid.Selection.HeldSelection.ToString() -> string
+*REMOVED*~static ExGrid.Cells.GridPointDashes<TRow>.operator !=(ExGrid.Cells.GridPointDashes<TRow>? left, ExGrid.Cells.GridPointDashes<TRow>? right) -> bool
+*REMOVED*~static ExGrid.Cells.GridPointDashes<TRow>.operator ==(ExGrid.Cells.GridPointDashes<TRow>? left, ExGrid.Cells.GridPointDashes<TRow>? right) -> bool
+*REMOVED*~static ExGrid.Cells.GridPointedPress<TRow>.operator !=(ExGrid.Cells.GridPointedPress<TRow>? left, ExGrid.Cells.GridPointedPress<TRow>? right) -> bool
+*REMOVED*~static ExGrid.Cells.GridPointedPress<TRow>.operator ==(ExGrid.Cells.GridPointedPress<TRow>? left, ExGrid.Cells.GridPointedPress<TRow>? right) -> bool
+*REMOVED*~static ExGrid.Cells.GridPointedStep<TRow>.operator !=(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool
+*REMOVED*~static ExGrid.Cells.GridPointedStep<TRow>.operator ==(ExGrid.Cells.GridPointedStep<TRow>? left, ExGrid.Cells.GridPointedStep<TRow>? right) -> bool

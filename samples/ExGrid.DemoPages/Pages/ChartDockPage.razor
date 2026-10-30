@@ -31,7 +31,7 @@
 </p>
 <p><button type="button" id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button></p>
 
-<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280" ScriptCore="true">
+<MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280">
     <MudExGridPaper>
         <ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
                 Rows="_rows"

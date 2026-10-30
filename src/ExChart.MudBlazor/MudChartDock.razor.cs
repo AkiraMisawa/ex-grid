@@ -10,8 +10,8 @@ namespace ExChart.MudBlazor;
 /// from its selection as tabs. Give it the grid as its content and the grid's
 /// <see cref="GridChartBridge{TRow}"/>; it takes the bridge's events, so the context menu's "Chart
 /// selection" opens a tab directly, "Add to chart" offers every open tab, and a click on a point
-/// shows its cell. The grid may be the Razor component or the one the Script Core draws
-/// (ADR-0421); <see cref="ScriptCore"/> draws the charts with the Script Core too.
+/// shows its cell. The grid and the charts are drawn by their Script Cores (ADR-0421), so the bridge's
+/// <see cref="GridChartBridge{TRow}.ScriptGrid"/> is set and the grid's <c>ContextCommands</c> are the bridge's.
 /// </summary>
 /// <typeparam name="TRow">The grid's row type.</typeparam>
 public partial class MudChartDock<TRow>
@@ -37,13 +37,6 @@ public partial class MudChartDock<TRow>
 
     /// <summary>Each chart's height in CSS pixels.</summary>
     [Parameter] public double ChartHeight { get; set; } = 320;
-
-    /// <summary>
-    /// Whether each chart is drawn by the Script Core (<c>ExChart.Script.ExChart</c>, ADR-0370) rather than by the
-    /// Razor component. Set it beside a grid the Script Core draws, whose bridge's <see cref="GridChartBridge{TRow}.ScriptGrid"/>
-    /// is set and whose <c>ContextCommands</c> are the bridge's (ADR-0421).
-    /// </summary>
-    [Parameter] public bool ScriptCore { get; set; }
 
     /// <summary>What draws each chart's toolbar and context menu; <see cref="MudChartChrome.Default"/> unless set.</summary>
     [Parameter] public IChartChrome? Chrome { get; set; } = MudChartChrome.Default;

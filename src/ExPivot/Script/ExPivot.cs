@@ -31,8 +31,7 @@ namespace ExPivot.Script;
 /// and the source answers it there with its Leaf Aggregates, as a server answers a fetching source (ADR-0370 section
 /// 3); the engine in the browser builds the report and its totals from them. A source's <see cref="PivotSource.Changed"/>
 /// crosses as a notice, and the report asks again (ADR-0067).</para>
-/// <para>It stands beside <see cref="Components.ExPivot"/>, the Razor component, until ExPivot's Blazor step holds
-/// (ADR-0370 section 11). A field's <see cref="PivotField.OrderKey"/>, a .NET function, is called in .NET for each
+/// <para>A field's <see cref="PivotField.OrderKey"/>, a .NET function, is called in .NET for each
 /// Item an answer names, and its keys cross with the Items (ADR-0412). What this adapter does not carry yet is refused
 /// by name, never left out quietly: a field with declared Items that are not text, numbers or Booleans.</para>
 /// </remarks>
@@ -55,7 +54,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// <summary>Raised with the layout the report shows after each change the user made, once it is answered.</summary>
     [Parameter] public EventCallback<PivotLayout> LayoutChanged { get; set; }
 
-    /// <summary>Whether the Field List stands beside the report; true unless set, as the Razor component has it.</summary>
+    /// <summary>Whether the Field List stands beside the report; true unless set.</summary>
     [Parameter] public bool ShowFieldList { get; set; } = true;
 
     /// <summary>Raised when the user shows or hides the Field List.</summary>
@@ -93,8 +92,8 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
 
     /// <summary>The Consumer's word for an id, or null to keep the English (ADR-0060): <see cref="PivotWords.Japanese"/>
     /// gives Excel's Japanese edition's words in one line. A function cannot cross to the browser, so it is asked for
-    /// every id the pivot and its grid have words for each time the parameters are set, as the Razor component asks it
-    /// on each render, and the words cross only when they changed. It answers from the id alone: a Remove command's id
+    /// every id the pivot and its grid have words for each time the parameters are set, and the words cross only
+    /// when they changed. It answers from the id alone: a Remove command's id
     /// that names a field (<c>remove-named-field:Region</c>) is not asked, and its words are the
     /// <c>remove-named-field</c> template filled with the caption.</summary>
     [Parameter] public Func<string, string?>? Label { get; set; }
@@ -119,12 +118,11 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     /// was computed from, under its Source Version.</summary>
     [Parameter] public EventCallback<PivotDetails> OnShowDetails { get; set; }
 
-    /// <summary>Hears the report's Selection each time it changes, in the report grid's rows and columns, as the
-    /// Razor component's does.</summary>
+    /// <summary>Hears the report's Selection each time it changes, in the report grid's rows and columns.</summary>
     [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
 
     /// <summary>Whether the Selection Summary is shown under the report (ADR-0130): Excel's status-bar figures over the
-    /// cells selected, summed over the whole report in the browser. On unless set off, as the Razor component has it.</summary>
+    /// cells selected, summed over the whole report in the browser. On unless set off.</summary>
     [Parameter] public bool ShowSelectionSummary { get; set; } = true;
 
     /// <summary>The Selection Summary's figures (ADR-0130); Excel's Average, Count and Sum unless set. The report holds the
@@ -307,7 +305,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             builder.OpenElement(2, "div");
             builder.AddAttribute(3, "role", "alert");
             builder.AddAttribute(4, "data-ex-notice", "script");
-            // The Consumer's words first, as the Razor component's notice has them; null keeps the English (ADR-0060).
+            // The Consumer's words first; null keeps the English (ADR-0060).
             builder.AddContent(5, Label?.Invoke(ReloadNoticeLabelIds.Script) ?? BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
             builder.CloseElement();
         }
@@ -534,7 +532,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     private string OptionsJson() => Json(json =>
     {
         json.WriteStartObject();
-        // The culture the component reads, as the Razor component reads it (ADR-0370 section 10).
+        // The culture the component reads (ADR-0370 section 10).
         var culture = (Culture ?? CultureInfo.CurrentCulture).Name;
         json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
         json.WriteBoolean("showFieldList", ShowFieldList);
@@ -583,8 +581,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
             json.WriteEndObject();
         }
         // The stylesheets the Chrome brings, whose notices the pivot's root renders beside its own (ADR-0123, ERR-11):
-        // the Pivot Chrome's, and its report grid's Chrome's, which the Razor component's report grid renders and
-        // the browser's grid does not.
+        // the Pivot Chrome's, and its report grid's Chrome's, which the browser's grid does not render.
         var stylesheets = (_renderedChrome?.Stylesheets ?? []).Concat(_gridChrome?.Stylesheets ?? []).DistinctBy(sheet => sheet.Name).ToList();
         if (stylesheets.Count > 0)
         {
@@ -788,7 +785,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
     private static string Text(JsonElement json) => json.GetString() ?? throw new InvalidOperationException("Internal: the Script Core sent null for a text.");
 
     // A command's words in the report grid's menus, as IPivotChrome.GridChrome has them: the Consumer's through Label,
-    // then ExPivot's English, the Remove command filled with its field's caption as the Razor pivot fills it.
+    // then ExPivot's English, the Remove command filled with its field's caption.
     private string? CommandLabelFor(string id)
     {
         if (Label?.Invoke(id) is { } own)

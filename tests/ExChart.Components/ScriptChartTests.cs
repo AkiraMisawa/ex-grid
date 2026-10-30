@@ -349,8 +349,8 @@ public class ScriptChartTests : BunitContext
             () => ChartWire.Definition(new ChartDefinition(ChartAxis.Numbers(), [formatted]))).Message, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0420 s3: the Consumer's own script crosses as its module and export wherever it stands; a component drawing in .NET refuses it
-    public void A_script_function_crosses_by_name_and_the_razor_component_refuses_it()
+    [Fact] // ADR-0420 s3: the Consumer's own script crosses as its module and export wherever it stands
+    public void A_script_function_crosses_by_name()
     {
         var tenor = ScriptFunction.Of("./js/chart-formats.js", "tenor");
         var smile = ScriptFunction.Of("./js/curves.js", "smile");
@@ -371,9 +371,6 @@ public class ScriptChartTests : BunitContext
         Assert.Equal("tenor", wired.GetProperty("x").GetProperty("formatScript").GetProperty("export").GetString());
         Assert.Equal("smile", wired.GetProperty("zFormatScript").GetProperty("export").GetString());
 
-        Assert.Contains("only a chart drawn in the browser calls", Assert.Throws<NotSupportedException>(
-            () => Render<global::ExChart.Components.ExChart>(ps => ps.Add(c => c.Definition, definition))).Message, StringComparison.Ordinal);
-        Assert.Throws<NotSupportedException>(() => Render<global::ExChart.Components.ExSurface>(ps => ps.Add(c => c.Definition, surface)));
     }
 
     // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----

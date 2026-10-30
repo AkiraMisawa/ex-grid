@@ -1,6 +1,6 @@
 {
   "about": "What one header click does to the Sorts list (ADR-0012). From tests/ExGrid.Tests/SortCycleTests.cs. The C# core's SortCycle is a static class; the Script Core's query/sort.ts has it as nextSort.",
-  "kind": "calls",
+  "kind": "scriptCalls",
   "subject": "SortCycle",
   "cases": [
     {

@@ -33,7 +33,7 @@ internal sealed class SourceCrossing
     /// each source the message before named for that input, under the same declaration of it, by its number, and every
     /// other anew: a source is asked, and what it is asked and answers is read, as the Board that numbered it declares
     /// the input, whichever Board .NET holds by the time the question arrives (spine rule 6). An input
-    /// <paramref name="board"/> does not declare is not read, as the Razor component's binding reads none.
+    /// <paramref name="board"/> does not declare is not read.
     /// </summary>
     public void Write(Utf8JsonWriter json, IReadOnlyDictionary<string, BoardSource>? sources, BoardReading board)
     {

@@ -9,7 +9,7 @@
                         OnSeriesVisibilityChanged="SeriesChanged" />
 
 @code {
-    // The same definition as ExChart.Components.ExChart's: it is built in .NET and drawn in the browser.
+    // The definition is built in .NET and drawn in the browser.
     private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
 
     // The legend's click crosses back to .NET, and the page hands the hidden series in again.

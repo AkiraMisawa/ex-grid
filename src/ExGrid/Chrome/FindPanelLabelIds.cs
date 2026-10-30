@@ -1,76 +1,12 @@
 namespace ExGrid.Chrome;
 
 /// <summary>
-/// The words of the find panel (ADR-0055) and its Replace (ADR-0332 §2), by id. The built-in panel resolves them as the
-/// built-in menus resolve theirs — through the grid's <c>CommandLabel</c>, falling back to
-/// <see cref="BuiltInCommandLabels"/> — and a substituted Chrome may use the same ids for its
-/// own wording, as <c>ExGrid.MudBlazor</c> does. The grid holds no sentence: which one a step's
-/// outcome calls for is <see cref="For"/>.
+/// The words of the find panel (ADR-0055) and its Replace (ADR-0332 §2), by id: the ids a Chrome's
+/// <see cref="IGridChrome.Words"/> is asked for, as <c>ExGrid.MudBlazor</c> answers them, with
+/// <see cref="BuiltInCommandLabels"/> the English beneath.
 /// </summary>
 public static class FindPanelLabelIds
 {
-    /// <summary>The id of what the panel says about a step's outcome, or null for an outcome
-    /// that says nothing — no step yet, or a match in a cell, which the moved Focus shows. A match
-    /// in a header is said, as the Focus does not move to it (ADR-0333).</summary>
-    public static string? For(Finding.FindOutcome outcome) => outcome switch
-    {
-        Finding.FindOutcome.NotFound => NotFound,
-        Finding.FindOutcome.OrderChanged => OrderChanged,
-        Finding.FindOutcome.SourceChanged => SourceChanged,
-        Finding.FindOutcome.Replaced => Replaced,
-        Finding.FindOutcome.ReplaceRefused => ReplaceRefused,
-        Finding.FindOutcome.FoundInHeader => FoundInHeader,
-        _ => null,
-    };
-
-    /// <summary>How many refused cells <see cref="OutcomeText"/> names before it counts the rest.</summary>
-    public const int RefusedCellsNamed = 5;
-
-    /// <summary>
-    /// The whole sentence the panel shows for <paramref name="context"/>'s outcome, in
-    /// <paramref name="words"/> — the Chrome's wording of these ids — or the empty string for an
-    /// outcome that says nothing. A Replace All's count fills <see cref="CountPlaceholder"/>; a
-    /// refused Replace names its first <see cref="RefusedCellsNamed"/> cells, each with
-    /// <see cref="ReplaceRefusedCell"/>, and counts the rest with <see cref="ReplaceRefusedMore"/>
-    /// (ADR-0332 §2). A match in a header names the header at <see cref="ColumnPlaceholder"/>
-    /// (<see cref="FindContext.FoundHeader"/>, ADR-0333). The built-in panel and <c>ExGrid.MudBlazor</c>'s
-    /// both say it through this.
-    /// </summary>
-    /// <param name="context">The panel's context.</param>
-    /// <param name="words">The Chrome's words for an id.</param>
-    public static string OutcomeText(FindContext context, Func<string, string> words)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(words);
-        if (For(context.Outcome) is not { } id)
-            return "";
-        if (context.Outcome == Finding.FindOutcome.Replaced)
-        {
-            var count = context.ReplacedCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
-            return words(context.ReplacedCount == 1 ? ReplacedOne : Replaced).Replace(CountPlaceholder, count, StringComparison.Ordinal);
-        }
-        if (context.Outcome == Finding.FindOutcome.FoundInHeader)
-            return words(id).Replace(ColumnPlaceholder, context.FoundHeader, StringComparison.Ordinal);
-        if (context.Outcome != Finding.FindOutcome.ReplaceRefused)
-            return words(id);
-        var said = new System.Text.StringBuilder(words(ReplaceRefused));
-        var cells = context.ReplaceRefusedCells;
-        for (var i = 0; i < cells.Count && i < RefusedCellsNamed; i++)
-        {
-            var cell = cells[i];
-            said.Append(' ').Append(words(ReplaceRefusedCell)
-                .Replace(RowPlaceholder, cell.RowNumber.ToString(System.Globalization.CultureInfo.CurrentCulture), StringComparison.Ordinal)
-                .Replace(ColumnPlaceholder, cell.Column, StringComparison.Ordinal)
-                .Replace(ReasonPlaceholder, (cell.Reason ?? words(NotEditable)).TrimEnd().TrimEnd('.'), StringComparison.Ordinal));
-        }
-        if (cells.Count > RefusedCellsNamed)
-        {
-            said.Append(' ').Append(words(ReplaceRefusedMore)
-                .Replace(CountPlaceholder, (cells.Count - RefusedCellsNamed).ToString(System.Globalization.CultureInfo.CurrentCulture), StringComparison.Ordinal));
-        }
-        return said.ToString();
-    }
-
     /// <summary>Where words hold a number: a Replace All's count, or the refused cells not named.</summary>
     public const string CountPlaceholder = "{count}";
 

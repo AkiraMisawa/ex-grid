@@ -82,21 +82,6 @@ async function pointedAtNow(grid) {
     }));
 }
 
-/**
- * Whether the grid wore ex-pointed-at as the next press on it was made: heard on its root in the
- * capture phase, in the press's own task, so it is what the browser painted then, whatever the
- * core had meanwhile decided. The listener goes with that press. Read it with `.evaluate((h) => h.at)`.
- */
-function paintedAtNextPress(grid) {
-    return grid.evaluateHandle((root) => {
-        const heard = {};
-        heard.at = new Promise((resolve) => {
-            root.addEventListener('mousedown', () => resolve(root.classList.contains('ex-pointed-at')), { capture: true, once: true });
-        });
-        return heard;
-    });
-}
-
 /** A column header of a grid, by its label. */
 function header(grid, label) {
     return grid.locator('.ex-header-cell', { hasText: new RegExp(`^${label}$`) });
@@ -454,71 +439,6 @@ test.describe('/sheet', () => {
         });
     }
 
-    // A press keeps the meaning the grid on screen had when it was made (ADR-0058, "On a circuit";
-    // GridPointedAt.OnPress), whichever way the core has moved since: on a circuit the grid is painted
-    // pointed at, or otherwise, a round trip after the text that decides it. Found on CI (the Server
-    // host, 2026-10-01): a press made just after `=SUM(1,` landed once `=S` had been painted, and was
-    // the positions grid's own, the Sheet's edit standing and nothing written, which the tests above
-    // now wait out (expectPointedAtFor). Here each way is made on purpose, with a round trip.
-    test('ADR-0058/DC-54: with a 150 ms round trip, a press on the positions grid still painted pointed at after the text stopped pointing writes nothing, says why, and the keys after it go on', async ({ page }) => {
-        test.skip(!SERVER, 'WebAssembly paints the end of pointing before a press can land');
-        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
-        await openSheet(page, 'builtin', 'razor');
-        const grid = sheet(page);
-        const table = positions(page);
-        await pressCell(grid, 'F3');
-        await page.keyboard.type('=1+');
-        await expectPointedAtFor(grid, table, '=1+');
-        // spec-lint: early-read: expectPointedAtFor above waits for the pointing; typing into the Sheet does not move the positions grid's C3
-        const target = await boxOf(cell(table, 'C3'));
-        const painted = await paintedAtNextPress(table);
-        await setRoundTrip(150);
-
-        // `2` ends pointing in the core at once, and the grid is painted otherwise a round trip later:
-        // the press lands in between. No wait between the three.
-        await page.keyboard.type('2');
-        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
-        await page.keyboard.type('*3');
-
-        await expect(page.locator('#sheet-pointing')).toContainText('no longer stood where a Reference can go');
-        await expect(editor(grid)).toHaveValue('=1+2*3');
-        await expect(editor(grid)).toBeFocused();
-        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
-        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted pointed at').toBe(true);
-    });
-
-    test('ADR-0058/SH-35: with a 150 ms round trip, a press on the positions grid still painted otherwise after the text began to point is an ordinary press, and the edit stands', async ({ page }) => {
-        test.skip(!SERVER, 'WebAssembly paints the start of pointing before a press can land');
-        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
-        await openSheet(page, 'builtin', 'razor');
-        const grid = sheet(page);
-        const table = positions(page);
-        await pressCell(grid, 'F3');
-        await page.keyboard.type('=1');
-        await expect(bar(grid)).toHaveValue('=1');
-        await expectPointedAt(table, false);
-        const target = await boxOf(cell(table, 'C3'));
-        const painted = await paintedAtNextPress(table);
-        await setRoundTrip(150);
-
-        // `+` begins pointing in the core at once, and the grid is painted pointed at a round trip
-        // later: the press lands in between. No wait between the two.
-        await page.keyboard.type('+');
-        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
-
-        await expectKeyboardOn(table);
-        await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
-        await expect(editor(grid)).toHaveValue('=1+');
-        await expectPointedAt(table, false);
-        await expect(page.locator('#sheet-pointing')).toHaveText('');
-        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted otherwise').toBe(false);
-        await setRoundTrip(0);
-        // The edit stands, and a press back points.
-        await clickCell(grid, 'B2');
-        await expect(editor(grid)).toHaveValue('=1+B2');
-        await expect(editor(grid)).toBeFocused();
-    });
-
     test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
@@ -661,35 +581,6 @@ test.describe('/sheet', () => {
         await expect(cell(grid, 'D10')).toHaveText('');
     });
 
-    // The first gap of ADR-0058, "On a circuit": the positions grid learns that the Sheet points from
-    // the render that follows `=`, a round trip later. A press before that render is an ordinary
-    // press, and the edit stands. On WebAssembly there is no round trip to press within.
-    test('ADR-0058/SH-35: with a 150 ms round trip, a press within the round trip after = is an ordinary press, and the edit stands', async ({ page }) => {
-        test.skip(!SERVER, 'WebAssembly has no round trip: the grid is pointed at before any press can land');
-        // The Razor components, whose pointing is painted a round trip after the key (CIRCUIT_SHEET's reason).
-        await openSheet(page, 'builtin', 'razor');
-        const grid = sheet(page);
-        const table = positions(page);
-        await pressCell(grid, 'F3');
-        await expectKeyboardOn(grid);
-        await setRoundTrip(150);
-
-        // No wait between the two.
-        await page.keyboard.type('=');
-        await clickCell(table, 'C3');
-
-        await expectKeyboardOn(table);
-        await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
-        await expect(editor(grid)).toHaveValue('=');
-        // The keyboard is the positions grid's, so the Sheet does not point.
-        await expectPointedAt(table, false);
-        await expect(page.locator('#sheet-pointing')).toHaveText('');
-        await setRoundTrip(0);
-        // The edit stands, and a press back points.
-        await clickCell(grid, 'B2');
-        await expect(editor(grid)).toHaveValue('=B2');
-        await expect(editor(grid)).toBeFocused();
-    });
 });
 
 test.describe('/sheets', () => {

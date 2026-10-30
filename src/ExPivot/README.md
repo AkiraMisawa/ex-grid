@@ -1,15 +1,17 @@
 # ExPivot
 
 Excel's PivotTable for Blazor, drawn by [ExGrid](https://www.nuget.org/packages/ExGrid) as that
-grid's Consumer. The application hands ExPivot a **Pivot Source**: its own records with the
+grid's Consumer. The component is Blazor's adapter over ExPivot's Script Core, `@ex-grid/pivot`, which this package
+ships: the report, the pane and what each input means are the Script Core's, in the browser, on both hosting
+models, and the data stays the application's, in .NET. The application hands ExPivot a **Pivot Source**: its own records with the
 **Pivot Fields** they carry, answered in the process, or a server that answers the same questions.
 The user builds a report in the **PivotTable Fields** pane — Filters, Columns, Rows, Values, with
 drag and drop, each field's menu, Filter…, Field Settings… and Value Field Settings… — sets its
 form from the Pivot Toolbar's Layout menu, and reads it with ExGrid's selection, keyboard and
 clipboard. The application persists the **Pivot Layout**.
 
-- Excel's semantics, computed by [ExPivot.Engine](https://www.nuget.org/packages/ExPivot.Engine):
-  Sum to Varp, subtotals and grand totals, the Compact, Outline and Tabular forms, expand and
+- Excel's semantics: the source answers Leaf Aggregates in .NET, and the Script Core's engine builds the report
+  from them in the browser: Sum to Varp, subtotals and grand totals, the Compact, Outline and Tabular forms, expand and
   collapse, Hidden Items, sorting by label or by value, Show Values As, and Show Details.
 - A number that does not fit is `####`, never a shorter number; a copy carries the full-precision
   values; money is summed exactly.
@@ -47,7 +49,7 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
 
 ```razor
 @using ExPivot
-@using ExPivot.Components
+@using ExPivot.Script
 @using ExPivot.Engine
 
 <ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />
@@ -71,19 +73,11 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
 }
 ```
 
-- **Source** takes the Pivot Source: `PivotSource.From(records, fields)` or a Snapshot. ExPivot
-  owns an independent report computation over it. For a report computed on a server, hand
-  **ReportSource** a report source instead, `PivotReportSource.Fetch`: its delegates obtain report
-  Windows, their Window Changes and versioned operations through your transport, and
-  `PivotReportSource.From(data)` runs the same calculation on the server. Hand exactly one of
-  `Source` and `ReportSource`. A slow answer leaves the report under its loading indication, and a
-  newer question cancels the old one, unless the old one's Window holds the rows on screen. A
-  server's report is read ahead: `Fetch` asks for 60 rows either side of the rows on screen unless
-  given another `readAheadRows`, and the next Window is asked for ten rows before the one held runs
-  out, without dimming the report while every row on screen is held. A server that caps its answers
-  may send fewer rows than were read ahead, as long as they hold the rows on screen. The Consumer
-  disposes a `ReportSource` it owns; the component disposes the computation it makes over `Source`,
-  leaving the Pivot Source alive.
+- **Source** takes the Pivot Source: `PivotSource.From(records, fields)`, a Snapshot, or a server's source,
+  `PivotSource.Fetch`, whose delegates ask your server through your transport. Every question the report asks
+  crosses to .NET, and the source answers it there with its Leaf Aggregates; the report and its totals are built
+  from them in the browser. A slow answer leaves the report under its loading indication, and a newer question
+  cancels the old one. A new source is a refresh.
 - **Layout** is View State. `PivotLayoutJson.Write` and `Read` give it a versioned JSON form to
   store as a user's setting. `LayoutChanged` is raised for the layout the report shows.
 - **Show Details**, from a double click on a value or the Context Menu, opens the records behind
@@ -92,13 +86,12 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
   the cell and pages its records under the report's Source Version.
 - **Caps** (`PivotCaps`) refuse, by name, a layout whose report is too large to read: 200,000
   leaves and Excel's 1,048,576 rows and 16,384 columns by default.
-- **A large report never holds the page.** The answer, its cube and the report's layout are built
-  in slices of about 30 ms (`Slicing`, `PivotSlicing.Default` when left out), under the loading
-  indication, with the report on screen kept until the new one is complete; a newer gesture
-  supersedes the work.
+- **A large report never holds the page.** The report is built in slices (`Slicing`, the Script Core's when left
+  out), under the loading indication, with the report on screen kept until the new one is complete; a newer
+  gesture supersedes the work.
 - **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
   call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
-  requests the current report Window, or its Window Changes. Changes are gathered and the report
+  asks the source again. Changes are gathered and the report
   is redrawn at most every `RedrawInterval` (250 ms; zero redraws on every change). A change of
   values keeps the Selection and any open menu or panel. A value cell whose shown text changed is
   marked for `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks
@@ -107,7 +100,7 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
   as of when, with Retry; meanwhile its value cells are painted in a muted colour, still readable,
   the Visual Token `--ex-pivot-stale-value-color`, and Copy is refused, saying as of when the data
   is, since a paste would lose that. While a new version's Items are on their way, the report
-  filter band and Filter… keep the ones they listed. `Clock` takes a `TimeProvider` for tests.
+  filter band and Filter… keep the ones they listed.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the Pivot Toolbar.
 - **Label** replaces any word by its id. The English is Excel's English (UK) edition's under an
@@ -115,6 +108,7 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
   under any other (`Max of Amount`); `Label="PivotWords.EnglishUnitedKingdom"` gives the UK words
   under any culture, and `Label="PivotWords.Japanese"` speaks the words of Excel's Japanese
   edition. No culture changes the language, and the report's `Culture` changes no word.
-- **PivotChrome** draws the Field List, the Pivot Toolbar, the menus, the panels, Show Details' tabs
-  and dialog, and the Stale Report's notice in another design system; **Chrome** is the report
-  grid's. For MudBlazor, use `ExPivot.MudBlazor`.
+- **Chrome** (`IPivotChrome`) draws the Field List, the Pivot Toolbar, the menus, the panels, Show Details' tabs
+  and dialog, and the Stale Report's notice in Razor, in another design system: its `ScriptSlots` names the parts
+  it draws, each from a view of data the Script Core hands it, and its `GridChrome` dresses the report grid. For
+  MudBlazor, use `ExPivot.MudBlazor`.

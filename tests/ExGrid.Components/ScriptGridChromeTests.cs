@@ -36,14 +36,6 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => ScriptSlots.ColumnMenu | ScriptSlots.LoadingIndicator;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? ColumnMenu(GridMenuView view) => builder =>
         {
             for (var i = 0; i < view.Items.Count; i++)
@@ -152,14 +144,6 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => ScriptSlots.FilterPanel;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? FilterPanel(GridFilterView view) => builder => builder.AddContent(0, view.Conditions is { } form
             ? $"{view.Column} {view.Type}: {form.First.Operator} '{form.First.Operand}' ({form.First.Refusal}) {form.Combinator} {form.Second?.Operator ?? "none"}; "
                 + $"{string.Join(",", form.Allowed.Select(op => $"{op.Id}={op.Label}"))}; OK {(view.CanApply ? "on" : "off")}; {view.Words.None}"
@@ -190,14 +174,6 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => ScriptSlots.FindPanel;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? FindPanel(GridFindView view) => builder => builder.AddContent(0,
             $"'{view.Text}' case {view.MatchCase} whole {view.WholeCell}; replace {(view.ReplaceShown ? $"'{view.ReplaceText}'" : "off")}"
             + $"{(view.ReplaceWaiting ? " waiting" : "")}; {view.Words.Next}/{view.Words.ReplaceAll}; said '{view.Outcome}'");
@@ -224,14 +200,6 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => ScriptSlots.CellEditor;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? CellEditor(GridCellEditorView view) => builder => builder.AddContent(0,
             $"{view.Column} {view.Type} '{view.InitialText}' {view.Mode} error '{view.Error}' pending {view.IsPending}");
     }
@@ -253,14 +221,6 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => ScriptSlots.FormulaBarText | ScriptSlots.NameBox;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
-
         public RenderFragment? FormulaBarText(GridFormulaBarTextView view) => builder => builder.AddContent(0, "bar text");
 
         public RenderFragment? NameBox(GridNameBoxView view) => builder => builder.AddContent(0, "name box");
@@ -280,14 +240,6 @@ public class ScriptGridChromeTests : BunitContext
     private sealed class CompletionChrome : IGridChrome
     {
         public ScriptSlots ScriptSlots => ScriptSlots.EditorCompletion;
-
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
 
         public RenderFragment? EditorCompletion(GridEditorCompletionView view) => builder => builder.AddContent(0,
             $"{string.Join(",", view.Labels)} / {view.Hint?.Parts().Emphasis}");
@@ -408,12 +360,5 @@ public class ScriptGridChromeTests : BunitContext
     {
         public ScriptSlots ScriptSlots => (ScriptSlots)1024;
 
-        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
-
-        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
-
-        public RenderFragment? CellEditor(CellEditorContext context) => null;
-
-        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
     }
 }

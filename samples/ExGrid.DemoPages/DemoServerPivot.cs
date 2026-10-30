@@ -7,8 +7,8 @@ using global::ExPivot.Engine;
 namespace ExGrid.DemoPages;
 
 /// <summary>
-/// The demo API's versioned report Windows and operations. SQL aggregation and report
-/// computation stay on the server; the browser receives its requested display rows.
+/// The demo API's server Pivot Source: its fields, and the Leaf Aggregates, Items and Details it answers in SQL, from
+/// which the pivot builds the report in the browser (ADR-0066, ADR-0370 section 3).
 /// </summary>
 public static class DemoServerPivot
 {
@@ -84,57 +84,5 @@ public static class DemoServerPivot
 
     /// <summary>The most records the server answers in one Details page.</summary>
     public const int MaxDetailsPage = 10_000;
-    #endregion
-
-    #region The code: fetch
-    // A report identity belongs to one view. Its server calculation is bounded by the
-    // Consumer's store; an expired baseline is recovered by the Window protocol.
-    public static FetchingPivotReportSource Fetch(
-        HttpClient http, IReadOnlyList<PivotField> fields, PivotSourceFeatures features, Action<string>? asked = null)
-    {
-        var path = "api/pivot/reports/" + Guid.NewGuid().ToString("N");
-        async ValueTask<TAnswer> PostAsync<TQuery, TAnswer>(string operation, TQuery query, CancellationToken token)
-        {
-            asked?.Invoke("api/pivot/" + operation);
-            using var content = new StringContent(PivotReportJson.Write(query), Encoding.UTF8, "application/json");
-            using var response = await http.PostAsync(path + "/" + operation, content, token);
-            response.EnsureSuccessStatusCode();
-            return PivotReportJson.Read<TAnswer>(await response.Content.ReadAsStringAsync(token));
-        }
-        // Show Details names the cell's Items and its Source Version (ADR-0151), and the server's Pivot
-        // Source answers it, in pages of at most MaxDetailsPage records: no report state is needed,
-        // so a Details tab keeps paging after any layout, while the server holds that version.
-        async ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken token)
-        {
-            var records = new List<PivotDetailRecord>();
-            PivotDetailPage page;
-            do
-            {
-                var next = new PivotDetailsQuery(query.SourceVersion, query.RowItems, query.ColumnItems, query.HiddenItems,
-                    query.Start + records.Count, Math.Min(MaxDetailsPage, query.Count - records.Count));
-                asked?.Invoke("api/pivot/details");
-                using var content = new StringContent(PivotJson.Write(next), Encoding.UTF8, "application/json");
-                using var response = await http.PostAsync("api/pivot/details", content, token);
-                response.EnsureSuccessStatusCode();
-                page = PivotJson.ReadDetailPage(await response.Content.ReadAsStringAsync(token));
-                if (page.IsRefused) return page;
-                records.AddRange(page.Records);
-                if (page.Records.Count == 0 || records.Count >= query.Count || query.Start + records.Count >= page.Total) break;
-            } while (true);
-            return new PivotDetailPage(page.SourceVersion, page.Fields, query.Start, page.Total, records);
-        }
-        return PivotReportSource.Fetch(fields, features, PivotReportUpdateMode.FullRefresh,
-            (query, token) => PostAsync<PivotReportRequest, PivotReportUpdate>("window", query, token),
-            copy: (query, token) => PostAsync<PivotReportCopyQuery, PivotReportCopyResult>("copy", query, token),
-            summary: (query, token) => PostAsync<PivotReportSummaryQuery, PivotReportSummaryResult>("summary", query, token),
-            details: DetailsAsync,
-            reportItems: (query, token) => PostAsync<PivotReportItemsQuery, PivotReportItemsResult>("items", query, token),
-            dispose: async () =>
-            {
-                try { using var response = await http.DeleteAsync(path); }
-                catch (HttpRequestException) { /* The store's idle expiry releases an unreachable report. */ }
-                catch (OperationCanceledException) { /* Likewise when the transport has stopped. */ }
-            });
-    }
     #endregion
 }

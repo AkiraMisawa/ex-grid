@@ -41,17 +41,15 @@ public class SkipsTests
         return text.ToString();
     }
 
-    private const string Million = "ExGrid.Components.Tests.ConsistencyTests.Five_hundred_random_operations_leave_every_invariant_standing(seed: 20260901, totalRows: 1000000)";
-    private const string MillionReason = "ST-1 at 10⁶ rows runs with EXGRID_ST1_MILLION=1 (Definition of Done §22 Step 5)";
     private const string Clock = "ExGrid.Data.Tests.CsvClockTests.A_date_marked_utc_is_held_as_its_clock_in_any_time_zone";
     private const string ClockReason = "The platform does not let a process move its local time zone through TZ.";
 
-    /// <summary>A run as Step 1 leaves it on a machine where TZ moves the zone: ST-1's 10⁶ case skipped, DA-17's two explicit.</summary>
+    /// <summary>A run as Step 1 leaves it on a machine where TZ moves the zone: DA-17's two explicit, and CsvClockTests' one passed.</summary>
     private static List<TrxFile> Run(params (string Project, Result Result)[] besides)
     {
         var results = new Dictionary<string, List<Result>>
         {
-            ["ExGrid.Components"] = [new("ExGrid.Components.Tests.SortWiringTests.A_click_past_the_last_column_is_ignored"), new(Million, "NotExecuted", MillionReason)],
+            ["ExGrid.Components"] = [new("ExGrid.Components.Tests.SortWiringTests.A_click_past_the_last_column_is_ignored")],
             ["ExGrid.Data.Tests"] =
             [
                 new("ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects", "NotRunnable"),
@@ -78,10 +76,9 @@ public class SkipsTests
 
         Assert.Empty(report.Refusals);
         var named = Assert.Single(report.Notices, n => n.StartsWith("Not run, as Step 2 allows", StringComparison.Ordinal));
-        Assert.Contains($"{Million} (ST-1, skipped: {MillionReason})", named);
         Assert.Contains("ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV (DA-17, explicit, not asked for)", named);
         Assert.DoesNotContain("CsvClockTests", named);
-        Assert.Contains(report.Notices, n => n.Contains("Step 2: 6 tests in 3 test projects, every one passed or allowed"));
+        Assert.Contains(report.Notices, n => n.Contains("Step 2: 5 tests in 3 test projects, every one passed or allowed"));
     }
 
     [Fact] // DoD §22 Step 2: CsvClockTests' one test may skip by name where TZ cannot move the zone, giving its reason
@@ -150,23 +147,33 @@ public class SkipsTests
     public void An_allowed_test_left_out_otherwise_than_step_2_says_is_refused()
     {
         var files = Run();
-        files[0] = files[0] with { Text = Trx([new(Million, "NotRunnable")]) };
-        files[1] = files[1] with { Text = Trx([new("ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV", "NotExecuted", "Skipped by hand")]) };
+        files[1] = files[1] with
+        {
+            Text = Trx(
+            [
+                new("ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects", "NotRunnable"),
+                new("ExGrid.Data.Tests.MeasureTests.DA17_a_million_rows_read_from_a_CSV", "NotExecuted", "Skipped by hand"),
+                new(Clock, "NotRunnable"),
+            ]),
+        };
 
         var refusals = Check(files).Refusals;
 
         Assert.Equal(2, refusals.Count);
-        Assert.Contains($"{Million} (ExGrid.Components) is allowed by Step 2 as a skip by name, which the TRX writes NotExecuted, and its .trx says outcome NotRunnable", refusals[0].Message);
-        Assert.Contains("DA17_a_million_rows_read_from_a_CSV (ExGrid.Data.Tests) is allowed by Step 2 as an explicit measurement not asked for, which the TRX writes NotRunnable, and its .trx says outcome NotExecuted", refusals[1].Message);
+        Assert.Contains("DA17_a_million_rows_read_from_a_CSV (ExGrid.Data.Tests) is allowed by Step 2 as an explicit measurement not asked for, which the TRX writes NotRunnable, and its .trx says outcome NotExecuted", refusals[0].Message);
+        Assert.Contains($"{Clock} (ExGrid.Data.Tests) is allowed by Step 2 as a skip by name, which the TRX writes NotExecuted, and its .trx says outcome NotRunnable", refusals[1].Message);
     }
 
-    [Fact] // DoD §22 Step 2: an allowed skip holds only behind the switch Step 2 names, known by the reason its test gives
+    [Fact] // DoD §22 Step 2: an allowed skip holds only where Step 2 allows it, known by the reason its test gives
     public void An_allowed_skip_with_another_reason_is_refused()
     {
         var files = Run();
-        files[0] = files[0] with { Text = Trx([new(Million, "NotExecuted", "Something else")]) };
+        files[1] = files[1] with
+        {
+            Text = Trx([new("ExGrid.Data.Tests.MeasureTests.DA17_a_million_records_built_from_objects", "NotRunnable"), new(Clock, "NotExecuted", "Something else")]),
+        };
 
-        Assert.Contains($"skipped saying 'Something else', and Step 2 allows its skip only for '{MillionReason}'", Assert.Single(Check(files).Refusals).Message);
+        Assert.Contains($"skipped saying 'Something else', and Step 2 allows its skip only for '{ClockReason}'", Assert.Single(Check(files).Refusals).Message);
     }
 
     [Fact] // DoD §1, §22 Steps 1 and 2: a test project with no .trx cannot be read, and a .trx of no test project is not Step 1's

@@ -4,9 +4,10 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using global::MudBlazor.Services;
 using ExGrid;
 using ExGrid.Chrome;
-using ExGrid.Finding;
 using ExGrid.MudBlazor;
 using Xunit;
 using Color = global::MudBlazor.Color;
@@ -20,8 +21,14 @@ namespace ExSheet.MudBlazor.Tests;
 /// its Chrome is ExGrid.MudBlazor's in every seam of the grid, so the Sheet's grid looks and behaves
 /// under it as under <see cref="MudGridChrome"/>.
 /// </summary>
-public class MudSheetPackageTests : MudSheetTestContext
+public class MudSheetPackageTests : BunitContext
 {
+    public MudSheetPackageTests()
+    {
+        Services.AddMudServices();
+        JSInterop.Mode = JSRuntimeMode.Loose;
+    }
+
     private static readonly string[] ScriptExtensions = [".js", ".mjs", ".cjs"];
 
     // The types a component needs to call into JavaScript or to be called from it. FocusAsync is
@@ -152,22 +159,20 @@ public class MudSheetPackageTests : MudSheetTestContext
     [Fact] // ADR-0071 / ADR-0030 / WR-3: a seam of the grid's draws what the Grid Chrome draws, in its words
     public void A_seam_of_the_grids_is_the_grid_chromes()
     {
-        var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null } };
-        var context = new FindContext(
-            "", MatchCase: false, WholeCell: false, FindOutcome.None,
-            _ => { }, _ => Task.CompletedTask, _ => Task.CompletedTask, () => Task.CompletedTask, () => Task.CompletedTask, () => { }, FocusRequest: 1);
+        var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == GridCommandIds.Pin ? "Anheften" : null } };
 
-        var cut = Render(chrome.FindPanel(context)!);
-
-        Assert.Contains("Weiter", cut.Find(".mud-ex-grid-find-next").TextContent);
+        Assert.Equal(["Anheften"], MenuItems(chrome.ColumnMenu(MenuOf(GridCommandIds.Pin))!, this));
         Assert.Same(MudGridChrome.Default, MudSheetChrome.Default.Grid);
     }
 
+    // The items as the Script Core draws them: one control per item, marked with its index (ADR-0410).
     private static IReadOnlyList<string> MenuItems(RenderFragment menu, BunitContext context) =>
-        [.. context.Render(menu).FindAll("[role=menuitem]").Select(item => item.TextContent.Trim())];
+        [.. context.Render(menu).FindAll($"[{ScriptSlotAttributes.MenuItem}]").Select(item => item.TextContent.Trim())];
 
-    private static ColumnMenuContext MenuOf(params string[] ids) =>
-        new("A", ColumnType.Text, [.. ids.Select(id => new GridCommand(id, true, () => Task.CompletedTask))], () => { });
+    // A menu whose items the Script Core named by their ids alone, so what is read is the Chrome's words; Copy as the
+    // core words it.
+    private static GridMenuView MenuOf(params string[] ids) =>
+        new("A", ColumnType.Text, [.. ids.Select(id => new GridMenuItemView(id, id == GridCommandIds.Copy ? "Copy" : id, true))]);
 
     [Fact] // ADR-0036 / ADR-0071: the menus word ExSheet's commands — "Format Cells…", not its id — and the grid's own as the Wrapper does
     public void The_menus_word_exsheets_commands()
@@ -206,13 +211,5 @@ public class MudSheetPackageTests : MudSheetTestContext
         Assert.Equal(grid.Stylesheets, worded.Stylesheets);
         Assert.Equal("Format Cells…", worded.Label!(SheetCommandIds.FormatCells));
         Assert.Same(grid, new MudSheetChrome { Grid = grid }.Grid);
-    }
-
-    [Fact] // ADR-0071 / ADR-0030: under MudSheetChrome the Sheet's grid wears ExGrid.MudBlazor's controls — the Name Box is the Wrapper's
-    public void The_sheets_grid_wears_the_wrappers_controls()
-    {
-        var page = RenderPage();
-
-        Assert.NotEmpty(page.FindAll(".ex-name-box .mud-ex-name-box"));
     }
 }

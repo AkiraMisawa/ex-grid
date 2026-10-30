@@ -1,55 +1,58 @@
 @using ExSheet
-@using InputKind = global::ExGrid.Chrome.GridInputKind
 
-@* One list item on the toolbar: a button that claims its click, so the press takes its place among the
-   Sheet's keys and presses. A pointer press leaves the keyboard on the Sheet. *@
-<span id="@Context.Id" style="display: inline-flex">
-    <button type="button" tabindex="-1" disabled="@(!Context.Enabled)" title="@Context.Tooltip"
-            aria-haspopup="listbox" aria-expanded="@(Chrome.Open?.Id == Context.Id ? "true" : "false")"
-            data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="PressAsync"
-            style="@(Context.Active ? "outline: 2px solid currentColor" : null)">
-        @(Context.Text ?? Context.Name) ▾
-    </button>
+@* One Toolbar Item, drawn from its view: a menu or a colour control is a text button with its list, every other item
+   a text button. Each control is marked for the Sheet's script, which presses the item, opens and closes the list,
+   answers its keys and keeps the keyboard on the Sheet; the markup carries no handler of its own. *@
+<span class="own-item" title="@View.Tooltip">
+    @if (View.Kind is ToolbarItemKind.Menu or ToolbarItemKind.Split)
+    {
+        @if (View.Kind == ToolbarItemKind.Split)
+        {
+            <button type="button" disabled="@(!View.Enabled)" aria-label="@View.Name" data-ex-sheet-press="invoke"
+                    style="@(View.Swatch is { } colour ? $"border-bottom: 3px solid {colour}" : null)">@View.Name</button>
+        }
+        <button type="button" disabled="@(!View.Enabled)" aria-label="@(View.MoreName ?? View.Name)" aria-haspopup="menu"
+                data-ex-sheet-press="list">@(View.Kind == ToolbarItemKind.Menu ? View.Text ?? View.Name : "") ▾</button>
+        @* In the rows the list's keys walk (View.Rows): a choice that is no colour on a row of its own, and a run of
+           colours together, ten across. *@
+        <div class="own-list" data-ex-sheet-list>
+            @foreach (var row in View.Rows)
+            {
+                if (row is [var only] && View.Choices[only].Swatch is null)
+                {
+                    var choice = View.Choices[only];
+                    <div class="own-choice" data-ex-sheet-choice="@only" title="@(choice.DisabledReason ?? choice.Label)">@choice.Label</div>
+                }
+                else
+                {
+                    <div class="own-swatches">
+                        @foreach (var at in row)
+                        {
+                            var swatch = View.Choices[at];
+                            <span class="own-swatch" data-ex-sheet-choice="@at" title="@swatch.Label" style="background: @swatch.Swatch"></span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <button type="button" disabled="@(!View.Enabled)" aria-label="@View.Name" aria-pressed="@(View.Kind == ToolbarItemKind.Toggle ? View.Pressed ? "true" : "false" : null)"
+                data-ex-sheet-press="invoke" style="@(View.Pressed ? "font-weight: 700" : null)">
+            @if (View.HasContent)
+            {
+                <span data-ex-sheet-content></span>
+            }
+            else
+            {
+                @(View.Text ?? View.Name)
+            }
+        </button>
+    }
 </span>
 
 @code {
-    [Parameter, EditorRequired] public ToolbarItemContext Context { get; set; } = default!;
-
-    [Parameter, EditorRequired] public OwnListChrome Chrome { get; set; } = default!;
-
-    private int _answeredOpen;
-    private int _answeredClose;
-
-    protected override void OnInitialized()
-    {
-        _answeredOpen = Context.OpenRequest;
-        _answeredClose = Context.CloseRequest;
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // The toolbar took the keyboard back before the list had it: the list closes, telling nothing.
-        if (Context.CloseRequest != _answeredClose)
-        {
-            _answeredClose = Context.CloseRequest;
-            Chrome.CloseList(Context.Id);
-        }
-        // The toolbar's keys asked for the list: it opens and takes the keyboard. One that cannot open
-        // says so, and the keys held for it go back to the toolbar.
-        if (Context.OpenRequest != _answeredOpen)
-        {
-            _answeredOpen = Context.OpenRequest;
-            if (Context.OpenRequest == Context.CloseRequest) return;
-            if (Context.Enabled && Context.Choices.Count > 0) _ = Chrome.OpenList(Context, fromKeys: true);
-            else await Context.ChoicesClosed(null, false);
-        }
-    }
-
-    // In the press's turn, which ends once the list has joined the Sheet's order.
-    private Task PressAsync() => Context.InOrder(InputKind.Click, () =>
-    {
-        if (Chrome.Open?.Id != Context.Id) return Chrome.OpenList(Context, fromKeys: false);
-        Chrome.CloseList(Context.Id);
-        return Task.CompletedTask;
-    });
+    /// <summary>The item, as the Sheet describes it.</summary>
+    [Parameter, EditorRequired] public SheetToolbarItemView View { get; set; } = default!;
 }

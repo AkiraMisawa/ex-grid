@@ -1,0 +1,154 @@
+using ExGrid.Selection;
+
+namespace ExGrid.Clipboard;
+
+/// <summary>
+/// Why a paste is refused (ADR-0014). <see cref="SingleCellTarget"/> is Excel's
+/// "range → 1 cell", refused because it would spill outside the selection — it is a
+/// distinct reason so Chrome can say that reselecting a target of the same shape will
+/// work. <see cref="ShapeMismatch"/>: the target is not a multiple of the copied block.
+/// <see cref="DisjointTarget"/>: a block cannot be pasted into multiple ranges.
+/// <see cref="EmptySelection"/>: nowhere to paste; nothing happens.
+/// <see cref="OrderMoved"/>: the gesture was aimed under an order that has moved since, so its
+/// positions name other rows now (ADR-0011, ADR-0142).
+/// <see cref="TargetNotEditable"/> is the one that is not about shape (ADR-0035): the
+/// target covers a column the Consumer declared non-editable, so the write may not land
+/// however it is shaped. Chrome must not offer the "reselect the same shape" advice for
+/// it — no reselection of that shape would be accepted.
+/// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
+/// grid's byte ceiling, so it was not read at all — or a fill key's source is past the copy
+/// cap (ADR-0035). The byte ceiling is component-level, never produced by the pure rules.
+/// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
+/// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
+/// No reason is about the values under the target: a write lands as entered over cells that changed
+/// since they were painted (ADR-0142).
+/// </summary>
+public enum PasteRefusalReason
+{
+    /// <summary>Nothing is selected: nowhere to paste, and nothing happens. A write aimed with a
+    /// Selection that an order move took away is <see cref="OrderMoved"/>, and one a replaced
+    /// Source took away is <see cref="SourceChanged"/>, not this.</summary>
+    EmptySelection,
+
+    /// <summary>A block of several cells onto one cell, which would spill outside the
+    /// selection. Reselecting a target of the block's shape will work.</summary>
+    SingleCellTarget,
+
+    /// <summary>The target is not a whole multiple of the block, in rows or in columns.</summary>
+    ShapeMismatch,
+
+    /// <summary>A block of several cells onto a selection of several ranges; only a single
+    /// value fills more than one range.</summary>
+    DisjointTarget,
+
+    /// <summary>The target covers a column that is not Editable (ADR-0035). No reselection
+    /// of the same shape would be accepted, so Chrome must not advise one.</summary>
+    TargetNotEditable,
+
+    /// <summary>Too much to read: a clipboard past the grid's <c>PasteByteCap</c>, raised by
+    /// the component before the clipboard is read at all (ADR-0005) — or a fill key's source
+    /// past the copy cap, which the fill keys refuse as a copy of it would be refused
+    /// (ADR-0035).</summary>
+    TooLarge,
+
+    /// <summary>A spilled paste (ADR-0050, item 3) whose block would run past the grid's
+    /// last row or last column. Nothing is written — the block is never clipped to the
+    /// edge. Raised only where the Consumer declared that a paste may spill.</summary>
+    SpillPastExtent,
+
+    /// <summary>A fill key (Ctrl+D, Ctrl+R) on a range one row tall at the first row, or
+    /// one column wide at the first column: there is no row above, or column to the left,
+    /// to fill from (ADR-0035).</summary>
+    NothingToFillFrom,
+
+    /// <summary>A fill key over more than one range: each would need a source of its own,
+    /// and one intent carries one source block (ADR-0035).</summary>
+    MultipleRanges,
+
+    /// <summary>A fill key whose source rows could not be had whole — nobody to ask for
+    /// rows outside the Window, an answer that came back short, or the order changing
+    /// while they were asked for. The fill is refused rather than filled from a guess
+    /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
+    SourceUnavailable,
+
+    /// <summary>The gesture was aimed under a Row Sequence Version that has moved since: the
+    /// Selection it was aimed with no longer names those rows, so nothing is written (ADR-0011,
+    /// ADR-0142). Raised for a paste, Delete, Ctrl+D or Ctrl+R taken before the order moved — even
+    /// onto the empty Selection the move left — for a Ctrl+Enter fill whose editor opened before it,
+    /// and for a fill-handle drag released after it. Component-level, never produced by the pure
+    /// rules.</summary>
+    OrderMoved,
+
+    /// <summary>The gesture was aimed at what the grid painted from a Grid Source it has since been
+    /// unbound from: the <c>Source</c> parameter was replaced by another instance, so the positions
+    /// it was aimed at name the new source's rows, and nothing is written (ADR-0011, ADR-0142). Raised
+    /// whatever the two sources' Row Sequence Versions are — two fresh sources both start at 0 — for
+    /// a paste, Delete, Ctrl+D or Ctrl+R taken before the replacement, even onto the empty Selection
+    /// it left; for Ctrl+D or Ctrl+R whose source rows were being read when it came; and for a
+    /// fill-handle drag released after it. An edit open across it is discarded instead
+    /// (<see cref="Cells.EditDiscardReason.SourceChanged"/>), so a Ctrl+Enter fill never reaches it.
+    /// Component-level, never produced by the pure rules.</summary>
+    SourceChanged,
+
+    /// <summary>The clipboard's data could not be read: its stream failed or stopped delivering before
+    /// it was read whole. Nothing is written, and the grid keeps answering; a paste is never made
+    /// from part of the clipboard (ADR-0005). Component-level, never produced by the pure
+    /// rules.</summary>
+    Unreadable,
+
+    /// <summary>An Escape typed while the paste was still being read or parsed cancelled it, before it
+    /// raised its Edit Intent: nothing is written (ADR-0240 section 12). Component-level, never produced
+    /// by the pure rules.</summary>
+    Cancelled,
+}
+
+/// <summary>
+/// The approved paste: the target ranges and how the source block tiles onto them.
+/// Compact by construction — ranges plus modulo arithmetic, never a per-cell list — so a
+/// whole-column target of a million rows stays one rectangle, including rows that are
+/// off screen or not yet fetched (ADR-0014: that is intended). The Consumer resolves it
+/// positionally — "rows N–M of the current order, this column" (ADR-0007 / 0011) — under
+/// the Row Sequence Version the selection was made under.
+/// </summary>
+public sealed class PastePlan
+{
+    internal PastePlan(IReadOnlyList<SelectionRange> targets, PasteShape source, bool collapsesSelection = false)
+    {
+        Targets = targets;
+        Source = source;
+        CollapsesSelection = collapsesSelection;
+    }
+
+    /// <summary>
+    /// One value of plain text over a Selection of more than one cell (ADR-0014, amended
+    /// 2026-09-29): the one target is the top-left cell of the range made last, and once the
+    /// Consumer accepts the paste the Selection collapses to that cell, as Excel's does.
+    /// </summary>
+    internal bool CollapsesSelection { get; }
+
+    /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014). A
+    /// spilled paste (ADR-0050, item 3) is one range, the block itself.</summary>
+    public IReadOnlyList<SelectionRange> Targets { get; }
+
+    /// <summary>The block on the clipboard, tiled from each target range's top-left.</summary>
+    public PasteShape Source { get; }
+
+    /// <summary>
+    /// Which source cell lands on a target cell: the source tiles from each range's
+    /// top-left. Multi-range targets exist only with a 1×1 source, so overlapping
+    /// ranges agree on the value and first match is safe. A cell outside every target
+    /// range is a caller bug — refuse rather than answer something plausible.
+    /// </summary>
+    internal SourceCell SourceCellFor(CellPosition target)
+    {
+        foreach (var range in Targets)
+        {
+            if (range.Contains(target))
+                return new(
+                    (target.Row - range.TopRow) % Source.Rows,
+                    (target.Column - range.LeftColumn) % Source.Columns);
+        }
+        throw new ArgumentOutOfRangeException(nameof(target), target,
+            "The cell is not inside any target range of this paste.");
+    }
+}

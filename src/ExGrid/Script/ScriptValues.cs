@@ -67,7 +67,7 @@ internal static class ScriptValues
                 json.WriteEndObject();
                 return;
             default:
-                // Any other value shows the text the C# core shows of it: a TimeOnly in its one invariant form, and a
+                // Any other value shows its Display Text: a TimeOnly in its one invariant form, and a
                 // value of the Consumer's own by its ToString (ADR-0006).
                 json.WriteStringValue(DisplayText.Of(value));
                 return;
@@ -133,7 +133,7 @@ internal static class ScriptValues
             $"Column '{column}' holds {number}, of more significant digits than the Script Core reads a number exactly with ({ExactDigits}): it would show and sum another number (ADR-0350 section 16)."));
     }
 
-    // As the C# core reads a float: straight to decimal, never widened to a double first, which would manufacture
+    // A float is read straight to decimal, never widened to a double first, which would manufacture
     // digits the float never held, and refused past decimal's range either way, since a value that became 0 would
     // tie with the true zeros (ADR-0023).
     private static void WriteFloat(Utf8JsonWriter json, float number, string column)

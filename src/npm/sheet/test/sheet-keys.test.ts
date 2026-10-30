@@ -1,5 +1,8 @@
 // Excel's keys as ExSheet declares them and what each does (ADR-0071, ADR-0050 item 14, ADR-0331 §4), ported from
 // the pure facts of tests/ExSheet.Components/FormatKeyTests.cs, StructureKeyTests.cs and SheetTabsTests.cs.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { GridSelection } from '@ex-grid/core';
 import { CellAddress, CellFormat, CellFont, CellFill, CellBorders, Culture, NumberFormat, SheetEdit, Workbook } from '@ex-grid/sheet-engine';
@@ -106,5 +109,15 @@ describe('Sheet Tab keys', () => {
         expect.hasAssertions();
         expect(sheetTabKeysDeclared()).toEqual(['Control+PageUp', 'Control+PageDown', 'Shift+F11']);
         expect([sheetTabStepOf('Control+PageUp'), sheetTabStepOf('Control+PageDown'), sheetTabStepOf('Shift+F11')]).toEqual([-1, 1, undefined]);
+    });
+});
+
+describe('the keys the Keyboard page is held to', () => {
+    it('ADR-0110: the keys the Sheet declares to its grid are those tests/cases/sheet/sheet-keys.json lists, which the Docs Site reads', () => {
+        expect.hasAssertions();
+        const file = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/sheet/sheet-keys.json');
+        const listed = (JSON.parse(fs.readFileSync(file, 'utf8')) as { readonly declared: readonly string[] }).declared;
+        const declared = [...sheetFormatKeysDeclared(), ...sheetStructureKeysDeclared(), ...sheetTabKeysDeclared()];
+        expect(declared.toSorted()).toEqual(listed.toSorted());
     });
 });

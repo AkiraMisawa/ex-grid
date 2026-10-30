@@ -15,15 +15,13 @@ namespace ExChart.Script;
 /// it, hands it its parameters as options and its definition as data, and raises the chart's events as
 /// <see cref="EventCallback"/>s. It holds no state of the chart's, draws nothing inside the root and decides nothing:
 /// the drawing, the tooltip, the legend, Chart Filters, View as table and what each gesture means are the Script
-/// Core's, in the browser, on both hosting models. Like the Razor component it holds no view state (ADR-0272): what
-/// the user changes is raised, and taken back as a parameter.
+/// Core's, in the browser, on both hosting models. It holds no view state (ADR-0272): what the user changes is
+/// raised, and taken back as a parameter.
 /// </summary>
 /// <remarks>
-/// <para>It stands beside <see cref="Components.ExChart"/>, the Razor component, until ExChart's Blazor step holds
-/// (ADR-0370 section 11). Its <see cref="Chrome"/> fills the toolbar and the menu with Razor where it names them in
+/// <para>Its <see cref="Chrome"/> fills the toolbar and the menu with Razor where it names them in
 /// <see cref="IChartChrome.ScriptSlots"/> (ADR-0410); every other part is the Script Core's own. A Chart Spec is read
-/// through its Chart Sources in .NET, where the sources are, as the Razor component reads it (ADR-0344), and the
-/// reading crosses as a definition does.</para>
+/// through its Chart Sources in .NET, where the sources are (ADR-0344), and the reading crosses as a definition does.</para>
 /// <para>A .NET function cannot cross to the browser, so a definition's Formats cross as the texts they write each
 /// value the definition holds; what the chart would ask a Format of a value it does not hold, an axis' ticks, a
 /// candle's change, is refused by name, never written another way. A function series, an axis Format and a Row Key

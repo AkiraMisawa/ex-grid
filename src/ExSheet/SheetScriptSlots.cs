@@ -8,9 +8,7 @@ namespace ExSheet;
 /// and the Cell Editor and the Formula Bar's text, whose own fields colour a formula's References (ADR-0057).
 /// </summary>
 /// <remarks>
-/// It stands beside the C# core's contexts until the C# core is removed (ADR-0350 section 7, ADR-0410 section 4's
-/// note of 2026-10-28): a Chrome answers both while both cores draw. The Sheet Tabs' menu and the Sheet's find panel
-/// are not carried yet: the Script Core draws its own.
+/// The Sheet Tabs' menu and the Sheet's find panel are not carried: the Script Core draws its own under every Chrome.
 /// </remarks>
 [Flags]
 public enum SheetScriptSlots

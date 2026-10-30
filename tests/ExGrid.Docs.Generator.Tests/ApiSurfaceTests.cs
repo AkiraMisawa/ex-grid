@@ -283,29 +283,21 @@ public class ApiSurfaceTests
     public void The_real_packages_hidden_types_are_not_the_contract()
     {
         var source = Real.Value;
-        var hidden = ShippedAssemblies().SelectMany(a => a.GetExportedTypes())
-            .Where(t => t.GetCustomAttribute<EditorBrowsableAttribute>() is { State: EditorBrowsableState.Never })
-            .ToList();
-
-        Assert.NotEmpty(hidden);
-        foreach (var type in hidden)
+        var exported = ShippedAssemblies().SelectMany(a => a.GetExportedTypes()).ToList();
+        Assert.NotEmpty(exported);
+        // None of these packages hides a type since the grid drawn in .NET and its parts were removed (ADR-0370); the
+        // Wrappers' hidden slot parts are not read here. One hidden again is listed as not the contract.
+        foreach (var type in exported.Where(t => t.GetCustomAttribute<EditorBrowsableAttribute>() is { State: EditorBrowsableState.Never }))
             Assert.Contains(", false, typeof(", LineOf(source, "\"T:" + type.FullName!.Replace('+', '.') + "\""));
-        Assert.Contains("\"T:ExGrid.Components.ExGrid`1\", \"component\", true", source);
-        Assert.Contains("\"T:ExGrid.Components.ExGridRow`1\", \"component\", false", source);
-        Assert.Contains("\"T:ExGrid.Clipboard.ClipboardPayload\", \"record\", false", source);
+        Assert.Contains("\"T:ExGrid.Script.ExGrid`1\", \"component\", true", source);
     }
 
-    [Fact] // ADR-0201: every method the grid's own script calls is listed apart as not the contract
-    public void Every_interop_method_of_the_real_grid_is_listed_apart()
+    [Fact] // ADR-0201 / ADR-0350 section 7: the grid's public surface carries no method its script calls: the browser calls a bridge of its own
+    public void The_grid_carries_no_interop_method()
     {
-        var source = Real.Value;
-        var interop = typeof(global::ExGrid.Components.ExGrid<>).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Where(m => m.GetCustomAttribute<JSInvokableAttribute>() is not null)
-            .ToList();
-
-        Assert.NotEmpty(interop);
-        foreach (var method in interop)
-            Assert.EndsWith(", true),", LineOf(source, "\"M:ExGrid.Components.ExGrid`1." + method.Name + (method.GetParameters().Length == 0 ? "\"" : "(")));
+        Assert.DoesNotContain(typeof(global::ExGrid.Script.ExGrid<>).GetMethods(BindingFlags.Public | BindingFlags.Instance),
+            m => m.GetCustomAttribute<JSInvokableAttribute>() is not null);
+        Assert.DoesNotContain("\"M:ExGrid.Script.ExGrid`1.Heard", Real.Value);
     }
 
     // The one emitted line that holds <paramref name="text"/>.

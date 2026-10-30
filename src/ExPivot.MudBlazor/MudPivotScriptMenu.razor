@@ -8,7 +8,7 @@
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
    may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-@* A menu when the Script Core draws the pivot (ADR-0410): the same text MudButtons as MudPivotMenu,
+@* A menu when the Script Core draws the pivot (ADR-0410): text MudButtons,
    a choice's radio mark among them and a group's heading where one starts, each marked with its
    command's index and nothing else. Its role, its checked state, what a press runs and which command
    takes the keyboard are wired by the adapter's script in the browser, so no press waits on the
@@ -21,7 +21,7 @@
         {
             <MudText @key="@($"heading {item.Id}")" Typo="Typo.caption" Class="mud-ex-pivot-menu-heading" aria-hidden="true">@heading</MudText>
         }
-        @* Keyed by the command, as MudPivotMenu keys its buttons: a heading drawn or gone between them would
+        @* Keyed by the command: a heading drawn or gone between them would
            otherwise shift the diff, and the button holding the keyboard would be drawn again under it. *@
         <MudButton @key="item.Id" Variant="Variant.Text" Size="Size.Small" FullWidth="true" Class="mud-ex-pivot-menu-item"
                    Disabled="!item.Enabled" StartIcon="@IconOf(item)"
@@ -36,7 +36,7 @@
     /// <summary>Where the icons come from.</summary>
     [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
 
-    // A choice is a radio button, checked where it is the current one, as MudPivotMenu draws it.
+    // A choice is a radio button, checked where it is the current one.
     private string? IconOf(PivotMenuItemView item) => item.Checked switch
     {
         true => Icons.Material.Filled.RadioButtonChecked,
