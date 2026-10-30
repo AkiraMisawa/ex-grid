@@ -25,7 +25,7 @@ async function chart(page, [r1, c1], [r2, c2], words) {
     await grid(page).locator('[role=menu] [role=menuitem]').filter({ hasText: words }).click();
 }
 
-test('ADR-0258, ADR-0281: the Chart Dock opens each chart made from the selection as a tab beside the grid', async ({ page }) => {
+test('ADR-0258, ADR-0281: the Chart Dock opens each chart made from the selection as a tab beside the grid @blazor', async ({ page }) => {
     await expect(dock(page).locator('.mud-ex-chart-dock-panel')).toHaveCount(0);
     await chart(page, [0, 1], [3, 2], /^Chart$/);
     await expect(tabs(page)).toHaveText(['Chart 1']);
@@ -44,7 +44,7 @@ test('ADR-0258, ADR-0281: the Chart Dock opens each chart made from the selectio
     await expect(grid(page).locator('[role=menu] [role=menuitem]').filter({ hasText: /^Add to/ })).toHaveCount(2);
 });
 
-test('ADR-0281: the MudBlazor context menu holds ExChart\'s commands, and Escape closes it', async ({ page }) => {
+test('ADR-0281: the MudBlazor context menu holds ExChart\'s commands, and Escape closes it @blazor', async ({ page }) => {
     const plot = paperChart(page).locator('.ex-chart-hit').first();
     await plot.click({ button: 'right', position: { x: 40, y: 40 } });
     const menu = paperChart(page).locator('.ex-chart-menu[role=menu]');
@@ -54,7 +54,7 @@ test('ADR-0281: the MudBlazor context menu holds ExChart\'s commands, and Escape
     await expect(menu).toHaveCount(0);
 });
 
-test('ADR-0281, ADR-0282: Download CSV from the context menu saves the file and closes the menu', async ({ page }) => {
+test('ADR-0281, ADR-0282: Download CSV from the context menu saves the file and closes the menu @blazor', async ({ page }) => {
     await paperChart(page).locator('.ex-chart-hit').first().click({ button: 'right', position: { x: 40, y: 40 } });
     const [download] = await Promise.all([
         page.waitForEvent('download'),
@@ -66,7 +66,7 @@ test('ADR-0281, ADR-0282: Download CSV from the context menu saves the file and 
     await expect(paperChart(page).locator('.ex-chart-menu')).toHaveCount(0);
 });
 
-test('ADR-0281, ADR-0282: the toolbar\'s downloads save the PNG', async ({ page }) => {
+test('ADR-0281, ADR-0282: the toolbar\'s downloads save the PNG @blazor', async ({ page }) => {
     const [download] = await Promise.all([
         page.waitForEvent('download'),
         paperChart(page).locator('.mud-ex-chart-downloads [data-ex-command="exchart.download.png"]').click(),
@@ -74,7 +74,7 @@ test('ADR-0281, ADR-0282: the toolbar\'s downloads save the PNG', async ({ page 
     expect(download.suggestedFilename()).toBe('curves.png');
 });
 
-test('ADR-0281: the theme\'s Primary, Secondary and Tertiary lead the series, and follow dark mode', async ({ page }) => {
+test('ADR-0281: the theme\'s Primary, Secondary and Tertiary lead the series, and follow dark mode @blazor', async ({ page }) => {
     const colours = async () => paperChart(page).evaluate((root) => {
         const style = getComputedStyle(document.querySelector('.mud-ex-grid'));
         const probe = (value) => {
@@ -99,7 +99,7 @@ test('ADR-0281: the theme\'s Primary, Secondary and Tertiary lead the series, an
     expect(dark.slots).toEqual(dark.palette);
 });
 
-test('ADR-0281, ADR-0282: a saved SVG carries the theme\'s Primary on the first slot', async ({ page }) => {
+test('ADR-0281, ADR-0282: a saved SVG carries the theme\'s Primary on the first slot @blazor', async ({ page }) => {
     const [download] = await Promise.all([
         page.waitForEvent('download'),
         paperChart(page).locator('.mud-ex-chart-downloads [data-ex-command="exchart.download.svg"]').click(),

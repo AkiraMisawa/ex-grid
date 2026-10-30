@@ -2,7 +2,7 @@ import { test, expect, setRoundTrip, settled, alterPage } from './fixtures.mjs';
 import { expectTabStopTaken } from './keyboard.mjs';
 import { openSheet, sheet, pressCell, editor, bar, nameBox, cell } from './sheet-helpers.mjs';
 
-test('ADR-0240: a row press commits all text typed immediately before it', async ({ page }) => {
+test('ADR-0240: a row press commits all text typed immediately before it @blazor', async ({ page }) => {
     await page.goto('/features');
     const grid = page.locator('.ex-grid').first();
     await expectTabStopTaken(grid);
@@ -23,7 +23,7 @@ test('ADR-0240: a row press commits all text typed immediately before it', async
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0240: a point survives its press answer and release, and fresh typing replaces it (${chrome})`, async ({ page }) => {
+    test(`ADR-0240: a point survives its press answer and release, and fresh typing replaces it (${chrome}) @blazor`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await setRoundTrip(150);
@@ -49,7 +49,7 @@ for (const chrome of ['builtin', 'mud']) {
 
 for (const chrome of ['builtin', 'mud']) {
 for (const target of ['heading', 'menu', 'macOS Control-click menu']) {
-    test(`ADR-0240: typing followed immediately by a ${target} command keeps the full text (${chrome})`, async ({ page, context }) => {
+    test(`ADR-0240: typing followed immediately by a ${target} command keeps the full text (${chrome}) @blazor`, async ({ page, context }) => {
         const menu = target !== 'heading';
         const controlClick = target === 'macOS Control-click menu';
         test.skip(controlClick && process.platform !== 'darwin', 'ADR-0021: Control-primary opens a context menu on macOS only');
@@ -106,7 +106,7 @@ for (const target of ['heading', 'menu', 'macOS Control-click menu']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0240: Name Box typing, Enter and the following key keep their order (${chrome})`, async ({ page }) => {
+    test(`ADR-0240: Name Box typing, Enter and the following key keep their order (${chrome}) @blazor`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await setRoundTrip(150);
@@ -123,7 +123,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0240: a Formula Bar commit answers both its typing and its command (${chrome})`, async ({ page }) => {
+    test(`ADR-0240: a Formula Bar commit answers both its typing and its command (${chrome}) @blazor`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await setRoundTrip(150);
@@ -141,7 +141,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-test(`ADR-0240: a right-click without an edit holds the following menu command (${chrome})`, async ({ page, context }) => {
+test(`ADR-0240: a right-click without an edit holds the following menu command (${chrome}) @blazor`, async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.goto(`/features?chrome=${chrome}`);
     const grid = page.locator('.ex-grid').first();

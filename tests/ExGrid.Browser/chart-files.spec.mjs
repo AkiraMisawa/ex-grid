@@ -24,7 +24,7 @@ async function save(page, button) {
     return { name: download.suggestedFilename(), bytes: await readFile(await download.path()) };
 }
 
-test('ADR-0282, CH-12: one click saves the CSV of the visible series', async ({ page }) => {
+test('ADR-0282, CH-12: one click saves the CSV of the visible series @behaviour', async ({ page }) => {
     const { name, bytes } = await save(page, '.ex-chart-download-csv');
     expect(name).toMatch(/\.csv$/);
     const lines = bytes.toString('utf8').replace(/^﻿/, '').trim().split(/\r?\n/);
@@ -32,7 +32,7 @@ test('ADR-0282, CH-12: one click saves the CSV of the visible series', async ({ 
     expect(lines[1]).toMatch(/^2026-10-30,/);
 });
 
-test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its stylesheet and the screen\'s colours inside', async ({ page }) => {
+test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its stylesheet and the screen\'s colours inside @behaviour', async ({ page }) => {
     const { name, bytes } = await save(page, '.ex-chart-download-svg');
     expect(name).toMatch(/\.svg$/);
     const text = bytes.toString('utf8');
@@ -55,7 +55,7 @@ test('ADR-0282, CH-12: one click saves the SVG, the drawing on screen with its s
     expect(parsed.rootStyle).toContain(`--ex-chart-colour-0:${onScreen};`);
 });
 
-test('ADR-0282, CH-10, CH-12: one click saves the PNG, painted at the Device Pixel', async ({ page }) => {
+test('ADR-0282, CH-10, CH-12: one click saves the PNG, painted at the Device Pixel @behaviour', async ({ page }) => {
     const { name, bytes } = await save(page, '.ex-chart-download-png');
     expect(name).toMatch(/\.png$/);
     expect(bytes.subarray(1, 4).toString('latin1')).toBe('PNG');
@@ -67,7 +67,7 @@ test('ADR-0282, CH-10, CH-12: one click saves the PNG, painted at the Device Pix
     expect(bytes.readUInt32BE(20)).toBe(Math.round(height * scale));
 });
 
-test('ADR-0282, ADR-0274, CH-10: the 3D surface saves its drawing as it stands, as SVG and as PNG at the Device Pixel', async ({ page }) => {
+test('ADR-0282, ADR-0274, CH-10: the 3D surface saves its drawing as it stands, as SVG and as PNG at the Device Pixel @behaviour', async ({ page }) => {
     await page.goto('/surface');
     const surface = page.locator('#vol .ex-chart-surface');
     await expect(surface.locator('.ex-chart-download-png')).toBeEnabled();

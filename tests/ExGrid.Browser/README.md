@@ -89,15 +89,35 @@ done
 EXGRID_HOSTS=/tmp/exgrid-hosts npx playwright test --project=chrome --shard=1/4
 ```
 
-## The two hosts
+## Which host a test runs on
 
-The same pages are served by two hosts (ADR-0019): the standalone WebAssembly DemoHost,
-which is the default, and the Blazor Server host, which the suite drives with
-`EXGRID_HOSTING=server` (Definition of Done §24):
+The pages are served by three hosts: the standalone WebAssembly DemoHost, which is the default,
+the Blazor Server host (`EXGRID_HOSTING=server`, Definition of Done §24), and the React DemoHost
+(`EXGRID_HOSTING=react`, ADR-0350 section 13). Every product is drawn by its Script Core under
+each, so a test runs on the hosts its title's tag names (ADR-0370 section 11):
+
+- **`@behaviour`** runs on the React host: the Script Core under the built-in Chrome, with data the
+  page already holds, judged once for every adapter. The React Wrappers' own specs
+  (`mantine.spec.mjs`, `mui.spec.mjs`) are tagged so too.
+- **`@blazor`** runs on both Blazor hosts: anything that passes through Blazor. A parameter reaching
+  the Script Core, an event reaching the Consumer, data across the Server host's circuit (a round
+  trip set, answers held, a Window asked for by a scroll), a slot filled with Razor (the MudBlazor
+  Chrome among them), Blazor's own runtime at the root, prerender and attach, and pages only the
+  Blazor hosts serve.
+
+The tag ends the title. A test run under each Chrome takes `chromeHost(chrome)`, and one run at
+0 ms and across a round trip takes `roundTripHost(ms)`, both from `fixtures.mjs`. A test that
+names neither host, or both, fails by name on every host (the `hostTag` fixture), so none is run
+twice and none is left out by default. Each host's run leaves out a test that names only the other
+host (`playwright.config.mjs`'s `grepInvert`). A `--grep-invert` on the command line replaces that
+one, so a test of the other host's that then reaches a run fails by name: add the other host's tag
+to the pattern. `EXGRID_EVERY_HOST=1` lists every test whatever the host, and lets one run them.
 
 ```sh
 EXGRID_HOSTING=server npx playwright test
 ```
+
+## The Server host
 
 On Server the browser does not reach the host directly. `latency-proxy.mjs` sits in front
 of it (the browser at 5298, the host at 6298, the proxy's control at 7298 — every port is
@@ -124,8 +144,9 @@ test.
 `circuit.spec.mjs` holds what only a circuit can fail — keys typed faster than a round
 trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser rejects
 (CP-23), the Prerendered paint (A11Y-20), two users over one store (SRV-3), and text typed at
-full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). It runs on
-both hosts; a test that has no meaning on WebAssembly is skipped there by name.
+full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). Its
+tests are `@blazor`, so they run on both Blazor hosts; a test that has no meaning on WebAssembly is
+skipped there by name.
 
 ## The demo API server
 
@@ -393,7 +414,7 @@ the job's summary.
 many times, writing the count to the job's summary (ADR-0220). `browser-repeat` runs through it, and
 so does the daily hunt, `.github/workflows/hunt.yml`, which gates nothing:
 
-- **The hunt** runs all of layer 3, each test ten times, against both hosts in Chrome and Edge, in
+- **The hunt** runs all of layer 3, each test ten times, on the hosts its tag names in Chrome and Edge, in
   ten shards each (ADR-0220 §4). A failure it finds is a defect to record and fix (§3), never one
   to re-run. A shard is whole spec files, chosen by `shard-files.mjs`, never Playwright's
   `--shard`: that one cuts the tests after `--repeat-each` has multiplied them, and the hunt's first

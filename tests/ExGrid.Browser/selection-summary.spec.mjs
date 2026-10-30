@@ -1,4 +1,4 @@
-import { test, expect, alterPage } from './fixtures.mjs';
+import { test, expect, alterPage, chromeHost } from './fixtures.mjs';
 import { openSheet, sheet, enter, clickCell, pressCell, cell } from './sheet-helpers.mjs';
 
 // The Selection Summary with real keys (ADR-0130): select cells and the status line shows Excel's
@@ -41,7 +41,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         });
 
-        test('a selection of numbers shows Average, Count and Sum from every selected cell (SM-9/SM-11, ADR-0130)', async ({ page }) => {
+        test(`a selection of numbers shows Average, Count and Sum from every selected cell (SM-9/SM-11, ADR-0130) ${chromeHost(chrome)}`, async ({ page }) => {
             await grid(page).locator("[id$='r0c2']").click({ force: true });
             await page.keyboard.press('Shift+ArrowDown');
             await page.keyboard.press('Shift+ArrowDown');
@@ -61,7 +61,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(shown.indexOf('Count')).toBeLessThan(shown.indexOf('Sum'));
         });
 
-        test('selecting does not move the Viewport: the strip stands before the first selection (SM-9, ADR-0130)', async ({ page }) => {
+        test(`selecting does not move the Viewport: the strip stands before the first selection (SM-9, ADR-0130) ${chromeHost(chrome)}`, async ({ page }) => {
             const scroller = grid(page).locator('.ex-scroller');
             const before = await scroller.boundingBox();
             const strip = await grid(page).locator('.ex-status').boundingBox();
@@ -97,7 +97,7 @@ async function tick(page, name) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`a Sheet under the ${chrome} Chrome`, () => {
-        test('an error among the cells leaves Count and Numerical Count, as Excel\'s status bar (SM-7, ADR-0130, run 17 b5 and b6)', async ({ page }) => {
+        test(`an error among the cells leaves Count and Numerical Count, as Excel's status bar (SM-7, ADR-0130, run 17 b5 and b6) ${chromeHost(chrome)}`, async ({ page }) => {
             await openSheet(page, chrome);
             const book = sheet(page);
             await enter(page, book, 'F1', '1');
@@ -162,7 +162,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(held(page).locator('.ex-row').first()).toBeVisible();
         });
 
-        test(`SM-11 / ADR-0130 (SM-2): a change of selection clears the figures at once for the pending mark, and the question it replaced is cancelled (${chrome})`, async ({ page }) => {
+        test(`SM-11 / ADR-0130 (SM-2): a change of selection clears the figures at once for the pending mark, and the question it replaced is cancelled (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             // Every render of the grid as the browser applies it: how many rows the selection
             // covers, and what the summary says beside it.
             await alterPage(page, () => {
@@ -221,7 +221,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`SM-11 / ADR-0130 (SM-2): the answer to a question a new selection replaced, given after the grid cancelled it, is shown nowhere (${chrome})`, async ({ page }) => {
+        test(`SM-11 / ADR-0130 (SM-2): the answer to a question a new selection replaced, given after the grid cancelled it, is shown nowhere (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             // The page ignores the token and keeps the replaced question, as a careless Consumer may.
             await page.goto(`/features?chrome=${chrome}&summary=held&late=1`);
             await expect(held(page).locator('.ex-row').first()).toBeVisible();
@@ -255,7 +255,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(seen.filter((text) => /Count: 2\b/.test(text)), 'the replaced question\'s figures, shown').toEqual([]);
         });
 
-        test(`SM-11 / ADR-0130 (SM-4): a declined question shows its reason in place of the figures, and no figure with it (${chrome})`, async ({ page }) => {
+        test(`SM-11 / ADR-0130 (SM-4): a declined question shows its reason in place of the figures, and no figure with it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await notional(page, 0).click({ force: true });
             for (let i = 0; i < 4; i++) {
                 await page.keyboard.press('Shift+ArrowDown');

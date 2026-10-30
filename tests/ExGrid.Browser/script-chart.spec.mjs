@@ -25,7 +25,7 @@ async function readingAt(page, chart, across) {
     return reading;
 }
 
-test('ADR-0370 section 1: the chart the Script Core draws from .NET\'s definition reads as the Razor component\'s, and a legend click crosses to .NET and back', async ({ page }) => {
+test('ADR-0370 section 1: the chart the Script Core draws from .NET\'s definition reads as the Razor component\'s, and a legend click crosses to .NET and back @blazor', async ({ page }) => {
     await page.goto('/chart');
     await expect(razorExposure(page).locator('g.ex-chart-series')).toHaveCount(5);
     const razor = await readingAt(page, razorExposure(page), 0.3);
@@ -42,7 +42,7 @@ test('ADR-0370 section 1: the chart the Script Core draws from .NET\'s definitio
     await expect(exposure(page).locator('g.ex-chart-series[data-series="ene-before"]')).toHaveCount(0);
 });
 
-test('ADR-0274, ADR-0370 section 1: a click on the surface reaches .NET as the axis\' own value, and the slice it hands back is drawn in its written digits', async ({ page }) => {
+test('ADR-0274, ADR-0370 section 1: a click on the surface reaches .NET as the axis\' own value, and the slice it hands back is drawn in its written digits @blazor', async ({ page }) => {
     await page.goto('/script-chart');
     const box = surface(page).locator('.ex-chart-surface-box');
     await expect(box.locator('circle.ex-chart-surface-point')).toHaveCount(20);
@@ -59,7 +59,7 @@ test('ADR-0274, ADR-0370 section 1: a click on the surface reaches .NET as the a
     await expect(slice.locator('g.ex-chart-series')).toHaveCount(1);
 });
 
-test('ADR-0420 section 3: a chart is written and sampled by the page\'s own module, imported from where the application serves it', async ({ page }) => {
+test('ADR-0420 section 3: a chart is written and sampled by the page\'s own module, imported from where the application serves it @blazor', async ({ page }) => {
     await page.goto('/script-chart');
     const chart = page.locator('#script-functions .ex-chart');
     await expect(chart.locator('g.ex-chart-series')).toHaveCount(1);
@@ -68,7 +68,7 @@ test('ADR-0420 section 3: a chart is written and sampled by the page\'s own modu
     expect(await readingAt(page, chart, 0.5)).toMatch(/^\d+\.\d yrs\n[\s\S]*Survival[\s\S]*\b9\d{3} bp/u);
 });
 
-test('ADR-0410, ADR-0281: MudBlazor\'s toolbar and menu stand in the chart\'s slots, and a range typed and applied at once over a slow circuit is the one read', async ({ page }) => {
+test('ADR-0410, ADR-0281: MudBlazor\'s toolbar and menu stand in the chart\'s slots, and a range typed and applied at once over a slow circuit is the one read @blazor', async ({ page }) => {
     await page.goto('/script-chart-mud');
     const chart = page.locator('.ex-chart').first();
     await expect(chart.locator('g.ex-chart-series')).toHaveCount(5);
@@ -105,7 +105,7 @@ test('ADR-0410, ADR-0281: MudBlazor\'s toolbar and menu stand in the chart\'s sl
     }
 });
 
-test('ADR-0421, ADR-0258: the Chart Dock over the Script grid opens a chart from the grid\'s menu, and the menu opened at once after it offers that chart', async ({ page }) => {
+test('ADR-0421, ADR-0258: the Chart Dock over the Script grid opens a chart from the grid\'s menu, and the menu opened at once after it offers that chart @blazor', async ({ page }) => {
     await page.goto('/script-chart-dock');
     const grid = page.locator('.ex-grid').first();
     const cell = (row, column) => grid.locator(`[id$='r${row}c${column}']`);

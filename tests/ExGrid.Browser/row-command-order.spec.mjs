@@ -1,7 +1,7 @@
 import { test, expect, settled, circuitQuiet } from './fixtures.mjs';
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0240/0160: ${chrome} row commands wait, refuse departed rows and continue after refusal`, async ({ page }) => {
+    test(`ADR-0240/0160: ${chrome} row commands wait, refuse departed rows and continue after refusal @blazor`, async ({ page }) => {
         await page.goto(`/row-command-order?chrome=${chrome}`);
         const grid = page.locator('.ex-grid');
         await settled(grid);
@@ -23,7 +23,7 @@ for (const chrome of ['builtin', 'mud']) {
         await settled(grid);
         await expect(page.locator('#row-order-trace')).toHaveText('started | finished | action:RowLeftTheWindow | mark:RowLeftTheWindow | action:0 | mark:1');
     });
-    test(`ADR-0240: ${chrome} row commands follow keys held behind a Consumer`, async ({ page }) => {
+    test(`ADR-0240: ${chrome} row commands follow keys held behind a Consumer @blazor`, async ({ page }) => {
         await page.goto(`/row-command-order?chrome=${chrome}`);
         const grid = page.locator('.ex-grid');
         await settled(grid);

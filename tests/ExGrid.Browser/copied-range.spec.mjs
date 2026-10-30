@@ -39,7 +39,7 @@ async function writeElsewhere(page, text) {
     }), text);
 }
 
-test('a copy is outlined with dashes that stand still and read over the Selection\'s outline (ADR-0170, CP-26, UX-6)', async ({ page }) => {
+test('a copy is outlined with dashes that stand still and read over the Selection\'s outline (ADR-0170, CP-26, UX-6) @behaviour', async ({ page }) => {
     await open(page);
     await writeElsewhere(page, 'SENTINEL');
     await clickCell(page, 1, 1);
@@ -79,7 +79,7 @@ test('a copy is outlined with dashes that stand still and read over the Selectio
     expect(gaps, JSON.stringify(broken.slice(0, 24))).toBeGreaterThan(broken.length / 5);
 });
 
-test('a write by anything but the grid\'s own copy drops the outline: another grid\'s copy, a script\'s write (ADR-0170, CP-27)', async ({ page }) => {
+test('a write by anything but the grid\'s own copy drops the outline: another grid\'s copy, a script\'s write (ADR-0170, CP-27) @behaviour', async ({ page }) => {
     await open(page);
     await clickCell(page, 0, 1);
     await page.keyboard.press('ControlOrMeta+C');
@@ -96,7 +96,7 @@ test('a write by anything but the grid\'s own copy drops the outline: another gr
     await expect(outlines(page, 1)).toHaveCount(0);
 });
 
-test('Escape takes the outline away and the grid keeps the keyboard; a paste leaves it (ADR-0170, ADR-0012, CP-28, CP-31)', async ({ page }) => {
+test('Escape takes the outline away and the grid keeps the keyboard; a paste leaves it (ADR-0170, ADR-0012, CP-28, CP-31) @behaviour', async ({ page }) => {
     await open(page);
     await clickCell(page, 0, 1);
     await page.keyboard.press('ControlOrMeta+C');
@@ -117,7 +117,7 @@ test('Escape takes the outline away and the grid keeps the keyboard; a paste lea
     expect(await grid(page).evaluate((root) => root.contains(document.activeElement))).toBe(true);
 });
 
-test('a copied cell whose value moves upstream loses the outline; a row replaced with the same copied text keeps it (ADR-0170, ADR-0142, CP-30)', async ({ page }) => {
+test('a copied cell whose value moves upstream loses the outline; a row replaced with the same copied text keeps it (ADR-0170, ADR-0142, CP-30) @behaviour', async ({ page }) => {
     await open(page, '?upstream=1');
     await expect(page.locator('#upstream-status')).toBeVisible();
 
@@ -142,7 +142,7 @@ test('a copied cell whose value moves upstream loses the outline; a row replaced
 test.describe('a browser that cannot say the clipboard changed', () => {
     test.use({ freshDocument: true });
 
-    test('draws no outline, and the copy still lands (ADR-0170, CP-32)', async ({ page, context }) => {
+    test('draws no outline, and the copy still lands (ADR-0170, CP-32) @behaviour', async ({ page, context }) => {
         await context.grantPermissions(['clipboard-read', 'clipboard-write']);
         // The event's interface removed before the grid attaches, as a browser before 143 has none.
         await page.addInitScript(() => {
@@ -160,7 +160,7 @@ test.describe('a browser that cannot say the clipboard changed', () => {
     });
 });
 
-test('on a Sheet the dashes are its outline\'s colour, with and without a Wrapper (ADR-0170, ADR-0071)', async ({ page }) => {
+test('on a Sheet the dashes are its outline\'s colour, with and without a Wrapper (ADR-0170, ADR-0071) @blazor', async ({ page }) => {
     for (const query of ['', '?chrome=mud']) {
         await page.goto(`/sheet${query}`);
         const sheet = page.locator('.ex-sheet .ex-grid').first();

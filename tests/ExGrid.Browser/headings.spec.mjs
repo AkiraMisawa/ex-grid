@@ -45,7 +45,7 @@ const readableOf = (grid) => grid.locator('.ex-scroller').evaluate((el) => {
     };
 });
 
-test('SR-2c: with the view at the top, a Column Heading click then Shift+→ leaves scrollTop where it was', async ({ page }) => {
+test('SR-2c: with the view at the top, a Column Heading click then Shift+→ leaves scrollTop where it was @behaviour', async ({ page }) => {
     const grid = sheet(page);
     expect((await scrollOf(grid)).top).toBe(0);
 
@@ -68,7 +68,7 @@ test('SR-2c: with the view at the top, a Column Heading click then Shift+→ lea
     await expect(cell(grid, 'C1')).toBeVisible();
 });
 
-test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls to show the Extent', async ({ page }) => {
+test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls to show the Extent @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await heading(grid, 'C').click({ force: true });
     await expectFocusAt(grid, 'C1');
@@ -89,7 +89,7 @@ test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls 
     await expect(nameBox(grid)).toHaveValue('C1');
 });
 
-test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leaves scrollLeft where it was', async ({ page }) => {
+test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leaves scrollLeft where it was @behaviour', async ({ page }) => {
     const grid = sheet(page);
     expect((await scrollOf(grid)).left).toBe(0);
 
@@ -145,7 +145,7 @@ async function expectWholeRows(grid, from, to) {
     }).toBe('whole rows');
 }
 
-test('DC-42: a drag across Column Headings selects whole columns, over the Headings and over the cells', async ({ page }) => {
+test('DC-42: a drag across Column Headings selects whole columns, over the Headings and over the cells @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const b = centreOf(await boxOf(heading(grid, 'B')));
     await page.mouse.move(b.x, b.y);
@@ -173,7 +173,7 @@ test('DC-42: a drag across Column Headings selects whole columns, over the Headi
     await expect(cell(grid, 'A4')).toHaveText('Plums');
 });
 
-test('DC-42: Shift+press on a Column Heading extends from the Focus\'s column, and the drag goes on', async ({ page }) => {
+test('DC-42: Shift+press on a Column Heading extends from the Focus\'s column, and the drag goes on @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'C3');
 
@@ -193,7 +193,7 @@ test('DC-42: Shift+press on a Column Heading extends from the Focus\'s column, a
     await expectFocusAt(grid, 'C3');
 });
 
-test('DC-42: a drag across Row Headings selects whole rows, over the Headings and over the cells', async ({ page }) => {
+test('DC-42: a drag across Row Headings selects whole rows, over the Headings and over the cells @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const three = centreOf(await boxOf(rowHeading(grid, 3)));
     await page.mouse.move(three.x, three.y);
@@ -214,7 +214,7 @@ test('DC-42: a drag across Row Headings selects whole rows, over the Headings an
     await expectWholeRows(grid, 3, 8);
 });
 
-test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never down', async ({ page }) => {
+test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never down @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const b = centreOf(await boxOf(heading(grid, 'B')));
     await page.mouse.move(b.x, b.y);
@@ -237,7 +237,7 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     expect((await scrollOf(grid)).top).toBe(0);
 });
 
-test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways', async ({ page }) => {
+test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sideways @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const three = centreOf(await boxOf(rowHeading(grid, 3)));
     await page.mouse.move(three.x, three.y);
@@ -258,7 +258,7 @@ test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sidew
     expect((await scrollOf(grid)).left).toBe(0);
 });
 
-test('DC-44: over more than one column the Size Tip shows the size at the Extent\'s Heading, and the Name Box is empty', async ({ page }) => {
+test('DC-44: over more than one column the Size Tip shows the size at the Extent\'s Heading, and the Name Box is empty @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const tip = grid.locator('.ex-size-tip');
     const b = centreOf(await boxOf(heading(grid, 'B')));
@@ -295,7 +295,7 @@ test('DC-44: over more than one column the Size Tip shows the size at the Extent
     await expect(nameBox(grid)).toHaveValue('B1');
 });
 
-test('DC-44: a Row Heading drag shows its size beside the Extent\'s Row Heading', async ({ page }) => {
+test('DC-44: a Row Heading drag shows its size beside the Extent\'s Row Heading @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const tip = grid.locator('.ex-size-tip');
     const three = centreOf(await boxOf(rowHeading(grid, 3)));
@@ -317,7 +317,7 @@ test('DC-44: a Row Heading drag shows its size beside the Extent\'s Row Heading'
     await expect(nameBox(grid)).toHaveValue('A3');
 });
 
-test('DC-44: the Size Tip is redrawn only when the Extent moves to another Heading', async ({ page }) => {
+test('DC-44: the Size Tip is redrawn only when the Extent moves to another Heading @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const tip = grid.locator('.ex-size-tip');
     const b = centreOf(await boxOf(heading(grid, 'B')));
@@ -366,7 +366,7 @@ test('DC-44: the Size Tip is redrawn only when the Extent moves to another Headi
     await page.mouse.up();
 });
 
-test('SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second takes it out', async ({ page }) => {
+test('SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second takes it out @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B7');
     const ranges = grid.locator('.ex-range');
@@ -384,7 +384,7 @@ test('SR-2e/DC-42: Ctrl+click on a Column Heading adds the column, and a second 
     await expectSelectionIsCell(grid, 'B7');
 });
 
-test('SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as one range', async ({ page }) => {
+test('SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as one range @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B7');
 
@@ -402,7 +402,7 @@ test('SR-2e/DC-42: Ctrl+drag across Column Headings adds the columns crossed as 
     await expectWholeColumns(grid, 'C', 'E');
 });
 
-test('DC-42: Ctrl+click on a Row Heading adds the row, and a second takes it out', async ({ page }) => {
+test('DC-42: Ctrl+click on a Row Heading adds the row, and a second takes it out @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'C2');
     const pinnedRanges = grid.locator('.ex-selection-pinned .ex-range');

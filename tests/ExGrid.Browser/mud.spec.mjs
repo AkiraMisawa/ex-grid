@@ -21,7 +21,7 @@ async function open(page) {
         .not.toBe('');
 }
 
-test('the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3)', async ({ page }) => {
+test('the painted geometry equals the declared metrics under the real Wrapper stylesheet (UX-3) @blazor', async ({ page }) => {
     await open(page);
     // Dense → Compact: 28px rows, 28px header, 8px padding — nothing in the Wrapper's
     // stylesheet may move them (ADR-0027/0030).
@@ -42,7 +42,7 @@ test('the painted geometry equals the declared metrics under the real Wrapper st
         .toBe('32px');
 });
 
-test('nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6)', async ({ page }) => {
+test('nothing under the Viewport transitions or animates with the Wrapper loaded (UX-6) @blazor', async ({ page }) => {
     await open(page);
     const offenders = await gridA(page).evaluate((g) => {
         const out = [];
@@ -76,7 +76,7 @@ function hue([r, g, b]) {
     return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
 }
 
-test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9)', async ({ page }) => {
+test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9) @blazor', async ({ page }) => {
     await open(page);
     // The colours the cascade resolved, in whatever syntax it kept them — the dark scheme's is
     // an oklch() — as sRGB bytes.
@@ -157,7 +157,7 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
     }
 });
 
-test('UX-19/UX-9: among several ranges the Focus\'s thin border is the Focus outline\'s colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030)', async ({ page }, testInfo) => {
+test('UX-19/UX-9: among several ranges the Focus\'s thin border is the Focus outline\'s colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030) @blazor', async ({ page }, testInfo) => {
     await open(page);
     const scale = await page.evaluate(() => devicePixelRatio);
     expect(scale).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
@@ -200,7 +200,7 @@ test('UX-19/UX-9: among several ranges the Focus\'s thin border is the Focus out
     }
 });
 
-test('a loss is painted in the palette\'s error colour by the Consumer\'s tone rule, and only there (ADR-0006, FN-7a)', async ({ page }) => {
+test('a loss is painted in the palette\'s error colour by the Consumer\'s tone rule, and only there (ADR-0006, FN-7a) @blazor', async ({ page }) => {
     await open(page);
     // Every fifth trade is negative in the fixture; the rule marks it, the Wrapper's
     // token colours it, and a gain the rule says nothing about stays the ink colour.
@@ -222,7 +222,7 @@ test('a loss is painted in the palette\'s error colour by the Consumer\'s tone r
     expect(colours.loss).not.toBe(colours.ink);
 });
 
-test('a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1)', async ({ page }) => {
+test('a theme switch re-renders nothing inside the grid: the rows are the same elements (RR-1) @blazor', async ({ page }) => {
     await open(page);
     const before = await gridA(page).evaluate((g) => {
         const rows = [...g.querySelectorAll('.ex-row')];
@@ -240,7 +240,7 @@ test('a theme switch re-renders nothing inside the grid: the rows are the same e
     expect(after.probes).toEqual([...Array(before.count).keys()].map(String));
 });
 
-test('the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13)', async ({ page }) => {
+test('the row under the pointer is highlighted by an overlay band, in the hovered instance only (UX-13) @blazor', async ({ page }) => {
     await open(page);
     const rows = gridA(page).locator('.ex-row');
     const second = await rows.nth(1).boundingBox();
@@ -268,7 +268,7 @@ test('the row under the pointer is highlighted by an overlay band, in the hovere
     await expect(band).toHaveCount(0);
 });
 
-test("the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030)", async ({ page }) => {
+test("the Wrapper's editor opens inside the core's box with the typed character, and commits (ED-4, ADR-0030) @blazor", async ({ page }) => {
     await open(page);
     // Trader is column 1, editable.
     const cell = gridA(page).locator('.ex-row').nth(1).locator('.ex-cell').nth(1);
@@ -299,7 +299,7 @@ test("the Wrapper's editor opens inside the core's box with the typed character,
     await expect(gridA(page).locator('.ex-row').nth(1).locator('.ex-cell').nth(1)).toHaveText('Quinn');
 });
 
-test('the loading bar is a MudProgressLinear where the core places its seam, only while loading', async ({ page }) => {
+test('the loading bar is a MudProgressLinear where the core places its seam, only while loading @blazor', async ({ page }) => {
     await open(page);
     await expect(gridB(page).locator('.mud-ex-grid-loading')).toHaveCount(0);
     await page.locator('#toggle-loading').click();
@@ -311,7 +311,7 @@ test('the loading bar is a MudProgressLinear where the core places its seam, onl
     await expect(bar).toHaveCount(0);
 });
 
-test("the paper's corners: rounded with an inset, square flush; the grid's own box is untouched", async ({ page }) => {
+test("the paper's corners: rounded with an inset, square flush; the grid's own box is untouched @blazor", async ({ page }) => {
     await open(page);
     const before = await paperA(page).evaluate((p) => ({
         radius: getComputedStyle(p).borderTopLeftRadius,
@@ -328,7 +328,7 @@ test("the paper's corners: rounded with an inset, square flush; the grid's own b
     expect(await paperA(page).evaluate((p) => getComputedStyle(p).paddingLeft)).toBe('0px');
 });
 
-test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030)', async ({ page }) => {
+test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030) @blazor', async ({ page }) => {
     await open(page);
     await page.mouse.move(0, 0);
     // The rule's line and the ground four pixels above it, near the right edge of the pinned Book

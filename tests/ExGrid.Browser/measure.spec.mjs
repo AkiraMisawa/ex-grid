@@ -30,7 +30,7 @@ const median = (values) => {
     return sorted[Math.floor(sorted.length / 2)];
 };
 
-test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip (SRV-6)', async ({ page }, testInfo) => {
+test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip (SRV-6) @blazor', async ({ page }, testInfo) => {
     test.skip(MEASURE !== 'pointer', 'EXGRID_MEASURE=pointer');
     test.setTimeout(180_000);
     const results = {};
@@ -111,7 +111,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
     console.log(`SRV-6 ${JSON.stringify(results)}`);
 });
 
-test('how long the stale band stands while the window is dragged over a Stretch grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028)', async ({ page }, testInfo) => {
+test('how long the stale band stands while the window is dragged over a Stretch grid, at 0, 50 and 150 ms round trip (§21.9, ADR-0028) @blazor', async ({ page }, testInfo) => {
     test.skip(MEASURE !== 'stretch', 'EXGRID_MEASURE=stretch');
     test.setTimeout(180_000);
     const results = {};

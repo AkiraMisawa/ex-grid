@@ -47,13 +47,13 @@ async function dragGrip(page, name, dx) {
     await page.mouse.up();
 }
 
-test('a sorted Auto header and a Japanese Auto header paint whole (FN-12d, ADR-0016)', async ({ page }) => {
+test('a sorted Auto header and a Japanese Auto header paint whole (FN-12d, ADR-0016) @behaviour', async ({ page }) => {
     await expect(header(page, 'Notional')).toHaveAttribute('aria-sort', 'ascending');
     expect(await overflows(header(page, 'Notional'))).toBe(false);
     expect(await overflows(header(page, '評価額（円）'))).toBe(false);
 });
 
-test('a Japanese header double-clicked to fit paints whole at its fitted width (FN-12d, ADR-0016)', async ({ page }) => {
+test('a Japanese header double-clicked to fit paints whole at its fitted width (FN-12d, ADR-0016) @behaviour', async ({ page }) => {
     await header(page, '評価額（円）').locator('.ex-resize-grip').dblclick({ force: true });
 
     await expect(page.locator('#width-status')).toHaveText(/^Widths: Amount=\d/);
@@ -62,7 +62,7 @@ test('a Japanese header double-clicked to fit paints whole at its fitted width (
     expect(await overflows(header(page, '評価額（円）'))).toBe(false);
 });
 
-test('a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016)', async ({ page }) => {
+test('a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) @behaviour', async ({ page }) => {
     await clickCell(page, 0, 2);
     await page.keyboard.press('Control+End');
     const total = grid(page).locator('.ex-row-total');
@@ -77,7 +77,7 @@ test('a bold total the estimate fits paints whole, and a #### run fits its cell 
     expect(await overflows(narrow)).toBe(false);
 });
 
-test('a double-click on an edge fits a value the Viewport has not painted (FN-12a, ADR-0016)', async ({ page }) => {
+test('a double-click on an edge fits a value the Viewport has not painted (FN-12a, ADR-0016) @behaviour', async ({ page }) => {
     await expect(grid(page).locator('.ex-cell', { hasText: 'A note far longer' })).toHaveCount(0);
 
     await header(page, 'Note').locator('.ex-resize-grip').dblclick({ force: true });
@@ -93,7 +93,7 @@ test('a double-click on an edge fits a value the Viewport has not painted (FN-12
     expect(await overflows(note)).toBe(false);
 });
 
-test('Shift+click on a header selects whole columns and does not sort (SR-2a, ADR-0012)', async ({ page }) => {
+test('Shift+click on a header selects whole columns and does not sort (SR-2a, ADR-0012) @behaviour', async ({ page }) => {
     await clickCell(page, 2, 2);
 
     await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
@@ -110,7 +110,7 @@ async function headerCentre(page, name) {
     return { x: box.x + Math.min(20, box.width / 3), y: box.y + (box.height / 2) };
 }
 
-test('a press on a header released on its own column is a click, and sorts (SR-2d, SR-1, ADR-0012)', async ({ page }) => {
+test('a press on a header released on its own column is a click, and sorts (SR-2d, SR-1, ADR-0012) @behaviour', async ({ page }) => {
     const from = await headerCentre(page, 'Notional');
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
@@ -122,7 +122,7 @@ test('a press on a header released on its own column is a click, and sorts (SR-2
     await expect(page.locator('#selection-status')).toHaveText('Selection:');
 });
 
-test('a press that reaches another header selects whole columns, and never sorts, even released on its own (SR-2d, ADR-0012)', async ({ page }) => {
+test('a press that reaches another header selects whole columns, and never sorts, even released on its own (SR-2d, ADR-0012) @behaviour', async ({ page }) => {
     const from = await headerCentre(page, 'Notional');
     const to = await headerCentre(page, 'Narrow');
     await page.mouse.move(from.x, from.y);
@@ -146,7 +146,7 @@ test('a press that reaches another header selects whole columns, and never sorts
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('a press on one header released on another sorts nothing: the click lands on the header all the same (SR-2d, ADR-0012)', async ({ page }) => {
+test('a press on one header released on another sorts nothing: the click lands on the header all the same (SR-2d, ADR-0012) @behaviour', async ({ page }) => {
     const from = await headerCentre(page, 'Notional');
     const to = await headerCentre(page, 'Narrow');
     await page.mouse.move(from.x, from.y);
@@ -161,7 +161,7 @@ test('a press on one header released on another sorts nothing: the click lands o
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('a press on a header that reaches another column\'s cells selects whole columns (SR-2d, ADR-0012)', async ({ page }) => {
+test('a press on a header that reaches another column\'s cells selects whole columns (SR-2d, ADR-0012) @behaviour', async ({ page }) => {
     const from = await headerCentre(page, 'Notional');
     const amount = await grid(page).locator("[id$='-r4c3']").boundingBox();
     await page.mouse.move(from.x, from.y);
@@ -174,7 +174,7 @@ test('a press on a header that reaches another column\'s cells selects whole col
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('Ctrl+click on a header adds the whole column, a second takes it out, and neither sorts (SR-2e, ADR-0012)', async ({ page }) => {
+test('Ctrl+click on a header adds the whole column, a second takes it out, and neither sorts (SR-2e, ADR-0012) @behaviour', async ({ page }) => {
     await clickCell(page, 2, 0);
 
     await header(page, 'Notional').click({ modifiers: ['ControlOrMeta'], position: { x: 20, y: 12 }, force: true });
@@ -191,7 +191,7 @@ test('Ctrl+click on a header adds the whole column, a second takes it out, and n
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('Ctrl+drag across headers adds the columns crossed as one range, and does not sort (SR-2e, ADR-0012)', async ({ page }) => {
+test('Ctrl+drag across headers adds the columns crossed as one range, and does not sort (SR-2e, ADR-0012) @behaviour', async ({ page }) => {
     await clickCell(page, 2, 0);
     const from = await headerCentre(page, 'Notional');
     const to = await headerCentre(page, 'Narrow');
@@ -210,7 +210,7 @@ test('Ctrl+drag across headers adds the columns crossed as one range, and does n
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-0012)', async ({ page }) => {
+test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-0012) @behaviour', async ({ page }) => {
     await clickCell(page, 2, 0);
 
     await header(page, 'Notional').click({ modifiers: ['Meta'], position: { x: 20, y: 12 }, force: true });
@@ -226,7 +226,7 @@ test('Meta counts as Ctrl on a header only where Meta is Command (SR-2e, ADR-001
     }
 });
 
-test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-0016)', async ({ page }) => {
+test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-0016) @behaviour', async ({ page }) => {
     await dragGrip(page, 'Note', 30);
 
     await expect(page.locator('#width-status')).toHaveText('Widths: Note=150');
@@ -234,7 +234,7 @@ test('a drag on a resize grip resizes and is not a Heading drag (ticket 21, ADR-
     await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
 });
 
-test('with the view at the top, a header Shift+click then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+test('with the view at the top, a header Shift+click then Shift+→ never scrolls down (SR-2c, ADR-0052) @behaviour', async ({ page }) => {
     const scroller = grid(page).locator('.ex-scroller');
     await clickCell(page, 0, 2);
     await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
@@ -248,7 +248,7 @@ test('with the view at the top, a header Shift+click then Shift+→ never scroll
     expect(await scroller.evaluate((el) => el.scrollTop)).toBe(0);
 });
 
-test('with the view at the top, Ctrl+Space on the first row then Shift+→ never scrolls down (SR-2c, ADR-0052)', async ({ page }) => {
+test('with the view at the top, Ctrl+Space on the first row then Shift+→ never scrolls down (SR-2c, ADR-0052) @behaviour', async ({ page }) => {
     const scroller = grid(page).locator('.ex-scroller');
     await clickCell(page, 0, 2);
     await page.keyboard.press('Control+Space');
@@ -267,7 +267,7 @@ test('with the view at the top, Ctrl+Space on the first row then Shift+→ never
     await expect.poll(async () => scroller.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 });
 
-test('dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016)', async ({ page }) => {
+test('dragging the edge of one of several whole columns resizes them all (FN-12c, ADR-0016) @behaviour', async ({ page }) => {
     await clickCell(page, 2, 2);
     await header(page, 'Narrow').click({ modifiers: ['Shift'], position: { x: 20, y: 12 }, force: true });
     await expect(page.locator('#selection-status')).toHaveText('Selection: 0,2,120,3');
@@ -284,7 +284,7 @@ async function headerWidths(page) {
         Object.fromEntries([...root.querySelectorAll('.ex-header-cell')].map((c) => [c.textContent, c.getBoundingClientRect().width])));
 }
 
-test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045)', async ({ page }) => {
+test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045) @behaviour', async ({ page }) => {
     const wide = await headerWidths(page);
     expect(Object.keys(wide)).toHaveLength(6);
     // Every painted width is the resolved one written inline, not a share of the box.
@@ -309,7 +309,7 @@ test('columns narrower than a wide box are not stretched, and a resize changes n
     }, { message: 'the columns whose width a resize changed' }).toEqual([]);
 });
 
-test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045)', async ({ page }) => {
+test('a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) @behaviour', async ({ page }) => {
     await expect(grid(page).locator('.ex-cell.ex-pinned').first()).toBeVisible();
     const bookWidth = (await header(page, 'Book').boundingBox()).width;
 

@@ -20,7 +20,7 @@ import { scenarios } from './differential-products.mjs';
 
 function differential(product, scenario, makeSteps, fixedSeeds) {
     for (const seed of seedsOf(fixedSeeds)) {
-        test(`ADR-0240 §8: ${product} ends the same typed fast and slow, seed ${seed}`, async ({ page }, testInfo) => {
+        test(`ADR-0240 §8: ${product} ends the same typed fast and slow, seed ${seed} @blazor`, async ({ page }, testInfo) => {
             test.setTimeout(240_000);
             const steps = makeSteps(random(seed));
             testInfo.annotations.push({ type: 'seed', description: String(seed) });

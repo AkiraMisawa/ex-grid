@@ -35,7 +35,7 @@ test.beforeEach(async ({ page }) => {
     await settled(grid(page, 'blotter'));
 });
 
-test('ADR-0343: a selected row hands the server its desk, and the desk grid and the pivot are asked again under it', async ({ page }) => {
+test('ADR-0343: a selected row hands the server its desk, and the desk grid and the pivot are asked again under it @blazor', async ({ page }) => {
     await expect.poll(() => desks(page)).toEqual({ desk: all, pivot: all });
 
     await cell(page, 'blotter', 'T-00002').click({ force: true });
@@ -43,7 +43,7 @@ test('ADR-0343: a selected row hands the server its desk, and the desk grid and 
     await expect.poll(() => desks(page)).toEqual({ desk: ['FX'], pivot: ['FX'] });
 });
 
-test('ADR-0343: a selection past the rows fetched narrows nothing and hands nothing on, and says so', async ({ page }) => {
+test('ADR-0343: a selection past the rows fetched narrows nothing and hands nothing on, and says so @blazor', async ({ page }) => {
     await cell(page, 'blotter', 'T-00002').click({ force: true });
     await expect.poll(() => desks(page)).toEqual({ desk: ['FX'], pivot: ['FX'] });
 
@@ -57,14 +57,14 @@ test('ADR-0343: a selection past the rows fetched narrows nothing and hands noth
     await expect(page.locator('#raised')).toHaveText('');
 });
 
-test('ADR-0343: the confirm hands on the fetched rows chosen, with the version they were read at', async ({ page }) => {
+test('ADR-0343: the confirm hands on the fetched rows chosen, with the version they were read at @blazor', async ({ page }) => {
     await cell(page, 'blotter', 'T-00003').click({ force: true });
     await view(page, 'blotter').getByRole('button', { name: 'Send to review' }).click();
 
     await expect(page.locator('#raised')).toHaveText('{"output":"review","input":"trades","version":1,"on":["id"],"values":[["T-00003"]]}');
 });
 
-test('ADR-0343: a sort is the grid\'s query, executed by the server, and drops the selection and its narrowing (ADR-0011)', async ({ page }) => {
+test('ADR-0343: a sort is the grid\'s query, executed by the server, and drops the selection and its narrowing (ADR-0011) @blazor', async ({ page }) => {
     await cell(page, 'blotter', 'T-00002').click({ force: true });
     await expect.poll(() => desks(page)).toEqual({ desk: ['FX'], pivot: ['FX'] });
 
@@ -76,7 +76,7 @@ test('ADR-0343: a sort is the grid\'s query, executed by the server, and drops t
     await expect.poll(() => desks(page)).toEqual({ desk: all, pivot: all });
 });
 
-test('ADR-0344: the chart over the server is drawn from the points thinned there, and saves no CSV of them', async ({ page }) => {
+test('ADR-0344: the chart over the server is drawn from the points thinned there, and saves no CSV of them @blazor', async ({ page }) => {
     await expect.poll(async () => [...((await line(page)) ?? '').matchAll(/[ML]/g)].length).toBeGreaterThan(250);
 
     const csv = view(page, 'curve').locator('.ex-chart-download-csv');
@@ -85,7 +85,7 @@ test('ADR-0344: the chart over the server is drawn from the points thinned there
     await expect(view(page, 'curve').locator('.ex-chart-download-svg')).toBeEnabled();
 });
 
-test('ADR-0345: a desk selected in the pivot over the server narrows the chart; the grand total stands for every desk', async ({ page }) => {
+test('ADR-0345: a desk selected in the pivot over the server narrows the chart; the grand total stands for every desk @blazor', async ({ page }) => {
     const pivotCell = text => grid(page, 'byDesk').locator('[role=rowheader], [role=gridcell]').filter({ hasText: new RegExp(`^${text}$`) }).first();
     await expect.poll(() => line(page)).not.toBeNull();
     const whole = await line(page);

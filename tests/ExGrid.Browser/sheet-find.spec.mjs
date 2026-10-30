@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, settled } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, settled, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -61,7 +61,7 @@ for (const chrome of ['builtin', 'mud']) {
             await panel(page).locator(parts.withinWorkbook).click();
         }
 
-        test('SF-1: within the Sheet, the default, a step searches the Sheet shown alone and says no match (ADR-0332 §5)', async ({ page }) => {
+        test(`SF-1: within the Sheet, the default, a step searches the Sheet shown alone and says no match (ADR-0332 §5) ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
 
@@ -74,7 +74,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'A1');
         });
 
-        test('SF-2: within the Workbook, a step goes on to the next Sheet, shows it and selects the match there, marked as current (ADR-0332 §4, §5)', async ({ page }) => {
+        test(`SF-2: within the Workbook, a step goes on to the next Sheet, shows it and selects the match there, marked as current (ADR-0332 §4, §5) ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await open(page, 'f', 'travel');
@@ -97,7 +97,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(findField(page)).toBeFocused();
         });
 
-        test('SF-3: Replace All within the Workbook writes every Sheet, says the count, and is one undo step (ADR-0332 §2, §5)', async ({ page }) => {
+        test(`SF-3: Replace All within the Workbook writes every Sheet, says the count, and is one undo step (ADR-0332 §2, §5) ${chromeHost(chrome)}`, async ({ page }) => {
             await openWorkbook(page);
             const grid = sheet(page);
             await open(page, 'h', 'el');

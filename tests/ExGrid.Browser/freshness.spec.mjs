@@ -190,7 +190,7 @@ test.afterAll(() => {
     if (work) fs.rmSync(work, { recursive: true, force: true });
 });
 
-test('ERR-9 / ADR-0123: a deploy over GitHub Pages\' headers is met with the new script and stylesheet on a normal reload', async ({ browser }) => {
+test('ERR-9 / ADR-0123: a deploy over GitHub Pages\' headers is met with the new script and stylesheet on a normal reload @blazor', async ({ browser }) => {
     const live = path.join(work, 'live');
     fs.rmSync(live, { recursive: true, force: true });
     copy(first.wwwroot, live);

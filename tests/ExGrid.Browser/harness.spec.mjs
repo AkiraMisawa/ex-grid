@@ -29,7 +29,7 @@ async function openFeatures(page) {
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
-test('a spec file boots its app once, at the index (ADR-0056)', async ({ page }) => {
+test('a spec file boots its app once, at the index (ADR-0056) @blazor', async ({ page }) => {
     await openFeatures(page);
     expect(await bootedAt(page), 'the document was loaded at the index, not at the page').toBe('/');
     // Inside the test's own page, so nothing the harness has to put back.
@@ -37,14 +37,14 @@ test('a spec file boots its app once, at the index (ADR-0056)', async ({ page })
     left.boots = await documentOf(page);
 });
 
-test('the next test mounts its page afresh on the same document (ADR-0056)', async ({ page }) => {
+test('the next test mounts its page afresh on the same document (ADR-0056) @blazor', async ({ page }) => {
     const document = leftBy('boots');
     await openFeatures(page);
     expect(await documentOf(page), 'no second boot').toBe(document);
     await expect(grid(page), 'a new grid, not the last test\'s').not.toHaveAttribute('data-harness-first', /.*/);
 });
 
-test('what a test changed through the harness is put back when it ends (ADR-0056)', async ({ page, context }) => {
+test('what a test changed through the harness is put back when it ends (ADR-0056) @blazor', async ({ page, context }) => {
     await page.setViewportSize({ width: 900, height: 600 });
     await openFeatures(page);
     await alterPage(page, () => {
@@ -76,7 +76,7 @@ test('what a test changed through the harness is put back when it ends (ADR-0056
     left.changes = true;
 });
 
-test('the next test finds none of it (ADR-0056)', async ({ page }) => {
+test('the next test finds none of it (ADR-0056) @blazor', async ({ page }) => {
     leftBy('changes');
     await openFeatures(page);
     const found = await page.evaluate(async () => ({
@@ -108,14 +108,14 @@ test('the next test finds none of it (ADR-0056)', async ({ page }) => {
 test.describe('a change made behind the harness\'s back is named, and the page is not handed on (ADR-0056)', () => {
     test.describe(() => {
         test.use({ expectedLeaks: [/navigator\.clipboard\.write\b/] });
-        test('a native stubbed with page.evaluate', async ({ page }) => {
+        test('a native stubbed with page.evaluate @blazor', async ({ page }) => {
             await openFeatures(page);
             await page.evaluate(() => { navigator.clipboard.write = async () => { }; });
             left.stubbed = await documentOf(page);
         });
     });
 
-    test('after it, the next test has a document of its own', async ({ page }) => {
+    test('after it, the next test has a document of its own @blazor', async ({ page }) => {
         const document = leftBy('stubbed');
         await openFeatures(page);
         expect(await documentOf(page)).not.toBe(document);
@@ -123,7 +123,7 @@ test.describe('a change made behind the harness\'s back is named, and the page i
 
     test.describe(() => {
         test.use({ expectedLeaks: [/document\.hasFocus/] });
-        test('a native stubbed on its instance rather than its prototype', async ({ page }) => {
+        test('a native stubbed on its instance rather than its prototype @blazor', async ({ page }) => {
             await openFeatures(page);
             await page.evaluate(() => { document.hasFocus = () => true; });
         });
@@ -134,7 +134,7 @@ test.describe('a change made behind the harness\'s back is named, and the page i
         // for both, because test.use reads a list whose second item is an object — a RegExp is
         // one — as Playwright's own [value, options] pair.
         test.use({ expectedLeaks: [/harness-leak|stylesheets/] });
-        test('an element left in the head', async ({ page }) => {
+        test('an element left in the head @blazor', async ({ page }) => {
             await openFeatures(page);
             await page.evaluate(() => {
                 const style = document.createElement('style');
@@ -148,7 +148,7 @@ test.describe('a change made behind the harness\'s back is named, and the page i
         // DIR-2's case: the grid's parent is #app on WebAssembly and body on the Server host,
         // and neither is part of the page Blazor removes.
         test.use({ expectedLeaks: [/data-harness-leak/] });
-        test('an attribute left on the grid\'s parent', async ({ page }) => {
+        test('an attribute left on the grid\'s parent @blazor', async ({ page }) => {
             await openFeatures(page);
             await grid(page).evaluate((root) => root.parentElement.setAttribute('data-harness-leak', ''));
         });
@@ -156,7 +156,7 @@ test.describe('a change made behind the harness\'s back is named, and the page i
 
     test.describe(() => {
         test.use({ expectedLeaks: [/stylesheets/] });
-        test('a rule inserted into a stylesheet, which the markup does not show', async ({ page }) => {
+        test('a rule inserted into a stylesheet, which the markup does not show @blazor', async ({ page }) => {
             await openFeatures(page);
             await page.evaluate(() => document.styleSheets[0].insertRule('.harness-leak { color: red; }'));
         });
@@ -164,20 +164,20 @@ test.describe('a change made behind the harness\'s back is named, and the page i
 
     test.describe(() => {
         test.use({ expectedLeaks: [/window\.harnessLeak/] });
-        test('a global left on window', async ({ page }) => {
+        test('a global left on window @blazor', async ({ page }) => {
             await openFeatures(page);
             await page.evaluate(() => { window.harnessLeak = true; });
         });
     });
 });
 
-test('a test that leaves a key held hands no page on (ADR-0056)', async ({ page }) => {
+test('a test that leaves a key held hands no page on (ADR-0056) @blazor', async ({ page }) => {
     await openFeatures(page);
     left.keyHeld = await documentOf(page);
     await page.keyboard.down('Shift');
 });
 
-test('after it, the next test boots, with no key held (ADR-0056)', async ({ page }) => {
+test('after it, the next test boots, with no key held (ADR-0056) @blazor', async ({ page }) => {
     const document = leftBy('keyHeld');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
@@ -187,40 +187,40 @@ test('after it, the next test boots, with no key held (ADR-0056)', async ({ page
     expect(await page.evaluate(() => window.__keySeen), 'a plain a, not a Shift+A').toBe(true);
 });
 
-test('a test that leaves a mouse button held hands no page on (ADR-0056)', async ({ page }) => {
+test('a test that leaves a mouse button held hands no page on (ADR-0056) @blazor', async ({ page }) => {
     await openFeatures(page);
     left.buttonHeld = await documentOf(page);
     await page.mouse.move(5, 5);
     await page.mouse.down();
 });
 
-test('after it too, the next test boots (ADR-0056)', async ({ page }) => {
+test('after it too, the next test boots (ADR-0056) @blazor', async ({ page }) => {
     const document = leftBy('buttonHeld');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
 });
 
-test('a test whose console reports an error hands no page on (ADR-0056)', async ({ page }) => {
+test('a test whose console reports an error hands no page on (ADR-0056) @blazor', async ({ page }) => {
     test.fail(true, 'reports an error on purpose, which CON-1 fails: the point is what the next test is given');
     await openFeatures(page);
     left.reported = await documentOf(page);
     await page.evaluate(() => console.error('harness.spec: an error on purpose'));
 });
 
-test('after that, the next test boots (ADR-0056)', async ({ page }) => {
+test('after that, the next test boots (ADR-0056) @blazor', async ({ page }) => {
     const document = leftBy('reported');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
 });
 
-test('a test that fails hands no page on (ADR-0056)', async ({ page }) => {
+test('a test that fails hands no page on (ADR-0056) @blazor', async ({ page }) => {
     test.fail(true, 'fails on purpose, to see what the next test is given');
     await openFeatures(page);
     left.failed = await documentOf(page);
     expect(false).toBe(true);
 });
 
-test('after a failure, the next test boots (ADR-0056)', async ({ page }) => {
+test('after a failure, the next test boots (ADR-0056) @blazor', async ({ page }) => {
     const document = leftBy('failed');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
@@ -231,26 +231,26 @@ test('after a failure, the next test boots (ADR-0056)', async ({ page }) => {
 // writes do with [ex-grid], and a .NET log line under an ExGrid category. Written from the test,
 // because the product writes none; the harness's verdict is what is under test. A page's own line
 // that names no ExGrid code is not the grid's, and passes.
-test('CON-8 / ADR-0005: a console.log written by ExGrid fails the test', async ({ page }) => {
+test('CON-8 / ADR-0005: a console.log written by ExGrid fails the test @blazor', async ({ page }) => {
     test.fail(true, 'logs on purpose as ExGrid, which CON-8 fails');
     await openFeatures(page);
     await page.evaluate(() => console.log('[ex-grid] harness.spec: a log line on purpose'));
 });
 
-test('CON-8 / ADR-0005: a console.info under an ExGrid category fails the test', async ({ page }) => {
+test('CON-8 / ADR-0005: a console.info under an ExGrid category fails the test @blazor', async ({ page }) => {
     test.fail(true, 'logs on purpose under an ExGrid category, which CON-8 fails');
     await openFeatures(page);
     await page.evaluate(() => console.info('info: ExGrid.Components.ExGrid[0] harness.spec: an info line on purpose'));
 });
 
-test('CON-8 / ADR-0005: a console.log that names no ExGrid code is not the grid\'s, and passes', async ({ page }) => {
+test('CON-8 / ADR-0005: a console.log that names no ExGrid code is not the grid\'s, and passes @blazor', async ({ page }) => {
     await openFeatures(page);
     await page.evaluate(() => console.log('harness.spec: the page\'s own line'));
 });
 
 test.describe(() => {
     test.use({ freshDocument: true });
-    test('a test that asks for a document of its own loads its page for real (ADR-0056)', async ({ page }) => {
+    test('a test that asks for a document of its own loads its page for real (ADR-0056) @blazor', async ({ page }) => {
         await openFeatures(page);
         expect(await bootedAt(page)).toBe('/features');
     });

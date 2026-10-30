@@ -10,7 +10,7 @@ import { expectActiveDescendant } from './keyboard.mjs';
 // nothing a key means waits on .NET on Blazor Server; and that a Sheet in no Pointing Scope outlines a grid the page
 // wired to it.
 
-test('ADR-0431: a grid given the page\'s script points, cycles with F4 and outlines each Reference, with the keys typed at once', async ({ page }) => {
+test('ADR-0431: a grid given the page\'s script points, cycles with F4 and outlines each Reference, with the keys typed at once @blazor', async ({ page }) => {
     await page.goto('/script-formula-entry');
     const grid = page.locator('#script-formula-entry-lines .ex-grid');
     // The grid has no names of its own for cells, so its Name Box stays empty: the Focus is read where it is carried.
@@ -35,7 +35,7 @@ test('ADR-0431: a grid given the page\'s script points, cycles with F4 and outli
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
 });
 
-test('ADR-0431: a Sheet in no Pointing Scope tells its linked columns\' colours, and the grid the page hands them outlines the column', async ({ page }) => {
+test('ADR-0431: a Sheet in no Pointing Scope tells its linked columns\' colours, and the grid the page hands them outlines the column @blazor', async ({ page }) => {
     await page.goto('/script-formula-entry');
     const sheet = page.locator('#script-formula-entry-sheet .ex-grid');
     const table = page.locator('#script-formula-entry-positions .ex-grid');

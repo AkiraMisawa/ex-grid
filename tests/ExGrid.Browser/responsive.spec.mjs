@@ -1,6 +1,6 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 
-test('RT-1 (ADR-0045): a container narrows and widens without changing columns or saved pinning', async ({ page }) => {
+test('RT-1 (ADR-0045): a container narrows and widens without changing columns or saved pinning @blazor', async ({ page }) => {
     await page.goto('/responsive');
     for (const layout of ['flex', 'grid'])
         await expect(page.locator(`#responsive-${layout} .ex-row`).first()).toBeVisible();

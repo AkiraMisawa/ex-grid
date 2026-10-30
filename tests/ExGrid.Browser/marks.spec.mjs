@@ -38,7 +38,7 @@ async function expectEveryPaintedRowTicked(page, ticked) {
     expect(new Set(states)).toEqual(new Set([ticked ? 'true' : 'false']));
 }
 
-test('after "mark all", rows scrolled to far away paint ticked (MK-6)', async ({ page }) => {
+test('after "mark all", rows scrolled to far away paint ticked (MK-6) @behaviour', async ({ page }) => {
     await open(page);
 
     await headerBox(page).click();
@@ -53,7 +53,7 @@ test('after "mark all", rows scrolled to far away paint ticked (MK-6)', async ({
     await expectEveryPaintedRowTicked(page, true);
 });
 
-test('a filter keeps the marks and names the ones outside it (MK-7)', async ({ page }) => {
+test('a filter keeps the marks and names the ones outside it (MK-7) @behaviour', async ({ page }) => {
     await open(page);
     await headerBox(page).click();
     await expect(markCount(page)).toHaveText(`${ROWS} marked`, { timeout: 15_000 });
@@ -69,7 +69,7 @@ test('a filter keeps the marks and names the ones outside it (MK-7)', async ({ p
     await expectEveryPaintedRowTicked(page, true);
 });
 
-test('Space in the Mark Column brings the selected rows into line (MK-1)', async ({ page }) => {
+test('Space in the Mark Column brings the selected rows into line (MK-1) @behaviour', async ({ page }) => {
     await open(page);
     await rowBoxes(page).nth(1).click();
     await expect(markCount(page)).toHaveText('1 marked', { timeout: 15_000 });
@@ -92,7 +92,7 @@ test('Space in the Mark Column brings the selected rows into line (MK-1)', async
     await expect(markCount(page)).toHaveCount(0, { timeout: 15_000 });
 });
 
-test('an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043)', async ({ page }) => {
+test('an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043) @behaviour', async ({ page }) => {
     await open(page);
     await rowBoxes(page).nth(3).click();
     await expect(markCount(page)).toHaveText('1 marked', { timeout: 15_000 });

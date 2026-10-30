@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, settled, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, settled, circuitQuiet, roundTripHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import {
@@ -108,7 +108,7 @@ test.describe('/sheet', () => {
         await openSheet(page);
     });
 
-    test('ADR-0058/SH-32: =, a press on a PV cell, *2 and Enter show that row\'s PV doubled', async ({ page }) => {
+    test('ADR-0058/SH-32: =, a press on a PV cell, *2 and Enter show that row\'s PV doubled @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -132,7 +132,7 @@ test.describe('/sheet', () => {
         await expectPointedAt(table, false);
     });
 
-    test('ADR-0058/SH-32: =SUM(, a press on the PV header, ) and Enter show the column\'s sum', async ({ page }) => {
+    test('ADR-0058/SH-32: =SUM(, a press on the PV header, ) and Enter show the column\'s sum @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -153,7 +153,7 @@ test.describe('/sheet', () => {
         await expect(cell(grid, 'F3')).toHaveText('1189.4');
     });
 
-    test('ADR-0058/SH-32: a further press replaces what this Point wrote, on the positions grid or on the Sheet', async ({ page }) => {
+    test('ADR-0058/SH-32: a further press replaces what this Point wrote, on the positions grid or on the Sheet @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -175,7 +175,7 @@ test.describe('/sheet', () => {
         await expect(editor(grid)).toBeFocused();
     });
 
-    test('ADR-0058/SH-32: a Shift+press writes nothing, and the status line says why', async ({ page }) => {
+    test('ADR-0058/SH-32: a Shift+press writes nothing, and the status line says why @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -190,7 +190,7 @@ test.describe('/sheet', () => {
         await expect(editor(grid)).toBeFocused();
     });
 
-    test('ADR-0058/SH-32: a drag that reaches another cell takes back what its press wrote, and the status line says why', async ({ page }) => {
+    test('ADR-0058/SH-32: a drag that reaches another cell takes back what its press wrote, and the status line says why @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -213,7 +213,7 @@ test.describe('/sheet', () => {
         await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
     });
 
-    test('ADR-0058/SH-35/ED-26: when the keyboard leaves the Sheet the positions grid is ordinary, the edit stands, and pointing goes on once it is back', async ({ page }) => {
+    test('ADR-0058/SH-35/ED-26: when the keyboard leaves the Sheet the positions grid is ordinary, the edit stands, and pointing goes on once it is back @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -246,7 +246,7 @@ test.describe('/sheet', () => {
     // the positions grid reaches the Sheet's field a round trip later, as the text written for it. The
     // positions grid tells the Sheet's root of the press in script, and the Sheet holds the keys typed
     // after it until it has been answered, and hands on the keys typed before it first.
-    test('ADR-0058/DC-54: with a 150 ms round trip, =, a press on a PV cell and * at once give the lookup and the *', async ({ page }) => {
+    test('ADR-0058/DC-54: with a 150 ms round trip, =, a press on a PV cell and * at once give the lookup and the * @blazor', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -269,7 +269,7 @@ test.describe('/sheet', () => {
     // Sheet's order, and the keyboard's moves inside the Sheet's Input Root are no crossing, so nothing
     // waits on the browser's next turn: =, the press and + typed with nothing awaited between them give
     // the lookup and the +, in the order made.
-    test('ADR-0240/ADR-0058: =, a press on a PV cell and + typed at once give = then the lookup then +', async ({ page }) => {
+    test('ADR-0240/ADR-0058: =, a press on a PV cell and + typed at once give = then the lookup then + @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -289,7 +289,7 @@ test.describe('/sheet', () => {
     // again with the keyboard still inside, the keyboard's next move inside — the Cell Editor taking it as
     // = opens it — is told as its arrival, so the Sheet points. Told against the claims that had gone, the
     // arrival was taken as standing, and the Sheet never pointed until the keyboard had left and come back.
-    test('ADR-0240/ADR-0058: a Sheet given its Scope again while it holds the keyboard points once = opens the editor', async ({ page }) => {
+    test('ADR-0240/ADR-0058: a Sheet given its Scope again while it holds the keyboard points once = opens the editor @behaviour', async ({ page }) => {
         await page.goto('/sheet?scope=switch');
         const grid = sheet(page);
         const table = positions(page);
@@ -319,7 +319,7 @@ test.describe('/sheet', () => {
     // the keyboard back to the element it left is no arrival. That reading ends with any other focus or
     // departure: left standing, it took a later arrival from nothing for the window's return, and the
     // Sheet that had heard the keyboard leave never heard it come back.
-    test('ADR-0240/ADR-0058: after the window has left, the keyboard leaving the Sheet and coming back from nothing points again', async ({ page }) => {
+    test('ADR-0240/ADR-0058: after the window has left, the keyboard leaving the Sheet and coming back from nothing points again @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -348,7 +348,7 @@ test.describe('/sheet', () => {
     // Sheet heard the focusout as the keyboard leaving, because on a circuit the focusin came in a
     // later message than the one turn it waited. The Scope stopped pointing for a round trip, and a
     // press in it was the positions grid's own: it took the keyboard and selected the cell.
-    test('ADR-0058: with a 150 ms round trip, the Cell Editor taking the keyboard from the Sheet\'s root does not stop the pointing', async ({ page }) => {
+    test('ADR-0058: with a 150 ms round trip, the Cell Editor taking the keyboard from the Sheet\'s root does not stop the pointing @blazor', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -383,7 +383,7 @@ test.describe('/sheet', () => {
         await expectPointedAt(table, false);
     });
 
-    test('ADR-0058/DC-54: with a 150 ms round trip, =SUM(1,, a press, then ) and Enter at once commit the lookup inside the SUM', async ({ page }) => {
+    test('ADR-0058/DC-54: with a 150 ms round trip, =SUM(1,, a press, then ) and Enter at once commit the lookup inside the SUM @blazor', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -417,7 +417,7 @@ test.describe('/sheet', () => {
     // 0 ms, 2026-10-11; DC-54 corrected the same day). Four rounds each, since at 0 ms whether the
     // press lands while the keys are held is a race, and every round has the one answer.
     for (const ms of [0, 150]) {
-        test(`ADR-0058/DC-54: with a ${ms} ms round trip, =-( typed and a press at once give =-( and the lookup, never the lookup ahead of -( nor =-( alone`, async ({ page }) => {
+        test(`ADR-0058/DC-54: with a ${ms} ms round trip, =-( typed and a press at once give =-( and the lookup, never the lookup ahead of -( nor =-( alone ${roundTripHost(ms)}`, async ({ page }) => {
             const grid = sheet(page);
             const table = positions(page);
             await pressCell(grid, 'F3');
@@ -439,7 +439,7 @@ test.describe('/sheet', () => {
         });
     }
 
-    test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort', async ({ page }) => {
+    test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -504,7 +504,7 @@ test.describe('/sheet', () => {
         await expect(editor(grid)).toHaveValue(`=SUM(1,${lookup}`);
     });
 
-    test('ADR-0058/SH-34: a press on the PV header dashes the column; an operator typed takes the dashes away, and the outline stays until the edit ends', async ({ page }) => {
+    test('ADR-0058/SH-34: a press on the PV header dashes the column; an operator typed takes the dashes away, and the outline stays until the edit ends @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -534,7 +534,7 @@ test.describe('/sheet', () => {
         await expect(table.locator('.ex-reference-outline')).toHaveCount(0);
     });
 
-    test('ADR-0058/SH-34: a lookup written straight after = lies on the grey as a whole; Enter takes the dashes and the outlines away', async ({ page }) => {
+    test('ADR-0058/SH-34: a lookup written straight after = lies on the grey as a whole; Enter takes the dashes and the outlines away @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
@@ -564,7 +564,7 @@ test.describe('/sheet', () => {
     // The thirteenth Windows run's b11 (ADR-0058, the defect seen and not asked; ticket 75): the
     // lookup a press wrote stood with the caret at its end and the Cell Editor still showing the
     // text's start. The editor shows the caret, and the coloured layer is scrolled with it (DC-48).
-    test('ticket 75: a press on the positions grid shows the lookup it wrote at the end of the text in the Cell Editor', async ({ page }) => {
+    test('ticket 75: a press on the positions grid shows the lookup it wrote at the end of the text in the Cell Editor @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'D10');
@@ -590,7 +590,7 @@ test.describe('/sheets', () => {
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
     });
 
-    test('ADR-0058/SH-32: each side is a Scope of its own: a press on the right\'s grid while the left Sheet points is an ordinary press', async ({ page }) => {
+    test('ADR-0058/SH-32: each side is a Scope of its own: a press on the right\'s grid while the left Sheet points is an ordinary press @behaviour', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         const leftPositions = page.locator('#sheet-left-positions .ex-grid');
@@ -646,7 +646,7 @@ test.describe('/pointing', () => {
         await expect(cell(sheet(page), 'B1')).toHaveText('8200');
     });
 
-    test('ADR-0058/SH-35: =, a press on R-1\'s PV, ↓ gives R-2\'s lookup and moves the dashes; ↑ goes back; Enter computes it', async ({ page }) => {
+    test('ADR-0058/SH-35: =, a press on R-1\'s PV, ↓ gives R-2\'s lookup and moves the dashes; ↑ goes back; Enter computes it @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
         await pointFrom(page, 'C1', lookup('R-1'));
@@ -671,7 +671,7 @@ test.describe('/pointing', () => {
         await expect(refused(page)).toHaveText('');
     });
 
-    test('ADR-0058/SH-35: → from an Id cell passes over Book, the grid\'s own column, to PV; at the last column nothing moves; ← comes back over it', async ({ page }) => {
+    test('ADR-0058/SH-35: → from an Id cell passes over Book, the grid\'s own column, to PV; at the last column nothing moves; ← comes back over it @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
         await pointFrom(page, 'A1', lookup('R-1', 'Id'));
@@ -688,7 +688,7 @@ test.describe('/pointing', () => {
         await expect(refused(page)).toHaveText('');
     });
 
-    test('ADR-0058/SH-35/DC-55: ↓ past the painted rows scrolls the positions grid to keep the pointed cell in view', async ({ page }) => {
+    test('ADR-0058/SH-35/DC-55: ↓ past the painted rows scrolls the positions grid to keep the pointed cell in view @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
         const scroller = positions.locator('.ex-scroller');
@@ -711,7 +711,7 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toBeFocused();
     });
 
-    test('ADR-0058/SH-35: Shift+↓ and Ctrl+↓ write nothing, leave the text as it was, and the page says why; ↓ still points', async ({ page }) => {
+    test('ADR-0058/SH-35: Shift+↓ and Ctrl+↓ write nothing, leave the text as it was, and the page says why; ↓ still points @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await pointFrom(page, 'C1', lookup('R-1'));
 
@@ -732,7 +732,7 @@ test.describe('/pointing', () => {
     // once the browser has acknowledged the render: a round trip after the answer. A Shift+↓ held
     // behind the press met the gate before it was told, was not claimed, and was dropped, and the page
     // said nothing (found on CI, the Server host, 2026-10-01).
-    test('ADR-0058/SH-35/DC-54: with a 150 ms round trip, a press and Shift+↓ at once: the Shift+↓ is refused, and the page says why', async ({ page }) => {
+    test('ADR-0058/SH-35/DC-54: with a 150 ms round trip, a press and Shift+↓ at once: the Shift+↓ is refused, and the page says why @blazor', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no round trip: the gate is told within the press');
         const grid = sheet(page);
         const positions = table(page);
@@ -773,7 +773,7 @@ test.describe('/pointing', () => {
     // After a press on a column header, the arrow keys point too (ADR-0058, Part B of the ninth run,
     // Q52): Excel, pointing at a whole column of another workbook, went with ↓ to the column's first
     // row of data, and from there with → to the next column's.
-    test('ADR-0058/SH-35: a press on the PV header, then ↓, gives R-1\'s lookup, dashes its cell, and scrolls the grid back to it (Part B, Q52)', async ({ page }) => {
+    test('ADR-0058/SH-35: a press on the PV header, then ↓, gives R-1\'s lookup, dashes its cell, and scrolls the grid back to it (Part B, Q52) @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
         const scroller = positions.locator('.ex-scroller');
@@ -797,7 +797,7 @@ test.describe('/pointing', () => {
         await expect(cell(grid, 'C3')).toHaveText('10');
     });
 
-    test('ADR-0058/SH-35: a press on the PV header, then ←, gives Positions[Id], passing over Book, and dashes that column; ↑ and a further ← move nothing (Part B, Q52)', async ({ page }) => {
+    test('ADR-0058/SH-35: a press on the PV header, then ←, gives Positions[Id], passing over Book, and dashes that column; ↑ and a further ← move nothing (Part B, Q52) @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
         await pressCell(grid, 'C3');
@@ -826,7 +826,7 @@ test.describe('/pointing', () => {
 
     // The keys typed after an arrow keep their place behind it (ADR-0010's hold): the arrow is answered
     // once the Scope has rewritten the text, and on a circuit that is a round trip after the key.
-    test('ADR-0058/SH-35: with a 150 ms round trip, ↓ and *2 typed at once give R-2\'s lookup and the *2', async ({ page }) => {
+    test('ADR-0058/SH-35: with a 150 ms round trip, ↓ and *2 typed at once give R-2\'s lookup and the *2 @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pointFrom(page, 'C1', lookup('R-1'));
         await setRoundTrip(150);
@@ -873,7 +873,7 @@ test.describe('/pointing?narrow', () => {
         };
     });
 
-    test('ADR-0058/DC-53: scrolled to R-40\'s PV, =, a press on it: the dashes and both column outlines lie inside the client area, not under either gutter', async ({ page }, testInfo) => {
+    test('ADR-0058/DC-53: scrolled to R-40\'s PV, =, a press on it: the dashes and both column outlines lie inside the client area, not under either gutter @behaviour', async ({ page }, testInfo) => {
         const positions = table(page);
         const scroller = positions.locator('.ex-scroller');
 
@@ -936,7 +936,7 @@ test.describe('/pointing?narrow', () => {
     // DC-55): the grid is first scrolled down its rows, so that a vertical offset left alone can be
     // told from one put back. Down, a column's dashes run the painted rows, which the Viewport cuts:
     // across is what the reveal is for.
-    test('ADR-0058/DC-55/SH-35: =, a press on Id\'s header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back', async ({ page }, testInfo) => {
+    test('ADR-0058/DC-55/SH-35: =, a press on Id\'s header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back @behaviour', async ({ page }, testInfo) => {
         const grid = sheet(page);
         const positions = table(page);
         const scroller = positions.locator('.ex-scroller');

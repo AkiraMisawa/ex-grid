@@ -1,4 +1,4 @@
-import { test, expect, settled, circuitQuiet } from './fixtures.mjs';
+import { test, expect, settled, circuitQuiet, chromeHost } from './fixtures.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // WR-1 on /filter-panel, once per Chrome: the Wrapper's filter panel uses the whole
@@ -64,7 +64,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(spec(page)).toHaveText('No filter.');
         });
 
-        test(`WR-1 / ADR-0009/0023: the value list ends with the Blank entry, its search narrows it, and Apply sends what was ticked (${chrome})`, async ({ page }) => {
+        test(`WR-1 / ADR-0009/0023: the value list ends with the Blank entry, its search narrows it, and Apply sends what was ticked (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const ui = PANEL[chrome];
             const panel = await openPanel(page, 1);
             await expect(ui.entries(panel)).toHaveText(['Ishikawa', 'Novak', 'Osei', '(Blanks)']);
@@ -88,7 +88,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectKeyboardOn(grid(page));
         });
 
-        test(`WR-1 / ADR-0009: a column whose values are TooMany gets the condition form, and Apply sends its condition (${chrome})`, async ({ page }) => {
+        test(`WR-1 / ADR-0009: a column whose values are TooMany gets the condition form, and Apply sends its condition (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const ui = PANEL[chrome];
             const panel = await openPanel(page, 2);
             await expect(ui.operand(panel)).toBeVisible();
@@ -102,7 +102,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page)).toHaveAttribute('aria-rowcount', '200');
         });
 
-        test(`WR-1 / ADR-0009: a column that declares the condition form gets it alone, and Cancel sends nothing (${chrome})`, async ({ page }) => {
+        test(`WR-1 / ADR-0009: a column that declares the condition form gets it alone, and Cancel sends nothing (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const ui = PANEL[chrome];
             const panel = await openPanel(page, 3);
             await expect(ui.operand(panel)).toBeVisible();

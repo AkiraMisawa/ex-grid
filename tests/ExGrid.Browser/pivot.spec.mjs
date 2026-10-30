@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded, chromeHost } from './fixtures.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -134,7 +134,7 @@ const focusLog = (page) => page.evaluate(() => window.__pivotFocusLog);
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
-        test(`ADR-0061: a field dragged from the list onto an Area stands there (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: a field dragged from the list onto an Area stands there (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             expect(await entriesOf(page, 'Columns')).toEqual(['Product']);
 
@@ -145,7 +145,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
         });
 
-        test(`ADR-0061: an entry dragged before another reorders, and dragged to the list of fields is removed (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: an entry dragged before another reorders, and dragged to the list of fields is removed (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
 
@@ -158,7 +158,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('checkbox', { name: 'Desk', exact: true })).not.toBeChecked();
         });
 
-        test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             let changes = 0;
             for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
@@ -174,7 +174,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const before = await reportRows(page);
             await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
@@ -188,7 +188,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
         });
 
-        test(`ADR-0061: an unused field and a details grid do not accept report removal (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: an unused field and a details grid do not accept report removal (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await field(page, 'Month').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
             await circuitQuiet();
@@ -202,7 +202,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
         });
 
-        test(`ADR-0061: cancelling over the report clears the removal indication without removing (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: cancelling over the report clears the removal indication without removing (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const from = await entry(page, 'Desk').boundingBox();
             const to = await report(page).boundingBox();
@@ -218,7 +218,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
         });
 
-        test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome})`, async ({ page }) => {
+        test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             // A second Value Field brings Σ Values into Columns, after Product.
             await setTicked(field(page, 'Notional').getByRole('checkbox'));
@@ -240,7 +240,7 @@ for (const chrome of ['builtin', 'mud']) {
             // the window at once: a scroll between the press and the drop would cancel the drag.
             test.use({ viewport: { width: 1400, height: 2200 } });
 
-            test(`PV-10 / ADR-0061: a drag from outside the pivot, dropped on the report, an Area or the list of fields, changes nothing — after a cancelled drag too (${chrome})`, async ({ page }) => {
+            test(`PV-10 / ADR-0061: a drag from outside the pivot, dropped on the report, an Area or the list of fields, changes nothing — after a cancelled drag too (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
                 await open(page, chrome);
                 // A drag of the pivot's own, cancelled over the report: it leaves nothing behind
                 // for a later drop to take.
@@ -267,7 +267,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
             });
 
-            test(`PV-10 / ADR-0061: a field or an entry dragged from another pivot changes neither pivot (${chrome})`, async ({ page }) => {
+            test(`PV-10 / ADR-0061: a field or an entry dragged from another pivot changes neither pivot (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
                 await page.goto(`/pivot?chrome=${chrome}&second=1`);
                 const [first, second] = [nthPivot(page, 0), nthPivot(page, 1)];
                 for (const one of [first, second]) {
@@ -307,7 +307,7 @@ for (const chrome of ['builtin', 'mud']) {
             });
         });
 
-        test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome})`, async ({ page }) => {
+        test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const toggle = report(page).locator('.ex-pivot-toggle').first();
             await expect(toggle).toHaveAttribute('aria-expanded', 'true');
@@ -320,7 +320,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
 
-        test(`ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (${chrome})`, async ({ page }) => {
+        test(`ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             const label = report(page).locator("[id$='-r4c0']");
             const toggle = label.locator('.ex-pivot-toggle');
@@ -343,7 +343,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (${chrome})`, async ({ page }) => {
+        test(`ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const layout = await page.locator('#pivot-status').textContent();
 
@@ -402,7 +402,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(rows(page).first()).toBeVisible();
         });
 
-        test(`ADR-0059: Show Details opens ExPivot's dialog when the page asks for one, which takes the keyboard and closes on Escape (${chrome})`, async ({ page }) => {
+        test(`ADR-0059: Show Details opens ExPivot's dialog when the page asks for one, which takes the keyboard and closes on Escape (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
 
             await firstValue(page).dblclick({ force: true });
@@ -424,7 +424,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(pivot(page).locator('.ex-pivot-report')).not.toHaveAttribute('inert');
         });
 
-        test(`ADR-0070: Escape in the dialog's grid peels the grid's own layers, then closes the dialog, and the arrows move the report's Focus again (${chrome})`, async ({ page }) => {
+        test(`ADR-0070: Escape in the dialog's grid peels the grid's own layers, then closes the dialog, and the arrows move the report's Focus again (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -461,7 +461,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
-        test(`ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -485,7 +485,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
-        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, → typed at once, closes it and moves the report's Focus down and right, in that order (${chrome})`, async ({ page }) => {
+        test(`ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, → typed at once, closes it and moves the report's Focus down and right, in that order (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -502,7 +502,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toBeFocused();
         });
 
-        test(`ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome})`, async ({ page }) => {
+        test(`ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await firstValue(page).dblclick({ force: true });
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
@@ -531,7 +531,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
-        test(`ADR-0070: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (${chrome})`, async ({ page }) => {
+        test(`ADR-0070: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             const dialog = page.getByRole('dialog', { name: /^Details: / });
             const close = dialog.getByRole('button', { name: 'Close', exact: true });
@@ -556,7 +556,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`ADR-0070: Escape in a details tab's grid closes nothing; the selected tab closed hands the keyboard to the tab selected next, and the last one back to the report (${chrome})`, async ({ page }) => {
+        test(`ADR-0070: Escape in a details tab's grid closes nothing; the selected tab closed hands the keyboard to the tab selected next, and the last one back to the report (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await firstValue(page).dblclick({ force: true });
             const tabs = pivot(page).getByRole('tablist');
@@ -620,7 +620,7 @@ for (const chrome of ['builtin', 'mud']) {
         // it there; where it lands first, the records take the keyboard from it. Their grid hands
         // the keyboard to its root once the root is a tab stop. The end is the same either way.
 
-        test(`ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (${chrome})`, async ({ page }) => {
+        test(`ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             await focusOnArrival(page, '.ex-pivot-dialog .ex-grid .ex-scroller');
 
@@ -641,7 +641,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(dialog).toBeVisible();
         });
 
-        test(`ADR-0070/0033 (PV-41): the keyboard put in a new tab's records before the tab's request lands stays there, on their root (${chrome})`, async ({ page }) => {
+        test(`ADR-0070/0033 (PV-41): the keyboard put in a new tab's records before the tab's request lands stays there, on their root (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await focusOnArrival(page, '.ex-pivot-details-panel .ex-grid .ex-scroller');
 
@@ -660,7 +660,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
 
-        test(`ADR-0063: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (${chrome})`, async ({ page }) => {
+        test(`ADR-0063: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome, '&details=page');
 
             await firstValue(page).dblclick({ force: true });
@@ -672,7 +672,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('dialog')).toHaveCount(0);
         });
 
-        test(`ADR-0039/0061: the keyboard goes into a field's menu and back to its entry (${chrome})`, async ({ page }) => {
+        test(`ADR-0039/0061: the keyboard goes into a field's menu and back to its entry (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
 
             await entry(page, 'Region').click();
@@ -689,7 +689,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
         });
 
-        test(`ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Region').click();
             const menu = page.getByRole('menu', { name: 'Options for Region' });
@@ -711,7 +711,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Region')).toBeFocused();
         });
 
-        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             test.skip(!SERVER, 'WebAssembly opens the menu in the task of the press: no key is typed while it opens');
             await open(page, chrome);
             await entry(page, 'Region').click();
@@ -739,7 +739,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(focusedEntry).toMatch(/^Options for /);
         });
 
-        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             test.skip(!SERVER, 'WebAssembly opens the panel in the task of the press: no key is typed while it opens');
             await open(page, chrome);
             const button = toolbarButton(page, 'Filter Currency');
@@ -765,7 +765,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(button).toBeFocused();
         });
 
-        test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Region').click();
             const menu = page.getByRole('menu', { name: 'Options for Region' });
@@ -781,7 +781,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
-        test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const menu = page.getByRole('menu', { name: 'Options for Region' });
             for (const target of ['disabled item', 'padding']) {
@@ -801,7 +801,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const menu = page.getByRole('menu', { name: 'Options for Region' });
             const search = pane(page).getByRole(chrome === 'builtin' ? 'searchbox' : 'textbox', { name: 'Search', exact: true });
@@ -819,7 +819,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(fieldsList(page).getByRole('checkbox', { name: 'Region', exact: true })).toBeVisible();
         });
 
-        test(`ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const opener = entry(page, 'Region');
             const menu = page.getByRole('menu', { name: 'Options for Region' });
@@ -851,7 +851,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Product')).toBeFocused();
         });
 
-        test(`ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             await setRoundTrip(150);
             await entry(page, 'Region').click();
@@ -877,7 +877,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(settings).toHaveCount(0);
         });
 
-        test(`ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (${chrome})`, async ({ page }) => {
+        test(`ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Region').click();
             await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
@@ -894,7 +894,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Product')).toBeFocused();
         });
 
-        test(`ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             await setRoundTrip(150);
             // The Values Area stands in the pane's right-hand column.
@@ -918,7 +918,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(area.y + area.height).toBeLessThan(box.y + box.height);
         });
 
-        test(`ADR-0061: a command from a field's menu moves the field (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: a command from a field's menu moves the field (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Desk').click();
 
@@ -929,7 +929,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('menu')).toHaveCount(0);
         });
 
-        test(`ADR-0061: the Pivot Toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the Pivot Toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const band = await toolbarButton(page, 'Filter Currency').boundingBox();
             const layout = await toolbarButton(page, 'Layout').boundingBox();
@@ -945,7 +945,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(toolbarButton(page, 'Refresh')).toHaveCount(0);
         });
 
-        test(`ADR-0061: the report filter band filters the report (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the report filter band filters the report (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const button = toolbarButton(page, 'Filter Currency');
             await expect(button).toContainText('(All)');
@@ -965,7 +965,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(button).toBeFocused();
         });
 
-        test(`ADR-0061: the band's Filter… opens under the Pivot Toolbar, over the report, and a press beside it closes it (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the band's Filter… opens under the Pivot Toolbar, over the report, and a press beside it closes it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const button = toolbarButton(page, 'Filter Currency');
 
@@ -990,7 +990,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(button).toBeFocused();
         });
 
-        test(`ADR-0061: the Layout menu opens under its button, over the report; a choice lays the report out again and the keyboard goes back to Layout (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the Layout menu opens under its button, over the report; a choice lays the report out again and the keyboard goes back to Layout (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             const button = toolbarButton(page, 'Layout');
 
@@ -1021,7 +1021,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
         });
 
-        test(`ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             const button = toolbarButton(page, 'Layout');
             const menu = page.getByRole('menu', { name: 'Layout', exact: true });
@@ -1043,7 +1043,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu.getByRole('menuitemradio', { name: 'Do Not Show Subtotals' })).toHaveAttribute('aria-checked', 'true');
         });
 
-        test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome}) @blazor`, async ({ page }) => {
             await open(page, chrome);
             await setRoundTrip(150);
             await alterPage(page, () => {
@@ -1089,7 +1089,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
-        test(`ADR-0060: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (${chrome})`, async ({ page }) => {
+        test(`ADR-0060: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Product').click();
             await page.getByRole('menuitem', { name: 'Remove Field' }).click();
@@ -1119,7 +1119,7 @@ for (const chrome of ['builtin', 'mud']) {
 // user chose in that time keeps the keyboard. On WebAssembly there is no round trip to add, and the
 // same test is the case without one.
 
-test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its way back keeps it', async ({ page }) => {
+test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its way back keeps it @blazor', async ({ page }) => {
     await open(page, 'builtin', '&details=dialog');
     await firstValue(page).dblclick({ force: true });
     const dialog = page.getByRole('dialog', { name: /^Details: / });
@@ -1147,7 +1147,7 @@ test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its
     await expect(report(page)).not.toBeFocused();
 });
 
-test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its way back to the first keeps it', async ({ page }) => {
+test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its way back to the first keeps it @blazor', async ({ page }) => {
     // /pivot-db stands two pivots side by side: two report grids, each with its tabs (ADR-0069).
     const reset = await fetch(`${API_URL}/api/reset`, { method: 'POST' });
     expect(reset.ok).toBe(true);
@@ -1180,7 +1180,7 @@ test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its 
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`PV-7 / ADR-0060: a number format the engine cannot write is refused by name, in the sample and on OK, and the report keeps its own (${chrome})`, async ({ page }) => {
+    test(`PV-7 / ADR-0060: a number format the engine cannot write is refused by name, in the sample and on OK, and the report keeps its own (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, chrome);
         const before = await report(page).locator('.ex-viewport').innerText();
         await entry(page, 'Sum of P&L').click();
@@ -1200,7 +1200,7 @@ for (const chrome of ['builtin', 'mud']) {
 
 // Under either Chrome (ADR-0360).
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
+    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome}) @blazor`, async ({ page }) => {
         // The source's first answer waits for the page's button: the pane stands, and no report grid
         // does, so the keyboard cannot be handed on through one.
         await page.goto(`/pivot?chrome=${chrome}&first=held`);
@@ -1231,7 +1231,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('ADR-0062/0030: the palette reaches the pane, the entries and the − button, light and dark', async ({ page }) => {
+test('ADR-0062/0030: the palette reaches the pane, the entries and the − button, light and dark @blazor', async ({ page }) => {
     await open(page, 'mud');
     const colours = () => page.evaluate(() => {
         const paper = document.querySelector('.mud-ex-grid');
@@ -1263,7 +1263,7 @@ test('ADR-0062/0030: the palette reaches the pane, the entries and the − butto
     expect(dark.toggle).toBe(dark.secondary);
 });
 
-test('PV-18 / ADR-0062/0030: every Visual Token ExPivot reads is the palette entry the Wrapper maps it to, inside the report, light and dark', async ({ page }) => {
+test('PV-18 / ADR-0062/0030: every Visual Token ExPivot reads is the palette entry the Wrapper maps it to, inside the report, light and dark @blazor', async ({ page }) => {
     await open(page, 'mud');
     // Each token ExPivot's stylesheet reads with a default (a Visual Token; a Geometry Token is read
     // without one, ADR-0027), resolved inside ExPivot's root, against the palette entry the Wrapper's
@@ -1405,7 +1405,7 @@ async function slowAndFast(page, chrome, ticks, steps, more = {}) {
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`ADR-0362 (${chrome})`, () => {
-        test(`ADR-0362: a field ticked straight after Layout ▾ and Enter keeps the keyboard, behind the menu's command (${chrome})`, async ({ page }) => {
+        test(`ADR-0362: a field ticked straight after Layout ▾ and Enter keeps the keyboard, behind the menu's command (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             // Layout ▾ opens its menu and gives its first choice the keyboard a round trip later; the Enter
             // typed meanwhile presses that choice, and the tick pressed after it — let through, so a drag
             // could start from it — takes the keyboard back only in its own turn, as typed slowly.
@@ -1420,7 +1420,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(slow.menus).toBe(0);
         });
 
-        test(`ADR-0362: a field's caption pressed straight after Layout ▾ and Enter waits for the menu's command, as its tick does (${chrome})`, async ({ page }) => {
+        test(`ADR-0362: a field's caption pressed straight after Layout ▾ and Enter waits for the menu's command, as its tick does (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             // The caption is the tick's label: its press ends in the tick's click, which takes its turn behind
             // the Enter as a press on the tick itself does.
             const slow = await slowAndFast(page, chrome, ['Book'], [
@@ -1434,7 +1434,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(slow.menus).toBe(0);
         });
 
-        test(`ADR-0362: Space typed straight after Layout ▾, pressed from a ticked field, presses the menu's choice and not the tick (${chrome})`, async ({ page }) => {
+        test(`ADR-0362: Space typed straight after Layout ▾, pressed from a ticked field, presses the menu's choice and not the tick (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             // The press on Layout ▾ is held behind the tick still being answered, and DOM focus stays on the
             // tick meanwhile. The Space typed after it is the press's: held, and handed to the menu's first
             // choice, where typed slowly it lands. Let through, its release toggled the tick.
@@ -1449,7 +1449,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0362: a field ticked straight after a command pressed in a field's menu waits for that command, and its press does not dismiss the menu ahead of it (${chrome})`, async ({ page }) => {
+    test(`ADR-0362: a field ticked straight after a command pressed in a field's menu waits for that command, and its press does not dismiss the menu ahead of it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         // Region ▾'s menu is painted a round trip before its first command takes the keyboard, and the press
         // on Move Down made meanwhile is held, with its click, behind that hand-off. The tick pressed next is
         // let through for its drag; the pivot heard its press, and the focus its default moved, as they came,
@@ -1465,7 +1465,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test(`ADR-0362: Space typed on a field ticked straight after Layout ▾ and Enter goes to that field in its turn, and a field pressed after it takes the keyboard after it (builtin)`, async ({ page }) => {
+test(`ADR-0362: Space typed on a field ticked straight after Layout ▾ and Enter goes to that field in its turn, and a field pressed after it takes the keyboard after it (builtin) @behaviour`, async ({ page }) => {
     // Built-in only: the MudBlazor Field List's tick does not keep DOM focus after its click (seen
     // 2026-10-25, typed slowly). The Space then reaches whatever holds the keyboard instead, and that run
     // ended with Layout ▾'s menu open, so the press after it landed on the menu's backdrop: an outcome
@@ -1487,7 +1487,7 @@ test(`ADR-0362: Space typed on a field ticked straight after Layout ▾ and Ente
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0362: Enter on a Layout ▾ choice, which closes the menu it stands in, is answered and the pivot settles (${chrome})`, async ({ page }) => {
+    test(`ADR-0362: Enter on a Layout ▾ choice, which closes the menu it stands in, is answered and the pivot settles (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await open(page, chrome);
         await toolbarButton(page, 'Layout').click();
         const choice = page.getByRole('menu', { name: 'Layout', exact: true }).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
@@ -1505,7 +1505,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 // The code blocks a page shows do not depend on the Chrome, so they are read once (ADR-0370 §11).
-test(`ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date`, async ({ page }) => {
+test(`ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date @blazor`, async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
     expect(code['DemoPivotData.cs#fields']).toContain('PivotFields.Of<DemoPivotTrade>()');

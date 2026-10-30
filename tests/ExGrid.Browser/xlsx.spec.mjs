@@ -1,4 +1,4 @@
-import { test, expect, settled } from './fixtures.mjs';
+import { test, expect, settled, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell } from './sheet-helpers.mjs';
 
 // Opening and saving an .xlsx at its place in the Input Order (ADR-0330 §10; exsheet-xlsx ticket 06), on
@@ -33,7 +33,7 @@ for (const chrome of ['builtin', 'mud']) {
         const tab = (page, name) => page.locator('.ex-sheet-tab', { hasText: name });
         const notice = (page) => page.locator('.ex-sheet-notice');
 
-        test('XL-1: a key typed while a file opens waits for it, and lands on the Workbook it opened', async ({ page }) => {
+        test(`XL-1: a key typed while a file opens waits for it, and lands on the Workbook it opened ${chromeHost(chrome)}`, async ({ page }) => {
             await openPage(page, true);
             const grid = sheet(page);
             const sample = await fileOf(page, '#xlsx-sample', 'sample.xlsx');
@@ -58,7 +58,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid).not.toHaveAttribute('aria-busy', /./);
         });
 
-        test('XL-2: Escape typed as a file is chosen cancels the opening, says so, and leaves the Workbook as it was', async ({ page }) => {
+        test(`XL-2: Escape typed as a file is chosen cancels the opening, says so, and leaves the Workbook as it was ${chromeHost(chrome)}`, async ({ page }) => {
             await openPage(page, true);
             const grid = sheet(page);
             const sample = await fileOf(page, '#xlsx-sample', 'sample.xlsx');
@@ -83,7 +83,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#xlsx-release')).toHaveCount(0);
         });
 
-        test('XL-3: a Workbook saved, then opened again, comes back as it was saved', async ({ page }) => {
+        test(`XL-3: a Workbook saved, then opened again, comes back as it was saved ${chromeHost(chrome)}`, async ({ page }) => {
             await openPage(page, false);
             const grid = sheet(page);
             await clickCell(grid, 'B2');

@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
+import { BASE_URL, HOSTING, HOST_LOG, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
 
 // What every spec shares: the console capture that CON-1/2/3/6 are read from, the two
 // records a run writes — console.json and metrics.json — under one directory, and the app a
@@ -939,7 +939,39 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     }
 }
 
+// Which host a test runs on (ADR-0370 section 11). A behaviour spec judges the Script Core under the
+// built-in Chrome with data the page holds, and runs on the React host; a Blazor spec judges anything
+// that passes through Blazor, and runs on both Blazor hosts. Each test says which in its title's tag,
+// and the run refuses a test that says neither, or both (the `hostTag` fixture below), so none runs on
+// a host by default and none is left out by default.
+export const BEHAVIOUR = '@behaviour';
+export const BLAZOR = '@blazor';
+
+/** A test run under each Chrome, named `mud` or `MudBlazor` for ExGrid.MudBlazor's: the built-in one is a behaviour spec, the MudBlazor one a Blazor one. */
+export const chromeHost = (chrome) => (/mud/i.test(chrome) ? BLAZOR : BEHAVIOUR);
+
+/** A test run at 0 ms and across a round trip: only the Server host's circuit has one to set. */
+export const roundTripHost = (ms) => (ms > 0 ? BLAZOR : BEHAVIOUR);
+
 export const test = base.extend({
+    // ADR-0370 section 11: a test that names neither host, or both, is run on every host and fails
+    // there by name, so it can be neither skipped everywhere nor run twice. A test of the other host's
+    // reaches this host only when a --grep-invert on the command line has replaced the config's, which
+    // leaves out the other host's tests; it fails by name too, rather than pass where it does not
+    // belong.
+    hostTag: [async ({ }, use, testInfo) => {
+        const hosts = [BEHAVIOUR, BLAZOR].filter((tag) => testInfo.tags.includes(tag));
+        if (hosts.length !== 1) {
+            throw new Error(`"${testInfo.title}" names ${hosts.length === 0 ? 'no host' : 'both hosts'}: its title ends with `
+                + `${BEHAVIOUR} (the React host) or ${BLAZOR} (both Blazor hosts), ADR-0370 section 11.`);
+        }
+        if (process.env.EXGRID_EVERY_HOST !== '1' && hosts[0] !== (REACT ? BEHAVIOUR : BLAZOR)) {
+            throw new Error(`"${testInfo.title}" is a ${hosts[0]} spec, and this is the ${HOSTING} host. A --grep-invert `
+                + `on the command line replaces playwright.config.mjs's, which leaves the other host's tests out: `
+                + `put the host's own in it too, ${REACT ? '@blazor' : '@behaviour'} (ADR-0370 section 11).`);
+        }
+        await use(true);
+    }, { auto: true }],
     // A browser's first page is not what any test is about. The first load after a launch
     // pays for the browser starting up and for the app's first boot in it, and on a CI
     // runner that has taken over half a minute — the second project's first two tests timed

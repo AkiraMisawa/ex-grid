@@ -36,7 +36,7 @@ test.beforeEach(async ({ page }) => {
     await settled(grid(page, 'blotter'));
 });
 
-test('ADR-0340: a selected row narrows the pivot, the chart and a grid over another input to its desk', async ({ page }) => {
+test('ADR-0340: a selected row narrows the pivot, the chart and a grid over another input to its desk @behaviour', async ({ page }) => {
     await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 5 });
 
     await cell(page, 'blotter', 'FX').click({ force: true });
@@ -45,7 +45,7 @@ test('ADR-0340: a selected row narrows the pivot, the chart and a grid over anot
     await expect(cell(page, 'limits', 'FX')).toBeVisible();
 });
 
-test('ADR-0340: a Ctrl+click adds the next row\'s desk; a sort drops the selection and its narrowing (ADR-0011)', async ({ page }) => {
+test('ADR-0340: a Ctrl+click adds the next row\'s desk; a sort drops the selection and its narrowing (ADR-0011) @behaviour', async ({ page }) => {
     await cell(page, 'blotter', 'FX').click({ force: true });
     await cell(page, 'blotter', 'Credit').click({ force: true, modifiers: ['ControlOrMeta'] });
 
@@ -56,7 +56,7 @@ test('ADR-0340: a Ctrl+click adds the next row\'s desk; a sort drops the selecti
     await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 5 });
 });
 
-test('ADR-0340: the confirm hands on the values of the selection it follows, and with none says so', async ({ page }) => {
+test('ADR-0340: the confirm hands on the values of the selection it follows, and with none says so @behaviour', async ({ page }) => {
     const confirm = view(page, 'blotter').getByRole('button', { name: 'Send to review' });
     await confirm.click();
     await expect(view(page, 'blotter').locator('.ex-board-confirm-status')).toHaveText('Select the rows to hand on first.');
@@ -69,7 +69,7 @@ test('ADR-0340: the confirm hands on the values of the selection it follows, and
     await expect(page.locator('#raised')).toHaveText('{"output":"review","input":"trades","version":0,"on":["day","trader"],"values":[["2026-10-16","Chen"]]}');
 });
 
-test('ADR-0340: a sort is raised as the Board Diff, not a narrowing, and lays over the Board drawn again', async ({ page }) => {
+test('ADR-0340: a sort is raised as the Board Diff, not a narrowing, and lays over the Board drawn again @behaviour', async ({ page }) => {
     await cell(page, 'blotter', 'FX').click({ force: true });
     await expect.poll(() => shown(page)).toEqual({ limits: 1, traders: ['Aoki', 'Brandt'], points: 2 });
     // A narrowing is not the user's change to the Board.
@@ -87,7 +87,7 @@ test('ADR-0340: a sort is raised as the Board Diff, not a narrowing, and lays ov
     await expect(page.locator('.ex-board-dropped')).toHaveCount(0);
 });
 
-test('ADR-0340: a pivot\'s selected cells narrow by their items; narrowed by the blotter, it lets go of them (ADR-0011)', async ({ page }) => {
+test('ADR-0340: a pivot\'s selected cells narrow by their items; narrowed by the blotter, it lets go of them (ADR-0011) @behaviour', async ({ page }) => {
     const trader = name => grid(page, 'byTrader').locator('[role=rowheader], [role=gridcell]').filter({ hasText: new RegExp(`^${name}$`) }).first();
 
     await trader('Chen').click({ force: true });

@@ -1,4 +1,4 @@
-import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, twoFrames, chromeHost } from './fixtures.mjs';
 import { sheet, cell, at, pressCell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { sameColour, resolvedColour, paints, painted } from './pixels.mjs';
 import { across, along, pattern, expected, isDark } from './line-pixels.mjs';
@@ -82,7 +82,7 @@ async function expectSpans(grid, selector, nth, from, to) {
 
 // ---- The Selection on the Paper (SH-54) ----------------------------------------------------------
 
-test('SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
+test('SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11');
     await selectB2toC3(page, grid);
     const scale = await page.evaluate(() => devicePixelRatio);
@@ -113,7 +113,7 @@ test('SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 w
     expect(sameColour(focus.pixel(-3), WHITE, 2), `inside the Focus cell: ${focus.pixel(-3)}`).toBe(true);
 });
 
-test('SH-54 (built-in Chrome): while an edit is open the white line inside the outline is not drawn (ADR-0071, the fourteenth run\'s case 19)', async ({ page }) => {
+test('SH-54 (built-in Chrome): while an edit is open the white line inside the outline is not drawn (ADR-0071, the fourteenth run\'s case 19) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11');
     await pressCell(grid, 'C3');
     await page.mouse.move(0, 0);
@@ -131,7 +131,7 @@ test('SH-54 (built-in Chrome): while an edit is open the white line inside the o
     await page.keyboard.press('Escape');
 });
 
-test('SH-54/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
+test('SH-54/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11) @blazor', async ({ page }) => {
     const grid = await openCase(page, '11', '&chrome=mud');
     await selectB2toC3(page, grid);
     const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first()
@@ -191,7 +191,7 @@ async function selectionFill(grid) {
 const multiplied = ({ colour, alpha }, under) => under.map((u, i) => u * (1 - alpha + alpha * colour[i] / 255));
 
 for (const [place, pin] of PLACES) {
-    test(`SH-54/DC-59 (MudBlazor Chrome): ${place}, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11)`, async ({ page }) => {
+    test(`SH-54/DC-59 (MudBlazor Chrome): ${place}, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) @blazor`, async ({ page }) => {
         const grid = await openCase(page, '11', `&chrome=mud&pin=${pin}`);
         await selectB2toC3(page, grid, pin === 2 ? 2 : 1);
         await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
@@ -229,7 +229,7 @@ for (const [place, pin] of PLACES) {
         expect(sameColour(b2.pixel(-3), WHITE, 2), `inside the Focus cell: ${b2.pixel(-3)}`).toBe(true);
     });
 
-    test(`SH-54/DC-59 (built-in Chrome): ${place}, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11)`, async ({ page }) => {
+    test(`SH-54/DC-59 (built-in Chrome): ${place}, the shade is #C7C7C7, a black line inside stays black, and the Focus is unshaded (ADR-0206, case 11) @behaviour`, async ({ page }) => {
         const grid = await openCase(page, '11', `&pin=${pin}`);
         await selectB2toC3(page, grid, pin === 2 ? 2 : 1);
         await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
@@ -250,7 +250,7 @@ for (const [place, pin] of PLACES) {
     });
 }
 
-test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned Fill and a pinned line, in a Pinned Column and across the boundary (ADR-0206, ADR-0071)', async ({ page }) => {
+test('DC-59: a Consumer\'s coloured --ex-selection-fill multiplies over a pinned Fill and a pinned line, in a Pinned Column and across the boundary (ADR-0206, ADR-0071) @behaviour', async ({ page }) => {
     for (const [place, pin] of PLACES) {
         // Case 10: B2's thick black bottom, and B3's yellow Fill below it.
         const grid = await openCase(page, '10', `&pin=${pin}`);
@@ -329,7 +329,7 @@ const STYLES_IN_ORDER = ['Hair', 'Thin', 'Medium', 'Thick', 'Double', 'Dotted', 
 // Viewport holds. So with a pinned tint on screen and the page a third of a pixel across and down, the
 // lines outside the range — a pinned column's and a scrollable one's — keep their exact Device Pixels.
 // If this fails, the work stops and returns to the user as a decision; offsets are never tuned to it.
-test('DC-59: with a pinned tint on screen and the page a third of a pixel across and down, the lines outside the range keep their exact Device Pixels (ADR-0206, the sub-pixel gate)', async ({ page }) => {
+test('DC-59: with a pinned tint on screen and the page a third of a pixel across and down, the lines outside the range keep their exact Device Pixels (ADR-0206, the sub-pixel gate) @behaviour', async ({ page }) => {
     // The thirteen styles on B's bottoms and D's rights, with A and B pinned.
     const grid = await openCase(page, 'lines', '&pin=2');
     // Padding on the page's own element around the Sheet, which leaves with the page (as
@@ -369,7 +369,7 @@ test('DC-59: with a pinned tint on screen and the page a third of a pixel across
     }
 });
 
-test('DC-59: scrolling with column A selected, its shade stays on column A down and across, and never over the cells that pass beneath it (ADR-0206)', async ({ page }) => {
+test('DC-59: scrolling with column A selected, its shade stays on column A down and across, and never over the cells that pass beneath it (ADR-0206) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11', '&pin=1');
     await pressCell(grid, 'A5');
     await page.keyboard.press('Control+Space');
@@ -413,7 +413,7 @@ test('DC-59: scrolling with column A selected, its shade stays on column A down 
     }
 });
 
-test('DC-59: under forced colors no tint is painted over a pinned range, and its outline is (ADR-0206)', async ({ page }) => {
+test('DC-59: under forced colors no tint is painted over a pinned range, and its outline is (ADR-0206) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11', '&pin=3');
     await selectB2toC3(page, grid);
     await page.emulateMedia({ forcedColors: 'active' });
@@ -432,7 +432,7 @@ test('DC-59: under forced colors no tint is painted over a pinned range, and its
 });
 
 for (const [chrome, query] of [['built-in', ''], ['MudBlazor', '&chrome=mud']]) {
-    test(`DC-59/SH-39 (${chrome} Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071)`, async ({ page }) => {
+    test(`DC-59/SH-39 (${chrome} Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) ${chromeHost(chrome)}`, async ({ page }) => {
         const grid = await openCase(page, '11', `${query}&pin=2&scheme=dark`);
         await selectB2toC3(page, grid, 2);
         await expect(grid.locator('.ex-shade-pinned > .ex-range-tint')).toHaveCount(1);
@@ -452,7 +452,7 @@ for (const [chrome, query] of [['built-in', ''], ['MudBlazor', '&chrome=mud']]) 
 
 // ---- Device Pixels (VZ-16, VZ-17) -----------------------------------------------------------------
 
-test('VZ-17/DC-59: a vertical gridline is one Device Pixel of #E0E0E0, and every column edge lies on a Device Pixel (ADR-0090)', async ({ page }) => {
+test('VZ-17/DC-59: a vertical gridline is one Device Pixel of #E0E0E0, and every column edge lies on a Device Pixel (ADR-0090) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11');
     const scale = await page.evaluate(() => devicePixelRatio);
     // An empty row: its cells' right edges are gridlines alone.
@@ -475,7 +475,7 @@ test('VZ-17/DC-59: a vertical gridline is one Device Pixel of #E0E0E0, and every
 
 // ---- The Row Headings' edge (Part C) ----------------------------------------------------------------
 
-test('Part C (ticket 146): the Row Headings\' edge is Excel\'s #ABABAB on a light page (ADR-0071)', async ({ page }) => {
+test('Part C (ticket 146): the Row Headings\' edge is Excel\'s #ABABAB on a light page (ADR-0071) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '11');
     const a8 = await cell(grid, 'A8').boundingBox();
     const { pixel } = await across(page, a8, 'left', 0.5);
@@ -484,7 +484,7 @@ test('Part C (ticket 146): the Row Headings\' edge is Excel\'s #ABABAB on a ligh
 
 // ---- #### fills the cell (FN-12e; case 3c) -----------------------------------------------------------
 
-test('FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016)', async ({ page }) => {
+test('FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '3c');
     const target = cell(grid, 'A1');
     await expect(target.locator('.ex-hashes')).toHaveCount(1);
@@ -523,7 +523,7 @@ test('FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it 
 
 // ---- Ctrl+Plus and Ctrl+Minus (SH-53; case 12) --------------------------------------------------------
 
-test('SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above it, Ctrl+Minus deletes it, and neither reaches the page (ADR-0050 item 14)', async ({ page }) => {
+test('SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above it, Ctrl+Minus deletes it, and neither reaches the page (ADR-0050 item 14) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '3c');
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
     await pressCell(grid, 'A1');
@@ -548,7 +548,7 @@ test('SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above
     expect(await page.evaluate(() => devicePixelRatio)).toBe(zoom);
 });
 
-test('SH-53: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14)', async ({ page }) => {
+test('SH-53: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14) @behaviour', async ({ page }) => {
     const grid = await openCase(page, '3c');
     await pressCell(grid, 'A1');
     await page.keyboard.press('Control+Space');

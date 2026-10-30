@@ -21,7 +21,7 @@ function grid(page) {
 
 const cell = (page, row, column) => grid(page).locator(`[id$='r${row}c${column}']`);
 
-test('ADR-0030: in MudExGridPaper the Script grid takes the paper\'s cascaded defaults, its Density and Row Stripes, under its Roboto', async ({ page }) => {
+test('ADR-0030: in MudExGridPaper the Script grid takes the paper\'s cascaded defaults, its Density and Row Stripes, under its Roboto @blazor', async ({ page }) => {
     await settled(grid(page));
     // The paper's cascaded defaults crossed to the browser and the core took them: Standard's 32 px rows, every second
     // one striped. Roboto's widths come in the same value; what the core charges by them is layer 1's
@@ -33,7 +33,7 @@ test('ADR-0030: in MudExGridPaper the Script grid takes the paper\'s cascaded de
     expect(await cell(page, 0, 0).evaluate(e => getComputedStyle(e).fontFamily)).toContain('Roboto');
 });
 
-test('ADR-0410: the column menu is MudBlazor\'s, and keys typed as it opens are the menu\'s before its Razor arrives', async ({ page }) => {
+test('ADR-0410: the column menu is MudBlazor\'s, and keys typed as it opens are the menu\'s before its Razor arrives @blazor', async ({ page }) => {
     await settled(grid(page));
     await cell(page, 0, 0).click({ force: true });
 
@@ -60,7 +60,7 @@ test('ADR-0410: the column menu is MudBlazor\'s, and keys typed as it opens are 
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
 });
 
-test('ADR-0410: the filter panel is MudBlazor\'s, and what is typed and chosen in it at machine speed over a slow circuit is what applies', async ({ page }) => {
+test('ADR-0410: the filter panel is MudBlazor\'s, and what is typed and chosen in it at machine speed over a slow circuit is what applies @blazor', async ({ page }) => {
     await settled(grid(page));
     const books = grid(page).locator('.ex-row [id$="c0"]');
     const notionals = grid(page).locator('.ex-row [id$="c2"]');
@@ -99,7 +99,7 @@ test('ADR-0410: the filter panel is MudBlazor\'s, and what is typed and chosen i
     expect(await numbers()).toEqual(before.filter(value => value > threshold));
 });
 
-test('ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor\'s find panel, and a text typed and entered at machine speed over a slow circuit is what the source finds', async ({ page }) => {
+test('ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor\'s find panel, and a text typed and entered at machine speed over a slow circuit is what the source finds @blazor', async ({ page }) => {
     await settled(grid(page));
     const books = (await grid(page).locator('.ex-row [id$="c0"]').allTextContents()).map(text => text.trim());
     const target = books[4];
@@ -123,7 +123,7 @@ test('ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor\'s find panel, and a text type
     await expect.poll(() => activeDescendant(grid(page))).toMatch(new RegExp(`r${found}c0$`));
 });
 
-test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed and entered at machine speed over a slow circuit is what commits', async ({ page }) => {
+test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed and entered at machine speed over a slow circuit is what commits @blazor', async ({ page }) => {
     await settled(grid(page));
     // Typed onto Trader as the editor opens, while its Razor is a round trip from standing on Server: the keys wait for
     // MudBlazor's field, which the core reads in the browser, so the Enter commits every one of them.
@@ -143,7 +143,7 @@ test('ADR-0410 / SRV-7: the Cell Editor is MudBlazor\'s field, and a text typed 
     await expect(field).toHaveAttribute('aria-label', 'Trader');
 });
 
-test('ADR-0410 / ADR-0051: the completion list is MudBlazor\'s, the arrows move its choice without waiting on a slow circuit, and a click accepts a candidate', async ({ page }) => {
+test('ADR-0410 / ADR-0051: the completion list is MudBlazor\'s, the arrows move its choice without waiting on a slow circuit, and a click accepts a candidate @blazor', async ({ page }) => {
     await settled(grid(page));
     await setRoundTrip(150);
     await cell(page, 4, 1).click({ force: true });
@@ -172,7 +172,7 @@ test('ADR-0410 / ADR-0051: the completion list is MudBlazor\'s, the arrows move 
     await expect(page.locator('#script-mud-edited')).toHaveText('Edited: Trader = Martens');
 });
 
-test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what is typed in either and entered at machine speed over a slow circuit is what the grid hears', async ({ page }) => {
+test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what is typed in either and entered at machine speed over a slow circuit is what the grid hears @blazor', async ({ page }) => {
     await settled(grid(page));
     await cell(page, 3, 1).click({ force: true });
     await settled(grid(page));
@@ -201,7 +201,7 @@ test('ADR-0410 / ADR-0051: the Formula Bar\'s fields are MudBlazor\'s, and what 
     await expectKeyboardOn(grid(page));
 });
 
-test('ADR-0410 section 6 / ADR-0037: a Template cell is drawn in Razor from its row, and Space pressed at once over a slow circuit hands its field the keyboard through the grid', async ({ page }) => {
+test('ADR-0410 section 6 / ADR-0037: a Template cell is drawn in Razor from its row, and Space pressed at once over a slow circuit hands its field the keyboard through the grid @blazor', async ({ page }) => {
     await settled(grid(page));
     // Note is column 3: each cell's field was drawn in .NET from the trade the browser named, and stands in its cell.
     const note = cell(page, 2, 3).locator('input.demo-note');

@@ -27,7 +27,7 @@ async function choose(page, [row, column], words) {
     await items(page).filter({ hasText: words }).click();
 }
 
-test('ADR-0258: tenor columns chart one curve a row, from the one item "Chart"', async ({ page }) => {
+test('ADR-0258: tenor columns chart one curve a row, from the one item "Chart" @behaviour', async ({ page }) => {
     await select(page, [0, 2], [3, 3]);
     await grid(page).locator("[id$='r1c2']").click({ button: 'right', force: true });
     await expect(items(page).filter({ hasText: /^(Chart|Series in columns|Series in rows)$/ })).toHaveText(['Chart']);
@@ -36,7 +36,7 @@ test('ADR-0258: tenor columns chart one curve a row, from the one item "Chart"',
     await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(4);
 });
 
-test('ADR-0258: one cell holds dates and tenors, so the menu offers both, and columns chart the history', async ({ page }) => {
+test('ADR-0258: one cell holds dates and tenors, so the menu offers both, and columns chart the history @behaviour', async ({ page }) => {
     await select(page, [2, 4]);
     await grid(page).locator("[id$='r2c4']").click({ button: 'right', force: true });
     await expect(items(page).filter({ hasText: /^Series in/ })).toHaveText(['Series in columns', 'Series in rows']);
@@ -45,7 +45,7 @@ test('ADR-0258: one cell holds dates and tenors, so the menu offers both, and co
     await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(5);
 });
 
-test('ADR-0258: Add to chart adds a curve, and refuses a curve into a history', async ({ page }) => {
+test('ADR-0258: Add to chart adds a curve, and refuses a curve into a history @behaviour', async ({ page }) => {
     await select(page, [0, 2], [1, 5]);
     await choose(page, [0, 2], /^Chart$/);
     await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(2);
@@ -64,7 +64,7 @@ test('ADR-0258: Add to chart adds a curve, and refuses a curve into a history', 
     await expect(chart(page, 'Chart 2').locator('g.ex-chart-series')).toHaveCount(5);
 });
 
-test('ADR-0258, M3-Q6: a click on a point moves the grid\'s Focus to its cell', async ({ page }) => {
+test('ADR-0258, M3-Q6: a click on a point moves the grid\'s Focus to its cell @behaviour', async ({ page }) => {
     await select(page, [0, 2], [1, 5]);
     await choose(page, [0, 2], /^Chart$/);
     // The pointer entry hears the pointer only once it holds the chart's first drawing.

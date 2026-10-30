@@ -84,7 +84,7 @@ async function isStriped(page, row) {
     return (await rowOf(page, row).getAttribute('class')).split(' ').includes('ex-row-stripe');
 }
 
-test('a pinned and a scrollable cell of one striped row paint the same ground (UX-15)', async ({ page }) => {
+test('a pinned and a scrollable cell of one striped row paint the same ground (UX-15) @behaviour', async ({ page }) => {
     // Row 9 is striped, row 10 is not; both are detail rows with nothing else on them.
     expect(await isStriped(page, 9)).toBe(true);
     expect(await isStriped(page, 10)).toBe(false);
@@ -108,7 +108,7 @@ test('a pinned and a scrollable cell of one striped row paint the same ground (U
     expect(plainAfter).toBe(desk10);
 });
 
-test('a group or total row paints its own ground over the stripe and still counts (UX-16)', async ({ page }) => {
+test('a group or total row paints its own ground over the stripe and still counts (UX-16) @behaviour', async ({ page }) => {
     // Parity: the roles count, so the rows after them keep their places.
     expect(await isStriped(page, 3)).toBe(true);
     expect(await isStriped(page, 4)).toBe(false);
@@ -175,7 +175,7 @@ async function onceOver(page, locator, ground) {
 // scrollable cell is transparent over the row, a pinned one opaque: a tint painted on the row and
 // on the cell both is two layers deep on the first and one on the second. The group rows stand at
 // a striped position (3) and an unstriped one (12), the total row at a striped one (7).
-test('a group or total row paints its tint once, on its pinned and its scrollable cells alike (ADR-0024, ADR-0038)', async ({ page }) => {
+test('a group or total row paints its tint once, on its pinned and its scrollable cells alike (ADR-0024, ADR-0038) @behaviour', async ({ page }) => {
     // The grid's own ground: a detail row at an even position, with nothing on it.
     const [{ ground: plain }] = await edgesOf(page, [[10, 3]]);
 
@@ -205,7 +205,7 @@ test('a group or total row paints its tint once, on its pinned and its scrollabl
         `the rule once over ${plain} is ${rule}; painted ${JSON.stringify(pinned.top)}`).toBe(true);
 });
 
-test('the hover band reads the same over a group row\'s pinned and scrollable cells (ADR-0024, ADR-0029)', async ({ page }) => {
+test('the hover band reads the same over a group row\'s pinned and scrollable cells (ADR-0024, ADR-0029) @behaviour', async ({ page }) => {
     // Read unhovered first: the band can stand where a real cursor left it, but not on row 12.
     await expect.poll(() => hoverBandRows(page, [12])).toEqual([]);
     const [{ ground: before }] = await edgesOf(page, [[12, 3]]);
@@ -223,7 +223,7 @@ test('the hover band reads the same over a group row\'s pinned and scrollable ce
     expect(sameColour(grounds[2], before, 1), `the band paints over the group row (${before} → ${grounds[2]})`).toBe(false);
 });
 
-test('a Cell State ground and the overlays paint over the stripe (UX-16)', async ({ page }) => {
+test('a Cell State ground and the overlays paint over the stripe (UX-16) @behaviour', async ({ page }) => {
     // A missing Amount on a striped row (5) and on an unstriped one (8): the state's
     // ground shows on both, over whatever the row is.
     const [missingStriped, stripeBeside, missingPlain, plainBeside] =
@@ -255,7 +255,7 @@ test('a Cell State ground and the overlays paint over the stripe (UX-16)', async
     expect(selected, 'the selection over a stripe').not.toBe(unselected);
 });
 
-test('under forced colours no stripe is painted (UX-16)', async ({ page }) => {
+test('under forced colours no stripe is painted (UX-16) @behaviour', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' });
     // The class stays — it is the grid's statement about the row — but nothing paints it.
     expect(await isStriped(page, 9)).toBe(true);
@@ -272,7 +272,7 @@ test('under forced colours no stripe is painted (UX-16)', async ({ page }) => {
 // and Edge's bar a custom one, which paints no native part, so a stylesheet that meant to leave
 // the native bar alone painted an empty gutter: the thumb worked and could not be seen (the
 // fourth Windows run, 2026-09-29). Read from the screen, as the stripes are.
-test('the vertical scrollbar paints a thumb in its gutter (ADR-0029, UX-10)', async ({ page }) => {
+test('the vertical scrollbar paints a thumb in its gutter (ADR-0029, UX-10) @behaviour', async ({ page }) => {
     const scroller = page.locator('.ex-grid .ex-scroller');
     const box = await scroller.boundingBox();
     const gutter = await scroller.evaluate((el) => el.offsetWidth - el.clientWidth);
@@ -299,7 +299,7 @@ async function ruleLineOf(page, row, columns) {
     return out;
 }
 
-test('a pinned cell paints its row\'s rule as the scrollable cells show it, and none while the rule is off (ticket 92, ADR-0029, ADR-0038)', async ({ page }) => {
+test('a pinned cell paints its row\'s rule as the scrollable cells show it, and none while the rule is off (ticket 92, ADR-0029, ADR-0038) @behaviour', async ({ page }) => {
     // Rows 9 (striped) and 10 (not) are detail rows; 12 is a group row, which paints no rule.
     expect(await isStriped(page, 9)).toBe(true);
     expect(await isStriped(page, 10)).toBe(false);

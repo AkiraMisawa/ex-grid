@@ -58,7 +58,7 @@ test.describe('on /sheet', () => {
         await openSheet(page);
     });
 
-    test('SH-45/DC-60: the Context Menu opens Format Cells inside the Sheet\'s box, with the keyboard on its tab, and the arrows switch the tabs', async ({ page }) => {
+    test('SH-45/DC-60: the Context Menu opens Format Cells inside the Sheet\'s box, with the keyboard on its tab, and the arrows switch the tabs @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
 
@@ -77,7 +77,7 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid).getByRole('radio', { name: 'Accounting' })).toBeDisabled();
     });
 
-    test('SH-45: OK sets the part touched as one undo step, and the keyboard is the Sheet\'s again', async ({ page }) => {
+    test('SH-45: OK sets the part touched as one undo step, and the keyboard is the Sheet\'s again @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await page.locator('#sheet-format-cells').click();
@@ -99,7 +99,7 @@ test.describe('on /sheet', () => {
     // OK closes Format Cells, a round trip later on a circuit, and the keys typed meanwhile are held and
     // handed on where the keyboard lands, as behind a command run (ADR-0010's rule for a key that closes
     // a popover; ADR-0044's note of 2026-10-12): OK carries ex-popover-closes.
-    test('SH-45/ADR-0044: keys typed while Enter on OK closes Format Cells are the Sheet\'s, in order: ↓, ↓ typed at once move the Focus (2026-10-12)', async ({ page }) => {
+    test('SH-45/ADR-0044: keys typed while Enter on OK closes Format Cells are the Sheet\'s, in order: ↓, ↓ typed at once move the Focus (2026-10-12) @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await page.locator('#sheet-format-cells').click();
@@ -126,7 +126,7 @@ test.describe('on /sheet', () => {
     // Input-order ticket 04: Format Cells' OK is a submission numbered as it happens (data-ex-claims), so
     // the arrow typed straight after the Enter that submits it is taken once the format is set, where the
     // keyboard landed: the Percentage lands on C2, and the arrow moves from it.
-    test('ADR-0240/SH-45: Ctrl+1, a choice, then Enter and ↓ at once, sets the format and then moves the Focus', async ({ page }) => {
+    test('ADR-0240/SH-45: Ctrl+1, a choice, then Enter and ↓ at once, sets the format and then moves the Focus @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await page.keyboard.press('Control+1');
@@ -153,7 +153,7 @@ test.describe('on /sheet', () => {
     // come. Where none comes — here a handler of the page's prevents the key's default, as a browser that
     // does not submit would leave it — Format Cells stays open, and the ↑ typed after it moves the choice,
     // as typed; it is not held for a submission that never comes.
-    test('ADR-0240/SH-45: Enter on a choice that submits nothing leaves the ↑ after it to the choices', async ({ page }) => {
+    test('ADR-0240/SH-45: Enter on a choice that submits nothing leaves the ↑ after it to the choices @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await page.keyboard.press('Control+1');
@@ -185,7 +185,7 @@ test.describe('on /sheet', () => {
     // frame is drawn, and it took the keyboard back from the pressed choice to the first tab, where the
     // Enter typed next did nothing and Format Cells stayed open. The round trip is long so that the press
     // lands first; the outcome is the same whichever lands first.
-    test('ticket 240/ADR-0204: a choice pressed as Format Cells appears keeps the keyboard, and OK then Enter applies it', async ({ page }) => {
+    test('ticket 240/ADR-0204: a choice pressed as Format Cells appears keeps the keyboard, and OK then Enter applies it @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         const circuit = await setRoundTrip(300);
@@ -212,7 +212,7 @@ test.describe('on /sheet', () => {
         }
     });
 
-    test('SH-42/SH-45, case 22: Ctrl+1 opens Format Cells from the keyboard, on Number, and no tab of the browser is selected', async ({ page }) => {
+    test('SH-42/SH-45, case 22: Ctrl+1 opens Format Cells from the keyboard, on Number, and no tab of the browser is selected @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
 
@@ -225,7 +225,7 @@ test.describe('on /sheet', () => {
         await expectKeyboardOn(grid);
     });
 
-    test('SH-45/DC-60: Escape sets nothing, closes Format Cells, and the next arrow moves the Focus', async ({ page }) => {
+    test('SH-45/DC-60: Escape sets nothing, closes Format Cells, and the next arrow moves the Focus @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
         await pick(choice(grid, 'Percentage'));
@@ -239,7 +239,7 @@ test.describe('on /sheet', () => {
         await expectFocusAt(grid, 'C3');
     });
 
-    test('SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK', async ({ page }) => {
+    test('SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
         await pick(choice(grid, 'Custom'));
@@ -254,7 +254,7 @@ test.describe('on /sheet', () => {
         await expect(cell(grid, 'C2')).toHaveText('0.5000');
     });
 
-    test('DC-60/ADR-0039: Tab and Shift+Tab wrap inside Format Cells once it holds the keyboard', async ({ page }) => {
+    test('DC-60/ADR-0039: Tab and Shift+Tab wrap inside Format Cells once it holds the keyboard @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
         const cancel = formatCells(grid).getByRole('button', { name: 'Cancel' });
@@ -275,7 +275,7 @@ test.describe('on /sheet', () => {
     // typed once what it waits for has come (ADR-0240: no outcome turns on a clock). Here no frame comes
     // until the keys have been typed, so the window the test above fell into one run in a few hundred
     // is the only one there is. Opened by Ctrl+1, a key, so that nothing before it waits on a frame.
-    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before any frame has looked', async ({ page }) => {
+    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before any frame has looked @behaviour', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await settled(grid);
@@ -302,7 +302,7 @@ test.describe('on /sheet', () => {
     // the keys have been typed, so that is the case every time; on the Server host with a 150 ms round
     // trip, where the hand-off's own number is answered on a round trip of its own beside the one the
     // tab's focus takes.
-    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before Ctrl+1\'s reply has come', async ({ page }) => {
+    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before Ctrl+1\'s reply has come @blazor', async ({ page }) => {
         const letReplies = await holdReplies(page, 'OnKeyAsync');
         await openSheet(page);
         const grid = sheet(page);
@@ -330,7 +330,7 @@ test.describe('on /sheet', () => {
         }
     });
 
-    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
+    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
         // A1's bottom thick, set through Format Cells itself. Over A1, with no line, it opens on Thin.
@@ -367,7 +367,7 @@ test.describe('on /sheet', () => {
     // Decided with the user on 2026-10-12 (ADR-0071): Format Cells' OK widens a column over ####
     // for any part of the Font it sets, as Excel's Font tab widened column A for Bold in the
     // seventeenth Windows run's h7, where Ctrl+B does not; its Fill tab widens nothing.
-    test('ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width', async ({ page }) => {
+    test('ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width @behaviour', async ({ page }) => {
         const grid = sheet(page);
         const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
         const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
@@ -410,7 +410,7 @@ test.describe('on /sheet', () => {
     // Selection and leaves it standing (ticket 56). On WebAssembly these are the cases without a
     // round trip.
 
-    test('ticket 56: the page\'s Format Cells pressed straight after Shift+ArrowDown opens over the extended range, and stands when the move is heard', async ({ page }) => {
+    test('ticket 56: the page\'s Format Cells pressed straight after Shift+ArrowDown opens over the extended range, and stands when the move is heard @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await setRoundTrip(150);
@@ -430,7 +430,7 @@ test.describe('on /sheet', () => {
         await expect(cell(grid, 'C3')).toHaveText('75.00%');
     });
 
-    test('ticket 56: the Context Menu\'s Format Cells…, chosen as soon as the menu opens on another cell, opens over that cell', async ({ page }) => {
+    test('ticket 56: the Context Menu\'s Format Cells…, chosen as soon as the menu opens on another cell, opens over that cell @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
         await setRoundTrip(150);
@@ -457,7 +457,7 @@ test.describe('on /sheet', () => {
 });
 
 test.describe('in a box that follows the window', () => {
-    test('DC-60/ADR-0040: Format Cells scrolls inside a small box, and closes as a Cancel when the box shrinks below one row', async ({ page }) => {
+    test('DC-60/ADR-0040: Format Cells scrolls inside a small box, and closes as a Cancel when the box shrinks below one row @behaviour', async ({ page }) => {
         await page.goto('/sheet?box=window');
         const grid = sheet(page);
         await expect(cell(grid, 'A1')).toHaveText('Item');
@@ -490,7 +490,7 @@ test.describe('two Sheets on /sheets', () => {
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
     });
 
-    test('DC-60/ADR-0018: each Sheet\'s Format Cells is its own', async ({ page }) => {
+    test('DC-60/ADR-0018: each Sheet\'s Format Cells is its own @behaviour', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await openFromMenu(left, 'B1');

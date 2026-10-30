@@ -32,7 +32,7 @@ async function figures(page) {
     return { first: await firstValue(page).textContent(), total: await grandTotal(page).textContent() };
 }
 
-test('ADR-0370 section 1: a new source of the Consumer\'s in .NET is asked again, and the report built in the browser follows it', async ({ page }) => {
+test('ADR-0370 section 1: a new source of the Consumer\'s in .NET is asked again, and the report built in the browser follows it @blazor', async ({ page }) => {
     await open(page, '/script-pivot');
     const before = await figures(page);
 
@@ -43,7 +43,7 @@ test('ADR-0370 section 1: a new source of the Consumer\'s in .NET is asked again
     expect((await figures(page)).total).not.toBe(before.total);
 });
 
-test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layout in .NET, and the Consumer\'s own layout replaces it', async ({ page }) => {
+test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layout in .NET, and the Consumer\'s own layout replaces it @blazor', async ({ page }) => {
     await open(page, '/script-pivot');
     await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk');
 
@@ -56,7 +56,7 @@ test('ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer\'s layou
     await expect(page.locator('#script-pivot-layout')).toHaveText('Rows: Region, Desk');
 });
 
-test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\'s words, its Show Details handler, its Selection handler and its Selection Summary handler, all in .NET, reach the pivot in the browser', async ({ page }) => {
+test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\'s words, its Show Details handler, its Selection handler and its Selection Summary handler, all in .NET, reach the pivot in the browser @blazor', async ({ page }) => {
     await open(page, '/script-pivot?details=dotnet');
     await expect(report(page).getByText('Row Labels', { exact: true })).toBeVisible();
 
@@ -75,7 +75,7 @@ test('ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer\
     await expect(report(page).locator('.ex-summary')).toContainText(await page.locator('#script-pivot-summary').innerText());
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its Filter…, where an Item unticked with Space on MudBlazor\'s checkbox and OK reach the pivot', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its Filter…, where an Item unticked with Space on MudBlazor\'s checkbox and OK reach the pivot @blazor', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud');
     const button = pivot(page).getByRole('button', { name: 'Filter Currency', exact: true });
     await expect(button).toHaveClass(/mud-button-root/);
@@ -94,7 +94,7 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s report filter and its F
     await expect(grandTotal(page)).not.toHaveText(before);
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…, whose caption follows the Aggregation chosen in its native select, and OK reaches the pivot', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…, whose caption follows the Aggregation chosen in its native select, and OK reaches the pivot @blazor', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud');
     await pane(page).getByRole('button', { name: 'Options for Sum of P&L', exact: true }).click();
     await pivot(page).getByRole('menuitem', { name: 'Value Field Settings…' }).click();
@@ -107,7 +107,7 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s Value Field Settings…
     await expect(pane(page).getByRole('button', { name: 'Options for Count of P&L', exact: true })).toBeVisible();
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs, and Show Details opens one that takes a key typed as it opens over a slow circuit', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs, and Show Details opens one that takes a key typed as it opens over a slow circuit @blazor', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud');
     const details = pivot(page).getByRole('tablist').getByRole('tab', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
     await setRoundTrip(150);
@@ -127,7 +127,7 @@ test('ADR-0410: MudPivotChrome draws the Script pivot\'s sheet tabs, and Show De
     await expect(page.locator('#script-pivot-selection')).toHaveText('Focus: row 1, column 1; 1 range(s)');
 });
 
-test('ADR-0410: MudPivotChrome draws the Script pivot\'s Show Details dialog, and Enter typed as it opens over a slow circuit presses its Close', async ({ page }) => {
+test('ADR-0410: MudPivotChrome draws the Script pivot\'s Show Details dialog, and Enter typed as it opens over a slow circuit presses its Close @blazor', async ({ page }) => {
     await open(page, '/script-pivot?chrome=mud&details=dialog');
     const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
     await setRoundTrip(150);

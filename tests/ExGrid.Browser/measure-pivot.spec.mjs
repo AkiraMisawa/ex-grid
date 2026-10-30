@@ -262,7 +262,7 @@ async function openMillion(page) {
     });
 }
 
-test('PV-21/DA-17: a million trades read from objects on /pivot, and the gestures over them', async ({ page }, testInfo) => {
+test('PV-21/DA-17: a million trades read from objects on /pivot, and the gestures over them @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     const load = await openMillion(page);
     const runs = {};
@@ -376,7 +376,7 @@ async function questions(page, layouts) {
     return results;
 }
 
-test('PV-21: questions of a thousand to thirty thousand leaves, over a million trades on /pivot', async ({ page }, testInfo) => {
+test('PV-21: questions of a thousand to thirty thousand leaves, over a million trades on /pivot @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     // Below the cap's layouts, to see where a question passes 0.3 s: 270 dates, ten books, five
     // products and TRUE or FALSE, a million trades filling every combination.
@@ -413,7 +413,7 @@ test('PV-21: questions of a thousand to thirty thousand leaves, over a million t
     console.log(`PV-21 below the cap ${JSON.stringify(results, null, 1)}`);
 });
 
-test('PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot', async ({ page }, testInfo) => {
+test('PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     // The trades' 270 dates, 49 quantities, 499 notionals, five products, five currencies and three
     // regions are drawn independently, so a million of them fill nearly every combination of a few:
@@ -468,7 +468,7 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
     console.log(`PV-21 cap ${JSON.stringify(results, null, 1)}`);
 });
 
-test('PV-21: 1,000 changes folded into a million trades on /pivot-live', async ({ page }, testInfo) => {
+test('PV-21: 1,000 changes folded into a million trades on /pivot-live @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     await openMeasured(page, `/pivot-live?trades=${MILLION}&batch=1000`);
     await expect(page.locator(LIVE_REPORT).locator('.ex-row').first()).toBeVisible({ timeout: 600_000 });
@@ -534,7 +534,7 @@ test('PV-21: 1,000 changes folded into a million trades on /pivot-live', async (
     console.log(`PV-21 1,000 changes ${JSON.stringify(result, null, 1)}`);
 });
 
-test('DA-17: a million trades read from Arrow on /pivot-db', async ({ page }, testInfo) => {
+test('DA-17: a million trades read from Arrow on /pivot-db @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     const status = await (await fetch(`${API_URL}/api/status`)).json();
     expect(status.trades, 'the demo API server holds a million trades').toBe(1_000_000);
@@ -595,7 +595,7 @@ test('DA-17: a million trades read from Arrow on /pivot-db', async ({ page }, te
     console.log(`DA-17 Arrow ${JSON.stringify(result, null, 1)}`);
 });
 
-test('PV-21/DA-17: a CSV of a million rows read on /pivot-csv', async ({ page }, testInfo) => {
+test('PV-21/DA-17: a CSV of a million rows read on /pivot-csv @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     test.skip(!CSV || !fs.existsSync(CSV), 'EXGRID_MEASURE_CSV names the trade export of a million trades to read');
     const runs = [];
@@ -651,7 +651,7 @@ test('PV-21/DA-17: a CSV of a million rows read on /pivot-csv', async ({ page },
 // The file above reaches the reader through InputFile's stream, from JavaScript; the page's own
 // sample is written in memory and read from a MemoryStream. A tenth of the rows, so the two say
 // how much of the file's time is the reading itself.
-test('DA-17: the trade export\'s 100,000-trade sample read from memory on /pivot-csv', async ({ page }, testInfo) => {
+test('DA-17: the trade export\'s 100,000-trade sample read from memory on /pivot-csv @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     const runs = [];
     for (let run = 0; run < 3; run++) {

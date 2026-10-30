@@ -59,11 +59,11 @@ for (const browserZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
     test.describe(`a browser in ${browserZone}`, () => {
         test.use({ freshDocument: true, timezoneId: browserZone });
 
-        test(`ADR-0121/0122: TODAY() is the day in the browser's zone, ${browserZone}`, async ({ page }) => {
+        test(`ADR-0121/0122: TODAY() is the day in the browser's zone, ${browserZone} @behaviour`, async ({ page }) => {
             await expectShownDay(page, '/sheet?case=today', 'A1', browserZone, dateIn);
         });
 
-        test(`ADR-0124: NOW() is the moment in the browser's zone, ${browserZone}`, async ({ page }) => {
+        test(`ADR-0124: NOW() is the moment in the browser's zone, ${browserZone} @behaviour`, async ({ page }) => {
             await expectShownDay(page, '/sheet?case=today', 'A3', browserZone, latestDateShown);
         });
     });
@@ -72,18 +72,18 @@ for (const browserZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
 test.describe('a zone the Consumer gives', () => {
     test.use({ freshDocument: true, timezoneId: 'Pacific/Pago_Pago' });
 
-    test('ADR-0121: the Consumer\'s zone goes before the browser\'s', async ({ page }) => {
+    test('ADR-0121: the Consumer\'s zone goes before the browser\'s @behaviour', async ({ page }) => {
         // Kiritimati is 25 hours ahead of Pago Pago: always another date than the browser's.
         const shown = await expectShownDay(page, '/sheet?case=today&zone=Pacific/Kiritimati', 'A1', 'Pacific/Kiritimati', dateIn);
         expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
     });
 
-    test('SH-60 / ADR-0124: NOW() is the moment in the Consumer\'s zone, not the browser\'s', async ({ page }) => {
+    test('SH-60 / ADR-0124: NOW() is the moment in the Consumer\'s zone, not the browser\'s @behaviour', async ({ page }) => {
         const shown = await expectShownDay(page, '/sheet?case=today&zone=Pacific/Kiritimati', 'A3', 'Pacific/Kiritimati', latestDateShown);
         expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
     });
 
-    test('ADR-0121: a fixed day goes before any zone', async ({ page }) => {
+    test('ADR-0121: a fixed day goes before any zone @behaviour', async ({ page }) => {
         await page.goto('/sheet?case=today&zone=Pacific/Kiritimati&today=2026-09-30');
         await expect(cell(sheet(page), 'A1')).toHaveText('2026-09-30');
         // TODAY() itself takes the short date format, as Microsoft documents.
@@ -94,7 +94,7 @@ test.describe('a zone the Consumer gives', () => {
 test.describe('NOW() over time', () => {
     test.use({ freshDocument: true, timezoneId: 'Pacific/Pago_Pago' });
 
-    test('SH-60 / ADR-0124: NOW() moves on as the minute turns, in the Consumer\'s zone', async ({ page }) => {
+    test('SH-60 / ADR-0124: NOW() moves on as the minute turns, in the Consumer\'s zone @behaviour', async ({ page }) => {
         // Each reading lies between the zone's minute before the wait for it and the latest minute it
         // can show once it is read: the strings order as the minutes do.
         const zone = 'Pacific/Kiritimati';
@@ -117,7 +117,7 @@ test.describe('NOW() over time', () => {
 test.describe('a browser that does not say its zone', () => {
     test.use({ freshDocument: true });
 
-    test('SH-60 / ADR-0121/0124: with no zone known, TODAY() and NOW() are #GETTING_DATA, and a zone the Consumer gives answers them', async ({ page }) => {
+    test('SH-60 / ADR-0121/0124: with no zone known, TODAY() and NOW() are #GETTING_DATA, and a zone the Consumer gives answers them @behaviour', async ({ page }) => {
         // The zone is unread before the grid attaches, so the grid is never told one (ADR-0122).
         await page.addInitScript(() => {
             const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;

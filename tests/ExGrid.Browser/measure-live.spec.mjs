@@ -90,7 +90,7 @@ function spread(results, pick) {
     return values.length === 0 ? null : { median: median(values), min: Math.min(...values), max: Math.max(...values) };
 }
 
-test('LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them', async ({ page }, testInfo) => {
+test('LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them @blazor', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     await page.addInitScript(probe);
     // interval=0: every batch is shown at once, inside Apply, so no run waits for the source's clock

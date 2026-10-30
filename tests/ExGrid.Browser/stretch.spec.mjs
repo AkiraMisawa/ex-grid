@@ -32,7 +32,7 @@ test.describe('in parents with a definite height', () => {
         await expect(page.locator('#fixed-box .ex-row').first()).toBeVisible();
     });
 
-    test('a sized box: the grid is the box, rows reach its bottom, and the DOM is the box\'s (VZ-12a, ADR-0028)', async ({ page }) => {
+    test('a sized box: the grid is the box, rows reach its bottom, and the DOM is the box\'s (VZ-12a, ADR-0028) @behaviour', async ({ page }) => {
         const parent = await box(page, '#fixed-box');
         const grid = await box(page, '#fixed-box .ex-grid');
         expect(grid.height).toBeCloseTo(parent.height, 0);
@@ -44,7 +44,7 @@ test.describe('in parents with a definite height', () => {
         expect(await rowsIn(page, '#fixed-box')).toBeLessThanOrEqual(Math.ceil(300 / ROW) + 2);
     });
 
-    test('the rest of a flex column: the grid starts under the toolbar and ends with the column (VZ-12a, ADR-0028)', async ({ page }) => {
+    test('the rest of a flex column: the grid starts under the toolbar and ends with the column (VZ-12a, ADR-0028) @behaviour', async ({ page }) => {
         const column = await box(page, '#flex-box');
         const toolbar = await box(page, '#flex-toolbar');
         const grid = await box(page, '#flex-box .ex-grid');
@@ -53,7 +53,7 @@ test.describe('in parents with a definite height', () => {
         await expectRowsPainted(page, '#flex-box', 5);
     });
 
-    test('inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030)', async ({ page }) => {
+    test('inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030) @blazor', async ({ page }) => {
         const paper = await page.locator('#stretch-paper').evaluate((el) => {
             const r = el.getBoundingClientRect();
             const s = getComputedStyle(el);
@@ -71,7 +71,7 @@ test.describe('in parents with a definite height', () => {
 test.describe('in a parent with no height', () => {
     test.use({ expectedWarnings: [/parent gives it no height/] });
 
-    test('nothing is painted and the grid names the parent (VZ-12b, ADR-0028)', async ({ page }) => {
+    test('nothing is painted and the grid names the parent (VZ-12b, ADR-0028) @blazor', async ({ page }) => {
         await page.goto('/stretch?parent=auto');
         await expect(page.locator('#auto-box .ex-grid')).toBeVisible();
         // spec-lint: fixed-wait: no input is made: the rows wait on the size the browser reports for the parent, which the Settled Mark does not cover (ADR-0220, As built), and nothing marks that none will be painted
@@ -87,7 +87,7 @@ test.describe('in a box that follows the window', () => {
         await expect(page.locator('#window-box .ex-row').first()).toBeVisible();
     });
 
-    test('the Viewport follows the window, both ways (VZ-12a, ADR-0028/0045)', async ({ page }) => {
+    test('the Viewport follows the window, both ways (VZ-12a, ADR-0028/0045) @behaviour', async ({ page }) => {
         const tall = await rowsIn(page, '#window-box');
         await page.setViewportSize({ width: 1280, height: 500 });
         await expect.poll(async () => rowsIn(page, '#window-box')).toBeLessThan(tall);
@@ -95,7 +95,7 @@ test.describe('in a box that follows the window', () => {
         await expect.poll(async () => rowsIn(page, '#window-box')).toBe(tall);
     });
 
-    test('a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044)', async ({ page }) => {
+    test('a column that cannot be filtered shows its commands alone, and Tab closes them as a Cancel (KB-30, ADR-0039/0044) @behaviour', async ({ page }) => {
         // This grid's Trader column cannot be sorted or filtered: the popover is the menu alone, Hide its one enabled item.
         const grid = page.locator('#window-box .ex-grid');
         await grid.locator("[id$='r1c1']").click({ force: true });
@@ -113,7 +113,7 @@ test.describe('in a box that follows the window', () => {
         await expect(page.locator('#hidden-status')).toHaveText('Hidden: none');
     });
 
-    test('a column menu with less than a row of room closes, and the keyboard is the grid\'s (UX-11a, ADR-0040)', async ({ page }) => {
+    test('a column menu with less than a row of room closes, and the keyboard is the grid\'s (UX-11a, ADR-0040) @behaviour', async ({ page }) => {
         const grid = page.locator('#window-box .ex-grid');
         await grid.locator("[id$='r1c1']").click({ force: true });
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c1$/);

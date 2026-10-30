@@ -85,7 +85,7 @@ async function pressBarAfter(grid, characters) {
     await field.click({ position: { x: x + 1, y: box.height / 2 } });
 }
 
-test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end, and selects what it rewrote where it stood inside the text (run 18a, answers 1 and 2)', async ({ page }) => {
+test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end, and selects what it rewrote where it stood inside the text (run 18a, answers 1 and 2) @behaviour', async ({ page }) => {
     const grid = sheet(page);
 
     // 1. Typed into the bar, F2 (Enter mode), F4: a caret at the end.
@@ -136,7 +136,7 @@ test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end
     await cancel(page, grid, 'D10');
 });
 
-test('ADR-0051/DC-19: after =, Ctrl+↓ points at the column\'s data edge, and Ctrl+Shift+↓ points from the edited cell to it; nothing commits (run 18a, answer 5)', async ({ page }) => {
+test('ADR-0051/DC-19: after =, Ctrl+↓ points at the column\'s data edge, and Ctrl+Shift+↓ points from the edited cell to it; nothing commits (run 18a, answer 5) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const point = grid.locator('.ex-selection .ex-point');
 
@@ -175,7 +175,7 @@ test('ADR-0051/DC-19: after =, Ctrl+↓ points at the column\'s data edge, and C
     await expect(bar(grid)).toHaveValue('');
 });
 
-test('ADR-0051/ED-2: Shift+Home extends a pointed range from its fixed end, and after = points from the edited cell, in Point (run 18a, answers 3 and 8)', async ({ page }) => {
+test('ADR-0051/ED-2: Shift+Home extends a pointed range from its fixed end, and after = points from the edited cell, in Point (run 18a, answers 3 and 8) @behaviour', async ({ page }) => {
     const grid = sheet(page);
 
     await pressCell(grid, 'D10');
@@ -209,7 +209,7 @@ test('ADR-0051/ED-2: Shift+Home extends a pointed range from its fixed end, and 
 // Each from abc typed into D10, as run 18a typed it. /sheet's column D holds =SUM(D2:D4) in D5, so
 // Ctrl+↑ stops there where Excel's empty column took it to D1: the data edge (ADR-0050, item 2), as
 // with no edit open.
-test('ADR-0010/ED-2: typed into a cell, Shift+↑, Ctrl+← and Ctrl+↑ commit and move or extend the Selection as with no edit open (run 18a, answer 7)', async ({ page }) => {
+test('ADR-0010/ED-2: typed into a cell, Shift+↑, Ctrl+← and Ctrl+↑ commit and move or extend the Selection as with no edit open (run 18a, answer 7) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const range = grid.locator('.ex-selection .ex-range');
     await pressCell(grid, 'D10');
@@ -248,7 +248,7 @@ test('ADR-0010/ED-2: typed into a cell, Shift+↑, Ctrl+← and Ctrl+↑ commit 
     }
 });
 
-test('ADR-0010/ED-2: typed into a cell, Ctrl+↓ commits and moves to the column\'s last row, and Ctrl+Shift+↓ commits and selects to it (run 18a, answer 7)', async ({ page }) => {
+test('ADR-0010/ED-2: typed into a cell, Ctrl+↓ commits and moves to the column\'s last row, and Ctrl+Shift+↓ commits and selects to it (run 18a, answer 7) @behaviour', async ({ page }) => {
     const grid = sheet(page);
 
     await pressCell(grid, 'D10');

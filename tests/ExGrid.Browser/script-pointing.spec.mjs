@@ -8,7 +8,7 @@ import { sheet, cell, clickCell, pressCell, editor } from './sheet-helpers.mjs';
 
 const LOOKUP_4471 = '=XLOOKUP("R-4471", Positions[Id], Positions[PV])';
 
-test('ADR-0430: a press on a Script grid of the Scope writes the key .NET read from its row, and a refusal reaches .NET', async ({ page }) => {
+test('ADR-0430: a press on a Script grid of the Scope writes the key .NET read from its row, and a refusal reaches .NET @blazor', async ({ page }) => {
     await page.goto('/script-pointing');
     const grid = sheet(page);
     const table = page.locator('#script-pointing-positions .ex-grid');

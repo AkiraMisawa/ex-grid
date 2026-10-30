@@ -227,7 +227,7 @@ async function pressAndAwaitCorner(page, key) {
 }
 
 test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
-    test('with the platform\'s own scrollbars', async ({ page }, testInfo) => {
+    test('with the platform\'s own scrollbars @behaviour', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: false });
 
         await moveToCorner(page, 'End');
@@ -237,7 +237,7 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
         expectFocusInsideClientBox(await focusAgainstClientBox(page), testInfo);
     });
 
-    test('with scrollbars that occupy layout', async ({ page }, testInfo) => {
+    test('with scrollbars that occupy layout @behaviour', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: true });
 
         await expectScrollbarsOccupyLayout(page);
@@ -263,7 +263,7 @@ test.describe('the Focus is never behind a scrollbar (ADR-0012/0013)', () => {
     // the scale here is CDP's, and a real Windows desktop at 125% puts the scrollbar at
     // a non-integer number of CSS pixels with the OS doing the scaling. That case is
     // VZ-14, and it is the next describe block, not this test.
-    test('at every zoom level, after moving again', async ({ page }, testInfo) => {
+    test('at every zoom level, after moving again @behaviour', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: true });
         await expectScrollbarsOccupyLayout(page);
         const client = await page.context().newCDPSession(page);
@@ -342,7 +342,7 @@ test.describe('on a Windows desktop at fractional display scaling (VZ-14)', () =
         }));
     }
 
-    test('the Focus stays readable with the OS doing the scaling', async ({ page }, testInfo) => {
+    test('the Focus stays readable with the OS doing the scaling @behaviour', async ({ page }, testInfo) => {
         await openGrid(page, { classicScrollbars: false });
         const { diagnostics } = await focusAgainstClientBox(page);
         testInfo.annotations.push({ type: 'measured', description: JSON.stringify(diagnostics) });

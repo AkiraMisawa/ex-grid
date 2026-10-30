@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched, settled, chromeHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -48,7 +48,7 @@ for (const chrome of ['builtin', 'mud']) {
             await underChrome(page, chrome);
         });
 
-        test('DC-17: the candidate list opens under the editor, inside the grid\'s box; Tab accepts', async ({ page }) => {
+        test(`DC-17: the candidate list opens under the editor, inside the grid's box; Tab accepts ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
@@ -91,7 +91,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'F2')).toHaveText('39');
         });
 
-        test('DC-17: Escape closes the list and leaves the edit open; the next Escape cancels', async ({ page }) => {
+        test(`DC-17: Escape closes the list and leaves the edit open; the next Escape cancels ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
@@ -104,7 +104,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'F2')).toHaveText('');
         });
 
-        test('DC-31: with the list open, ← and → move the caret and the list stays', async ({ page }) => {
+        test(`DC-31: with the list open, ← and → move the caret and the list stays ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
@@ -133,7 +133,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
         });
 
-        test('DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it', async ({ page }) => {
+        test(`DC-31: a repeated letter (=SS) completes the span at the caret, and the caret sits after it ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=S');
@@ -167,7 +167,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
         });
 
-        test('DC-17: completion works from the Formula Bar, its list inside the grid\'s box', async ({ page }) => {
+        test(`DC-17: completion works from the Formula Bar, its list inside the grid's box ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'F2');
             await clickBarEnd(grid);
@@ -217,7 +217,7 @@ for (const chrome of ['builtin', 'mud']) {
             await underChrome(page, chrome);
         });
 
-        test('SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6)', async ({ page }) => {
+        test(`SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');
             await page.keyboard.type(AT_MATCH_MODE);
@@ -243,7 +243,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
-        test('SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays', async ({ page }) => {
+        test(`SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');
             await page.keyboard.type(AT_MATCH_MODE);
@@ -272,7 +272,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
         });
 
-        test('SH-36: Tab closes the list after a value, a column and a table\'s name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5)', async ({ page }) => {
+        test(`SH-36: Tab closes the list after a value, a column and a table's name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             // A value typed whole lists that value alone; any other beginning lists every value.
             await pressCell(grid, 'D10');
@@ -334,7 +334,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
-        test('SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1)', async ({ page }) => {
+        test(`SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             const typed = `${AT_MATCH_MODE}1)`;
             await pressCell(grid, 'D10');
@@ -360,7 +360,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(bar(grid)).toHaveValue(typed);
         });
 
-        test('SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53)', async ({ page }) => {
+        test(`SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');
             await page.keyboard.type(AT_MATCH_MODE);
@@ -424,7 +424,7 @@ for (const chrome of ['builtin', 'mud']) {
         // and Home, judged as that list's, moved the caret. Here the list for `=S` is shown, and the
         // rest is typed behind a round trip longer than the typing, so the field runs ahead of every
         // render while that list stands; Home typed at once still points, as it does typed slowly.
-        test('SH-36: Home typed at once after =SUM( points at A10 while the list for =S is still shown (ADR-0230 section 2)', async ({ page }) => {
+        test('SH-36: Home typed at once after =SUM( points at A10 while the list for =S is still shown (ADR-0230 section 2) @blazor', async ({ page }) => {
             test.skip(!SERVER, 'WebAssembly has no round trip to set');
             const grid = sheet(page);
             await pressCell(grid, 'D10');
@@ -440,7 +440,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
-        test('SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6)', async ({ page }) => {
+        test(`SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'D10');
             await page.keyboard.type(AT_MATCH_MODE);
@@ -488,7 +488,7 @@ for (const chrome of ['builtin', 'mud']) {
             await underChrome(page, chrome);
         });
 
-        test('ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5)', async ({ page }) => {
+        test(`ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             for (const [key, written] of [['Home', 'A10'], ['Shift+ArrowRight', 'D10:E10']]) {
                 await pressCell(grid, 'D10');
@@ -510,7 +510,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
-        test('ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor', async ({ page }) => {
+        test(`ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             const typed = '=SUM(A2:A4,B2:B4,C2:C4,';
             await pressCell(grid, 'D10');
@@ -532,7 +532,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
 
-        test('ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar', async ({ page }) => {
+        test(`ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             // Longer than the bar on a 1280 px page: forty ranges.
             const typed = `=SUM(${'A2:A4,'.repeat(40)}`;
@@ -565,7 +565,7 @@ for (const chrome of ['builtin', 'mud']) {
 // ---------------------------------------------------------------------------------------------
 // Point (DC-19, DC-20, DC-31, DC-34)
 
-test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the Focus stay put', async ({ page }) => {
+test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the Focus stay put @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -603,7 +603,7 @@ test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the 
     await expect(bar(grid)).toHaveValue('=F4:G5+G2');
 });
 
-test('DC-19: a click points at the clicked cell; Shift+click extends', async ({ page }) => {
+test('DC-19: a click points at the clicked cell; Shift+click extends @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -621,7 +621,7 @@ test('DC-19: a click points at the clicked cell; Shift+click extends', async ({ 
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-19: F2 switches from pointing to moving the caret', async ({ page }) => {
+test('DC-19: F2 switches from pointing to moving the caret @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -644,7 +644,7 @@ test('DC-19: F2 switches from pointing to moving the caret', async ({ page }) =>
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-31: a Reference written mid-text lands at the caret and the caret sits after it', async ({ page }) => {
+test('DC-31: a Reference written mid-text lands at the caret and the caret sits after it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=+1');
@@ -665,7 +665,7 @@ test('DC-31: a Reference written mid-text lands at the caret and the caret sits 
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         // Under ExGrid.MudBlazor's Chrome a press into the bar once opened the edit with DOM
         // focus in the Cell Editor, not the bar (found by this suite, 2026-09-27): MudCellEditor
         // mounted with no request seen yet and took any FocusRequest as a new one. An edit the
@@ -716,7 +716,7 @@ for (const chrome of ['builtin', 'mud']) {
 // back after the Reference, the core had set the press's report aside as the browser's own caret,
 // and pointing went on.
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-19/DC-34: a press in the Formula Bar's text before a 150 ms circuit has placed the caret after a pointed Reference ends pointing (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
@@ -753,7 +753,7 @@ for (const chrome of ['builtin', 'mud']) {
 // only moved the caret — nothing pointed. The keys typed after the press are held until the
 // core has answered it, as after any change of mode (ADR-0010).
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-19/ADR-0010: keys typed into the Formula Bar before a 150 ms circuit has answered the press into it keep their meaning (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
@@ -829,7 +829,7 @@ const writtenIntoTheBar = {
 };
 for (const chrome of ['builtin', 'mud']) {
     for (const [how, write] of Object.entries(writtenIntoTheBar)) {
-        test(`ED-29: =A1+B1 ${how}, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (${chrome} Chrome)`, async ({ page }) => {
+        test(`ED-29: =A1+B1 ${how}, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
             await underChrome(page, chrome);
             const grid = sheet(page);
             await pressCell(grid, 'D10');
@@ -867,7 +867,7 @@ for (const chrome of ['builtin', 'mud']) {
 // committed (found on CI, the Server host). The press is held among the keys, and the keys after it
 // are typed into the text its answer leaves.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (${chrome} Chrome)`, async ({ page }) => {
+    test(`ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D10');
@@ -896,7 +896,7 @@ for (const chrome of ['builtin', 'mud']) {
 // cases 20 and 23). Here F2 takes the bar's edit from Caret to Overwrite where no Reference can go, and
 // Home enters the Formula into D10 and moves the Focus to A10, as there.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; ${chrome} Chrome)`, async ({ page }) => {
+    test(`ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; ${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'D10');
@@ -925,7 +925,7 @@ for (const chrome of ['builtin', 'mud']) {
 // turn among the held keys the press is answered again, and the key typed after it edits the
 // cell the row press moved to, in the bar.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+    test(`ADR-0021: a row press's late hand-back does not take the keyboard from the Formula Bar or the Name Box pressed after it, on a 150 ms circuit (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
@@ -962,7 +962,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it', async ({ page }) => {
+test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it @blazor', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await setRoundTrip(150);
@@ -994,7 +994,7 @@ test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text f
 // mid-text within one round trip, in the Cell Editor as in the Formula Bar (abXYcdZ for
 // ab|cd + XY + Z). Left failing on the Server host, by name, until the core stops writing a
 // surface's own typing back into it (ADR-0051, ED-22).
-test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left', async ({ page }) => {
+test('DC-28/ED-22: after keys held behind F2 on a 150 ms circuit, the next key lands at the caret they left @blazor', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await clickBarEnd(grid);
@@ -1058,7 +1058,7 @@ async function recordEditorWrites(page) {
 const editorWrites = (page) => page.evaluate(() => window.__editorWrites.filter((text, i, all) => text !== all[i - 1]));
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-45: =B2 and four F4 presses in a cell give $B$2, B$2, $B2 and B2, the caret after each (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
@@ -1082,7 +1082,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(bar(grid)).toHaveValue('=$B$2');
     });
 
-    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, the caret after each, and the bar keeps the keyboard (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-45: =B2 and four F4 presses in the Formula Bar give the same four forms, the caret after each, and the bar keeps the keyboard (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'F2');
@@ -1103,7 +1103,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('DC-45: with no edit open, F4 is left to the browser and opens nothing', async ({ page }) => {
+test('DC-45: with no edit open, F4 is left to the browser and opens nothing @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D2');
     // Prevented once the listener has seen it, so the browser does nothing with it either.
@@ -1117,7 +1117,7 @@ test('DC-45: with no edit open, F4 is left to the browser and opens nothing', as
     await expect(bar(grid)).toHaveValue('=B2*C2');
 });
 
-test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers or touches', async ({ page }) => {
+test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Reference a selection covers or touches @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await clickBarEnd(grid);
@@ -1159,7 +1159,7 @@ test('DC-45: F4 cycles the Reference the caret touches mid-text, and every Refer
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form', async ({ page }) => {
+test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes on; the next arrow writes the relative form @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -1185,7 +1185,7 @@ test('DC-45: while pointing, F4 cycles the pointed Reference and pointing goes o
 // R1 (vi), (viii) and Part C's case 16, typed into D10 as Excel was: a pointed range cycles whole,
 // pointing goes on over it with the caret at its end, and a key typed next follows it; Shift+Home
 // extends the outline to the row's first column, still pointing.
-test('DC-45/SH-28: while pointing, F4 cycles both ends of the pointed range, and a key typed next follows it (ADR-0051; R1 (vi); the seventeenth Windows run, Part C, case 16)', async ({ page }) => {
+test('DC-45/SH-28: while pointing, F4 cycles both ends of the pointed range, and a key typed next follows it (ADR-0051; R1 (vi); the seventeenth Windows run, Part C, case 16) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
     await page.keyboard.type('=');
@@ -1211,7 +1211,7 @@ test('DC-45/SH-28: while pointing, F4 cycles both ends of the pointed range, and
     await expectFocusAt(grid, 'D10');
 });
 
-test('ED-29/DC-19: in the Formula Bar, after =, ↓ does not point: the text stays =, nothing is outlined, F4 and ↓ change nothing, and + types on (ADR-0051; R1 (i) to (iii))', async ({ page }) => {
+test('ED-29/DC-19: in the Formula Bar, after =, ↓ does not point: the text stays =, nothing is outlined, F4 and ↓ change nothing, and + types on (ADR-0051; R1 (i) to (iii)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
     await clickBarEnd(grid);
@@ -1240,7 +1240,7 @@ test('ED-29/DC-19: in the Formula Bar, after =, ↓ does not point: the text sta
 // On a circuit each F4 is answered a round trip later, and the keys behind it are held until it
 // is (ADR-0010), so each press carries the text the one before it left — never a text a round
 // trip old. On WebAssembly the same burst runs as the case without a round trip.
-test('DC-45: on a 150 ms circuit, four F4 presses in a burst give the four forms in order', async ({ page }) => {
+test('DC-45: on a 150 ms circuit, four F4 presses in a burst give the four forms in order @blazor', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await page.keyboard.type('=B2');
@@ -1267,7 +1267,7 @@ test('DC-45: on a 150 ms circuit, four F4 presses in a burst give the four forms
 // setting the value leaves the browser's own caret at the end meanwhile. A second F4 in that gap
 // carries that caret, which is not the user's: the Reference the first one rewrote cycles again,
 // not the one at the end of the text.
-test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles the same Reference', async ({ page }) => {
+test('DC-45: on a 150 ms circuit, a second F4 before the caret is placed cycles the same Reference @blazor', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await clickBarEnd(grid);
@@ -1320,7 +1320,7 @@ async function caretBeforeTheLastCharacter(page, grid, surface, text) {
 }
 
 for (const surface of ['cell', 'bar']) {
-    test(`SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; ${surface})`, async ({ page }) => {
+    test(`SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; ${surface}) @behaviour`, async ({ page }) => {
         const grid = sheet(page);
         const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A1:B2)');
 
@@ -1336,7 +1336,7 @@ for (const surface of ['cell', 'bar']) {
     });
 }
 
-test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Reference, in upper case, and the other end of a range as typed (ADR-0051; the seventeenth Windows run, Part C, cases 21 and 22)', async ({ page }) => {
+test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Reference, in upper case, and the other end of a range as typed (ADR-0051; the seventeenth Windows run, Part C, cases 21 and 22) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     for (const [typed, cycled] of [['=b2', '=$B$2'], ['=B2:A1', '=B2:$A$1']]) {
         await pressCell(grid, 'F2');
@@ -1357,7 +1357,7 @@ test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Re
 // on Shift+→, Shift+↓ and Shift+← and extended the Selection from D10; on Ctrl+→ it committed and
 // moved to XFD10, and on Ctrl+Shift+→ it committed and selected D10:XFD10. Row 10 of /sheet holds
 // nothing past A10, as Excel's held nothing.
-test('ED-2: typed into a cell, Shift+→, Shift+↓ and Shift+← commit and extend the Selection from it (ADR-0010; R1 (vii))', async ({ page }) => {
+test('ED-2: typed into a cell, Shift+→, Shift+↓ and Shift+← commit and extend the Selection from it (ADR-0010; R1 (vii)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const range = grid.locator('.ex-selection .ex-range');
     for (const [typed, key, from, to] of [
@@ -1393,7 +1393,7 @@ async function expectRangeHolds(grid, address) {
     }).toBe('holds');
 }
 
-test('ED-2: typed into a cell, Ctrl+→ commits and moves to the Sheet\'s last column; Ctrl+Shift+→ commits and selects to it (ADR-0010, ADR-0012; R1 (vii))', async ({ page }) => {
+test('ED-2: typed into a cell, Ctrl+→ commits and moves to the Sheet\'s last column; Ctrl+Shift+→ commits and selects to it (ADR-0010, ADR-0012; R1 (vii)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'D10');
     await page.keyboard.type('abc');
@@ -1425,7 +1425,7 @@ test('ED-2: typed into a cell, Ctrl+→ commits and moves to the Sheet\'s last c
     await expect(nameBox(grid)).toHaveValue('D10');
 });
 
-test('ED-2/DC-19: typed = into a cell, Shift+↓ points a range from the edited cell instead of selecting text, and nothing commits (ADR-0010, ADR-0051)', async ({ page }) => {
+test('ED-2/DC-19: typed = into a cell, Shift+↓ points a range from the edited cell instead of selecting text, and nothing commits (ADR-0010, ADR-0051) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await page.keyboard.type('=1+');
@@ -1451,7 +1451,7 @@ const paintOf = (locator) => locator.evaluate((element) => {
     return { line: style.outlineStyle, colour: style.outlineColor, ground: style.backgroundColor };
 });
 
-test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its own; Escape removes them', async ({ page }) => {
+test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its own; Escape removes them @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=A1+B2:C3');
@@ -1478,7 +1478,7 @@ test('DC-46: =A1+B2:C3 outlines A1 and B2:C3, each once and in a colour of its o
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
 });
 
-test('DC-46: a Reference across the pinned boundary is drawn whole in each layer and clipped to its side, as a selected range is (ADR-0008)', async ({ page }) => {
+test('DC-46: a Reference across the pinned boundary is drawn whole in each layer and clipped to its side, as a selected range is (ADR-0008) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=A1:B2');
@@ -1496,7 +1496,7 @@ test('DC-46: a Reference across the pinned boundary is drawn whole in each layer
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run)', async ({ page }) => {
+test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=A1+A1');
@@ -1510,7 +1510,7 @@ test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Wi
     await expect(editor(grid)).toHaveCount(0);
 });
 
-test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under dashes in the Focus outline\'s colour, which go once an operator follows; Enter removes them all', async ({ page }) => {
+test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under dashes in the Focus outline\'s colour, which go once an operator follows; Enter removes them all @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
     await page.keyboard.type('=');
@@ -1562,7 +1562,7 @@ test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under das
 
 const positionsGrid = (page) => page.locator('#sheet-positions .ex-grid');
 
-test('SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid\'s PV column in the colour Positions[PV] was given; Escape removes it', async ({ page }) => {
+test('SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid\'s PV column in the colour Positions[PV] was given; Escape removes it @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const positions = positionsGrid(page);
     await clickCell(grid, 'F2');
@@ -1593,7 +1593,7 @@ test('SH-31/DC-50: =A1+SUM(Positions[PV]) outlines the positions grid\'s PV colu
     await expect(grid.locator('.ex-reference-outline')).toHaveCount(0);
 });
 
-test('SH-31/DC-50: each column read is outlined once in its colour, whatever the Formula\'s casing; Enter removes them all', async ({ page }) => {
+test('SH-31/DC-50: each column read is outlined once in its colour, whatever the Formula\'s casing; Enter removes them all @behaviour', async ({ page }) => {
     const grid = sheet(page);
     const positions = positionsGrid(page);
     await clickCell(grid, 'F2');
@@ -1658,7 +1658,7 @@ async function fillDragHeard(page, grid, x, y) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (${chrome} Chrome)`, async ({ page }) => {
+    test(`DC-13/DC-27: dragging the fill handle continues a series; the Selection is source and target (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await enter(page, grid, 'F2', '1');
@@ -1684,7 +1684,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport', async ({ page }) => {
+test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await enter(page, grid, 'E2', '1');
     await enter(page, grid, 'E3', '2');
@@ -1727,7 +1727,7 @@ test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport
     await expect(cell(grid, end)).toHaveText(String(last - 1));
 });
 
-test('DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source', async ({ page }) => {
+test('DC-13: a Formula filled right shifts its References; a refused pattern leaves the Selection on the source @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // D2 =B2*C2 filled down to D2:D4's neighbours is already there; fill it right into E and F.
     await clickCell(grid, 'D2');
@@ -1816,7 +1816,7 @@ async function dragAxisHandleAlong(page, grid, cornerCell, where, to) {
     await expectHandleAt(grid, cornerCell, where);
 }
 
-test('DC-12/DC-13: a whole column\'s handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3))', async ({ page }) => {
+test('DC-12/DC-13: a whole column\'s handle stands beside its Heading; dragged right it fills every row, a lone number as a series, and dragged down it changes nothing (the readings of 2026-10-12, R5 (3)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // R5's column C, on column E, which is free on the page's Sheet; F lies clear of the Viewport's
     // right edge band. R5 dragged two columns; one is enough here, and two are layer 2's.
@@ -1854,7 +1854,7 @@ test('DC-12/DC-13: a whole column\'s handle stands beside its Heading; dragged r
     await expect(cell(grid, 'E1')).toHaveText('1');
 });
 
-test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4))', async ({ page }) => {
+test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its Heading; dragged down it fills every column, a lone number as a series, and dragged across it changes nothing (the readings of 2026-10-12, R5 (4)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     // R5's row 3, on row 6, which is free on the page's Sheet, between the table and the dates below
     // it. Rows 7 and 8 hold those dates ("As of", "Due"): the fill writes over them, blanks too, as
@@ -1894,7 +1894,7 @@ test('DC-12/DC-13: a whole row\'s handle stands at the row\'s left, beside its H
     await expect(cell(grid, 'E6')).toHaveText('5');
 });
 
-test('DC-12/DC-13: with row 1 scrolled away, a whole column\'s handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5))', async ({ page }) => {
+test('DC-12/DC-13: with row 1 scrolled away, a whole column\'s handle stays at the top of the part in view and fills from there (the readings of 2026-10-12, R5 (5)) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await enter(page, grid, 'E1', '1');
     await enter(page, grid, 'E5', 'x');
@@ -1917,7 +1917,7 @@ test('DC-12/DC-13: with row 1 scrolled away, a whole column\'s handle stays at t
 // ---------------------------------------------------------------------------------------------
 // The clipboard (DC-8, DC-33, SH-14)
 
-test('DC-8: a block pasted from the real clipboard onto one cell spills, and becomes the Selection', async ({ page }) => {
+test('DC-8: a block pasted from the real clipboard onto one cell spills, and becomes the Selection @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await page.evaluate(() => navigator.clipboard.writeText('1\t2\r\n3\t=F2+G2\r\n'));
     await clickCell(grid, 'F2');
@@ -1942,7 +1942,7 @@ test('DC-8: a block pasted from the real clipboard onto one cell spills, and bec
 // DOM focus left it and came back (found on /sheet, 2026-09-29). Every way out of an edit, under
 // both Chromes, followed by a copy and a paste by keyboard.
 for (const chrome of ['builtin', 'mud']) {
-    test(`CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (${chrome} Chrome)`, async ({ page }) => {
+    test(`CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after every way out of an edit (${chrome} Chrome) ${chromeHost(chrome)}`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         const copied = async (address, text) => {
@@ -2019,7 +2019,7 @@ for (const chrome of ['builtin', 'mud']) {
 // copy or paste its key fires is taken in its place and done at its turn, where the keyboard is
 // then. On WebAssembly it is the case without a round trip.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+    test(`ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (${chrome} Chrome) @blazor`, async ({ page }) => {
         await underChrome(page, chrome);
         const grid = sheet(page);
         await setRoundTrip(150);
@@ -2102,7 +2102,7 @@ async function pasteAsExcel(grid, cells, width) {
     }, { text: '6\r\n26/09/2026\r\n1,234.50\r\n', html: excelColumnHtml(width, cells) });
 }
 
-test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused, the notice says why, and the Selection stays', async ({ page }) => {
+test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused, the notice says why, and the Selection stays @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F7');
     await pasteAsExcel(grid, ['6', '######', '######'], 49);
@@ -2122,7 +2122,7 @@ test('DC-38/ADR-0048: Excel\'s too-narrow column pasted onto one cell is refused
     await expect(cell(grid, 'F9')).toHaveText('');
 });
 
-test('DC-8: Excel\'s column wide enough, with the same flavours, file and RTF included, pastes and spills', async ({ page }) => {
+test('DC-8: Excel\'s column wide enough, with the same flavours, file and RTF included, pastes and spills @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F7');
     await pasteAsExcel(grid, ['6', '26/09/2026', '1,234.50'], 74);
@@ -2151,7 +2151,7 @@ async function capturePastes(page) {
     return async () => page.evaluate(() => window.__pastes.at(-1));
 }
 
-test('SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References; outward it carries Values', async ({ page }, testInfo) => {
+test('SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References; outward it carries Values @blazor', async ({ page }, testInfo) => {
     const grid = sheet(page);
     const lastPaste = await capturePastes(page);
     // Copy D2:D3 (=B2*C2, =B3*C3) by keyboard.
@@ -2181,7 +2181,7 @@ test('SH-14/DC-33: a copy inside the Sheet carries Entries and shifts References
     expect(pasted?.html ?? '').toContain('<table');
 });
 
-test('DC-33: whether the invariant marker survives the asynchronous clipboard route (a menu copy)', async ({ page }, testInfo) => {
+test('DC-33: whether the invariant marker survives the asynchronous clipboard route (a menu copy) @blazor', async ({ page }, testInfo) => {
     const grid = sheet(page);
     const lastPaste = await capturePastes(page);
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
@@ -2208,7 +2208,7 @@ test('DC-33: whether the invariant marker survives the asynchronous clipboard ro
 // ---------------------------------------------------------------------------------------------
 // Undo and redo (DC-30)
 
-test('DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet\'s stack; with an edit open they are the editor\'s', async ({ page }) => {
+test('DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet\'s stack; with an edit open they are the editor\'s @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await enter(page, grid, 'F2', '5');
     await enter(page, grid, 'F3', '6');
@@ -2247,7 +2247,7 @@ test('DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet\'s stack; with an edi
 // input's own history. On the Server host every input's render writes the surface's text back
 // into it, which empties the browser's undo history (found by this suite, 2026-09-27; the same
 // write-back that loses characters in the SRV-5 test below), so there Ctrl+Z undoes nothing.
-test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', async ({ page }) => {
+test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing @blazor', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F4');
     await page.keyboard.type('abc');
@@ -2276,7 +2276,7 @@ test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing', asyn
 // ED-22's own cases pass because every key there is held behind the key that opened the editor
 // and replayed by the listener. Left failing on the Server host until the core stops writing a
 // surface's own typing back into it.
-test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing', async ({ page }) => {
+test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 150 ms circuit loses nothing @blazor', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F3');
     await page.keyboard.type('=');
@@ -2289,7 +2289,7 @@ test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 
     await expect(cell(grid, 'F3')).toHaveText('15');
 });
 
-test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'s', async ({ page }) => {
+test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'s @behaviour', async ({ page }) => {
     const positionsGrid = positions(page);
     await pressAt(positionsGrid.locator("[id$='-r1c1']"));
     await expectKeyboardOn(positionsGrid);
@@ -2313,7 +2313,7 @@ test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'
 // Resize grips without the menu (DC-36), and a grid that declares nothing beside one that
 // declares everything (DC-25)
 
-test('DC-36: the grips resize a column and size it to fit, and no header carries a menu button', async ({ page }) => {
+test('DC-36: the grips resize a column and size it to fit, and no header carries a menu button @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await expect(grid.locator('.ex-menu-button')).toHaveCount(0);
     const headerB = grid.locator('.ex-header-cell', { hasText: /^B$/ });
@@ -2338,7 +2338,7 @@ test('DC-36: the grips resize a column and size it to fit, and no header carries
     expect(fits).toBe(true);
 });
 
-test('DC-25: the positions grid, declaring nothing, keeps ExGrid\'s own behaviour beside the Sheet', async ({ page }) => {
+test('DC-25: the positions grid, declaring nothing, keeps ExGrid\'s own behaviour beside the Sheet @behaviour', async ({ page }) => {
     const positionsGrid = positions(page);
     await expect(positionsGrid.locator('.ex-formula-bar, .ex-row-heading, .ex-headings-corner, .ex-fill-handle')).toHaveCount(0);
     // Ctrl+↓ goes to the grid's edge, not to a block's end: it has no edge answer.

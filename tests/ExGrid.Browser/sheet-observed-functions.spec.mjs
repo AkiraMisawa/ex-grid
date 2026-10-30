@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, clickCell, editor, candidates, enter, bar } from './sheet-helpers.mjs';
 
 test.use({ viewport: { width: 1280, height: 1000 } });
@@ -7,7 +7,7 @@ for (const chrome of ['builtin', 'mud']) {
     test.describe(`observed functions under ${chrome}`, () => {
         test.beforeEach(async ({ page }) => openSheet(page, chrome));
 
-        test('ADR-0047/0051: observed function completion commits and recalculates the extended SUMIF range', async ({ page }) => {
+        test(`ADR-0047/0051: observed function completion commits and recalculates the extended SUMIF range ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await enter(page, grid, 'E2', '1');
             await enter(page, grid, 'E3', '2');
@@ -36,7 +36,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'G3')).toHaveText('40');
         });
 
-        test('ADR-0058: the lookup mode list writes the chosen value with Tab', async ({ page }) => {
+        test(`ADR-0058: the lookup mode list writes the chosen value with Tab ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await enter(page, grid, 'E2', '1');
             await enter(page, grid, 'E3', '2');

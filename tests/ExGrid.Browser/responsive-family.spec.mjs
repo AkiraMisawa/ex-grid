@@ -45,7 +45,7 @@ async function expectPreservedFocus(grid) {
 // changes. Each case keeps its document through all layouts, widths and supported pin choices.
 for (const product of ['grid', 'sheet', 'pivot']) {
     for (const chrome of ['builtin', 'mud']) {
-        test(`RT-1 family ${product} ${chrome}: parent sizing preserves precision, geometry and View State (ADR-0045)`, async ({ page }) => {
+        test(`RT-1 family ${product} ${chrome}: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor`, async ({ page }) => {
             await page.goto(`/responsive-family?product=${product}&chrome=${chrome}`);
             const grid = page.locator('#family-box .ex-grid');
             const scroller = grid.locator('.ex-scroller');

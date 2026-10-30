@@ -134,7 +134,7 @@ function expected(style) {
 test.describe('DC-59: lines', () => {
     for (const [index, style] of STYLES.entries()) {
         for (const side of ['bottom', 'right']) {
-            test(`DC-59: a ${style} line on a cell's ${side} edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9)`, async ({ page }, testInfo) => {
+            test(`DC-59: a ${style} line on a cell's ${side} edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9) @behaviour`, async ({ page }, testInfo) => {
                 await open(page);
                 // The 150% run is the display scale chrome-150 sets, not a default it fell back from.
                 expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
@@ -172,7 +172,7 @@ test.describe('DC-59: lines', () => {
         }
     }
 
-    test('DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0071, case 10)', async ({ page }) => {
+    test('DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0071, case 10) @behaviour', async ({ page }) => {
         await open(page);
         const cell = cellOf(page, 'appearance-borders', 3, 2);
         await cell.scrollIntoViewIfNeeded();
@@ -184,7 +184,7 @@ test.describe('DC-59: lines', () => {
         expect(sameColour(pixel(1), YELLOW), 'the Fill after it').toBe(true);
     });
 
-    test('DC-59: the Focus and the Selection are drawn above a line (ADR-0071, case 11)', async ({ page }) => {
+    test('DC-59: the Focus and the Selection are drawn above a line (ADR-0071, case 11) @behaviour', async ({ page }) => {
         await open(page);
         const grid = page.locator('#appearance-borders .ex-grid');
         const lined = cellOf(page, 'appearance-borders', 3, 2);
@@ -223,7 +223,7 @@ test.describe('DC-59: lines', () => {
     });
 });
 
-test('DC-58: a bold number that fits at the regular widths and not at the bold ones is #### (ADR-0050 item 15, ADR-0016)', async ({ page }) => {
+test('DC-58: a bold number that fits at the regular widths and not at the bold ones is #### (ADR-0050 item 15, ADR-0016) @blazor', async ({ page }) => {
     await open(page);
     const regular = cellOf(page, 'appearance-bold', 0, 1);
     const bold = cellOf(page, 'appearance-bold', 1, 1);
@@ -275,7 +275,7 @@ test('DC-58: a bold number that fits at the regular widths and not at the bold o
     expect(hashes.last).toBeLessThan(hashes.columns - 1);
 });
 
-test('DC-58: italic text is not cut at either edge of its cell (ADR-0071, "Bold, and what fits")', async ({ page }) => {
+test('DC-58: italic text is not cut at either edge of its cell (ADR-0071, "Bold, and what fits") @behaviour', async ({ page }) => {
     await open(page);
     for (const [row, column] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
         const cell = cellOf(page, 'appearance-italic', row, column);
@@ -359,7 +359,7 @@ async function expectTwins(read, row, block, what) {
     return { plain, filled };
 }
 
-test('ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row keeps the row\'s tint, beneath its lines and above its Fill', async ({ page }) => {
+test('ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row keeps the row\'s tint, beneath its lines and above its Fill @behaviour', async ({ page }) => {
     await open(page);
     const read = await tintGrounds(page);
     const unstriped = await read(PLAIN_ROW, BLOCKS.pinned + PLAIN);
@@ -377,7 +377,7 @@ test('ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row keeps th
     }
 });
 
-test('ADR-0050 item 15 / ADR-0038 (UX-15): a lined pinned cell of a striped row keeps the stripe, beneath its lines and above its Fill', async ({ page }) => {
+test('ADR-0050 item 15 / ADR-0038 (UX-15): a lined pinned cell of a striped row keeps the stripe, beneath its lines and above its Fill @behaviour', async ({ page }) => {
     await open(page);
     const read = await tintGrounds(page);
     const unstriped = await read(PLAIN_ROW, BLOCKS.pinned + PLAIN);
@@ -389,7 +389,7 @@ test('ADR-0050 item 15 / ADR-0038 (UX-15): a lined pinned cell of a striped row 
     await expectTwins(read, STRIPED_ROW, 'scrolling', 'a striped row');
 });
 
-test('ADR-0050 item 15 / ADR-0006: a lined Missing cell keeps its state\'s tint, beneath its lines and above its Fill', async ({ page }) => {
+test('ADR-0050 item 15 / ADR-0006: a lined Missing cell keeps its state\'s tint, beneath its lines and above its Fill @behaviour', async ({ page }) => {
     await open(page);
     const read = await tintGrounds(page);
 

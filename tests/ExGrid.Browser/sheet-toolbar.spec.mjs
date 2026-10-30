@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, holdAnswers, circuitQuiet, alterPage, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, holdAnswers, circuitQuiet, alterPage, settled, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, toolbarItem, toolbarArrow, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
@@ -106,7 +106,7 @@ for (const chrome of ['builtin', 'mud']) {
             await openSheet(page, chrome);
         });
 
-        test(`SH-48/ADR-0100: the toolbar stands above the Formula Bar, outside the grid's root, and the grid below it (${chrome})`, async ({ page }) => {
+        test(`SH-48/ADR-0100: the toolbar stands above the Formula Bar, outside the grid's root, and the grid below it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             const band = toolbar(page);
             await expect(band).toBeVisible();
@@ -129,7 +129,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(Math.abs(bandBox.height - first.height - second.height)).toBeLessThanOrEqual(1);
         });
 
-        test(`SH-50/ADR-0100: Bold sets bold, is shown pressed over a bold Focus, and the keyboard stays on the Sheet (${chrome})`, async ({ page }) => {
+        test(`SH-50/ADR-0100: Bold sets bold, is shown pressed over a bold Focus, and the keyboard stays on the Sheet (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A2');
             const bold = toolbarItem(page, 'Bold');
@@ -150,7 +150,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-50/ADR-0100: while a cell is edited every item is greyed out, the page's own included (${chrome})`, async ({ page }) => {
+        test(`SH-50/ADR-0100: while a cell is edited every item is greyed out, the page's own included (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C4');
             await expect(toolbarItem(page, 'Bold')).toBeEnabled();
@@ -167,7 +167,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(toolbarItem(page, 'Mark reviewed')).toBeEnabled();
         });
 
-        test(`ADR-0100: a Fill chosen from the palette is painted, and the face then sets it again (${chrome})`, async ({ page }) => {
+        test(`ADR-0100: a Fill chosen from the palette is painted, and the face then sets it again (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C2');
 
@@ -186,7 +186,7 @@ for (const chrome of ['builtin', 'mud']) {
         // the key it names does — Underline as Ctrl+U (the seventeenth Windows run's h7),
         // Strikethrough as Ctrl+5 (the fourteenth's case 7) — and Bold and Italic widen nothing, as
         // Ctrl+B and Ctrl+I do not.
-        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
             const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
@@ -224,7 +224,7 @@ for (const chrome of ['builtin', 'mud']) {
         // 2026-10-14, run 18a, widening case 5), never one sized by its grip, each in its press's one undo
         // step; SetCellFormatAsync keeps widening as Font.Color through COM, which does not widen. The Fill
         // Colour face widens nothing, as the fourteenth Windows run's Fill Colour button did not (case 7).
-        test(`ADR-0100/ADR-0071 (decided with the user, 2026-10-14): over #### the Font Colour, by its face and from its list, widens the column at the standard width and leaves a sized one, each taken back by one Ctrl+Z; the Fill Colour face widens no column (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0071 (decided with the user, 2026-10-14): over #### the Font Colour, by its face and from its list, widens the column at the standard width and leaves a sized one, each taken back by one Ctrl+Z; the Fill Colour face widens no column (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
             const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
@@ -262,7 +262,7 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test(`ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (${chrome})`, async ({ page }, testInfo) => {
+        test(`ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (${chrome}) @blazor`, async ({ page }, testInfo) => {
             const grid = sheet(page);
             const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
             const before = await inkOf(cell(grid, 'E1'));
@@ -285,7 +285,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(openLists(page)).toHaveCount(0);
         });
 
-        test(`ADR-0100: the page's own action runs over the Selection (${chrome})`, async ({ page }) => {
+        test(`ADR-0100: the page's own action runs over the Selection (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
 
@@ -299,14 +299,14 @@ for (const chrome of ['builtin', 'mud']) {
 // The Sheet's frame was display: contents without the toolbar until the Sheet Tabs (ADR-0331), which stand
 // under the grid in that frame on every Sheet, inside the area that hears a tab's drag (workbook ticket 06);
 // SheetTabsTests pins the frame without either.
-test('SH-48/ADR-0100: the page can hide the toolbar, and the Sheet keeps its Sheet Tabs under the grid', async ({ page }) => {
+test('SH-48/ADR-0100: the page can hide the toolbar, and the Sheet keeps its Sheet Tabs under the grid @behaviour', async ({ page }) => {
     await page.goto('/sheet?toolbar=off');
     await expect(cell(sheet(page), 'A1')).toHaveText('Item');
     await expect(page.locator('.ex-sheet-toolbar')).toHaveCount(0);
     await expect(page.locator('.ex-sheet > .ex-sheet-tab-area > .ex-sheet-tabs')).toHaveCount(1);
 });
 
-test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its items, Enter presses one, and the keyboard goes back to the Sheet', async ({ page }) => {
+test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its items, Enter presses one, and the keyboard goes back to the Sheet @behaviour', async ({ page }) => {
     await openSheet(page, 'builtin');
     const grid = sheet(page);
     await pressCell(grid, 'A3');
@@ -326,7 +326,7 @@ test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its ite
 // whether Alt's release is kept from Chrome's and Edge's menu — are a Windows run's to read; here the
 // keys reach the page and mean what ADR-0100 says.
 for (const chrome of ['builtin', 'mud']) {
-    test(`SH-52/ADR-0100: Alt released alone shows the rows' KeyTips, H shows Excel's letters, and 1 sets bold with the keyboard back on the Sheet (${chrome})`, async ({ page }) => {
+    test(`SH-52/ADR-0100: Alt released alone shows the rows' KeyTips, H shows Excel's letters, and 1 sets bold with the keyboard back on the Sheet (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'A4');
@@ -358,7 +358,7 @@ for (const chrome of ['builtin', 'mud']) {
 // keyboard leaves the toolbar through was aria-hidden while it held focus, which Chromium says in the
 // console.
 for (const chrome of ['builtin', 'mud']) {
-    test(`SH-52/ADR-0100/ADR-0039 (R2 (b), 2026-10-12): Alt, H, F, C puts the keyboard in the Font Colour list; Escape goes back to the Home row's KeyTips, Escape to the rows', Escape to the Sheet, and the next list is the only one (${chrome})`, async ({ page }) => {
+    test(`SH-52/ADR-0100/ADR-0039 (R2 (b), 2026-10-12): Alt, H, F, C puts the keyboard in the Font Colour list; Escape goes back to the Home row's KeyTips, Escape to the rows', Escape to the Sheet, and the next list is the only one (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         // R2 (b) of the Windows readings of 2026-10-12, observed: after Alt, H, F, C one Escape showed
         // the Home tab's KeyTips with the keyboard not back in the cell, a second the tabs', a third none.
         // Each step waited for here; typed at once below.
@@ -404,7 +404,7 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Control+z');
     });
 
-    test(`SH-52/ADR-0100 (2026-10-12; R2 (a), observed): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome})`, async ({ page }) => {
+    test(`SH-52/ADR-0100 (2026-10-12; R2 (a), observed): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'C2');
@@ -423,7 +423,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expectKeyboardOn(grid);
     });
 
-    test(`ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (${chrome})`, async ({ page }) => {
+    test(`ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'C2');
@@ -466,7 +466,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
     });
 
-    test(`ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (${chrome})`, async ({ page }) => {
+    test(`ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (${chrome}) @blazor`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'A4');
@@ -498,7 +498,7 @@ for (const chrome of ['builtin', 'mud']) {
 // the element a list leaves through, and never let go. A key is held only while a hand-back is under way,
 // and since 2026-10-13 (decided with the user) no control inside the band takes Tab under either Chrome.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0100: Tab goes through every control of the toolbar and out of it; the keys typed on each are that control's, nothing is held, and the band's own keys work after (${chrome})`, async ({ page }) => {
+    test(`ADR-0100: Tab goes through every control of the toolbar and out of it; the keys typed on each are that control's, nothing is held, and the band's own keys work after (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await openSheet(page, chrome);
         const grid = sheet(page);
         await pressCell(grid, 'B3');
@@ -558,7 +558,7 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a level; Alt with an arrow is a chord', async ({ page }) => {
+test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a level; Alt with an arrow is a chord @behaviour', async ({ page }) => {
     await openSheet(page, 'builtin');
     const grid = sheet(page);
     await pressCell(grid, 'C2');
@@ -582,7 +582,7 @@ test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a le
     await expect(tips).toHaveCount(0);
 });
 
-test('SH-51/ADR-0100: Ctrl+F1 hides the toolbar the page binds, and shows it again', async ({ page }) => {
+test('SH-51/ADR-0100: Ctrl+F1 hides the toolbar the page binds, and shows it again @behaviour', async ({ page }) => {
     await openSheet(page, 'builtin');
     const grid = sheet(page);
     await pressCell(grid, 'B2');
@@ -613,7 +613,7 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(0);
         });
 
-        test(`SH-52/ADR-0100/ADR-0050: Alt, H, 1 typed at once sets bold, with no edit opened and the KeyTips gone (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100/ADR-0050: Alt, H, 1 typed at once sets bold, with no edit opened and the KeyTips gone (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -637,7 +637,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Input-order ticket 04: the KeyTip's command is an input in the Sheet's order, and the key typed
         // behind it is taken after it, where the keyboard landed: the arrow moves the Focus from the cell the
         // command set bold, and never reaches the band.
-        test(`ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (${chrome})`, async ({ page }) => {
+        test(`ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -661,7 +661,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Input-order ticket 04: a press on a command is numbered as it happens (data-ex-claims), so the
         // arrow typed straight after it is taken once the command has been answered: bold lands on the cell
         // pressed, and the arrow moves from it.
-        test(`ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (${chrome})`, async ({ page }) => {
+        test(`ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -678,7 +678,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
         });
 
-        test(`SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -711,7 +711,7 @@ for (const chrome of ['builtin', 'mud']) {
         // H opened an edit in C2. With no round trip added the band takes the keyboard while these keys are
         // being typed, which is where that happened (six runs in ten); at 80 ms every key is held.
         for (const rtt of [0, 80]) {
-            test(`SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (${chrome}, ${rtt} ms)`, async ({ page }) => {
+            test(`SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (${chrome}, ${rtt} ms) @blazor`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
                 const before = await cell(grid, 'C2').textContent();
@@ -736,7 +736,7 @@ for (const chrome of ['builtin', 'mud']) {
             });
         }
 
-        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await setRoundTrip(80);
@@ -752,7 +752,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B4');
         });
 
-        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, 1 typed at once sets bold from the Home row's KeyTips, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, 1 typed at once sets bold from the Home row's KeyTips, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -770,7 +770,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await keyTips(page, 'h', 'h');
@@ -796,7 +796,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once, opens the next list, the only one (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once, opens the next list, the only one (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'f', 'c');
@@ -826,7 +826,7 @@ for (const chrome of ['builtin', 'mud']) {
         // held, they took the keyboard to the toolbar and back to the Sheet, and only then was the Alt
         // released. The key gate had forgotten its press when the keyboard left the grid, so the release
         // started no KeyTips, and H, H opened an edit in the cell.
-        test(`SH-52/ADR-0100/ADR-0050 (ticket 07): Escape three times in a list a KeyTip opened, then Alt held down until the keyboard is back on the Sheet, then H, H, opens the next list, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100/ADR-0050 (ticket 07): Escape three times in a list a KeyTip opened, then Alt held down until the keyboard is back on the Sheet, then H, H, opens the next list, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'f', 'c');
@@ -862,7 +862,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(openLists(page)).toHaveCount(0);
         });
 
-        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await page.keyboard.press('F2');
@@ -885,7 +885,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
         });
 
-        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Alt, Alt, H, 1 typed at once turns the KeyTips on and off and types h1 into the cell, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`SH-52/ADR-0100 (decided with the user, 2026-10-13): Alt, Alt, H, 1 typed at once turns the KeyTips on and off and types h1 into the cell, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
 
@@ -916,7 +916,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'A4')).toHaveText('Plums');
         });
 
-        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (${chrome})`, async ({ page }) => {
+        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             // The host's answers are held across the keys, so nothing .NET answers lands between them.
@@ -935,7 +935,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectFocusAt(grid, 'B4');
         });
 
-        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome})`, async ({ page }) => {
+        test(`ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C2');
             const formatCells = formatCellsOf(grid);
@@ -959,7 +959,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-number-format')).toHaveText(before ?? '');
         });
 
-        test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A4');
             await setRoundTrip(80);
@@ -976,7 +976,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
         });
 
-        test(`ADR-0100/ADR-0050: Enter typed at once after Enter on a toolbar item reaches the Sheet, not the item (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0050: Enter typed at once after Enter on a toolbar item reaches the Sheet, not the item (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'A3');
             const band = toolbar(page);
@@ -997,7 +997,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#sheet-focus-font')).toHaveText('italic');
         });
 
-        test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (${chrome})`, async ({ page }) => {
+        test(`ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (${chrome}) @blazor`, async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'B3');
             await keyTips(page, 'h', 'h');
@@ -1036,7 +1036,7 @@ test.describe('the Sheet\'s own markup that claims nothing (input-order ticket 0
         await openSheet(page);
     });
 
-    test('ADR-0240: a press on unclaimed markup in the Sheet while a toolbar press is held reaches its handler, release and click too', async ({ page }) => {
+    test('ADR-0240: a press on unclaimed markup in the Sheet while a toolbar press is held reaches its handler, release and click too @blazor', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'A4');
         // A control of the Consumer's own in the Sheet's box, outside the toolbar band and the grid, that

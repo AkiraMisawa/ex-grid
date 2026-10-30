@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -97,7 +97,7 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         for (const how of ['a press', 'a press, then the menu gone', 'Enter', 'Ctrl+1']) {
-            test(`ticket 93/ADR-0050/ADR-0039: a digit typed straight after ${how} reaches Format Cells, and never starts an edit`, async ({ page }) => {
+            test(`ticket 93/ADR-0050/ADR-0039: a digit typed straight after ${how} reaches Format Cells, and never starts an edit ${chromeHost(chrome)}`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
                 const formatCells = formatCellsOf(grid);
@@ -125,7 +125,7 @@ for (const chrome of ['builtin', 'mud']) {
         }
 
         for (const how of ['Enter', 'Ctrl+1']) {
-            test(`ticket 93/ADR-0039: End typed straight after ${how} reaches Format Cells' tabs, in order behind the digit`, async ({ page }) => {
+            test(`ticket 93/ADR-0039: End typed straight after ${how} reaches Format Cells' tabs, in order behind the digit ${chromeHost(chrome)}`, async ({ page }) => {
                 const grid = sheet(page);
                 await pressCell(grid, 'C2');
                 const formatCells = formatCellsOf(grid);
@@ -157,7 +157,7 @@ for (const chrome of ['builtin', 'mud']) {
             await setRoundTrip(0);
         });
 
-        test('ticket 93/ADR-0018: the keys held for one Sheet\'s Format Cells are never the other\'s, and the other types as ever', async ({ page }) => {
+        test(`ticket 93/ADR-0018: the keys held for one Sheet's Format Cells are never the other's, and the other types as ever ${chromeHost(chrome)}`, async ({ page }) => {
             const left = sheet(page, 0);
             const right = sheet(page, 1);
             const formatCells = formatCellsOf(left);

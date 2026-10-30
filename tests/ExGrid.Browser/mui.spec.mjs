@@ -25,7 +25,7 @@ async function open(page) {
 // Cells are pointer-events: none by design; the Viewport is the delegated target (ADR-0004).
 const press = (page, row, column, modifiers = []) => cell(page, row, column).click({ force: true, modifiers });
 
-test('UX-3 / ADR-0027: under MUI\'s styles the painted geometry is what the grid declared, at either Density, in MUI\'s default stack', async ({ page }) => {
+test('UX-3 / ADR-0027: under MUI\'s styles the painted geometry is what the grid declared, at either Density, in MUI\'s default stack @behaviour', async ({ page }) => {
     await open(page);
     const measured = () => grid(page).evaluate((g) => {
         const rows = [...g.querySelectorAll('.ex-viewport > .ex-row')];
@@ -54,7 +54,7 @@ test('UX-3 / ADR-0027: under MUI\'s styles the painted geometry is what the grid
     }
 });
 
-test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s primary, and the outline reads 3:1 in light and dark', async ({ page }) => {
+test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s primary, and the outline reads 3:1 in light and dark @behaviour', async ({ page }) => {
     await open(page);
     const colours = async () => {
         const css = await grid(page).evaluate((g) => {
@@ -102,7 +102,7 @@ test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s
     }
 });
 
-test('KB-30 / ADR-0390: a column menu drawn in MUI\'s list item buttons is crossed by the arrows, Home and End, and Enter runs its item', async ({ page }) => {
+test('KB-30 / ADR-0390: a column menu drawn in MUI\'s list item buttons is crossed by the arrows, Home and End, and Enter runs its item @behaviour', async ({ page }) => {
     await open(page);
     await press(page, 1, 0);
     await page.keyboard.press('Alt+ArrowDown');
@@ -125,7 +125,7 @@ test('KB-30 / ADR-0390: a column menu drawn in MUI\'s list item buttons is cross
 
 // @ex-grid/chart-mui on /mui-chart: what only a browser shows of the Chart Dock under MUI. The tabs, the targets, the
 // refusals and the slots' commands are the contracts layer 2 runs against MuiChartDock.
-test('ADR-0258, ADR-0390: the MUI Chart Dock opens a chart beside the grid, never over it, and the theme\'s primary and secondary lead its series in light and dark', async ({ page }) => {
+test('ADR-0258, ADR-0390: the MUI Chart Dock opens a chart beside the grid, never over it, and the theme\'s primary and secondary lead its series in light and dark @behaviour', async ({ page }) => {
     await page.goto('/mui-chart');
     const curves = page.locator('.mui-ex-grid [role=grid]');
     const at = (row, column) => curves.locator(`[id$='r${row}c${column}']`);
@@ -173,7 +173,7 @@ test('ADR-0258, ADR-0390: the MUI Chart Dock opens a chart beside the grid, neve
 // @ex-grid/pivot-mui on /pivot-mui: what only a browser shows of ExPivot under MUI. What each slot draws and calls
 // back is the contract layer 2 runs against muiPivotChrome; here, the pane's layout under MUI's styles, the mark the
 // stylesheet draws on the current choice, and the theme's colours in both schemes.
-test('ADR-0061, ADR-0390: under MUI the Field List keeps its Areas whole at the pane\'s foot, the current layout choice is marked, and the theme paints the pivot in light and dark', async ({ page }) => {
+test('ADR-0061, ADR-0390: under MUI the Field List keeps its Areas whole at the pane\'s foot, the current layout choice is marked, and the theme paints the pivot in light and dark @behaviour', async ({ page }) => {
     await page.goto('/pivot-mui');
     const pivot = page.locator('.mui-ex-pivot');
     const pane = pivot.locator('.ex-pivot-field-list');

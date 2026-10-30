@@ -30,7 +30,7 @@ async function highestMark(chart, series) {
     return [box.x + best[0] + 2, box.y + best[1] + 2];
 }
 
-test('ADR-0290: the tooltip reads the one point nearest the pointer, and nothing away from every point', async ({ page }) => {
+test('ADR-0290: the tooltip reads the one point nearest the pointer, and nothing away from every point @behaviour', async ({ page }) => {
     const chart = cds(page);
     const [x, y] = await highestMark(chart, 'names');
     await page.mouse.move(x, y);
@@ -44,7 +44,7 @@ test('ADR-0290: the tooltip reads the one point nearest the pointer, and nothing
     await expect(tooltip).toHaveCount(0);
 });
 
-test('ADR-0290, ADR-0258: a click on a point moves the grid\'s Focus to its row', async ({ page }) => {
+test('ADR-0290, ADR-0258: a click on a point moves the grid\'s Focus to its row @behaviour', async ({ page }) => {
     const [x, y] = await highestMark(cds(page), 'names');
     await page.mouse.move(x, y);
     await expect(cds(page).locator('.ex-chart-tooltip')).toBeVisible();
@@ -54,7 +54,7 @@ test('ADR-0290, ADR-0258: a click on a point moves the grid\'s Focus to its row'
     await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r57c2$/);
 });
 
-test('ADR-0290: a rectangle dragged across the plot narrows both axes, and the page is handed the range', async ({ page }) => {
+test('ADR-0290: a rectangle dragged across the plot narrows both axes, and the page is handed the range @behaviour', async ({ page }) => {
     const chart = cds(page);
     const hit = chart.locator('.ex-chart-hit').first();
     await hit.scrollIntoViewIfNeeded();
@@ -73,7 +73,7 @@ test('ADR-0290: a rectangle dragged across the plot narrows both axes, and the p
     await expect(chart.locator('.ex-chart-tooltip-position')).not.toHaveText('DSTR');
 });
 
-test('ADR-0290: the spread on a logarithmic axis is ticked by decades', async ({ page }) => {
+test('ADR-0290: the spread on a logarithmic axis is ticked by decades @behaviour', async ({ page }) => {
     const chart = cds(page);
     await page.locator('#log-spread').check();
     await circuitQuiet();

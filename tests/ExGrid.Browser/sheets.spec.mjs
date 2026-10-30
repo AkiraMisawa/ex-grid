@@ -26,7 +26,7 @@ test.beforeEach(async ({ page, context }) => {
     await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
 });
 
-test('SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard', async ({ page }) => {
+test('SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await enter(page, left, 'B1', '11');
@@ -48,7 +48,7 @@ test('SH-13/DC-25: typing and Formulas stay in the Sheet that has the keyboard',
     await expect(bar(left)).toHaveValue('');
 });
 
-test('SH-13: each Sheet keeps its own undo stack', async ({ page }) => {
+test('SH-13: each Sheet keeps its own undo stack @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await enter(page, left, 'B1', '11');
@@ -70,7 +70,7 @@ test('SH-13: each Sheet keeps its own undo stack', async ({ page }) => {
     await expect(cell(right, 'B1')).toHaveText('20');
 });
 
-test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong to one Sheet', async ({ page }) => {
+test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong to one Sheet @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await clickCell(left, 'D1');
@@ -113,7 +113,7 @@ test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong
     await expectFocusAt(left, 'E2');
 });
 
-test('ADR-0018: a Context Menu opens in the Sheet it was asked of, and its command acts there', async ({ page }) => {
+test('ADR-0018: a Context Menu opens in the Sheet it was asked of, and its command acts there @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await pressAt(cell(right, 'A1'), { button: 'right' });
@@ -132,7 +132,7 @@ test('ADR-0018: a Context Menu opens in the Sheet it was asked of, and its comma
 // it happened every time. ADR-0018: keys must never cross instances. The hand-back now lands
 // only while DOM focus is still inside that grid's root or on nothing (ADR-0021, added
 // 2026-09-27).
-test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late', async ({ page }) => {
+test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late @blazor', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     await clickCell(left, 'D1');
@@ -154,7 +154,7 @@ test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other o
 // ExSheet never reaches another instance (ADR-0018, ADR-0049): it tells which Linked Table columns
 // its Formula reads, and the Pointing Scope the page put it in outlines them in the grid beneath that
 // Sheet only, the one grid registered in that Scope (SH-31, DC-25, ADR-0057, ADR-0058).
-test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid of its own Pointing Scope', async ({ page }) => {
+test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid of its own Pointing Scope @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     const leftPositions = page.locator('#sheet-left-positions .ex-grid');
@@ -194,7 +194,7 @@ test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid
 // the one that coloured last would have registered its highlight under it in place of the other's,
 // and the other's References, coloured into a highlight no longer registered, would show plain when
 // the keyboard came back to it.
-test('ADR-0018/ADR-0057: each Sheet keeps its own colours while the other edits, under highlights named for it', async ({ page }) => {
+test('ADR-0018/ADR-0057: each Sheet keeps its own colours while the other edits, under highlights named for it @behaviour', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     // The References a grid's Cell Editor shows coloured, and the stretch on the grey Point wrote.

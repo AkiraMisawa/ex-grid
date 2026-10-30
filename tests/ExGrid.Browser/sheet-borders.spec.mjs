@@ -81,7 +81,7 @@ async function expectLine(page, style, side) {
 test.describe('DC-59: lines on the Sheet', () => {
     for (const style of STYLES) {
         for (const side of ['bottom', 'right']) {
-            test(`DC-59/SH-46: a ${style} line on a Sheet cell's ${side} edge is drawn as Excel draws it, centred on the gridline, at the run's scale (ADR-0071, case 9)`, async ({ page }, testInfo) => {
+            test(`DC-59/SH-46: a ${style} line on a Sheet cell's ${side} edge is drawn as Excel draws it, centred on the gridline, at the run's scale (ADR-0071, case 9) @behaviour`, async ({ page }, testInfo) => {
                 await openCase(page, 'lines');
                 expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
                 await expectLine(page, style, side);
@@ -92,7 +92,7 @@ test.describe('DC-59: lines on the Sheet', () => {
     // Where the page puts the Sheet is the page's: a line of text above it in another font puts it
     // at a fraction of a device pixel. CI's Linux fonts did, at 150% on the Server host, and a dotted
     // line on a right edge read 2, 1, 3, 1. The lines are still on the device pixels there.
-    test('DC-59: the lines stay on the device pixels wherever the page puts the Sheet, a third of a pixel across and down (ADR-0071, case 9)', async ({ page }) => {
+    test('DC-59: the lines stay on the device pixels wherever the page puts the Sheet, a third of a pixel across and down (ADR-0071, case 9) @behaviour', async ({ page }) => {
         await openCase(page, 'lines');
         // The page's own element around the Sheet, which leaves with the page. Padding, not a
         // margin: a margin of a third of a pixel collapses into its neighbour's, and the Sheet stayed
@@ -108,7 +108,7 @@ test.describe('DC-59: lines on the Sheet', () => {
         }
     });
 
-    test('DC-59: rows keep their one height where Excel raises them for a medium or a thick line (ADR-0071, ADR-0013, cases 8 and 9)', async ({ page }) => {
+    test('DC-59: rows keep their one height where Excel raises them for a medium or a thick line (ADR-0071, ADR-0013, cases 8 and 9) @behaviour', async ({ page }) => {
         await openCase(page, 'lines');
         const heights = await sheet(page).locator('.ex-row').evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
         expect(heights.length).toBeGreaterThan(10);
@@ -117,7 +117,7 @@ test.describe('DC-59: lines on the Sheet', () => {
 });
 
 test.describe('SH-46: Fills and lines beside Excel\'s', () => {
-    test('SH-46: a Fill covers the four gridlines at its edges, and the pixel past each is the neighbour\'s Paper (ADR-0071, case 4)', async ({ page }) => {
+    test('SH-46: a Fill covers the four gridlines at its edges, and the pixel past each is the neighbour\'s Paper (ADR-0071, case 4) @behaviour', async ({ page }) => {
         await openCase(page, '4');
         const box = await cell(sheet(page), 'B2').boundingBox();
         const read = async (side) => (await across(page, box, side, 0.5)).pixel;
@@ -139,7 +139,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(plain.pixel(-1), GRIDLINE, 2), `a gridline is Excel's (${plain.pixel(-1)})`).toBe(true);
     });
 
-    test('SH-46: a white Fill takes the gridlines round its cell away (ADR-0071, case 5)', async ({ page }) => {
+    test('SH-46: a white Fill takes the gridlines round its cell away (ADR-0071, case 5) @behaviour', async ({ page }) => {
         await openCase(page, '5');
         const box = await cell(sheet(page), 'B2').boundingBox();
         for (const side of ['bottom', 'right', 'top', 'left']) {
@@ -148,14 +148,14 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         }
     });
 
-    test('SH-46: between two filled cells the gridline is the Fill\'s (ADR-0071, case 6)', async ({ page }) => {
+    test('SH-46: between two filled cells the gridline is the Fill\'s (ADR-0071, case 6) @behaviour', async ({ page }) => {
         await openCase(page, '6');
         const box = await cell(sheet(page), 'B2').boundingBox();
         const { pixel } = await across(page, box, 'right', 0.5);
         for (const offset of [-3, -2, -1, 0, 1, 2]) expect(sameColour(pixel(offset), YELLOW, 2), `yellow at ${offset}`).toBe(true);
     });
 
-    test('SH-46/DC-59: between two filled cells one above the other the gridline is the lower cell\'s Fill, and each Fill still covers its other gridlines (ADR-0071, the fourteenth run\'s case 16)', async ({ page }, testInfo) => {
+    test('SH-46/DC-59: between two filled cells one above the other the gridline is the lower cell\'s Fill, and each Fill still covers its other gridlines (ADR-0071, the fourteenth run\'s case 16) @behaviour', async ({ page }, testInfo) => {
         await openCase(page, '14-16');
         expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
         const grid = sheet(page);
@@ -188,7 +188,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(plain(0), WHITE, 2), `the Paper below a plain gridline (${plain(0)})`).toBe(true);
     });
 
-    test('SH-46/DC-59: between two filled cells side by side the gridline is the right cell\'s Fill (ADR-0071, read from the fourteenth run\'s case 16)', async ({ page }) => {
+    test('SH-46/DC-59: between two filled cells side by side the gridline is the right cell\'s Fill (ADR-0071, read from the fourteenth run\'s case 16) @behaviour', async ({ page }) => {
         await openCase(page, 'fills');
         const { pixel } = await across(page, await cell(sheet(page), 'B2').boundingBox(), 'right', 0.5);
         expect(sameColour(pixel(-1), LIGHT_BLUE, 2), `the gridline between B2 and C2 is C2's (${pixel(-1)})`).toBe(true);
@@ -196,7 +196,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(pixel(-2), YELLOW, 2), `B2 up to it (${pixel(-2)})`).toBe(true);
     });
 
-    test('SH-46/DC-59: a double line\'s middle pixel is the Fill its gridline would show — dark, the Fill, dark (ADR-0071, the fourteenth run\'s case 17)', async ({ page }) => {
+    test('SH-46/DC-59: a double line\'s middle pixel is the Fill its gridline would show — dark, the Fill, dark (ADR-0071, the fourteenth run\'s case 17) @behaviour', async ({ page }) => {
         await openCase(page, '14-17');
         const { pixel } = await across(page, await cell(sheet(page), 'B2').boundingBox(), 'bottom', 0.5);
         expect(isDark(pixel(-2)), 'the line above the gridline').toBe(true);
@@ -206,7 +206,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(pixel(1), WHITE, 2), 'B3\'s Paper below it').toBe(true);
     });
 
-    test('SH-46/DC-59: a double line between Fills shows the lower or right cell\'s in its middle, else the upper or left cell\'s (ADR-0071, read from the fourteenth run\'s cases 16 and 17)', async ({ page }) => {
+    test('SH-46/DC-59: a double line between Fills shows the lower or right cell\'s in its middle, else the upper or left cell\'s (ADR-0071, read from the fourteenth run\'s cases 16 and 17) @behaviour', async ({ page }) => {
         await openCase(page, 'fills');
         const grid = sheet(page);
         // [cell, side, the middle pixel, the cell's own ground before the line, the neighbour's after it]
@@ -225,7 +225,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         }
     });
 
-    test('SH-46/DC-59: medium dashed is 9 on and 3 off, and dashed 3 on and 1 off, in device pixels at the run\'s scale (ADR-0071, the fourteenth run\'s case 18)', async ({ page }, testInfo) => {
+    test('SH-46/DC-59: medium dashed is 9 on and 3 off, and dashed 3 on and 1 off, in device pixels at the run\'s scale (ADR-0071, the fourteenth run\'s case 18) @behaviour', async ({ page }, testInfo) => {
         await openCase(page, '14-18');
         expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
         const grid = sheet(page);
@@ -238,7 +238,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         }
     });
 
-    test('SH-46/DC-59: a thick line lies above the Fill below it, a pixel into the filled cell (ADR-0071, case 10)', async ({ page }) => {
+    test('SH-46/DC-59: a thick line lies above the Fill below it, a pixel into the filled cell (ADR-0071, case 10) @behaviour', async ({ page }) => {
         await openCase(page, '10');
         const box = await cell(sheet(page), 'B2').boundingBox();
         const { pixel } = await across(page, box, 'bottom', 0.5);
@@ -247,7 +247,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(pixel(-3), WHITE, 2), 'B2\'s Paper above it').toBe(true);
     });
 
-    test('SH-46: where both cells record a line on an edge, the left cell\'s is drawn and the other\'s not at all (ADR-0071, the twelfth run\'s case 1)', async ({ page }) => {
+    test('SH-46: where both cells record a line on an edge, the left cell\'s is drawn and the other\'s not at all (ADR-0071, the twelfth run\'s case 1) @behaviour', async ({ page }) => {
         await openCase(page, '12-1');
         const box = await cell(sheet(page), 'B2').boundingBox();
         const { pixel } = await across(page, box, 'right', 0.5);
@@ -257,7 +257,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(pixel(1), WHITE, 2), 'the Paper past it').toBe(true);
     });
 
-    test('SH-46/DC-59: the Selection\'s outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11)', async ({ page }) => {
+    test('SH-46/DC-59: the Selection\'s outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11) @blazor', async ({ page }) => {
         // Under ExSheet.MudBlazor's Chrome, whose outline is the palette's primary: the built-in
         // one draws it in the Ink, as black as the lines, and could not show which is on top.
         await openCase(page, '11&chrome=mud');
@@ -305,7 +305,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         }
     });
 
-    test('SH-46: a line on column A\'s left lies under the Row Headings\' edge (ADR-0071, the twelfth run\'s case 14)', async ({ page }) => {
+    test('SH-46: a line on column A\'s left lies under the Row Headings\' edge (ADR-0071, the twelfth run\'s case 14) @behaviour', async ({ page }) => {
         await openCase(page, '12-14');
         const grid = sheet(page);
         // Row 3 is outlined, A3's left included; row 5 has no line, for comparison.
