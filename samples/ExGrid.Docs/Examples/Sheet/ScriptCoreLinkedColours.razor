@@ -5,16 +5,16 @@
 
 @* No Pointing Scope: the Sheet tells the page which of the ledger's columns its Formula reads, and in which colour,
    and the page hands them to the grid that shows the ledger. *@
-<ExGrid.Script.ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" OutlinedColumns="_outlined"
+<ExGrid.Components.ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" OutlinedColumns="_outlined"
                       ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
 
 <div class="mt-4">
-    <ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnLinkedColumnColoursChanged="Outline"
+    <ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" OnLinkedColumnColoursChanged="Outline"
                             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
 </div>
 
 @code {
-    private ExSheet.Script.ExSheet? _sheet;
+    private ExSheet.Components.ExSheet? _sheet;
     private SheetDocument _document = CostReport.Document();
     private static readonly CostCentre[] Centres = CostCentre.Sample();
     private readonly InMemoryGridSource<CostCentre> _ledger = GridSource.From(Centres);

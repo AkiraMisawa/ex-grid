@@ -27,13 +27,13 @@
   <ItemGroup>
     <!-- The Shared Script's .NET halves (ADR-0411): a call too large for a Server hub's message, and the Chrome slots
          filled with Razor (ADR-0410), crossing as every product's do. -->
-    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
-    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
-    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
-    <Compile Include="..\Shared\Script\ScriptFunctionJson.cs" Link="Script\ScriptFunctionJson.cs" />
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\Shared\Components\ScriptFunctionJson.cs" Link="Components\ScriptFunctionJson.cs" />
   </ItemGroup>
 
-  <!-- ExChart's Script Core's module for ExChart.Script.ExChart and ExSurface (ADR-0370 section 1): the bridge and
+  <!-- ExChart's Script Core's module for ExChart.Components.ExChart and ExSurface (ADR-0370 section 1): the bridge and
        @ex-grid/chart, bundled from their sources in src/npm as this project builds, never committed, as ExPivot's is
        (ADR-0350 section 7). The module goes to wwwroot, where the package serves it; its version and stamp (ADR-0123) are compiled in as
        ScriptCoreAsset. src/npm's dependencies are ExGrid's build's to install: the bundle is built once the project
@@ -55,7 +55,7 @@
 
   <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
           Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
-    <Exec Command="node ../scripts/build-blazor.mjs --name ex-chart-core --namespace ExChart.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-chart-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-chart-core --namespace ExChart.Components --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-chart-core.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
           WorkingDirectory="$(ScriptCoreWorkspace)chart-blazor" />
   </Target>
 

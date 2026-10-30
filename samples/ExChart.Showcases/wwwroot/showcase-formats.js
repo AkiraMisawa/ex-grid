@@ -1,4 +1,4 @@
-// The showcases' own module, which ExChart.Script.ExChart imports in the browser and calls as it draws (ADR-0420
+// The showcases' own module, which ExChart.Components.ExChart imports in the browser and calls as it draws (ADR-0420
 // section 3). It ships in this Razor class library, at _content/ExChart.Showcases/, as a Consumer's library would.
 
 // RateData's pillars: each tenor as quoted, at its position in years.

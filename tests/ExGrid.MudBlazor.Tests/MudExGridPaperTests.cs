@@ -2,7 +2,7 @@ using Bunit;
 using ExGrid.Columns;
 using Microsoft.AspNetCore.Components;
 using Xunit;
-using Grid = global::ExGrid.Script.ExGrid<ExGrid.MudBlazor.Tests.MudTestContext.Trade>;
+using Grid = global::ExGrid.Components.ExGrid<ExGrid.MudBlazor.Tests.MudTestContext.Trade>;
 
 namespace ExGrid.MudBlazor.Tests;
 

@@ -2,7 +2,7 @@
 @implements IDisposable
 @using System.Globalization
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). The components are
-   named in full, ExSheet.Script.ExSheet and ExGrid.Script.ExGrid, beside the namespaces of the same names. *@
+   named in full, ExSheet.Components.ExSheet and ExGrid.Components.ExGrid, beside the namespaces of the same names. *@
 @using global::ExSheet
 @using global::ExSheet.Engine
 @using global::ExGrid.Chrome
@@ -22,8 +22,8 @@
    for a test that needs a case beside a Pinned Column. ?toolbar=off opens the Sheet without its
    Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100); a case opens without it unless
    ?toolbar=on asks. *@
-@* The Sheet is ExSheet.Script.ExSheet, Blazor's ExSheet over the Script Core, and the positions grid
-   ExGrid.Script.ExGrid beside it (ADR-0370). *@
+@* The Sheet is ExSheet.Components.ExSheet, Blazor's ExSheet over the Script Core, and the positions grid
+   ExGrid.Components.ExGrid beside it (ADR-0370). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
@@ -84,7 +84,7 @@
         @Sheet
     }
     <div id="sheet-positions">
-        <ExGrid.Script.ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
+        <ExGrid.Components.ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
                               ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
     </div>
 </div>
@@ -184,7 +184,7 @@
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => ScriptCoreSheet;
 
-    private RenderFragment ScriptCoreSheet => @<ExSheet.Script.ExSheet @ref="_script" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
+    private RenderFragment ScriptCoreSheet => @<ExSheet.Components.ExSheet @ref="_script" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
                                               EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
                                               PointingScope="@(_inScope ? _scope : null)" OnPointingRefused="ShowPointingRefusal"
@@ -195,7 +195,7 @@
                                                  <ToolbarButton Text="Mark reviewed" OnClick="MarkReviewedAsync" KeyTip="R" />
                                              </ToolbarRow>
                                          </ToolbarContent>
-                                     </ExSheet.Script.ExSheet>;
+                                     </ExSheet.Components.ExSheet>;
 
     /// <summary><c>switch</c> shows a button that takes the Sheet out of its Pointing Scope and back (ADR-0058).</summary>
     [SupplyParameterFromQuery(Name = "scope")]
@@ -214,7 +214,7 @@
     // The Sheet's height includes its toolbar (ADR-0100) and its Sheet Tabs (ADR-0331). The page adds
     // the toolbar's two rows and the tabs' strip, each the Formula Bar's height, so that the grid keeps
     // the rows it showed before either came.
-    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.Script.ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
+    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.Components.ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
 
     private double SheetHeight => 420 + ToolbarRowPx + (_toolbarShown ? 2 * ToolbarRowPx : 0);
 
@@ -260,7 +260,7 @@
     private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
 
     // The Sheet, once drawn.
-    private ExSheet.Script.ExSheet? _script;
+    private ExSheet.Components.ExSheet? _script;
     private SheetDocument? _document;
     // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
     // registered with the table it shows and how its rows are the table's rows: its columns are
@@ -402,7 +402,7 @@
     // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
     // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed
     // out then, but a press can still land before the render that greys them does.
-    private async Task CommandAsync(Func<ExSheet.Script.ExSheet, Task> command)
+    private async Task CommandAsync(Func<ExSheet.Components.ExSheet, Task> command)
     {
         try
         {

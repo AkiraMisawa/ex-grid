@@ -938,7 +938,7 @@ from `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula 
 of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
 forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
-That object is also the wire: `SheetWire` writes a `SheetEdit` in it, the text Blazor's `ExSheet.Script.ExSheet` sends
+That object is also the wire: `SheetWire` writes a `SheetEdit` in it, the text Blazor's `ExSheet.Components.ExSheet` sends
 to the Sheet in the browser, and the Script Core's `readSheetEdit` reads it (ADR-0370 section 1). Both runners send every
 edit of every case through it, so the corpus holds the writer and the reader together: xUnit writes the edit it read with
 `SheetWire`, reads that text back and requires the same text again, and Vitest reads the case's edit with `readSheetEdit`

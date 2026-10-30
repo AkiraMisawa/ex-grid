@@ -40,8 +40,8 @@ namespace ExSheet;
 /// the declaration of the Sheet that points (<c>DeclareLinkedTableAsync</c>). A Scope belongs to one
 /// page, on one renderer: it is not shared between users.</para>
 ///
-/// <para>The Scope serves Blazor's components over the Script Core (<c>ExSheet.Script.ExSheet</c> and
-/// <c>ExGrid.Script.ExGrid</c>). The Scope is held in the browser, which decides all of the above there,
+/// <para>The Scope serves Blazor's components over the Script Core (<c>ExSheet.Components.ExSheet</c> and
+/// <c>ExGrid.Components.ExGrid</c>). The Scope is held in the browser, which decides all of the above there,
 /// and this object only names it; the function that reads a row as the table's row is asked as each row
 /// crosses to the browser (ADR-0430).</para>
 /// </summary>

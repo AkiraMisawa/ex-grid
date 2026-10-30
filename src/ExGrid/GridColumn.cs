@@ -278,7 +278,7 @@ public sealed record GridColumn<TRow>
     /// its domain, a store or a server before it says. While the answer is out the commit is pending: the editor
     /// stands with the text, and every input made meanwhile waits for it. The token is cancelled when the user
     /// cancels the commit with Escape, and the answer is then not read. Set in place of <see cref="Validate"/>,
-    /// never beside it. ExGrid (<see cref="Script.ExGrid{TRow}"/>) asks it.
+    /// never beside it. ExGrid (<see cref="Components.ExGrid{TRow}"/>) asks it.
     /// </summary>
     /// <exception cref="ArgumentException">Set on a column that declares <see cref="Validate"/>: two verdicts on one
     /// commit would leave the grid to pick one, and it does not pick.</exception>

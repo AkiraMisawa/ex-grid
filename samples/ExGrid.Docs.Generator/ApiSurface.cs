@@ -41,8 +41,8 @@ public static class ApiSurface
     /// <param name="Package">The package, which is its assembly's name.</param>
     /// <param name="Namespace">Its namespace.</param>
     /// <param name="Name">How a reader writes it: <c>ExGrid&lt;TRow&gt;</c>, <c>Outer.Inner</c>.</param>
-    /// <param name="Unbound">Its full name with its type parameters left out, as a page's <c>typeof</c> names it: <c>ExGrid.Script.ExGrid&lt;&gt;</c>.</param>
-    /// <param name="Id">Its documentation id: <c>T:ExGrid.Script.ExGrid`1</c>.</param>
+    /// <param name="Unbound">Its full name with its type parameters left out, as a page's <c>typeof</c> names it: <c>ExGrid.Components.ExGrid&lt;&gt;</c>.</param>
+    /// <param name="Id">Its documentation id: <c>T:ExGrid.Components.ExGrid`1</c>.</param>
     /// <param name="Kind">What it is: <c>component</c>, <c>record</c>, <c>enum</c>, …</param>
     /// <param name="Contract">Whether it is the contract, rather than public and not the contract.</param>
     /// <param name="TypeOf">The C# that names it in a <c>typeof</c>, from the global namespace.</param>
@@ -239,7 +239,7 @@ public static class ApiSurface
         };
     }
 
-    // ExGrid.Script.ExGrid<>, Outer<>.Inner: the name a typeof takes, type parameters left out.
+    // ExGrid.Components.ExGrid<>, Outer<>.Inner: the name a typeof takes, type parameters left out.
     private static string Unbound(INamedTypeSymbol type, bool escape)
     {
         var name = escape && SyntaxFacts.GetKeywordKind(type.Name) != SyntaxKind.None ? "@" + type.Name : type.Name;

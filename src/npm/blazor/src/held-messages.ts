@@ -1,7 +1,7 @@
 // A message too large for Blazor Server's hub, the browser's half (ADR-0005, as amended 2026-10-28): Blazor Server
 // closes the circuit on a message to .NET larger than its hub takes, 32 KB unless the application raises it, and says
 // nothing on the page. Each product's bridge holds such a message here, hands .NET its number and length instead, and
-// .NET takes it as a stream, in its turn: .NET's half is `src/Shared/Script/HeldCalls.cs`, compiled into each
+// .NET takes it as a stream, in its turn: .NET's half is `src/Shared/Components/HeldCalls.cs`, compiled into each
 // adapter. In the Shared Script (ADR-0411), so every product crosses a large message alike.
 
 /**

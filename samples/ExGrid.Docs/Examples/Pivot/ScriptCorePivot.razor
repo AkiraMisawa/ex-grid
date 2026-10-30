@@ -17,7 +17,7 @@
     </label>
 </p>
 
-<ExPivot.Script.ExPivot Source="@(_byMarket ? _byMarketSize : _source)" @bind-Layout="_layout" ViewportHeight="360"
+<ExPivot.Components.ExPivot Source="@(_byMarket ? _byMarketSize : _source)" @bind-Layout="_layout" ViewportHeight="360"
                         Label="@(_japanese ? PivotWords.Japanese : null)"
                         OnShowDetails="@(_takeRecords ? _showDetails : default)"
                         SelectionChanged="ShowSelection" />

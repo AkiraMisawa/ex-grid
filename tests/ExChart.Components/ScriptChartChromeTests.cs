@@ -3,11 +3,11 @@ using Bunit;
 using ExChart.Chrome;
 using ExChart.Engine;
 using ExChart.MudBlazor;
-using ExChart.Script;
+using ExChart.Components;
 using Microsoft.JSInterop;
 using MudBlazor.Services;
 using Xunit;
-using ScriptChart = ExChart.Script.ExChart;
+using ScriptChart = ExChart.Components.ExChart;
 
 namespace ExChart.Components.Tests;
 

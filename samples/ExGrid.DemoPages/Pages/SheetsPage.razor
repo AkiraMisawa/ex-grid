@@ -11,8 +11,8 @@
    stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
    tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). The Chrome is
    ExSheet.MudBlazor's, so each Sheet's Format Cells is its own (ADR-0071). Without the parameter each Sheet
-   stands on the page as it always did. Each Sheet is drawn by ExSheet.Script.ExSheet and its grid by
-   ExGrid.Script.ExGrid (ADR-0370). *@
+   stands on the page as it always did. Each Sheet is drawn by ExSheet.Components.ExSheet and its grid by
+   ExGrid.Components.ExGrid (ADR-0370). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -35,18 +35,18 @@
 
 <div class="demo-side-by-side">
     <div id="sheet-left">
-        @OnPaper(@<ExSheet.Script.ExSheet @ref="_leftScript" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+        @OnPaper(@<ExSheet.Components.ExSheet @ref="_leftScript" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
                                           PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
         <div id="sheet-left-positions">
-            <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+            <ExGrid.Components.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
                                   ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
         </div>
     </div>
     <div id="sheet-right">
-        @OnPaper(@<ExSheet.Script.ExSheet @ref="_rightScript" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+        @OnPaper(@<ExSheet.Components.ExSheet @ref="_rightScript" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
                                           PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
         <div id="sheet-right-positions">
-            <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+            <ExGrid.Components.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
                                   ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
         </div>
     </div>
@@ -105,8 +105,8 @@
     private SheetDocument? _left = Opening("Left", 10);
     private SheetDocument? _right = Opening("Right", 20);
     // Each Sheet, once drawn.
-    private ExSheet.Script.ExSheet? _leftScript;
-    private ExSheet.Script.ExSheet? _rightScript;
+    private ExSheet.Components.ExSheet? _leftScript;
+    private ExSheet.Components.ExSheet? _rightScript;
     private string _status = "";
     // One Pointing Scope per side (ADR-0058): a Sheet points only at the grid beneath it, and outlines
     // the columns its Formula reads only there, nothing from the other (ADR-0018).

@@ -1,5 +1,5 @@
 {
-  "about": "A cell's value as Blazor's ExGrid sends it to the Script Core (ADR-0350 sections 7 and 16): what ExGrid.Script.ScriptValues writes for a .NET value, and what the bridge (src/npm/blazor/src/wire-values.ts) reads the same JSON as. A case with `dotnet` and `wire` holds on the C# side; one with `wire` and `reads` on the bridge's; one with both is the contract end to end. `refused` names what C# refuses to send (`notSupported`) or the bridge refuses to read (`argument`).",
+  "about": "A cell's value as Blazor's ExGrid sends it to the Script Core (ADR-0350 sections 7 and 16): what ExGrid.Components.ScriptValues writes for a .NET value, and what the bridge (src/npm/blazor/src/wire-values.ts) reads the same JSON as. A case with `dotnet` and `wire` holds on the C# side; one with `wire` and `reads` on the bridge's; one with both is the contract end to end. `refused` names what C# refuses to send (`notSupported`) or the bridge refuses to read (`argument`).",
   "kind": "wireValue",
   "cases": [
     { "name": "ADR-0350 s16: text crosses as itself", "dotnet": { "type": "string", "value": "Rates" }, "wire": "Rates", "reads": { "type": "string", "text": "Rates" } },

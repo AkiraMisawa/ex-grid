@@ -4,7 +4,7 @@ namespace ExGrid.Chrome;
 
 /// <summary>
 /// The Chrome slots an <see cref="IGridChrome"/> fills with Razor when the Script Core draws the grid
-/// (<c>ExGrid.Script.ExGrid</c>, ADR-0410): each named here is asked for through its view overload, and
+/// (<c>ExGrid.Components.ExGrid</c>, ADR-0410): each named here is asked for through its view overload, and
 /// the Script Core draws its own part for every slot not named.
 /// </summary>
 [Flags]

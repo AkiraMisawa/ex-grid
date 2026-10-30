@@ -1,4 +1,4 @@
-// The page's own module, which ExChart.Script.ExChart imports in the browser and calls as it draws (ADR-0420
+// The page's own module, which ExChart.Components.ExChart imports in the browser and calls as it draws (ADR-0420
 // section 3). It ships in this Razor class library, at _content/ExGrid.DemoPages/, as a Consumer's library would.
 
 /** A position in years. */

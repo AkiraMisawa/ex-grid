@@ -9,7 +9,7 @@
     private sealed record Row(int Id, string Name);
 
     private static readonly string AssemblyStamp = (string)typeof(ExGrid<>).Assembly
-        .GetType("ExGrid.Script.ScriptCoreAsset", throwOnError: true)!
+        .GetType("ExGrid.Components.ScriptCoreAsset", throwOnError: true)!
         .GetField("Stamp", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
         .GetRawConstantValue()!;
 

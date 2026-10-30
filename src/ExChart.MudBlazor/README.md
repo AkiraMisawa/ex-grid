@@ -47,7 +47,7 @@ builder.RootComponents.Add<ExChart.MudBlazor.MudExChartStylesheet>("head::after"
 ```razor
 <MudChartDock TRow="Trade" Bridge="_bridge">
     <MudExGridPaper>
-        <ExGrid.Script.ExGrid @ref="_bridge.ScriptGrid" TRow="Trade" Rows="_rows" Columns="Columns"
+        <ExGrid.Components.ExGrid @ref="_bridge.ScriptGrid" TRow="Trade" Rows="_rows" Columns="Columns"
                               ContextCommands="_commands" ContextCommandLabel="_label"
                               Chrome="MudChartChrome.GridChrome" />
     </MudExGridPaper>
@@ -61,7 +61,7 @@ Script Cores. The dock takes the bridge's events, so the page writes no code to 
 ## A chart on its own
 
 ```razor
-@using ExChart.Script
+@using ExChart.Components
 
 <MudExGridPaper>
     <ExChart Definition="_definition" Title="Exposure" Chrome="MudChartChrome.Default" />

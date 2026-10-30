@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using ExGrid.Cells;
-using ExGrid.Script;
+using ExGrid.Components;
 using Xunit;
 
 namespace ExGrid.Tests;

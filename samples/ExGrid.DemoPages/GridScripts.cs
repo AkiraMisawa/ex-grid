@@ -2,7 +2,7 @@ using ExGrid.Data;
 
 namespace ExGrid.DemoPages;
 
-/// <summary>The pages' functions for <c>ExGrid.Script.ExGrid</c> that the browser asks by position (ADR-0440), exported
+/// <summary>The pages' functions for <c>ExGrid.Components.ExGrid</c> that the browser asks by position (ADR-0440), exported
 /// from <c>wwwroot/grid-scripts.js</c>.</summary>
 public static class GridScripts
 {

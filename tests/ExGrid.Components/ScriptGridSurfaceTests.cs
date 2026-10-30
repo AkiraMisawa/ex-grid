@@ -29,21 +29,21 @@ public class ScriptGridSurfaceTests : BunitContext
     public ScriptGridSurfaceTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = _module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(
-        Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null, GridColumn<TestRow>[]? columns = null)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(
+        Action<ComponentParameterCollectionBuilder<global::ExGrid.Components.ExGrid<TestRow>>>? extra = null, GridColumn<TestRow>[]? columns = null)
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Rows, _rows).Add(g => g.Columns, columns ?? TestRows.Columns());
             extra?.Invoke(ps);
         });
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private static JsonElement Parsed(object? json)
@@ -93,7 +93,7 @@ public class ScriptGridSurfaceTests : BunitContext
     public async Task ADR0440_a_mark_crosses_with_its_row_and_a_gesture_marks_the_row_named()
     {
         var source = GridSource.From(_rows);
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, source).Add(g => g.Columns, [GridColumn<TestRow>.MarkColumn(), .. TestRows.Columns()]));
         Assert.True(Attached().GetProperty("options").GetProperty("marks").GetBoolean());
         Assert.False(Window()[1].GetProperty("m").GetBoolean());
@@ -151,8 +151,8 @@ public class ScriptGridSurfaceTests : BunitContext
     public void ADR0440_two_holders_of_one_answer_are_refused_by_name()
     {
         var marks = GridSource.From(TestRows.Window()).Marks;
-        IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Over(Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>> extra)
-            => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+        IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Over(Action<ComponentParameterCollectionBuilder<global::ExGrid.Components.ExGrid<TestRow>>> extra)
+            => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps =>
             {
                 ps.Add(g => g.Source, GridSource.From(_rows)).Add(g => g.Columns, [GridColumn<TestRow>.MarkColumn(), .. TestRows.Columns()]);
                 extra(ps);
@@ -186,7 +186,7 @@ public class ScriptGridSurfaceTests : BunitContext
     public async Task ADR0440_the_row_an_edit_holds_crosses_beyond_the_rows_sent_wherever_the_window_holds_it()
     {
         var source = GridSource.From(TestRows.Many(1000), r => r.Book);
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, TestRows.Columns()));
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, TestRows.Columns()));
         var generation = Attached().GetProperty("source").GetProperty("generation").GetInt32();
         var first = Window()[0].GetProperty("i").GetInt64();
 
@@ -232,7 +232,7 @@ public class ScriptGridSurfaceTests : BunitContext
     [Fact] // ADR-0130 / ADR-0440: a figure past a double's range crosses by its name, never as another number
     public async Task ADR0440_an_infinite_figure_crosses_by_its_name()
     {
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.OnSummarize, (GridSummaryRequest _, CancellationToken _) => Task.FromResult(GridSummaryResult.Answered(
@@ -249,7 +249,7 @@ public class ScriptGridSurfaceTests : BunitContext
     {
         var held = new TaskCompletionSource<GridSummaryResult>();
         var asked = 0;
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.OnSummarize, (GridSummaryRequest _, CancellationToken _) => ++asked == 1 ? held.Task : Task.FromResult(GridSummaryResult.Answered(
@@ -350,7 +350,7 @@ public class ScriptGridSurfaceTests : BunitContext
     [Fact] // ADR-0332 section 4 / ADR-0440 section 3: a source that finds by a rule of its own is marked only through FindMatch
     public void ADR0332_another_source_marks_nothing_without_FindMatch()
     {
-        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, GridSource.Fetch<TestRow>((_, _) => ValueTask.FromResult(new GridPage<TestRow>([], 0, 0))))
             .Add(g => g.Columns, TestRows.Columns()));
         Assert.False(Attached().GetProperty("options").TryGetProperty("referenceMarks", out _));

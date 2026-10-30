@@ -1,7 +1,7 @@
 @page "/script-chart-dock"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExChart
-@using global::ExChart.Script
+@using global::ExChart.Components
 @using global::ExChart.Engine
 @using global::ExChart.MudBlazor
 @using global::ExGrid.Chrome
@@ -33,7 +33,7 @@
 
 <MudChartDock TRow="CurveRow" Bridge="_bridge" ChartWidth="560" ChartHeight="280">
     <MudExGridPaper>
-        <ExGrid.Script.ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
+        <ExGrid.Components.ExGrid @ref="_bridge.ScriptGrid" TRow="CurveRow"
                               Rows="_rows"
                               Columns="Columns"
                               HeaderGroups="Groups"

@@ -111,8 +111,8 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             Example above to React to run it.
         </p>
         <p>
-            Blazor's components over the TypeScript core, <code>ExSheet.Script.ExSheet</code> and
-            <code>ExGrid.Script.ExGrid</code>, take the same <code>PointingScope</code>, under the same names: pass the
+            Blazor's components over the TypeScript core, <code>ExSheet.Components.ExSheet</code> and
+            <code>ExGrid.Components.ExGrid</code>, take the same <code>PointingScope</code>, under the same names: pass the
             Scope to the Sheet's <code>PointingScope</code> and what <code>RegisterGrid</code> returned to the grid's
             <code>PointedAt</code>. The Scope is then held in the browser, where both run, so a press is written in
             the turn it is made, on Blazor Server too, and your function that makes a row the table's row is asked in

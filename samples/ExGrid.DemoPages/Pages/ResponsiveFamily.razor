@@ -19,8 +19,8 @@
     </Head>
 </DemoChromeAssets>
 <DemoNav />
-@* Each product is Blazor's component over the Script Core (ExGrid.Script.ExGrid, ExSheet.Script.ExSheet,
-   ExPivot.Script.ExPivot; ADR-0370). *@
+@* Each product is Blazor's component over the Script Core (ExGrid.Components.ExGrid, ExSheet.Components.ExSheet,
+   ExPivot.Components.ExPivot; ADR-0370). *@
 <h1>Responsive family — the report keeps its meaning</h1>
 <p>Parent-only widths model a phone portrait, phone landscape and narrow desktop panel.
     The browser window stays unchanged. This page checks container sizing, not mobile gestures.</p>
@@ -67,13 +67,13 @@
 
     private RenderFragment ProductView => Product switch
     {
-        "sheet" => @<ExSheet.Script.ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
+        "sheet" => @<ExSheet.Components.ExSheet Document="_document" DocumentChanged="SheetChanged" PinnedColumnCount="@(_pin ? 2 : 0)"
                             Chrome="@(DemoChrome.IsMud(ChromeName) ? MudSheetChrome.Default : null)"
                             Culture="Culture" ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
-        "pivot" => @<ExPivot.Script.ExPivot Source="_source" Layout="_pivotLayout" LayoutChanged="PivotChanged" ShowFieldList="false"
+        "pivot" => @<ExPivot.Components.ExPivot Source="_source" Layout="_pivotLayout" LayoutChanged="PivotChanged" ShowFieldList="false"
                              Chrome="@(DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null)"
                              ViewportWidth="ViewportSize.Stretch" ViewportHeight="280" />,
-        _ => @<ExGrid.Script.ExGrid TRow="PreciseRow" Rows="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
+        _ => @<ExGrid.Components.ExGrid TRow="PreciseRow" Rows="Rows" Columns="Columns" PinnedColumnCount="@(_pin ? 2 : 0)"
                        Chrome="@(DemoChrome.IsMud(ChromeName) ? _gridChrome : null)" RowHeight="24"
                        ViewportWidth="ViewportSize.Stretch" ViewportHeight="280"
                        OnColumnWidthChanged="WidthChanged" OnColumnOrderChanged="OrderChanged" OnPinnedCountChanged="PinnedChanged" />,

@@ -78,7 +78,7 @@
             <strong>A verdict may come later.</strong> In ExGrid for React (<code>@@ex-grid/react</code>, published with
             0.3.0) a column's <code>validate</code> may answer a promise of a verdict, and <code>onEdit</code> may return a
             promise, before which <code>intent.refuse(message)</code> still holds the editor. Each is handed an
-            <code>AbortSignal</code>. In Blazor's <code>ExGrid.Script.ExGrid</code> a column declares
+            <code>AbortSignal</code>. In Blazor's <code>ExGrid.Components.ExGrid</code> a column declares
             <code>ValidateAsync</code>, answering a <code>ValueTask&lt;EditVerdict&gt;</code> with a
             <code>CancellationToken</code>, in place of <code>Validate</code>; an asynchronous <code>OnEdit</code>,
             <code>OnPaste</code> or <code>OnFill</code> handler is waited for the same way, and its intent carries the token. Every verdict
@@ -99,8 +99,7 @@
             text, and ask your domain whether it can exist, on a server if it has to be; a Reject on a domain invariant is
             what the editor is held for. A <kbd>Ctrl</kbd>+<kbd>Enter</kbd> fill asks the verdict once, for the row the
             editor was opened on, so the other rows of a fill are judged in <code>onPaste</code>, where the whole target is
-            in hand: apply the objects that can exist, and refuse the fill, or flag the rest. The C# core's ExGrid judges a
-            commit as it is made, and refuses a column that declares <code>ValidateAsync</code>, naming it.
+            in hand: apply the objects that can exist, and refuse the fill, or flag the rest.
         </p>
         <DocsExample Title="A domain that answers later, over the Script Core" Builtin="typeof(ScriptCoreDomainGrid)" Files="@(["Examples/Data/Trade.cs"])">
             Type <code>1500</code> into a Notional and press <kbd>Enter</kbd>: no trade of that size can be booked,
@@ -152,7 +151,7 @@
             leaves <kbd>F8</kbd> to the page, and a grid given one refuses <kbd>F8</kbd> among its declared keys.
         </p>
         <p>
-            Blazor's <code>ExGrid.Script.ExGrid</code> takes the step as <code>OnFindError</code>, a
+            Blazor's <code>ExGrid.Components.ExGrid</code> takes the step as <code>OnFindError</code>, a
             <code>Func&lt;GridErrorStepRequest, CancellationToken, Task&lt;GridFindResult&gt;&gt;</code> answered in .NET:
             return <code>ruleset.FindError(request, rowsInOrder)</code>, the rows read from your Source in its order, which
             an in-memory Source holds whole as its <code>Window</code>. It is asked in its turn after the edits before it,

@@ -13,7 +13,7 @@
            @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
 </div>
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
-    <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
+    <ExGrid.Components.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
                           OnEdit="Edit" ShowFillHandle ShowFormulaBar OnFill="Fill" OnCellDoubleClick="OpenNoteAsync" OnNameBoxEntered="GoToTradeAsync" CompleteEditorText="CompleteBook" Chrome="MudGridChrome.Default" @ref="_grid" />
 </MudExGridPaper>
 @if (_nameBoxRefusal is not null)
@@ -22,7 +22,7 @@
 }
 
 @code {
-    // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
+    // Kept in fields: a new source is a new grid's worth of rows.
     private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
 
     // A Template cell, drawn in .NET from the row and moved into the cell by the grid's script. The value beside it
@@ -44,7 +44,7 @@
         GridColumn<Trade>.TemplateColumn("Confirmed", ColumnType.Boolean, t => t.Confirmed, Status),
     ];
 
-    private ExGrid.Script.ExGrid<Trade>? _grid;
+    private ExGrid.Components.ExGrid<Trade>? _grid;
     private ElementReference _noteField;
     private Trade? _noteFor;
     private readonly Dictionary<int, string> _notes = [];

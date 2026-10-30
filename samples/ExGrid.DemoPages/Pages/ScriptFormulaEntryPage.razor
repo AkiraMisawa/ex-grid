@@ -12,7 +12,7 @@
 <h1>Formula entry over the Script Core</h1>
 
 <p>
-    The first grid is <code>ExGrid.Script.ExGrid</code> given the page's own script for Formula entry
+    The first grid is <code>ExGrid.Components.ExGrid</code> given the page's own script for Formula entry
     (<code>_content/ExGrid.DemoPages/formula-entry.js</code>, ADR-0431): type <code>=</code> in a Formula cell and press
     an arrow, and the grid points, writing what the script calls the cell; F4 cycles the Reference at the caret, and
     each Reference is outlined in its colour while the edit is open. The browser asks the script as it decides each key,
@@ -20,7 +20,7 @@
 </p>
 
 <div id="script-formula-entry-lines">
-    <ExGrid.Script.ExGrid TRow="Line" Rows="_lines" Columns="LineColumns" OnEdit="_edit" ShowFormulaBar RowHeight="28"
+    <ExGrid.Components.ExGrid TRow="Line" Rows="_lines" Columns="LineColumns" OnEdit="_edit" ShowFormulaBar RowHeight="28"
                           PointAt="PointAt" ReferenceText="ReferenceText" CycleReference="CycleReference" ReferencesIn="ReferencesIn"
                           ViewportHeight="200" ViewportWidth="560" />
 </div>
@@ -33,11 +33,11 @@
 
 <div class="demo-side-by-side">
     <div id="script-formula-entry-sheet">
-        <ExSheet.Script.ExSheet Document="Opening" Culture="EnUs" OnLinkedColumnColoursChanged="_outline"
+        <ExSheet.Components.ExSheet Document="Opening" Culture="EnUs" OnLinkedColumnColoursChanged="_outline"
                                 ViewportHeight="280" ViewportWidth="520" />
     </div>
     <div id="script-formula-entry-positions">
-        <ExGrid.Script.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" OutlinedColumns="_outlined"
+        <ExGrid.Components.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" OutlinedColumns="_outlined"
                               RowHeight="28" ViewportHeight="280" ViewportWidth="330" />
     </div>
 </div>

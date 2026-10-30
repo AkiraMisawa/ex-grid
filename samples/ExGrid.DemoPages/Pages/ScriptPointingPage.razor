@@ -14,7 +14,7 @@
 
 <p>
     The Sheet and the positions grid below are Blazor's components over the Script Core
-    (<code>ExSheet.Script.ExSheet</code> and <code>ExGrid.Script.ExGrid</code>), put in one
+    (<code>ExSheet.Components.ExSheet</code> and <code>ExGrid.Components.ExGrid</code>), put in one
     <code>PointingScope</code> exactly as the Razor components are (ADR-0430): the Sheet is given the Scope, and the
     grid the declaration <code>RegisterGrid</code> made. The Scope is held in the browser. Type <code>=</code> in a cell
     and press a cell of the grid: the Sheet writes <code>XLOOKUP</code> by the pressed row's key, which .NET read from
@@ -27,7 +27,7 @@
 </p>
 
 <div class="demo-side-by-side">
-    <ExSheet.Script.ExSheet @ref="_sheet"
+    <ExSheet.Components.ExSheet @ref="_sheet"
                             Document="Opening"
                             Culture="EnUs"
                             PointingScope="_scope"
@@ -35,7 +35,7 @@
                             ViewportHeight="320"
                             ViewportWidth="520" />
     <div id="script-pointing-positions">
-        <ExGrid.Script.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" RowHeight="28"
+        <ExGrid.Components.ExGrid TRow="Position" Source="_positions" Columns="PositionColumns" RowHeight="28"
                               ViewportHeight="320" ViewportWidth="330" PointedAt="_pointedAt" />
     </div>
 </div>
@@ -72,7 +72,7 @@
     private readonly PointingScope _scope = new();
     private GridPointedAt<Position>? _pointedAt;
     private EventCallback<PointingRefusal> _pointingRefused;
-    private ExSheet.Script.ExSheet? _sheet;
+    private ExSheet.Components.ExSheet? _sheet;
     // Never empty: a line that appeared with the first refusal would move the page under the pointer.
     private string _refused = "Nothing refused yet";
 

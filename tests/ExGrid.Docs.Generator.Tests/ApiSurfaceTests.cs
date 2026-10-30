@@ -289,15 +289,15 @@ public class ApiSurfaceTests
         // Wrappers' hidden slot parts are not read here. One hidden again is listed as not the contract.
         foreach (var type in exported.Where(t => t.GetCustomAttribute<EditorBrowsableAttribute>() is { State: EditorBrowsableState.Never }))
             Assert.Contains(", false, typeof(", LineOf(source, "\"T:" + type.FullName!.Replace('+', '.') + "\""));
-        Assert.Contains("\"T:ExGrid.Script.ExGrid`1\", \"component\", true", source);
+        Assert.Contains("\"T:ExGrid.Components.ExGrid`1\", \"component\", true", source);
     }
 
     [Fact] // ADR-0201 / ADR-0350 section 7: the grid's public surface carries no method its script calls: the browser calls a bridge of its own
     public void The_grid_carries_no_interop_method()
     {
-        Assert.DoesNotContain(typeof(global::ExGrid.Script.ExGrid<>).GetMethods(BindingFlags.Public | BindingFlags.Instance),
+        Assert.DoesNotContain(typeof(global::ExGrid.Components.ExGrid<>).GetMethods(BindingFlags.Public | BindingFlags.Instance),
             m => m.GetCustomAttribute<JSInvokableAttribute>() is not null);
-        Assert.DoesNotContain("\"M:ExGrid.Script.ExGrid`1.Heard", Real.Value);
+        Assert.DoesNotContain("\"M:ExGrid.Components.ExGrid`1.Heard", Real.Value);
     }
 
     // The one emitted line that holds <paramref name="text"/>.

@@ -9,7 +9,7 @@
    that size can be booked, and the editor holds. Type 60000000: it is booked, painted as an error, and its reason
    opens when the Focus stands on it. Escape while the answer is out cancels the commit. F8 and Shift+F8 step through
    the flagged trades, wherever they stand in the order shown. *@
-<ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch"
+<ExGrid.Components.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch"
                       OnEdit="Edit" OnPaste="Fill" CellState="_rules.State" CellMessageOf="_rules.Message" OnFindError="_nextFlag" />
 
 @code {

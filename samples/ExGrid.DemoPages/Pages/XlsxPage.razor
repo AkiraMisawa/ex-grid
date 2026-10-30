@@ -11,7 +11,7 @@
 @* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /workbook does.
    ?hold=1 holds each read, once the file is chosen, until "Let the read go" is pressed: the opening is
    under way for as long as a test needs, with no clock (ADR-0220), so what is typed meanwhile, and an
-   Escape, meet it there. The Workbook is drawn by ExSheet.Script.ExSheet (ADR-0370). *@
+   Escape, meet it there. The Workbook is drawn by ExSheet.Components.ExSheet (ADR-0370). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -56,7 +56,7 @@
 }
 
 <div id="xlsx">
-    @OnPaper(@<ExSheet.Script.ExSheet @ref="_script" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    @OnPaper(@<ExSheet.Components.ExSheet @ref="_script" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
 </div>
 
 @code {
@@ -76,7 +76,7 @@
 
     private IGridChrome? _chrome;
     // The Sheet, once drawn.
-    private ExSheet.Script.ExSheet? _script;
+    private ExSheet.Components.ExSheet? _script;
     private bool _attached;
     private WorkbookDocument? _workbook = Before();
     private string _said = "Choose a workbook, or save this one.";
@@ -148,7 +148,7 @@
     }
 
     // The Script Sheet, once drawn: the buttons stand on the page before its first render.
-    private ExSheet.Script.ExSheet Drawn()
+    private ExSheet.Components.ExSheet Drawn()
         => _script ?? throw new InvalidOperationException("The Sheet is not drawn yet.");
 
     private void Release() => _held?.TrySetResult();

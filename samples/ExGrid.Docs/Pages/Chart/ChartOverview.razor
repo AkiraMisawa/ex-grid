@@ -95,8 +95,8 @@
     <DocsSection Title="A chart drawn in the browser">
         <p>
             Blazor's ExChart is drawn by the same TypeScript core as React's, as ExGrid and ExPivot are.
-            <code>ExChart.Script.ExChart</code> and <code>ExChart.Script.ExSurface</code> are that chart and that
-            surface, and every Example on this site draws them, through <code>@@using ExChart.Script</code>. The drawing, the tooltip, the legend, Chart Filters, View as table and the turning of a surface
+            <code>ExChart.Components.ExChart</code> and <code>ExChart.Components.ExSurface</code> are that chart and that
+            surface, and every Example on this site draws them, through <code>@@using ExChart.Components</code>. The drawing, the tooltip, the legend, Chart Filters, View as table and the turning of a surface
             run in the browser on both hosting models, so on Blazor Server a pointer moved over the plot never crosses
             the circuit. They take a <code>ChartDefinition</code> and a <code>SurfaceDefinition</code>, and a click hands back the Row Key the point was handed in with. A
             <code>Spec</code> is read through its <code>Sources</code> in .NET, where they are: each series is asked

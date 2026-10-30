@@ -19,7 +19,7 @@ public class ScriptGridKeyboardTests : BunitContext
     public ScriptGridKeyboardTests()
     {
         var module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -28,7 +28,7 @@ public class ScriptGridKeyboardTests : BunitContext
         _grid.SetupVoid("dispose", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid() => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid() => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
         .Add(g => g.Rows, TestRows.Many(3))
         .Add(g => g.Columns, TestRows.Columns()));
 
@@ -100,7 +100,7 @@ public class ScriptGridKeyboardTests : BunitContext
         using var context = new BunitContext();
         var module = context.JSInterop.SetupModule(invocation => invocation.Identifier == "import");
         module.Setup<string?>("stamp").SetResult("another build's");
-        var cut = context.Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = context.Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Many(3))
             .Add(g => g.Columns, TestRows.Columns()));
 

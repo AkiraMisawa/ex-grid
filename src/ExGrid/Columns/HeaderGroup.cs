@@ -66,7 +66,7 @@ public sealed record HeaderGroup
 
     /// <summary>What names the group in <c>OnHeaderGroupToggled</c> (ADR-0400): required with
     /// <see cref="Expanded"/>, and unique among the groups. Taken by the Script Core's grid,
-    /// <c>ExGrid.Script.ExGrid</c>, which refuses a repeated one by name.</summary>
+    /// <c>ExGrid.Components.ExGrid</c>, which refuses a repeated one by name.</summary>
     public string? Id { get; init; }
 
     /// <summary>Whether the group shows open (ADR-0400): given, the group draws a toggle whose

@@ -22,7 +22,7 @@ public class ScriptGridChromeTests : BunitContext
     public ScriptGridChromeTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = _module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -50,10 +50,10 @@ public class ScriptGridChromeTests : BunitContext
         public RenderFragment? LoadingIndicator(GridLoadingView view) => builder => builder.AddContent(0, view.IsLoading ? "Loading" : "");
     }
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(IGridChrome? chrome) => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(IGridChrome? chrome) => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
         .Add(g => g.Rows, TestRows.Window())
         .Add(g => g.Columns, Columns)
         .Add(g => g.Chrome, chrome));
@@ -263,7 +263,7 @@ public class ScriptGridChromeTests : BunitContext
     public async Task ADR0051_completion_is_asked_of_CompleteEditorText()
     {
         var asked = new List<(string, int)>();
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.CompleteEditorText, (text, caret) =>
@@ -288,7 +288,7 @@ public class ScriptGridChromeTests : BunitContext
     public async Task ADR0051_enter_in_the_name_box_reaches_OnNameBoxEntered()
     {
         var typed = new List<string>();
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.ShowFormulaBar, true)
@@ -308,7 +308,7 @@ public class ScriptGridChromeTests : BunitContext
             cell => builder => builder.AddContent(0, $"{mark} {cell.Row.Book} #{cell.FocusRequest}")),
     ];
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> TemplatedGrid(GridColumn<TestRow>[] columns) => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> TemplatedGrid(GridColumn<TestRow>[] columns) => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
         .Add(g => g.Rows, TestRows.Window())
         .Add(g => g.Columns, columns));
 

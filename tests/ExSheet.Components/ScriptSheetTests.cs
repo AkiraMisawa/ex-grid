@@ -31,17 +31,17 @@ public class ScriptSheetTests : BunitContext
     public ScriptSheetTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExSheet.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExSheet.Components.ScriptCoreAsset.Stamp);
         _module.Setup<string[]>("labelIds").SetResult(LabelIds);
         _sheet = _module.SetupModule("attach", _ => true);
         _sheet.SetupVoid("update", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExSheet.Script.ExSheet> Sheet(Action<ComponentParameterCollectionBuilder<global::ExSheet.Script.ExSheet>>? parameters = null)
-        => Render<global::ExSheet.Script.ExSheet>(ps => parameters?.Invoke(ps));
+    private IRenderedComponent<global::ExSheet.Components.ExSheet> Sheet(Action<ComponentParameterCollectionBuilder<global::ExSheet.Components.ExSheet>>? parameters = null)
+        => Render<global::ExSheet.Components.ExSheet>(ps => parameters?.Invoke(ps));
 
-    private DotNetObjectReference<global::ExSheet.Script.ScriptBridge> Bridge()
-        => Assert.IsType<DotNetObjectReference<global::ExSheet.Script.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
+    private DotNetObjectReference<global::ExSheet.Components.ScriptBridge> Bridge()
+        => Assert.IsType<DotNetObjectReference<global::ExSheet.Components.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
 
     private JsonElement Attach() => Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]);
 
@@ -77,7 +77,7 @@ public class ScriptSheetTests : BunitContext
         var attach = Attach();
         var options = attach.GetProperty("options");
         Assert.Equal("ja-JP", options.GetProperty("locale").GetString());
-        Assert.Equal(global::ExSheet.Script.ExSheet.DefaultRowHeightPx, options.GetProperty("rowHeight").GetDouble());
+        Assert.Equal(global::ExSheet.Components.ExSheet.DefaultRowHeightPx, options.GetProperty("rowHeight").GetDouble());
         Assert.Equal(600, options.GetProperty("viewportHeight").GetDouble());
         Assert.Equal(800, options.GetProperty("viewportWidth").GetDouble());
         Assert.True(options.GetProperty("showSheetTabs").GetBoolean());

@@ -4,7 +4,7 @@
 
 @* Press the chevron at Valuation's left, or Alt+Shift+Up from a cell under it, to collapse it; again, or
    Alt+Shift+Down, opens it. The grid draws the toggle and tells you; the columns are yours. *@
-<ExGrid.Script.ExGrid TRow="Position" Source="_source" Columns="@(_expanded ? All : Collapsed)" HeaderGroups="GroupsFor(_expanded)"
+<ExGrid.Components.ExGrid TRow="Position" Source="_source" Columns="@(_expanded ? All : Collapsed)" HeaderGroups="GroupsFor(_expanded)"
                       CellState="StateOf" OnHeaderGroupToggled="Toggled" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
 
 @code {

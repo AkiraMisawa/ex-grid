@@ -21,15 +21,15 @@ public class ShippedFilesTests : BunitContext
         Assert.Equal($"_content/ExPivot/ex-pivot.min.css?v={ShippedFiles.Version("ExPivot", "ex-pivot.min.css")}", link.GetAttribute("href"));
     }
 
-    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExPivot.Script.ExPivot imports answers the stamp the component is built with, at the version its address carries
+    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExPivot.Components.ExPivot imports answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()
     {
         const string module = "ex-pivot.min.js";
-        var stamp = global::ExPivot.Script.ScriptCoreAsset.Stamp;
+        var stamp = global::ExPivot.Components.ScriptCoreAsset.Stamp;
         var shipped = File.ReadAllText(ShippedFiles.PathOf("ExPivot", module));
         Assert.StartsWith($"/*! ex-pivot.js sha256:{stamp} ", shipped, StringComparison.Ordinal);
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
-        Assert.Equal(global::ExPivot.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExPivot", module));
+        Assert.Equal(global::ExPivot.Components.ScriptCoreAsset.Version, ShippedFiles.Version("ExPivot", module));
         Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
         // The grid and the data come from the Shared Script ExGrid ships, at the address its stamp names, which the
         // module expects of it (ADR-0411).

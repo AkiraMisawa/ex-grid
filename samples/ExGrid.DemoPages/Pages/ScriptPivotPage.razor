@@ -26,7 +26,7 @@
 <h1>ExPivot over the Script Core</h1>
 
 <p>
-    The pivot below is <code>ExPivot.Script.ExPivot</code>: Blazor's Framework Adapter over
+    The pivot below is <code>ExPivot.Components.ExPivot</code>: Blazor's Framework Adapter over
     <code>@@ex-grid/pivot</code> (ADR-0370 section 1). The report, the PivotTable Fields pane and the
     Pivot Toolbar are the Script Core's, in the browser, on both hosting models. The 2,000 trades stay in
     .NET behind <code>PivotSource.From</code>, which answers each question the report asks with its Leaf
@@ -48,7 +48,7 @@
     <span id="script-pivot-summary" role="status">@_summary</span>
 </p>
 
-<ExPivot.Script.ExPivot Source="_source"
+<ExPivot.Components.ExPivot Source="_source"
                         @bind-Layout="_layout"
                         @bind-ShowFieldList="_showFieldList"
                         Label="@(_japanese ? PivotWords.Japanese : null)"

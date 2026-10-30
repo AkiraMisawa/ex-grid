@@ -31,14 +31,14 @@ public class ScriptGridChartBridgeTests : BunitContext
     public ScriptGridChartBridgeTests()
     {
         var module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
         _grid.Setup<bool>("placeSelection", _ => true).SetResult(true);
     }
 
-    private GridChartBridge<Day> Bridge(global::ExGrid.Script.ExGrid<Day> grid) => new(new GridChartDeclarations<Day>
+    private GridChartBridge<Day> Bridge(global::ExGrid.Components.ExGrid<Day> grid) => new(new GridChartDeclarations<Day>
     {
         RowKey = r => r.Date,
         RowOf = k => _rows.FirstOrDefault(r => r.Date == (DateOnly)k),
@@ -46,12 +46,12 @@ public class ScriptGridChartBridgeTests : BunitContext
     })
     { ScriptGrid = grid };
 
-    private global::ExGrid.Script.ExGrid<Day> Grid() =>
-        Render<global::ExGrid.Script.ExGrid<Day>>(ps => ps.Add(g => g.Rows, _rows).Add(g => g.Columns, Columns)).Instance;
+    private global::ExGrid.Components.ExGrid<Day> Grid() =>
+        Render<global::ExGrid.Components.ExGrid<Day>>(ps => ps.Add(g => g.Rows, _rows).Add(g => g.Columns, Columns)).Instance;
 
-    private static int Version(global::ExGrid.Script.ExGrid<Day> grid) => Assert.IsAssignableFrom<IGridSource<Day>>(grid.RowSource).RowSequenceVersion;
+    private static int Version(global::ExGrid.Components.ExGrid<Day> grid) => Assert.IsAssignableFrom<IGridSource<Day>>(grid.RowSource).RowSequenceVersion;
 
-    private static ContextMenuContext<Day> Opened(global::ExGrid.Script.ExGrid<Day> grid, Day row, params SelectionRange[] selection) =>
+    private static ContextMenuContext<Day> Opened(global::ExGrid.Components.ExGrid<Day> grid, Day row, params SelectionRange[] selection) =>
         new(row, "epe", ColumnType.Number, selection, Version(grid), () => { });
 
     [Fact] // ADR-0258 / ADR-0421: "Chart" over the Script grid reads the selected rows from the source it reads, and the chart follows them

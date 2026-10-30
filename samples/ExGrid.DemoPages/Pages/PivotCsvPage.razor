@@ -267,7 +267,7 @@
 
     // Another file is a new source, handed in with the layout read with it: ExPivot asks the new
     // source under that layout, in one render.
-    private RenderFragment Pivot(PivotSource source) => @<ExPivot.Script.ExPivot Source="source" @bind-Layout="_layout"
+    private RenderFragment Pivot(PivotSource source) => @<ExPivot.Components.ExPivot Source="source" @bind-Layout="_layout"
                                                                                  Chrome="_pivotChrome" Culture="Culture" ViewportHeight="460" />;
     #endregion
 

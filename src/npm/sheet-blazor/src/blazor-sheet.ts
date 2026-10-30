@@ -479,7 +479,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the caller names the shape .NET wrote, and so the one assertion is here
 export function parsed<T>(json: string): T {
     if (typeof json !== 'string') throw new TypeError('Internal: .NET sent the bridge something other than JSON text.');
-    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExSheet.Script writes; each reader checks what it reads
+    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExSheet.Components writes; each reader checks what it reads
 }
 
 // A command's answer, or the Sheet's refusal of it, which crosses as data: any other failure is the command's.

@@ -33,12 +33,12 @@ public class ScriptGridFormulaEntryTests : BunitContext
         grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(
-        Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null, bool stamped = true)
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(
+        Action<ComponentParameterCollectionBuilder<global::ExGrid.Components.ExGrid<TestRow>>>? extra = null, bool stamped = true)
     {
         if (stamped)
             Stamp();
-        return Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+        return Render<global::ExGrid.Components.ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Rows, TestRows.Many(3)).Add(g => g.Columns, TestRows.Columns());
             extra?.Invoke(ps);
@@ -46,7 +46,7 @@ public class ScriptGridFormulaEntryTests : BunitContext
     }
 
     // The script's stamp, answered: until it is, the grid has not asked the browser to load the Consumer's functions.
-    private void Stamp() => _stamp.SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+    private void Stamp() => _stamp.SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
 
     private void Loads(string? refusal = null)
         => _module.Setup<string?>("loadScripts", _ => { _calls.Add("loadScripts"); return true; }).SetResult(refusal);
@@ -154,7 +154,7 @@ public class ScriptGridFormulaEntryTests : BunitContext
         Assert.Equal(3, outlined.GetProperty("colour").GetInt32());
         Assert.Contains("referenceKeyColoursChanged", options.GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
 
-        var bridge = Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+        var bridge = Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
             Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
         using var keys = JsonDocument.Parse("""[{"key":"Positions[PV]","colour":2}]""");
         await cut.InvokeAsync(() => bridge.Heard("referenceKeyColoursChanged", keys.RootElement));

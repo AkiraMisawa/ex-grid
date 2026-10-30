@@ -2,13 +2,13 @@ using System.Globalization;
 using System.Text.Json;
 using Bunit;
 using ExChart.Engine;
-using ExChart.Script;
+using ExChart.Components;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Testing;
 using Microsoft.JSInterop;
 using Xunit;
-using ScriptChart = ExChart.Script.ExChart;
-using ScriptSurface = ExChart.Script.ExSurface;
+using ScriptChart = ExChart.Components.ExChart;
+using ScriptSurface = ExChart.Components.ExSurface;
 using ScriptFunction = global::ExGrid.Data.ScriptFunction;
 
 namespace ExChart.Components.Tests;
@@ -55,7 +55,7 @@ public class ScriptChartTests : BunitContext
     private DotNetObjectReference<ScriptBridge> Bridge(string function)
         => Assert.IsType<DotNetObjectReference<ScriptBridge>>(Assert.Single(_module.Invocations[function]).Arguments[1]);
 
-    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExChart.Script imports answers the stamp the components are built with, at the version its address carries
+    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExChart.Components imports answers the stamp the components are built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_components_were_built_with()
     {
         const string module = "ex-chart-core.min.js";

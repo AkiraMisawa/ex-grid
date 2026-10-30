@@ -10,7 +10,7 @@
    server is handed the condition and they are asked again. A selection reaching rows not fetched is said
    under the blotter, and narrows nothing. The chart's 50,000 points are thinned on the server (ADR-0344),
    and a desk selected in the pivot narrows it, the server answering the desks under the cells (ADR-0345).
-   The Board is drawn by ExBoard.Script.ExBoard, Blazor's adapter over ExBoard's Script Core (ADR-0370
+   The Board is drawn by ExBoard.Components.ExBoard, Blazor's adapter over ExBoard's Script Core (ADR-0370
    section 1), the source staying in .NET and asked through it, the pivot reading the C# Pivot Source
    it makes through .NET as Leaf Aggregates (ADR-0370 section 3). *@
 <DemoChromeAssets>
@@ -20,7 +20,7 @@
 </DemoChromeAssets>
 
 <h1>A Board over a server</h1>
-<ExBoard.Script.ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
+<ExBoard.Components.ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
 <pre id="raised" role="log">@_raised</pre>
 
 @code {

@@ -25,21 +25,21 @@ public class ScriptPivotTests : BunitContext
     public ScriptPivotTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExPivot.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExPivot.Components.ScriptCoreAsset.Stamp);
         _module.Setup<string[]>("labelIds").SetResult(LabelIds);
         _pivot = _module.SetupModule("attach", _ => true);
         _pivot.SetupVoid("update", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExPivot.Script.ExPivot> Pivot(PivotSource source, Action<ComponentParameterCollectionBuilder<global::ExPivot.Script.ExPivot>>? more = null)
-        => Render<global::ExPivot.Script.ExPivot>(ps =>
+    private IRenderedComponent<global::ExPivot.Components.ExPivot> Pivot(PivotSource source, Action<ComponentParameterCollectionBuilder<global::ExPivot.Components.ExPivot>>? more = null)
+        => Render<global::ExPivot.Components.ExPivot>(ps =>
         {
             ps.Add(p => p.Source, source);
             more?.Invoke(ps);
         });
 
-    private DotNetObjectReference<global::ExPivot.Script.ScriptBridge> Bridge()
-        => Assert.IsType<DotNetObjectReference<global::ExPivot.Script.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
+    private DotNetObjectReference<global::ExPivot.Components.ScriptBridge> Bridge()
+        => Assert.IsType<DotNetObjectReference<global::ExPivot.Components.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
 
     private static JsonElement Parsed(object? json)
     {
@@ -94,7 +94,7 @@ public class ScriptPivotTests : BunitContext
         var defaults = new global::ExGrid.GridPresentationDefaults(10.4, 8.0, 4.95, 14, global::ExGrid.GridDensity.Standard);
         Render<CascadingValue<global::ExGrid.GridPresentationDefaults>>(ps => ps
             .Add(c => c.Value, defaults)
-            .AddChildContent<global::ExPivot.Script.ExPivot>(pivot => pivot
+            .AddChildContent<global::ExPivot.Components.ExPivot>(pivot => pivot
                 .Add(p => p.Source, SalesData.Bundled())
                 .Add(p => p.CellMetrics, metrics)));
 

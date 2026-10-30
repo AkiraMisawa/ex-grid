@@ -179,7 +179,7 @@ ExChart.GridChartBridge<TRow>.OnChart.get -> System.Func<ExChart.GridChart!, Sys
 ExChart.GridChartBridge<TRow>.OnChart.set -> void
 ExChart.GridChartBridge<TRow>.OnRefused.get -> System.Func<string!, System.Threading.Tasks.Task!>?
 ExChart.GridChartBridge<TRow>.OnRefused.set -> void
-ExChart.GridChartBridge<TRow>.ScriptGrid.get -> ExGrid.Script.ExGrid<TRow!>?
+ExChart.GridChartBridge<TRow>.ScriptGrid.get -> ExGrid.Components.ExGrid<TRow!>?
 ExChart.GridChartBridge<TRow>.ScriptGrid.set -> void
 ExChart.GridChartBridge<TRow>.ShowInGridAsync(ExChart.GridCell! cell) -> System.Threading.Tasks.Task<bool>!
 ExChart.GridChartBridge<TRow>.ShowInGridAsync(ExChart.GridChart! chart, ExChart.ChartPointClick! click) -> System.Threading.Tasks.Task<bool>!
@@ -237,83 +237,83 @@ ExChart.RowSeries.Name.init -> void
 ExChart.RowSeries.RowKey.get -> object!
 ExChart.RowSeries.RowKey.init -> void
 ExChart.RowSeries.RowSeries(string! Id, string! Panel, object! RowKey, string! Name, string! Group, ExChart.Engine.EquatableList<string!>! Columns) -> void
-ExChart.Script.ExChart
-ExChart.Script.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
-ExChart.Script.ExChart.AxisStyle.set -> void
-ExChart.Script.ExChart.Chrome.get -> ExChart.Chrome.IChartChrome?
-ExChart.Script.ExChart.Chrome.set -> void
-ExChart.Script.ExChart.ColourSlots.get -> int
-ExChart.Script.ExChart.ColourSlots.set -> void
-ExChart.Script.ExChart.Definition.get -> ExChart.Engine.ChartDefinition?
-ExChart.Script.ExChart.Definition.set -> void
-ExChart.Script.ExChart.Density.get -> ExGrid.GridDensity
-ExChart.Script.ExChart.Density.set -> void
-ExChart.Script.ExChart.Description.get -> string?
-ExChart.Script.ExChart.Description.set -> void
-ExChart.Script.ExChart.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExChart.Script.ExChart.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
-ExChart.Script.ExChart.ExChart() -> void
-ExChart.Script.ExChart.FileName.get -> string?
-ExChart.Script.ExChart.FileName.set -> void
-ExChart.Script.ExChart.Height.get -> double
-ExChart.Script.ExChart.Height.set -> void
-ExChart.Script.ExChart.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
-ExChart.Script.ExChart.HiddenSeries.set -> void
-ExChart.Script.ExChart.IndependentScales.get -> System.Collections.Generic.IReadOnlySet<string!>?
-ExChart.Script.ExChart.IndependentScales.set -> void
-ExChart.Script.ExChart.Legend.get -> ExChart.Engine.LegendPlacement?
-ExChart.Script.ExChart.Legend.set -> void
-ExChart.Script.ExChart.OnPointClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartPointClick!>
-ExChart.Script.ExChart.OnPointClick.set -> void
-ExChart.Script.ExChart.OnRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartRange?>
-ExChart.Script.ExChart.OnRangeChanged.set -> void
-ExChart.Script.ExChart.OnScaleChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.AxisScale>
-ExChart.Script.ExChart.OnScaleChanged.set -> void
-ExChart.Script.ExChart.OnSeriesVisibilityChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.SeriesVisibility!>
-ExChart.Script.ExChart.OnSeriesVisibilityChanged.set -> void
-ExChart.Script.ExChart.Range.get -> ExChart.ChartRange?
-ExChart.Script.ExChart.Range.set -> void
-ExChart.Script.ExChart.Scale.get -> ExChart.Engine.AxisScale?
-ExChart.Script.ExChart.Scale.set -> void
-ExChart.Script.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
-ExChart.Script.ExChart.Sources.set -> void
-ExChart.Script.ExChart.Spec.get -> string?
-ExChart.Script.ExChart.Spec.set -> void
-ExChart.Script.ExChart.Title.get -> string?
-ExChart.Script.ExChart.Title.set -> void
-ExChart.Script.ExChart.Width.get -> double
-ExChart.Script.ExChart.Width.set -> void
-ExChart.Script.ExChart.YScale.get -> ExChart.Engine.AxisScale?
-ExChart.Script.ExChart.YScale.set -> void
-ExChart.Script.ExSurface
-ExChart.Script.ExSurface.Definition.get -> ExChart.Engine.SurfaceDefinition!
-ExChart.Script.ExSurface.Definition.set -> void
-ExChart.Script.ExSurface.Density.get -> ExGrid.GridDensity
-ExChart.Script.ExSurface.Density.set -> void
-ExChart.Script.ExSurface.Description.get -> string?
-ExChart.Script.ExSurface.Description.set -> void
-ExChart.Script.ExSurface.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExChart.Script.ExSurface.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
-ExChart.Script.ExSurface.ExSurface() -> void
-ExChart.Script.ExSurface.FileName.get -> string?
-ExChart.Script.ExSurface.FileName.set -> void
-ExChart.Script.ExSurface.Height.get -> double
-ExChart.Script.ExSurface.Height.set -> void
-ExChart.Script.ExSurface.OnSliceChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceSlice!>
-ExChart.Script.ExSurface.OnSliceChanged.set -> void
-ExChart.Script.ExSurface.OnViewChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceView!>
-ExChart.Script.ExSurface.OnViewChanged.set -> void
-ExChart.Script.ExSurface.Slice.get -> ExChart.Engine.SurfaceSlice?
-ExChart.Script.ExSurface.Slice.set -> void
-ExChart.Script.ExSurface.SliceWidth.get -> double
-ExChart.Script.ExSurface.SliceWidth.set -> void
-ExChart.Script.ExSurface.SvgTextAsync() -> System.Threading.Tasks.ValueTask<string?>
-ExChart.Script.ExSurface.Title.get -> string?
-ExChart.Script.ExSurface.Title.set -> void
-ExChart.Script.ExSurface.View.get -> ExChart.Engine.SurfaceView?
-ExChart.Script.ExSurface.View.set -> void
-ExChart.Script.ExSurface.Width.get -> double
-ExChart.Script.ExSurface.Width.set -> void
+ExChart.Components.ExChart
+ExChart.Components.ExChart.AxisStyle.get -> ExChart.Engine.AxisStyle?
+ExChart.Components.ExChart.AxisStyle.set -> void
+ExChart.Components.ExChart.Chrome.get -> ExChart.Chrome.IChartChrome?
+ExChart.Components.ExChart.Chrome.set -> void
+ExChart.Components.ExChart.ColourSlots.get -> int
+ExChart.Components.ExChart.ColourSlots.set -> void
+ExChart.Components.ExChart.Definition.get -> ExChart.Engine.ChartDefinition?
+ExChart.Components.ExChart.Definition.set -> void
+ExChart.Components.ExChart.Density.get -> ExGrid.GridDensity
+ExChart.Components.ExChart.Density.set -> void
+ExChart.Components.ExChart.Description.get -> string?
+ExChart.Components.ExChart.Description.set -> void
+ExChart.Components.ExChart.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExChart.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
+ExChart.Components.ExChart.ExChart() -> void
+ExChart.Components.ExChart.FileName.get -> string?
+ExChart.Components.ExChart.FileName.set -> void
+ExChart.Components.ExChart.Height.get -> double
+ExChart.Components.ExChart.Height.set -> void
+ExChart.Components.ExChart.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>?
+ExChart.Components.ExChart.HiddenSeries.set -> void
+ExChart.Components.ExChart.IndependentScales.get -> System.Collections.Generic.IReadOnlySet<string!>?
+ExChart.Components.ExChart.IndependentScales.set -> void
+ExChart.Components.ExChart.Legend.get -> ExChart.Engine.LegendPlacement?
+ExChart.Components.ExChart.Legend.set -> void
+ExChart.Components.ExChart.OnPointClick.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartPointClick!>
+ExChart.Components.ExChart.OnPointClick.set -> void
+ExChart.Components.ExChart.OnRangeChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.ChartRange?>
+ExChart.Components.ExChart.OnRangeChanged.set -> void
+ExChart.Components.ExChart.OnScaleChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.AxisScale>
+ExChart.Components.ExChart.OnScaleChanged.set -> void
+ExChart.Components.ExChart.OnSeriesVisibilityChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.SeriesVisibility!>
+ExChart.Components.ExChart.OnSeriesVisibilityChanged.set -> void
+ExChart.Components.ExChart.Range.get -> ExChart.ChartRange?
+ExChart.Components.ExChart.Range.set -> void
+ExChart.Components.ExChart.Scale.get -> ExChart.Engine.AxisScale?
+ExChart.Components.ExChart.Scale.set -> void
+ExChart.Components.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
+ExChart.Components.ExChart.Sources.set -> void
+ExChart.Components.ExChart.Spec.get -> string?
+ExChart.Components.ExChart.Spec.set -> void
+ExChart.Components.ExChart.Title.get -> string?
+ExChart.Components.ExChart.Title.set -> void
+ExChart.Components.ExChart.Width.get -> double
+ExChart.Components.ExChart.Width.set -> void
+ExChart.Components.ExChart.YScale.get -> ExChart.Engine.AxisScale?
+ExChart.Components.ExChart.YScale.set -> void
+ExChart.Components.ExSurface
+ExChart.Components.ExSurface.Definition.get -> ExChart.Engine.SurfaceDefinition!
+ExChart.Components.ExSurface.Definition.set -> void
+ExChart.Components.ExSurface.Density.get -> ExGrid.GridDensity
+ExChart.Components.ExSurface.Density.set -> void
+ExChart.Components.ExSurface.Description.get -> string?
+ExChart.Components.ExSurface.Description.set -> void
+ExChart.Components.ExSurface.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExChart.Components.ExSurface.DownloadAsync(ExChart.ChartFileFormat format) -> System.Threading.Tasks.Task<bool>!
+ExChart.Components.ExSurface.ExSurface() -> void
+ExChart.Components.ExSurface.FileName.get -> string?
+ExChart.Components.ExSurface.FileName.set -> void
+ExChart.Components.ExSurface.Height.get -> double
+ExChart.Components.ExSurface.Height.set -> void
+ExChart.Components.ExSurface.OnSliceChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceSlice!>
+ExChart.Components.ExSurface.OnSliceChanged.set -> void
+ExChart.Components.ExSurface.OnViewChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExChart.Engine.SurfaceView!>
+ExChart.Components.ExSurface.OnViewChanged.set -> void
+ExChart.Components.ExSurface.Slice.get -> ExChart.Engine.SurfaceSlice?
+ExChart.Components.ExSurface.Slice.set -> void
+ExChart.Components.ExSurface.SliceWidth.get -> double
+ExChart.Components.ExSurface.SliceWidth.set -> void
+ExChart.Components.ExSurface.SvgTextAsync() -> System.Threading.Tasks.ValueTask<string?>
+ExChart.Components.ExSurface.Title.get -> string?
+ExChart.Components.ExSurface.Title.set -> void
+ExChart.Components.ExSurface.View.get -> ExChart.Engine.SurfaceView?
+ExChart.Components.ExSurface.View.set -> void
+ExChart.Components.ExSurface.Width.get -> double
+ExChart.Components.ExSurface.Width.set -> void
 ExChart.SeriesVisibility
 ExChart.SeriesVisibility.<Clone>$() -> ExChart.SeriesVisibility!
 ExChart.SeriesVisibility.Deconstruct(out string! Key, out bool Hidden) -> void

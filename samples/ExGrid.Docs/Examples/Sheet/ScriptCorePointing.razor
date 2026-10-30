@@ -3,11 +3,11 @@
 @using ExSheet
 @using ExSheet.Engine
 
-<ExGrid.Script.ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" PointedAt="_pointedAt"
+<ExGrid.Components.ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" PointedAt="_pointedAt"
                       ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
 
 <div class="mt-4">
-    <ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused"
+    <ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused"
                             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
 </div>
 
@@ -15,7 +15,7 @@
 <p class="mt-3" role="status">@_said</p>
 
 @code {
-    private ExSheet.Script.ExSheet? _sheet;
+    private ExSheet.Components.ExSheet? _sheet;
     private SheetDocument _document = CostReport.Document();
     // Never changed here, so the grid and the Sheet read the same rows.
     private static readonly CostCentre[] Centres = CostCentre.Sample();

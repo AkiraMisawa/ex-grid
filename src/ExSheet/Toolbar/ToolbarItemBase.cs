@@ -24,7 +24,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     internal ToolbarOrder Place { get; private set; } = new();
 
     /// <summary>The ExSheet's toolbar, where the item declares itself. Internal, as its type is (ADR-0201).</summary>
-    [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
+    [CascadingParameter] internal global::ExSheet.Components.ScriptToolbar? Script { get; set; }
 
     /// <summary>
     /// The item's KeyTip letters (ADR-0100): a <see cref="ToolbarButton"/>'s only, which carries one when it is declared

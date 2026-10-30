@@ -1,5 +1,5 @@
 @page "/script-grid"
-@using global::ExGrid.Script
+@using global::ExGrid.Components
 @using global::ExGrid.Clipboard
 @using global::ExGrid.Finding
 
@@ -8,7 +8,7 @@
 <h1>ExGrid over the Script Core</h1>
 
 <p>
-    The grid below is <code>ExGrid.Script.ExGrid</code>: Blazor's Framework Adapter over
+    The grid below is <code>ExGrid.Components.ExGrid</code>: Blazor's Framework Adapter over
     <code>@@ex-grid/core</code> (ADR-0350 section 7). The keys, the Selection, the clipboard and the
     editor are the Script Core's, in the browser, on both hosting models; the rows, their order and
     what an edit does to them stay in .NET, behind <code>GridSource.From</code>. Sort or filter from
@@ -23,7 +23,7 @@
     answered in .NET by the ruleset that holds the flags (ADR-0381).
 </p>
 
-<ExGrid.Script.ExGrid TRow="DemoTrade"
+<ExGrid.Components.ExGrid TRow="DemoTrade"
                      Source="_source"
                      Columns="Columns"
                      ViewportHeight="360"
@@ -68,7 +68,7 @@
 
     private readonly InMemoryGridSource<DemoTrade> _source = GridSource.From(DemoData.Window(1_000, 7));
 
-    private ExGrid.Script.ExGrid<DemoTrade>? _grid;
+    private ExGrid.Components.ExGrid<DemoTrade>? _grid;
     private ElementReference _noteField;
     private string _selection = "none";
     private string _edit = "none";

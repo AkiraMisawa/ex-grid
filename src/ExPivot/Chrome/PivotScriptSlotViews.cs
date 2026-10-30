@@ -4,7 +4,7 @@ namespace ExPivot.Chrome;
 
 /// <summary>
 /// The Chrome slots an <see cref="IPivotChrome"/> fills with Razor when the Script Core draws the pivot
-/// (<c>ExPivot.Script.ExPivot</c>, ADR-0410): each named here is asked for through its view overload, and the
+/// (<c>ExPivot.Components.ExPivot</c>, ADR-0410): each named here is asked for through its view overload, and the
 /// Script Core draws its own part for every slot not named. The report grid's slots are the grid Chrome's
 /// (<see cref="IPivotChrome.GridChrome"/>), named by its own <c>ScriptSlots</c>.
 /// </summary>

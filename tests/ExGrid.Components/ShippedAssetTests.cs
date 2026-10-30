@@ -93,7 +93,7 @@ public class ShippedAssetTests
     [Fact] // ADR-0123 / ERR-9: what ExGrid was compiled with is what the files say: its stylesheet's address, version and stamp
     public void ERR9_ExGrid_is_built_with_the_recorded_stylesheet()
     {
-        var shipped = typeof(global::ExGrid.Script.ExGrid<>).Assembly.GetType("ExGrid.ShippedAssets", throwOnError: true)!;
+        var shipped = typeof(global::ExGrid.Components.ExGrid<>).Assembly.GetType("ExGrid.ShippedAssets", throwOnError: true)!;
         string Compiled(string name) => (string)shipped.GetField(name, BindingFlags.NonPublic | BindingFlags.Static)!.GetRawConstantValue()!;
         foreach (var name in new[] { "StylesheetPath", "StylesheetVersion", "StylesheetStamp", "StylesheetName" })
             Assert.Equal(Recorded("ExGrid", name), Compiled(name));
@@ -160,7 +160,7 @@ public class ShippedAssetTests
     [Fact] // ADR-0123 / ADR-0350 s7: the bundled module answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()
     {
-        var stamp = global::ExGrid.Script.ScriptCoreAsset.Stamp;
+        var stamp = global::ExGrid.Components.ScriptCoreAsset.Stamp;
         var module = Path.Combine(Wwwroot("ExGrid"), ScriptCoreModule);
         var shipped = File.ReadAllText(module);
         var banner = Banner.Match(shipped);
@@ -168,7 +168,7 @@ public class ShippedAssetTests
         Assert.Equal("ex-grid-core.js", banner.Groups["name"].Value);
         Assert.Equal(stamp, banner.Groups["hash"].Value);
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
-        Assert.Equal(global::ExGrid.Script.ScriptCoreAsset.Version, HashOf(shipped)[..12]);
+        Assert.Equal(global::ExGrid.Components.ScriptCoreAsset.Version, HashOf(shipped)[..12]);
         Assert.Contains($"sourceMappingURL={ScriptCoreModule}.map", shipped, StringComparison.Ordinal);
     }
 

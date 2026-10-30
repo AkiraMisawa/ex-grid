@@ -1,4 +1,4 @@
-// The page's own module, which ExGrid.Script.ExGrid on /script-formula-entry imports in the browser and calls as it
+// The page's own module, which ExGrid.Components.ExGrid on /script-formula-entry imports in the browser and calls as it
 // decides each key in the editor (ADR-0431). It ships in this Razor class library, at _content/ExGrid.DemoPages/, as a
 // Consumer's library would. The grid knows positions; what a Reference is called, and where one may go, is the page's:
 // here the A1 names of the grid's four columns, A to D.

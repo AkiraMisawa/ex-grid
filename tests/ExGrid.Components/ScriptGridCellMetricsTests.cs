@@ -20,7 +20,7 @@ public class ScriptGridCellMetricsTests : BunitContext
     public ScriptGridCellMetricsTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -39,7 +39,7 @@ public class ScriptGridCellMetricsTests : BunitContext
     {
         var metrics = new CellTextMetrics(9, 7, 3, 13, 8, 10, 8, 4, 12, 13)
             .WithGlyphWidths(new GlyphWidthTable(16, [("W", 14, 15)]), 13);
-        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.CellMetrics, metrics));
@@ -65,7 +65,7 @@ public class ScriptGridCellMetricsTests : BunitContext
         var defaults = new GridPresentationDefaults(10.4, 8.0, 4.95, 14, GridDensity.Standard, stripeRows: true);
         Render<CascadingValue<GridPresentationDefaults>>(ps => ps
             .Add(c => c.Value, defaults)
-            .AddChildContent<global::ExGrid.Script.ExGrid<TestRow>>(grid => grid
+            .AddChildContent<global::ExGrid.Components.ExGrid<TestRow>>(grid => grid
                 .Add(g => g.Rows, TestRows.Window())
                 .Add(g => g.Columns, Columns)
                 .Add(g => g.HighlightHoverRow, false)));
@@ -86,7 +86,7 @@ public class ScriptGridCellMetricsTests : BunitContext
     [Fact] // ADR-0016: metrics nobody measured are refused by name, as the C# core refuses them
     public void ADR0016_default_cell_metrics_are_refused()
     {
-        var refused = Assert.Throws<ArgumentOutOfRangeException>(() => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var refused = Assert.Throws<ArgumentOutOfRangeException>(() => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.CellMetrics, default(CellTextMetrics))));

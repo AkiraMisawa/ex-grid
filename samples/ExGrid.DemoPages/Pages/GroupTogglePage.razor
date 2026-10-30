@@ -1,5 +1,5 @@
 @page "/group-toggle"
-@using global::ExGrid.Script
+@using global::ExGrid.Components
 
 <DemoNav />
 
@@ -13,7 +13,7 @@
 </p>
 
 <div id="group-toggle">
-    <ExGrid.Script.ExGrid TRow="DemoTrade" Source="_source" Columns="@(_open ? All : Closed)"
+    <ExGrid.Components.ExGrid TRow="DemoTrade" Source="_source" Columns="@(_open ? All : Closed)"
                          HeaderGroups="@(_open ? OpenGroups : ClosedGroups)" OnHeaderGroupToggled="Toggled"
                          ViewportHeight="240" ViewportWidth="640" />
 </div>
@@ -26,7 +26,7 @@
 </p>
 
 <div id="hidden-marks">
-    <ExGrid.Script.ExGrid TRow="DemoTrade" Source="_source" Columns="Marked" HeaderGroups="MarkGroups"
+    <ExGrid.Components.ExGrid TRow="DemoTrade" Source="_source" Columns="Marked" HeaderGroups="MarkGroups"
                          OnHeaderGroupToggled="Ignored" ViewportHeight="160" ViewportWidth="640" />
 </div>
 

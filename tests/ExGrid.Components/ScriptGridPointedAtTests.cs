@@ -18,7 +18,7 @@ public class ScriptGridPointedAtTests : BunitContext
     public ScriptGridPointedAtTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -27,8 +27,8 @@ public class ScriptGridPointedAtTests : BunitContext
     private static GridPointedAt<TestRow> Declared(string declaration = "scope-1") => new(new GridPointedInBrowser<TestRow>(
         "scope", declaration, "Trades", new Dictionary<string, string> { ["Book"] = "Trade" }, row => $"[\"{row.Book}\"]"));
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(GridPointedAt<TestRow>? pointedAt) =>
-        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(GridPointedAt<TestRow>? pointedAt) =>
+        Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Many(3))
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.PointedAt, pointedAt));

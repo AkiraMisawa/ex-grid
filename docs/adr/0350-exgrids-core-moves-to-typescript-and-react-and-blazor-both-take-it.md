@@ -243,6 +243,14 @@ bridge waits until what a write of the user's holds is taken in, so the core hol
 rows moved rather than "no error". `OnFindError` takes a `Source` and is refused beside `Rows`, whose order the
 grid keeps out of the Consumer's sight.)*
 
+*(2026-10-30, step 2 replaced the one with the other: #501 removed `ExGrid.Components.ExGrid<TRow>` drawn in
+.NET, and the adapter then took its name, `ExGrid.Script.ExGrid<TRow>` becoming `ExGrid.Components.ExGrid<TRow>`
+with each other product's adapter (`ExSheet.Components.ExSheet`, `ExPivot.Components.ExPivot`,
+`ExChart.Components.ExChart` and `ExSurface`, `ExBoard.Components.ExBoard`) and the code under `src/<Package>/Script/`
+moving to `src/<Package>/Components/`. The `Script` namespace never shipped, and 0.1.0 shipped the `Components` one,
+so a page written against 0.1.0 keeps its `@using`. The notes above name the adapter as it was named when they
+were written.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a

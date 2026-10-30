@@ -136,12 +136,12 @@
     <DocsSection Title="A sheet drawn in the browser">
         <p>
             Blazor's ExSheet runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
-            this site draws <code>ExSheet.Script.ExSheet</code>, which replaced the Razor component
-            <code>ExSheet.Components.ExSheet</code> in this release. The
+            this site draws <code>ExSheet.Components.ExSheet</code>, which in this release is drawn by that core in place
+            of .NET. The
             Workbook, its Formulas, the Formula Bar, the Sheet Tabs and the status-bar figures run in the browser on
             both hosting models, so on Blazor Server a key typed into a cell no longer crosses the circuit. It takes
-            the parameters above under the same names and defaults, so a page moves to it by its type
-            (<code>@@using ExSheet.Script</code>); its reads cross to the browser, so they are
+            the parameters above under the same names and defaults, so a page keeps its type and its
+            <code>@@using ExSheet.Components</code>; its reads cross to the browser, so they are
             <code>ToDocumentAsync</code>, <code>CellFormatAtAsync</code> and <code>LinkedTablesAsync</code>. The documents
             cross as the JSON both engines read and write: <code>Document</code> or <code>Workbook</code> goes to the
             browser when you hand over one of your own, and each change comes back through <code>DocumentChanged</code>
@@ -172,7 +172,7 @@
             you the Selection Summary the Sheet in the browser answered, as the Sheet above's does. A document, or
             anything else the browser hands .NET, that is larger than a message of a Server circuit carries crosses as
             a stream, so the hub's 32 KB limit need not be raised for it. A <code>PointingScope</code> and
-            <code>OnPointingRefused</code> point into <code>ExGrid.Script.ExGrid</code>s registered in the Scope
+            <code>OnPointingRefused</code> point into <code>ExGrid.Components.ExGrid</code>s registered in the Scope
             (<a href="exsheet/linked-tables">Linked Tables</a> says how). Its <code>Chrome</code> fills the slots of
             the Sheet's grid as <a href="exgrid#a-grid-drawn-in-the-browser">ExGrid's</a> does: a part drawn in Razor,
             such as <code>MudSheetChrome</code>'s Context Menu, is rendered beside the Sheet and moved into its place
@@ -357,7 +357,7 @@
     </DocsSection>
 
     <DocsSection Title="API">
-        <ApiTable Type="typeof(global::ExSheet.Script.ExSheet)" />
+        <ApiTable Type="typeof(global::ExSheet.Components.ExSheet)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.SheetDocument)" />
     </DocsSection>
 </DocsPage>
