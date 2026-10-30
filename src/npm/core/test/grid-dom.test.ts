@@ -84,6 +84,91 @@ describe('createGrid', () => {
         expect(after.filter(row => !before.includes(row))).toHaveLength(1);
     });
 
+    it('ADR-0038 RR-13: with Row Stripes on, a row that stays on screen is not touched when the Viewport moves one row', async () => {
+        const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, stripeRows: true });
+        await painted();
+        const before = rowsOf(root);
+        const written: Node[] = [];
+        const observer = new MutationObserver(records => { for (const record of records) written.push(record.target); });
+        observer.observe(root, { subtree: true, childList: true, attributes: true, characterData: true });
+        await scrollTo(root, 24);
+        observer.disconnect();
+        const after = rowsOf(root);
+        expect(after.slice(0, 19)).toEqual(before.slice(1));
+        // The stripe is counted by the row's place in the result, so it stays with its row: nothing under a row
+        // that stayed was written, its stripe included.
+        const surviving = after.slice(0, 19);
+        expect(written.filter(node => surviving.some(row => row.contains(node)))).toEqual([]);
+        expect(surviving.map(row => row.classList.contains('ex-row-stripe')))
+            .toEqual(surviving.map(row => Number(row.getAttribute('aria-rowindex')) % 2 === 1));
+    });
+
+    it('ADR-0018 MEM-4: destroying the grid removes every listener it put on its root and stops every report it asked for', async () => {
+        const root = document.createElement('div');
+        document.body.append(root);
+        // Each listener by its function, type and phase, as the DOM tells one from another; removing one never added
+        // is harmless, and a grid may let go of what it holds only sometimes.
+        const listening = new Set<string>();
+        const ids = new Map<EventListenerOrEventListenerObject, number>();
+        const key = (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): string => {
+            if (!ids.has(listener)) ids.set(listener, ids.size);
+            return `${type} ${String(typeof options === 'boolean' ? options : options?.capture === true)} ${String(ids.get(listener))}`;
+        };
+        const add = root.addEventListener.bind(root);
+        const remove = root.removeEventListener.bind(root);
+        root.addEventListener = (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => {
+            listening.add(key(type, listener, options));
+            add(type, listener, options);
+        };
+        root.removeEventListener = (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions) => {
+            listening.delete(key(type, listener, options));
+            remove(type, listener, options);
+        };
+        let reports = 0;
+        class Counted extends Told {
+            override observeViewport(scroller: HTMLElement, tell: Parameters<Told['observeViewport']>[1]): () => void {
+                reports++;
+                const stop = super.observeViewport(scroller, tell);
+                return () => { reports--; stop(); };
+            }
+            override observeCeiling(probe: HTMLElement, tell: (px: number) => void): () => void {
+                reports++;
+                const stop = super.observeCeiling(probe, tell);
+                return () => { reports--; stop(); };
+            }
+            override observeDevicePixel(tell: (ratio: number) => void): () => void {
+                reports++;
+                const stop = super.observeDevicePixel(tell);
+                return () => { reports--; stop(); };
+            }
+        }
+        const view = new GridView(root, { columns, rows: trades(10), rowHeight: 24, viewportHeight: 480 }, new Counted());
+        await painted();
+        expect([...listening].some(entry => entry.startsWith('keydown true ')), 'the capture-phase key listener is on the root').toBe(true);
+        expect(reports).toBe(3);
+        view.destroy();
+        expect([...listening]).toEqual([]);
+        expect(reports).toBe(0);
+        root.remove();
+    });
+
+    it('ADR-0003 RR-5: a new array of the same rows writes nothing; a column object made anew paints every row again', async () => {
+        const rows = trades(100);
+        const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        const before = rowsOf(root).map(row => [...row.children]);
+        view.update({ columns, rows: [...rows], rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        expect(rowsOf(root).map(row => [...row.children])).toEqual(before);
+        // Equal in every field, and still another column: the instance is the signal, never a comparison of what
+        // a column holds, which would call two formats that capture alike the same (ADR-0003).
+        view.update({ columns: columns.map(column => ({ ...column })), rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        const after = rowsOf(root).map(row => [...row.children]);
+        expect(after).toHaveLength(before.length);
+        expect(after.every((cells, i) => cells.every((cell, j) => cell !== before[i]?.[j]))).toBe(true);
+    });
+
     it('ADR-0003: a pass with nothing changed writes nothing', async () => {
         const rows = trades(100);
         const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480 });
