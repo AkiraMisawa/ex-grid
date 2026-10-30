@@ -69,24 +69,20 @@
 
     <DocsSection Title="Drawing a part yourself">
         <p>
-            <code>PivotChrome</code> takes an <code>IPivotChrome</code>, which draws the pane, the Pivot Toolbar, the
-            menus, the panels and the Details tabs and dialog; a member that answers null leaves its part to ExPivot's
-            markup. What it draws renders and calls back: what a command does is ExPivot's.
+            <code>Chrome</code> takes an <code>IPivotChrome</code>, which draws the pane, the Pivot Toolbar, the
+            menus, the panels and the Details tabs and dialog in Razor. Its <code>ScriptSlots</code> names the parts it
+            draws, and each is asked for through its view overload (<code>Toolbar(PivotToolbarView)</code> here); every
+            part it does not name is ExPivot's own. What it draws renders and calls back: what a command does is
+            ExPivot's.
         </p>
         <p>
-            Each part's context carries ExPivot's Input Order. A control of yours that changes the pivot or moves the
-            keyboard says which of its events it answers in a <code>data-ex-claims</code> attribute
-            (<code>click</code>, <code>keydown</code>, …) and hands its work to the context's
-            <code>InOrder(kind, handling)</code> each time that event comes, so it is handled in its place among the
-            report's keys and presses. A field of a panel's draft claims nothing (<code>data-ex-claims=""</code>), which
-            makes it, holding the keyboard, the pivot's own. A control asked to take the keyboard
-            (<code>FocusRequest</code>) takes it through the context's <code>TakeKeyboard</code>, never its own
-            <code>FocusAsync</code>: it lands at the end of the turn that asked, through the report's grid, and the keys
-            typed meanwhile follow it. You may hand it the box around a design system's control whose input you cannot
-            reference: the box's first text field takes the keyboard, or else its first control, and that holds while no
-            report is drawn too — the report empty, its first answer still on its way, or failed. A button that only claims its click is pressed by a key the user typed straight
-            away, but not by one held behind an earlier input, which is handed on as a keydown and presses no button:
-            claim <code>keydown</code> too and press it at Enter's keydown, as ExPivot's own buttons do.
+            A view is data only, drawn again at each change, and the markup carries no handler. Each control is marked
+            with a <code>PivotScriptSlotAttributes</code> attribute instead: the press it makes (<code>Press</code>),
+            the name the pivot gives the keyboard to (<code>Control</code>), and the box a menu or panel opens in
+            (<code>Anchor</code>), drawn empty. ExPivot's script wires them in the browser, in the pivot's Input Order,
+            so a press made straight after a change, or a key held behind an earlier input, is taken in its place on
+            both hosting models, and the keyboard goes back to Layout ▾ when its menu closes. A design system's control
+            that renders its own element takes the marks as its attributes (MudBlazor's <code>UserAttributes</code>).
         </p>
         <p>
             Under React a part is a member of <code>chrome</code>, a function of the part's context that returns what

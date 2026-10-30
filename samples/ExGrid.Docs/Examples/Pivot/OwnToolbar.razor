@@ -14,13 +14,15 @@
         Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
     };
 
-    // Your own Pivot Toolbar; every other member is left to ExPivot's built-in markup (null).
+    // Your own Pivot Toolbar; every other part is ExPivot's own.
     private sealed class OwnToolbarChrome : IPivotChrome
     {
-        public RenderFragment? Toolbar(PivotToolbarContext context) => builder =>
+        public PivotScriptSlots ScriptSlots => PivotScriptSlots.Toolbar;
+
+        public RenderFragment? Toolbar(PivotToolbarView view) => builder =>
         {
             builder.OpenComponent<OwnToolbarView>(0);
-            builder.AddComponentParameter(1, nameof(OwnToolbarView.Context), context);
+            builder.AddComponentParameter(1, nameof(OwnToolbarView.View), view);
             builder.CloseComponent();
         };
     }

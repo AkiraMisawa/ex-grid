@@ -1,41 +1,32 @@
-@using global::ExGrid.Chrome
 @using ExPivot.Chrome
 
-@* Each button claims its click (data-ex-claims) and hands its work to the context's InOrder, so the
-   click is handled in its place among the report's keys and presses. *@
+@* Data only, and no handler: each button is marked with the press it makes and the name the pivot gives the keyboard
+   to, and each box with the name of what opens in it. ExPivot's script wires them in the browser. *@
 <div style="display: flex; gap: 8px; align-items: center; padding-bottom: 6px">
-    @Context.ReportFilters
+    <div @attributes="@(View.ReportFilters ? Marks(PivotScriptSlotAttributes.Anchor, "report-filters") : None)"></div>
     <span style="position: relative; margin-left: auto">
-        <button @ref="_layoutButton" type="button" data-ex-claims="click" aria-haspopup="menu"
-                aria-expanded="@(Context.LayoutMenu.IsOpen ? "true" : "false")"
-                @onclick="() => Context.InOrder(GridInputKind.Click, OpenLayoutMenu)">@Context.LayoutMenu.Label ▾</button>
-        @Context.LayoutMenu.Popup
+        <button type="button" aria-haspopup="menu" aria-expanded="@(View.LayoutMenuOpen ? "true" : "false")"
+                @attributes="@Marks(PivotScriptSlotAttributes.Press, "layout", PivotScriptSlotAttributes.Control, "layout")">@View.LayoutLabel ▾</button>
+        <span @attributes="@Marks(PivotScriptSlotAttributes.Anchor, "layout")"></span>
     </span>
-    <button type="button" data-ex-claims="click" aria-pressed="@(Context.FieldList.Checked == true ? "true" : "false")"
-            @onclick="() => Context.InOrder(GridInputKind.Click, Context.FieldList.Invoke)">@Context.FieldList.Label</button>
+    <button type="button" aria-pressed="@(View.FieldListShown ? "true" : "false")"
+            @attributes="@Marks(PivotScriptSlotAttributes.Press, "field-list", PivotScriptSlotAttributes.Control, "field-list")">@View.FieldListLabel</button>
 </div>
+@if (View.Refusal is { } refusal)
+{
+    <div role="alert">@refusal</div>
+}
 
 @code {
-    private ElementReference _layoutButton;
-    private int _acted;
+    [Parameter, EditorRequired] public PivotToolbarView View { get; set; } = default!;
 
-    [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
+    private static readonly IReadOnlyDictionary<string, object> None = new Dictionary<string, object>();
 
-    private Task OpenLayoutMenu()
+    private static Dictionary<string, object> Marks(params string[] pairs)
     {
-        Context.LayoutMenu.Open();
-        return Task.CompletedTask;
-    }
-
-    // Layout ▾ takes the keyboard back when its menu closes: through the context's TakeKeyboard, once
-    // for each request.
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        var request = Context.LayoutMenu.FocusRequest;
-        if (request != 0 && request != _acted)
-        {
-            _acted = request;
-            await Context.TakeKeyboard(_layoutButton);
-        }
+        var marks = new Dictionary<string, object>();
+        for (var i = 0; i < pairs.Length; i += 2)
+            marks[pairs[i]] = pairs[i + 1];
+        return marks;
     }
 }
