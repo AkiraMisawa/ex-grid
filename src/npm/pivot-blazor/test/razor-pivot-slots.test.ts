@@ -371,6 +371,16 @@ describe('ExPivot\'s Razor slots', () => {
             'start {"entry":{"area":"values","index":0}}', 'enter rows 0', 'over', 'drop rows 2', 'drop on list',
         ]);
 
+        // A field placed in another Area a round trip before .NET draws it: an entry whose place still holds the field
+        // it was drawn with drags, as a field ticked and an entry dragged at once over a slow circuit do (ADR-0410).
+        heard.length = 0;
+        const drawnAreas = view.areas;
+        view = { ...view, areas: drawnAreas.map(area => area.area === 'values' ? { ...area, entries: [...area.entries, entryOf('values', 1, 'Sum of Notional')], end: 2 } : area) };
+        for (const listener of listeners) listener();
+        at('[data-ex-pivot-entry="entry:rows:0"]').dispatchEvent(new DragEvent('dragstart', { bubbles: true }));
+        expect(heard).toEqual(['start {"entry":{"area":"rows","index":0}}']);
+        view = { ...view, areas: drawnAreas };
+
         // The Areas changed under the contents, a round trip before .NET draws them again: an entry's place now names
         // another field, so a press or a drag on it does nothing, and a drop ends the drag.
         heard.length = 0;

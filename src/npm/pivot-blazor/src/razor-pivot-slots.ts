@@ -529,6 +529,15 @@ function entriesOf(view: PivotFieldListView): string {
     return JSON.stringify(view.areas.map(area => [area.area, area.entries.map(entry => [entry.key, entry.caption, entry.values])]));
 }
 
+// The entry `key` names in `view`, by its place and what it shows, or none.
+function entryNamed(view: PivotFieldListView, key: string): string | undefined {
+    for (const area of view.areas) {
+        const entry = area.entries.find(each => each.key === key);
+        if (entry !== undefined) return JSON.stringify([area.area, entry.key, entry.caption, entry.values]);
+    }
+    return undefined;
+}
+
 /**
  * Wires the Field List's contents (ADR-0410 section 2, ADR-0061): the search typed, a field's checkbox and Defer Layout
  * Update ticked, Hide, Update and each entry's button pressed, and every drag and drop, in the browser. An entry is
@@ -553,6 +562,8 @@ function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, d
         throw new RangeError(`An element is marked ${pivotSlotAttributes.entry}="${key}", which names no entry the pane was drawn with.`);
     };
     const asDrawn = (): boolean => entriesOf(list.view()) === entriesOf(drawn());
+    // Whether the place `key` names holds now the field it was drawn with.
+    const standsAsDrawn = (key: string): boolean => entryNamed(list.view(), key) === entryNamed(drawn(), key);
     const presses: Record<string, () => void> = { close: list.close, update: list.update };
     for (const area of drawn().areas) {
         for (const { key } of area.entries) {
@@ -606,8 +617,8 @@ function wireFieldList(contents: HTMLElement, list: PivotFieldListSlotContext, d
             if (!(event instanceof DragEvent)) return;
             const entry = around(event.target, pivotSlotAttributes.entry);
             if (entry !== undefined) {
-                // Taken on a place a newer layout moved: the browser's drag is refused, and nothing is dragged.
-                if (asDrawn()) list.startDrag(event, { entry: entryAt(entry[1]).entry.entry });
+                // Taken on a place a newer layout gave another field: the browser's drag is refused, and nothing is dragged.
+                if (standsAsDrawn(entry[1])) list.startDrag(event, { entry: entryAt(entry[1]).entry.entry });
                 else event.preventDefault();
                 return;
             }
