@@ -9,8 +9,8 @@ MudBlazor application:
     Settings… and Value Field Settings….
   - The Pivot Toolbar above the report: the report filter band, Layout ▾ with its menu, Refresh when
     the source can be refreshed, and the pane's toggle, with a refusal as an error `MudAlert`.
-  - Show Details' tabs, as `MudTabs` at the report's foot, and the content of its dialog. The
-    dialog itself is ExPivot's frame, not a `MudDialog`.
+  - Show Details' tabs at the report's foot, as text buttons in a tab list, and the content of its
+    dialog. The dialog itself is ExPivot's frame, not a `MudDialog`.
   - The Stale Report's notice, a warning `MudAlert` with a Retry button.
 
   It also dresses the report's grid with `ExGrid.MudBlazor`'s `MudGridChrome`, so you set one
@@ -21,7 +21,8 @@ MudBlazor application:
   surface, the grid's palette mapping, and the Roboto widths the report's label column is sized
   with.
 
-The pivot's behaviour does not change. The Chrome draws and calls back, and ExPivot decides what
+The pivot's behaviour does not change. The Chrome draws each part from the data ExPivot's Script Core hands it,
+its controls marked for the script that wires them in the browser, and ExPivot decides what
 every tick, drop and command means, which tab is selected, and where every menu, panel and dialog
 opens. The same gestures make the same layout under either Chrome.
 
@@ -62,13 +63,13 @@ builder.RootComponents.Add<ExPivot.MudBlazor.MudExPivotStylesheet>("head::after"
 
 ```razor
 @using ExGrid.MudBlazor
-@using ExPivot.Components
+@using ExPivot.Script
 @using ExPivot.Engine
 @using ExPivot.MudBlazor
 
 <MudExGridPaper Elevation="1" Hover="true">
     <ExPivot Source="_source" @bind-Layout="_layout"
-             PivotChrome="MudPivotChrome.Default" ViewportHeight="420" />
+             Chrome="MudPivotChrome.Default" ViewportHeight="420" />
 </MudExGridPaper>
 ```
 

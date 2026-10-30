@@ -187,18 +187,6 @@ else
     [SupplyParameterFromQuery(Name = "trades")]
     public int? TradesAsked { get; set; }
 
-    /// <summary><c>razor</c> draws the pivot with ExPivot's Razor component, which ships until the Script one
-    /// replaces it (ADR-0370 section 6, step 3); absent, with the Script one.</summary>
-    [SupplyParameterFromQuery(Name = "component")]
-    public string? ComponentName { get; set; }
-
-    private bool Razor => ComponentName switch
-    {
-        null => false,
-        "razor" => true,
-        _ => throw new ArgumentException($"Unknown component '{ComponentName}': this page runs with ?component=razor or without it.", nameof(ComponentName)),
-    };
-
     // How many trades the page pivots: ?trades=, or the 2,000 it opens with.
     private int TradeCount => TradesAsked is > 0 and var count ? count : DemoPivotData.Count;
 
@@ -225,21 +213,14 @@ else
         Describe();
     }
 
-    private RenderFragment Pivot => Razor ? RazorPivot : @<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
-                                                                                       @bind-ShowFieldList="_showFieldList" Chrome="_pivotChrome"
-                                                                                       OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
-                                                                                       Culture="Culture" ViewportHeight="460" />;
+    private RenderFragment Pivot => @<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
+                                                             @bind-ShowFieldList="_showFieldList" Chrome="_pivotChrome"
+                                                             OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
+                                                             Culture="Culture" ViewportHeight="460" />;
 
     // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0060).
     private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
     #endregion
-
-    // ?component=razor: the same pivot drawn by the Razor component.
-    private RenderFragment RazorPivot => @<ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
-                                                    @bind-ShowFieldList="_showFieldList"
-                                                    PivotChrome="_pivotChrome" Chrome="_gridChrome"
-                                                    OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
-                                                    Culture="Culture" ViewportHeight="460" />;
 
     // ?second=1: a second pivot over the same source, with a layout of its own.
     private PivotLayout _secondLayout = DemoPivotData.FirstLayout();
@@ -253,7 +234,7 @@ else
     protected override void OnParametersSet()
     {
         // The report grid takes ExPivot.MudBlazor's grid Chrome through the pivot Chrome; the
-        // details grid takes ExGrid.MudBlazor's directly (DemoChrome refuses any other name).
+        // details grid on the page takes ExGrid.MudBlazor's directly (DemoChrome refuses any other name).
         _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
         _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
         // Listening to OnShowDetails is what takes the records from the tab and the dialog.

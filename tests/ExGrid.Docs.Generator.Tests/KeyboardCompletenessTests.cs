@@ -1,14 +1,11 @@
 using System.Collections.Immutable;
 using Bunit;
 using ExGrid.Keys;
-using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
-using PivotComponent = global::ExPivot.Components.ExPivot;
-using PivotGrid = global::ExGrid.Components.ExGrid<global::ExPivot.Engine.PivotDisplayRow>;
 using SheetComponent = global::ExSheet.Components.ExSheet;
 using SheetGrid = global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>;
 
@@ -18,8 +15,8 @@ namespace ExGrid.Docs.Generator.Tests;
 /// The Keyboard reference held against the keys the products take (ADR-0110: a reference page's facts are read
 /// from a named source, and the Keyboard page lists every key in the three products). The rows are the site's own
 /// <c>KeyboardByHand</c>, read as the build reads them; the keys are ExGrid's key table (<c>GridKeys</c>, KB-2),
-/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet and ExPivot declare to
-/// their grids, read off the components as they render with everything that adds a key turned on. A key a menu,
+/// every key claimed on a grid that edits, undoes, redoes and finds, and the keys ExSheet declares to its grid, read
+/// off the component as it renders with everything that adds a key turned on; ExPivot declares none. A key a menu,
 /// a panel or an open edit answers in its own handler is in no table, and is not checked here.
 /// </summary>
 public class KeyboardCompletenessTests : BunitContext
@@ -49,12 +46,6 @@ public class KeyboardCompletenessTests : BunitContext
         AssertNamed("ExSheet", declared);
     }
 
-    [Fact] // ADR-0110, ADR-0059: every key ExPivot declares to its grids is named by an ExPivot row
-    public void Every_key_ExPivot_declares_is_named_by_an_ExPivot_row()
-    {
-        AssertNamed("ExPivot", PivotDeclared());
-    }
-
     [Fact] // ADR-0110: every key a row names is one its product answers, so a row cannot name a key nothing takes
     public void Every_key_a_row_names_is_one_its_product_answers()
     {
@@ -62,7 +53,9 @@ public class KeyboardCompletenessTests : BunitContext
         {
             ["ExGrid"] = [],
             ["ExSheet"] = SheetDeclared(),
-            ["ExPivot"] = PivotDeclared(),
+            // ExPivot declares no key of its own to its grids (@ex-grid/pivot's report grid takes no declaredKeys):
+            // every key an ExPivot row names is one the core answers.
+            ["ExPivot"] = [],
         };
         var unanswered = (
             from row in Rows
@@ -111,25 +104,6 @@ public class KeyboardCompletenessTests : BunitContext
             .Add(s => s.ShowToolbar, true)
             .Add(s => s.ShowToolbarChanged, EventCallback.Factory.Create<bool>(this, (bool _) => { })));
         return [.. sheet.FindComponents<SheetGrid>().SelectMany(g => g.Instance.DeclaredKeys ?? [])];
-    }
-
-    private sealed record Sale(string Region, decimal Amount);
-
-    // The keys ExPivot declares to every grid it renders.
-    private IReadOnlyCollection<string> PivotDeclared()
-    {
-        var source = PivotSource.From<Sale>(
-            [new("East", 100m), new("West", 70m)],
-            [
-                new("Region", PivotFieldType.Text, r => r.Region),
-                new("Amount", PivotFieldType.Number, r => r.Amount),
-            ]);
-        var pivot = Render<PivotComponent>(ps => ps
-            .Add(p => p.Source, source)
-            .Add(p => p.Layout, new PivotLayout { Rows = [new("Region")], Values = [new("Amount", PivotAggregation.Sum)] }));
-        var grids = pivot.FindComponents<PivotGrid>();
-        Assert.NotEmpty(grids);
-        return [.. grids.SelectMany(g => g.Instance.DeclaredKeys ?? [])];
     }
 
     // Whether ExGrid's core answers `key` itself: its table, the editor's keys, or the clipboard's. The core

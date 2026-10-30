@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 namespace ExPivot.MudBlazor;
 
 /// <summary>
-/// ExPivot's Chrome under MudBlazor (ADR-0062): every surface ExPivot hands a Chrome drawn with
+/// ExPivot's Chrome under MudBlazor (ADR-0062, ADR-0410): every slot the Script Core leaves to Razor drawn with
 /// MudBlazor's own controls — the PivotTable Fields pane with Defer Layout Update, a placed field's
 /// menu and the Layout menu, Filter…, Field Settings…, Value Field Settings…, the Pivot Toolbar
 /// above the report with its report filter band, Show Details' tabs and the content of its dialog,
@@ -15,7 +15,7 @@ namespace ExPivot.MudBlazor;
 ///
 /// <para>It draws what ExPivot hands it and calls back. Which commands there are, what a drop
 /// means, the drafts, which tab is selected, and where a menu, panel or dialog opens and what
-/// closes it are ExPivot's; swapping this Chrome for the built-in markup changes no behaviour
+/// closes it are ExPivot's; swapping this Chrome for the Script Core's own parts changes no behaviour
 /// (ADR-0061). Every frame is ExPivot's — the dialog's too, which is never a <c>MudDialog</c> — and
 /// the Chrome draws inside it. A <c>MudSelect</c>'s list is an Inner Popup of its panel, reported
 /// so that Escape closes the list first (ADR-0039). The words are ExPivot's, by id: one
@@ -44,67 +44,29 @@ public sealed class MudPivotChrome : IPivotChrome
         };
     }
 
-    /// <summary>The PivotTable Fields pane (<see cref="MudPivotFieldList"/>).</summary>
-    public RenderFragment? FieldList(PivotFieldListContext context) => View<MudPivotFieldList, PivotFieldListContext>(context);
-
-    /// <summary>The report filter band (<see cref="MudPivotReportFilters"/>).</summary>
-    public RenderFragment? ReportFilters(PivotReportFiltersContext context) => View<MudPivotReportFilters, PivotReportFiltersContext>(context);
-
-    /// <summary>The Pivot Toolbar above the report (<see cref="MudPivotToolbar"/>): the report
-    /// filter band, then Layout ▾, Refresh and the Field List's toggle as <c>MudButton</c>s, and a
-    /// refusal as an error <c>MudAlert</c> (ADR-0061).</summary>
-    public RenderFragment? Toolbar(PivotToolbarContext context) => View<MudPivotToolbar, PivotToolbarContext>(context);
-
-    /// <summary>A placed field's menu, and the Pivot Toolbar's Layout
-    /// menu (<see cref="MudPivotMenu"/>).</summary>
-    public RenderFragment? Menu(PivotMenuContext context) => View<MudPivotMenu, PivotMenuContext>(context);
-
-    /// <summary>Filter… (<see cref="MudPivotItemFilter"/>).</summary>
-    public RenderFragment? ItemFilter(PivotItemFilterContext context) => View<MudPivotItemFilter, PivotItemFilterContext>(context);
-
-    /// <summary>Field Settings… (<see cref="MudPivotFieldSettings"/>).</summary>
-    public RenderFragment? FieldSettings(PivotFieldSettingsContext context) => View<MudPivotFieldSettings, PivotFieldSettingsContext>(context);
-
-    /// <summary>Value Field Settings… (<see cref="MudPivotValueFieldSettings"/>).</summary>
-    public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context)
-        => View<MudPivotValueFieldSettings, PivotValueFieldSettingsContext>(context);
-
-    /// <summary>Show Details' tabs at the report's foot (<see cref="MudPivotDetailsTabs"/>):
-    /// <c>MudTabs</c> placed at the bottom, bound to the tab ExPivot selects (ADR-0059).</summary>
-    public RenderFragment? DetailsTabs(PivotDetailsTabsContext context) => View<MudPivotDetailsTabs, PivotDetailsTabsContext>(context);
-
-    /// <summary>The content of Show Details' dialog, inside ExPivot's frame
-    /// (<see cref="MudPivotDetailsDialog"/>): the cell's title, the records and a Close
-    /// <c>MudButton</c> (ADR-0059).</summary>
-    public RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => View<MudPivotDetailsDialog, PivotDetailsDialogContext>(context);
-
-    /// <summary>The Stale Report's notice (<see cref="MudPivotStaleReport"/>): a warning
-    /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0067).</summary>
-    public RenderFragment? StaleReport(PivotStaleReportContext context) => View<MudPivotStaleReport, PivotStaleReportContext>(context);
-
-    /// <summary>The pivot's slots this Chrome fills with Razor when the Script Core draws the pivot (ADR-0410): every
-    /// part, MudBlazor's as over the C# core. The report grid's are <see cref="MudGridChrome"/>'s.</summary>
+    /// <summary>The pivot's slots this Chrome fills with Razor (ADR-0410): every part. The report grid's are
+    /// <see cref="MudGridChrome"/>'s.</summary>
     public PivotScriptSlots ScriptSlots => PivotScriptSlots.Menu | PivotScriptSlots.Toolbar | PivotScriptSlots.StaleReport
         | PivotScriptSlots.ReportFilters | PivotScriptSlots.ItemFilter | PivotScriptSlots.FieldSettings | PivotScriptSlots.ValueFieldSettings
         | PivotScriptSlots.FieldList | PivotScriptSlots.DetailsTabs | PivotScriptSlots.DetailsDialog;
 
-    /// <summary>A menu when the Script Core draws the pivot (ADR-0410): the same <c>MudButton</c> items, each marked
+    /// <summary>A menu when the Script Core draws the pivot (ADR-0410): <c>MudButton</c> items, each marked
     /// for the script that wires them.</summary>
     public RenderFragment? Menu(PivotMenuView view) => ScriptView<MudPivotScriptMenu, PivotMenuView>(view);
 
-    /// <summary>The Pivot Toolbar when the Script Core draws the pivot (ADR-0410): the same <c>MudButton</c>s, marked
+    /// <summary>The Pivot Toolbar when the Script Core draws the pivot (ADR-0410): <c>MudButton</c>s, marked
     /// for the script that wires them.</summary>
     public RenderFragment? Toolbar(PivotToolbarView view) => ScriptView<MudPivotScriptToolbar, PivotToolbarView>(view);
 
-    /// <summary>The Stale Report's notice when the Script Core draws the pivot (ADR-0410): the same warning
+    /// <summary>The Stale Report's notice when the Script Core draws the pivot (ADR-0410): a warning
     /// <c>MudAlert</c>, its Retry marked for the script that wires it.</summary>
     public RenderFragment? StaleReport(PivotStaleReportView view) => ScriptView<MudPivotScriptStaleReport, PivotStaleReportView>(view);
 
-    /// <summary>The report filter band when the Script Core draws the pivot (ADR-0410): the same outlined
+    /// <summary>The report filter band when the Script Core draws the pivot (ADR-0410): outlined
     /// <c>MudButton</c>s, each marked with its field for the script that wires it.</summary>
     public RenderFragment? ReportFilters(PivotReportFiltersView view) => ScriptView<MudPivotScriptReportFilters, PivotReportFiltersView>(view, chrome: false);
 
-    /// <summary>Filter… when the Script Core draws the pivot (ADR-0410): the same MudBlazor search and checkboxes,
+    /// <summary>Filter… when the Script Core draws the pivot (ADR-0410): MudBlazor's search and checkboxes,
     /// marked for the script that hands each change to the pivot in the browser.</summary>
     public RenderFragment? ItemFilter(PivotItemFilterView view) => ScriptView<MudPivotScriptItemFilter, PivotItemFilterView>(view, chrome: false);
 
@@ -117,7 +79,7 @@ public sealed class MudPivotChrome : IPivotChrome
     public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsView view)
         => ScriptView<MudPivotScriptValueFieldSettings, PivotValueFieldSettingsView>(view, chrome: false);
 
-    /// <summary>The PivotTable Fields pane when the Script Core draws the pivot (ADR-0410): the same MudBlazor search,
+    /// <summary>The PivotTable Fields pane when the Script Core draws the pivot (ADR-0410): MudBlazor's search,
     /// checkboxes and entry buttons, marked for the script that hands each tick, press and drag to the pivot in the
     /// browser.</summary>
     public RenderFragment? FieldList(PivotFieldListView view) => ScriptView<MudPivotScriptFieldList, PivotFieldListView>(view, chrome: false);
@@ -153,18 +115,6 @@ public sealed class MudPivotChrome : IPivotChrome
             builder.AddComponentParameter(1, "View", view);
             if (chrome)
                 builder.AddComponentParameter(2, "Chrome", this);
-            builder.CloseComponent();
-        };
-    }
-
-    private RenderFragment View<TView, TContext>(TContext context) where TView : IComponent
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        return builder =>
-        {
-            builder.OpenComponent<TView>(0);
-            builder.AddComponentParameter(1, "Context", context);
-            builder.AddComponentParameter(2, "Chrome", this);
             builder.CloseComponent();
         };
     }

@@ -65,7 +65,7 @@ public class ScriptPivotTests : BunitContext
     [Fact] // ADR-0060, ADR-0370 section 10: the attach carries the Consumer's word for each id the module names, and none it does not answer
     public void ADR0370_the_attach_carries_the_words_Label_answers()
     {
-        Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.Label, id => id == "row-labels" ? "行ラベル" : null));
+        Pivot(SalesData.Bundled(), ps => ps.Add(p => p.Label, id => id == "row-labels" ? "行ラベル" : null));
 
         var words = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("words");
         Assert.Equal([("row-labels", "行ラベル")], words.EnumerateObject().Select(word => (word.Name, word.Value.GetString())));
@@ -79,7 +79,7 @@ public class ScriptPivotTests : BunitContext
         Render<CascadingValue<global::ExGrid.GridPresentationDefaults>>(ps => ps
             .Add(c => c.Value, defaults)
             .AddChildContent<global::ExPivot.Script.ExPivot>(pivot => pivot
-                .Add(p => p.Source, PivotTestContext.Bundled())
+                .Add(p => p.Source, SalesData.Bundled())
                 .Add(p => p.CellMetrics, metrics)));
 
         var options = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options");
@@ -92,7 +92,7 @@ public class ScriptPivotTests : BunitContext
     [Fact] // ADR-0123 / ERR-11: the stylesheets the Chrome brings cross with the options, whose notices the browser's pivot renders beside its own
     public void ERR11_the_stylesheets_the_Chrome_and_its_grid_Chrome_bring_cross_to_the_pivot()
     {
-        Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.Chrome, new BringsOne()));
+        Pivot(SalesData.Bundled(), ps => ps.Add(p => p.Chrome, new BringsOne()));
 
         var stylesheets = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options").GetProperty("stylesheets");
         Assert.Equal([("acme-pivot.css", BringsOne.Stamp), ("acme-grid.css", BringsOne.Stamp)],
@@ -129,7 +129,7 @@ public class ScriptPivotTests : BunitContext
     {
         var japanese = false;
         Func<string, string?> label = id => japanese ? PivotWords.JapaneseFor(id) : null;
-        var cut = Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.Label, label));
+        var cut = Pivot(SalesData.Bundled(), ps => ps.Add(p => p.Label, label));
 
         cut.Render(ps => ps.Add(p => p.Label, label));
         Assert.Empty(_pivot.Invocations["update"]);
@@ -143,7 +143,7 @@ public class ScriptPivotTests : BunitContext
     [Fact] // ADR-0059, ADR-0063: records the browser hands .NET reach the Consumer's handler, asked of the source the report was computed from
     public async Task ADR0059_records_reach_the_handler_asked_of_the_reports_source()
     {
-        var source = PivotTestContext.Bundled();
+        var source = SalesData.Bundled();
         PivotDetails? taken = null;
         var cut = Pivot(source, ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => taken = details));
 
@@ -154,13 +154,13 @@ public class ScriptPivotTests : BunitContext
         Assert.NotNull(taken);
         Assert.Equal("Details: Grand Total", taken!.Title);
         var page = await taken.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
-        Assert.Equal(PivotTestContext.Sales.Length, page.Total);
+        Assert.Equal(SalesData.Records.Length, page.Total);
     }
 
     [Fact] // ADR-0059, spine rule 6: records whose handler was let go before they arrived are answered as not taken, and the browser opens them
     public async Task ADR0059_records_no_handler_takes_are_answered_as_not_taken()
     {
-        var source = PivotTestContext.Bundled();
+        var source = SalesData.Bundled();
         var calls = 0;
         var cut = Pivot(source, ps => ps.Add(p => p.OnShowDetails, (PivotDetails _) => calls++));
         cut.Render(ps => ps.Add(p => p.OnShowDetails, default(EventCallback<PivotDetails>)));
@@ -176,7 +176,7 @@ public class ScriptPivotTests : BunitContext
     public async Task ADR0370_the_reports_selection_reaches_the_handler_as_a_GridSelection()
     {
         var heard = new List<GridSelection>();
-        var cut = Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
+        var cut = Pivot(SalesData.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
         Assert.Contains("selectionChanged", Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2])
             .GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
 
@@ -208,7 +208,7 @@ public class ScriptPivotTests : BunitContext
     {
         var take = _pivot.Setup<IJSStreamReference>("take", _ => true);
         var heard = new List<GridSelection>();
-        var cut = Pivot(PivotTestContext.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
+        var cut = Pivot(SalesData.Bundled(), ps => ps.Add(p => p.SelectionChanged, (GridSelection selection) => heard.Add(selection)));
         var ranges = string.Join(",", Enumerable.Range(0, 2_000).Select(row => $$"""{"topRow":{{row * 2}},"leftColumn":1,"rowCount":1,"columnCount":1}"""));
         var arguments = System.Text.Encoding.UTF8.GetBytes($$"""["selectionChanged",{"ranges":[{{ranges}}],"focus":{"row":0,"column":1},"focusRangeIndex":0}]""");
         var crossed = Parsed($$"""{"held":3,"bytes":{{arguments.Length}}}""");
@@ -265,9 +265,9 @@ public class ScriptPivotTests : BunitContext
     [Fact] // ADR-0412: an answer that names no Item of a field with an Order Key crosses as it is
     public async Task ADR0412_an_answer_naming_no_keyed_field_crosses_as_it_is()
     {
-        var source = PivotSource.From(PivotTestContext.Sales, [
+        var source = PivotSource.From(SalesData.Records, [
             new PivotField<Sale>("Region", PivotFieldType.Text, s => s.Region) { OrderKey = item => (string)item },
-            .. PivotTestContext.Fields.Skip(1),
+            .. SalesData.Fields.Skip(1),
         ]);
         Pivot(source);
 
@@ -281,9 +281,9 @@ public class ScriptPivotTests : BunitContext
     public async Task ADR0412_a_date_item_hands_the_order_key_its_datetime()
     {
         var day = new DateTime(2026, 10, 28, 9, 30, 0).AddTicks(7);
-        var source = PivotSource.From(PivotTestContext.Sales, [
+        var source = PivotSource.From(SalesData.Records, [
             new PivotField<Sale>("Day", PivotFieldType.Date, _ => day) { OrderKey = item => ((DateTime)item).Ticks },
-            .. PivotTestContext.Fields,
+            .. SalesData.Fields,
         ]);
         Pivot(source);
 
@@ -297,7 +297,7 @@ public class ScriptPivotTests : BunitContext
     public async Task ADR0412_an_order_key_crosses_as_each_answered_items_key()
     {
         var regionRank = new Dictionary<string, int> { ["West"] = 1, ["North"] = 2 };
-        var source = PivotSource.From(PivotTestContext.Sales, [
+        var source = PivotSource.From(SalesData.Records, [
             new PivotField<Sale>("Region", PivotFieldType.Text, s => s.Region)
             {
                 // East has no key; West and North are ranked.
@@ -307,7 +307,7 @@ public class ScriptPivotTests : BunitContext
             {
                 OrderKey = item => (string)item == "Plums" ? throw new InvalidOperationException("No rank for Plums.") : new Version(1, ((string)item).Length),
             },
-            .. PivotTestContext.Fields.Skip(2),
+            .. SalesData.Fields.Skip(2),
         ]);
         Pivot(source);
         var fields = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("source").GetProperty("fields");
@@ -336,9 +336,9 @@ public class ScriptPivotTests : BunitContext
         object[] keys = [-1.5m, 0.1m, 2m, DateTime.MinValue.AddTicks(7), new DateOnly(2026, 10, 28), TimeSpan.FromTicks(-3), ulong.MaxValue, 'b',
             new Guid("00000000-0000-0000-0000-0000000000ff"), DayOfWeek.Friday, 0.1, true, "Wide"];
         var named = keys.Select((key, at) => (Name: $"K{at}", Key: key)).ToArray();
-        var source = PivotSource.From(PivotTestContext.Sales, [
+        var source = PivotSource.From(SalesData.Records, [
             .. named.Select(entry => new PivotField<Sale>(entry.Name, PivotFieldType.Text, s => s.Region) { OrderKey = _ => (IComparable)entry.Key }),
-            .. PivotTestContext.Fields.Skip(2),
+            .. SalesData.Fields.Skip(2),
         ]);
         Pivot(source);
 

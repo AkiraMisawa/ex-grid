@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount, setTicked } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, dataRowCount, setTicked } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
@@ -7,8 +7,7 @@ import { expectCodeIsSource } from './demo-code.mjs';
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
 // trades over Arrow into a Snapshot the page pivots in its own process; "database → server Pivot
 // Source" asks the server each question through a fetching Pivot Source: the server answers Leaf Aggregates and the
-// page builds the report (ADR-0370 section 3). With ?report=windows on the Blazor hosts, the Razor component asks
-// through PivotReportSource.Fetch instead, where the server computes the report and returns the Window asked for.
+// page builds the report (ADR-0370 section 3).
 // What only a browser can say: that both reach the server from either host, read the same trades
 // and show the same numbers for the same layout; that the server's Details are paged from it as
 // the Details tab scrolls; and that the console stays clean throughout (PV-20).
@@ -34,10 +33,10 @@ async function api(path, init) {
     return response.json();
 }
 
-/** Opens /pivot-db; `query` such as `&report=windows` puts the server side on the Razor component's report Windows. */
-async function open(page, chrome, query = '') {
+/** Opens /pivot-db. */
+async function open(page, chrome) {
     await api('/api/reset', { method: 'POST' });
-    await page.goto(`/pivot-db?chrome=${chrome}${query}`);
+    await page.goto(`/pivot-db?chrome=${chrome}`);
     await expect(rows(page, 'snapshot').first()).toBeVisible();
     await expect(rows(page, 'server').first()).toBeVisible();
     // ExPivot's stylesheet has landed when its root lays the report and the pane out side by
@@ -68,11 +67,8 @@ async function expectSameReports(page) {
 }
 
 // The question that brings PV-20's server pivot its report: the Leaf Aggregates, from which the pivot builds the
-// report in the browser (ADR-0370 section 3). The report Windows of LV- are the Razor component's, which /pivot-db
-// shows with ?report=windows on the Blazor hosts until it goes (ADR-0370 section 6, step 3; ADR-0412 section 4).
+// report in the browser (ADR-0370 section 3).
 const REPORT_QUESTION = 'aggregate';
-// The Razor component over the server's report Windows (ADR-0151).
-const WINDOWS = '&report=windows';
 
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
 async function asked(page, kind) {
@@ -80,204 +76,9 @@ async function asked(page, kind) {
     return Number(new RegExp(`([\\d,]+) ${kind}`).exec(text)?.[1]?.replaceAll(',', '') ?? NaN);
 }
 
-test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
-    await open(page, 'builtin', WINDOWS);
-    const grid = report(page, 'server');
-    await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
-    const status = await api('/api/status');
-    await expect.poll(() => dataRowCount(grid)).toBeGreaterThanOrEqual(status.trades);
-    const count = await dataRowCount(grid);
-    expect(await rows(page, 'server').count()).toBeLessThan(100);
-    const last = count - 1;
-    await scrollRowToTop(grid, last);
-    await expect(grid.locator(`[id$='-r${last}c0']`)).toContainText('Grand Total');
-    expect(await rows(page, 'server').count()).toBeLessThan(100);
-    expect(await asked(page, 'Window')).toBeGreaterThan(1);
-});
-
-test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows its last rows, and scrolls on', async ({ page }) => {
-    await open(page, 'builtin', WINDOWS);
-    // Computed in the page over the Snapshot, and on the server: the same Window, asked of each.
-    for (const side of ['snapshot', 'server']) {
-        const grid = report(page, side);
-        const rowCount = () => dataRowCount(grid);
-        // The first layout's rows: the regions and their desks, and the Grand Total.
-        const first = await rowCount();
-        const tradeId = section(page, side).getByRole('checkbox', { name: 'Trade ID', exact: true });
-        await setTicked(tradeId);
-        await expect.poll(rowCount).toBeGreaterThan(1000);
-        const count = await rowCount();
-        // Scrolled to the last row, thousands of rows below the end of the first layout's report.
-        await scrollRowToTop(grid, count - 1);
-        await expect(grid.locator(`[id$='-r${count - 1}c0']`)).toContainText('Grand Total');
-
-        // Trade ID out of the rows again: the report shrinks to the first layout's, which ends long
-        // before the Window the grid stands on. The grid shows the new report's last rows, its Grand
-        // Total among them — not an error, and not an empty Window.
-        await setTicked(tradeId, false);
-        await expect.poll(rowCount).toBe(first);
-        await expect(grid.locator(`[id$='-r${first - 1}c0']`)).toContainText('Grand Total');
-        await circuitQuiet();
-        await expect(grid.locator(`[id$='-r${first - 1}c0']`)).toContainText('Grand Total');
-        expect(await rows(page, side).count()).toBeGreaterThan(0);
-
-        // And it scrolls on: back at the top, the first region's row is painted where it belongs.
-        await scrollRowToTop(grid, 0);
-        await expect(grid.locator("[id$='-r0c0']")).toContainText('Americas');
-    }
-    // Whatever the host still had to say has been said before the console's verdict is read: no
-    // console error, no page error, no unhandled exception in the host's log (CON-1, CON-2, CON-6).
-    await circuitQuiet();
-});
-
-// ADR-0182/0183 (LV-34, FN-3a): the server's report is asked for the rows on screen and 60 either side,
-// and asked for the next Window ten rows before the one held runs out. Counted in the questions the
-// page's status line says it has sent, never in time. On the Server host the circuit runs behind the
-// latency proxy at 150 ms; on WebAssembly the browser sends each question itself, and the Window it
-// names is read from the request. A request reaches the test as an event of its own, after the page
-// has counted it, so the Window is waited for, not read in passing; and the listener goes with the
-// test, since the page is handed on to the next one (ADR-0056).
-test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it read ahead asking nothing, and asks once ten rows before it runs out', async ({ page }) => {
-    await open(page, 'builtin', WINDOWS);
-    const windowsAsked = [];
-    const askedWindow = (request) => {
-        if (request.method() === 'POST' && /\/api\/pivot\/reports\/[0-9a-f]{32}\/window$/.test(request.url())) {
-            windowsAsked.push(JSON.parse(request.postData() ?? '{}').window);
-        }
-    };
-    page.on('request', askedWindow);
-    await setRoundTrip(150);
-    try {
-        const grid = report(page, 'server');
-        const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
-        await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
-        await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
-        await circuitQuiet();
-
-        // Row 500 at the top: past the Window, a jump the grid asks about once it settles (ADR-0004).
-        await scrollRowToTop(grid, 500);
-        await expect(placeholders).toHaveCount(0);
-        await circuitQuiet();
-        const onScreen = await rows(page, 'server').count();
-        const atFiveHundred = await asked(page, 'Window');
-        if (!SERVER) {
-            await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
-        }
-
-        // Down five rows at a time to row 550: ten rows below the rows on screen is still in the
-        // Window, which reaches sixty rows past the rows the grid asked for at 500. Nothing is asked.
-        for (let row = 505; row <= 550; row += 5) {
-            await scrollRowToTop(grid, row);
-            await expect(placeholders).toHaveCount(0);
-            await circuitQuiet();
-            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(atFiveHundred);
-        }
-
-        // Row 555: every row on screen is held, but the tenth row below them is not. The next Window
-        // is asked for, once, and the rows on screen stay painted while it is out.
-        await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, 'Window')).toBe(atFiveHundred + 1);
-        await expect(placeholders).toHaveCount(0);
-        await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(atFiveHundred + 1);
-        if (!SERVER) {
-            await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
-        }
-    } finally {
-        page.off('request', askedWindow);
-        await setRoundTrip(0);
-    }
-    // Whatever the host still had to say has been said before the console's verdict is read.
-    await circuitQuiet();
-});
-
-// ADR-0182/0183 (LV-34, FN-3a): the question asked early stays in flight while the scroll goes on within
-// its Window, however far past the Window held; and it is asked without the loading indication until rows
-// on screen wait for it. The test holds the answer at the demo API's Window gate and opens it itself —
-// never a timer (principle 6) — so the question is in flight for as long as the test says. The gate is
-// where both hosts' questions arrive: on WebAssembly the browser sends them, on the Server host the
-// server does, where no browser route reaches (SRV-2). The page's tally counts the questions; the gate
-// reads the Window each names. On the Server host a reading that must see what the circuit has to say
-// first waits for it to go quiet; a question held at the gate is between the host and the API, not on
-// the circuit, so the circuit goes quiet around it.
-test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while the scroll stays in its Window, and the report dims only once rows on screen wait for it', async ({ page }) => {
-    // open() resets the API, which opens the gate and forgets the Windows asked before.
-    await open(page, 'builtin', WINDOWS);
-    const gate = (hold) => api('/api/pivot/window-gate', {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hold }),
-    });
-    const windowsAsked = async () => (await api('/api/pivot/window-gate')).windows;
-    const lastWindow = async () => (await windowsAsked()).at(-1);
-    try {
-        const grid = report(page, 'server');
-        const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
-        await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
-        await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
-        await circuitQuiet();
-
-        // Row 500 at the top: rows 440 on are asked for and held.
-        await scrollRowToTop(grid, 500);
-        await expect(placeholders).toHaveCount(0);
-        await circuitQuiet();
-        const onScreen = await rows(page, 'server').count();
-        await expect.poll(lastWindow).toEqual({ start: 440, count: onScreen + 120 });
-        const base = await asked(page, 'Window');
-        for (let row = 505; row <= 550; row += 5) {
-            await scrollRowToTop(grid, row);
-        }
-        await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base);
-
-        // Row 555: the tenth row below the rows on screen is not held. The next Window is asked for, and
-        // its answer held at the gate. Every row on screen is still held, and the report is not dimmed.
-        const sentBefore = (await windowsAsked()).length;
-        await gate(true);
-        await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, 'Window')).toBe(base + 1);
-        await expect.poll(lastWindow).toEqual({ start: 495, count: onScreen + 120 });
-        await circuitQuiet();
-        await expect(placeholders).toHaveCount(0);
-        await expect(grid).not.toHaveClass(/\bex-loading\b/);
-
-        // On, five rows at a time, past the Window held and within the question's: it stays in flight,
-        // and nothing else is asked. Once rows on screen are past the Window held, they wait for it as
-        // Placeholders, and the report is dimmed.
-        for (let row = 560; row <= 600; row += 5) {
-            await scrollRowToTop(grid, row);
-            await circuitQuiet();
-            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(base + 1);
-        }
-        await expect(placeholders).not.toHaveCount(0);
-        await expect(grid).toHaveClass(/\bex-loading\b/);
-        expect(await windowsAsked()).toHaveLength(sentBefore + 1);
-
-        // The answer lands: the rows are painted, the dimming goes, and at row 600 the Window answered
-        // holds the rows on screen and ten either side, so nothing more is asked.
-        await gate(false);
-        await expect(placeholders).toHaveCount(0);
-        await expect(grid).not.toHaveClass(/\bex-loading\b/);
-        await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base + 1);
-
-        // The new Window reaches sixty rows past the rows asked for at 555: at 605 the tenth row below the
-        // rows on screen is its last, and nothing is asked; at 606 it leaves it, and one question more is.
-        await scrollRowToTop(grid, 605);
-        await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base + 1);
-        await scrollRowToTop(grid, 606);
-        await expect.poll(() => asked(page, 'Window')).toBe(base + 2);
-        await expect.poll(lastWindow).toEqual({ start: 546, count: onScreen + 120 });
-        await expect(placeholders).toHaveCount(0);
-    } finally {
-        await gate(false);
-    }
-    // Whatever the host still had to say has been said before the console's verdict is read.
-    await circuitQuiet();
-});
-
 test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await open(page, 'builtin', WINDOWS);
+    await open(page, 'builtin');
     await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }));
     await expect.poll(() => dataRowCount(report(page, 'snapshot'))).toBeGreaterThan(1000);
     await page.locator('#pivot-db-same-layout').click();

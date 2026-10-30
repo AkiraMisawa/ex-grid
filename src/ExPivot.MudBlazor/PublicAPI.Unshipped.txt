@@ -1,6 +1,4 @@
 #nullable enable
-ExPivot.MudBlazor.MudPivotButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
-ExPivot.MudBlazor.MudPivotButton.InOrder.set -> void
 ExPivot.MudBlazor.MudPivotChrome.DetailsDialog(ExPivot.Chrome.PivotDetailsDialogView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.DetailsTabs(ExPivot.Chrome.PivotDetailsTabsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.FieldList(ExPivot.Chrome.PivotFieldListView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -12,10 +10,6 @@ ExPivot.MudBlazor.MudPivotChrome.ScriptSlots.get -> ExPivot.Chrome.PivotScriptSl
 ExPivot.MudBlazor.MudPivotChrome.StaleReport(ExPivot.Chrome.PivotStaleReportView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.Toolbar(ExPivot.Chrome.PivotToolbarView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.MudBlazor.MudPivotChrome.ValueFieldSettings(ExPivot.Chrome.PivotValueFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.MudBlazor.MudPivotIconButton
-ExPivot.MudBlazor.MudPivotIconButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
-ExPivot.MudBlazor.MudPivotIconButton.InOrder.set -> void
-ExPivot.MudBlazor.MudPivotIconButton.MudPivotIconButton() -> void
 ExPivot.MudBlazor.MudPivotScriptActions
 ExPivot.MudBlazor.MudPivotScriptActions.CanApply.get -> bool
 ExPivot.MudBlazor.MudPivotScriptActions.CanApply.set -> void
