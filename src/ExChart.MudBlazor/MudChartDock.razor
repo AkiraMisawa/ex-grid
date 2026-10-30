@@ -32,7 +32,7 @@
                         <MudTabPanel @key="chart.Name" ID="@chart.Name" Text="@chart.Name" ShowCloseIcon="true">
                             @if (DefinitionOf(chart.Chart, out var why) is { } definition)
                             {
-                                <ExChart.Script.ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
+                                <ExChart.Components.ExChart Definition="definition" Title="@chart.Name" Width="ChartWidth" Height="ChartHeight"
                                                         Chrome="Chrome" OnPointClick="ClickOf(chart.Name)" />
                             }
                             else

@@ -223,16 +223,7 @@ public sealed class SnapshotPivotSource : PivotSource
             return PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
         var pass = new DetailsPass(snapshot, _bindings, query, _slicing.RowsRead);
         await Slicer.Of(_slicing, cancellationToken).PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
-        var records = new PivotDetailRecord[pass.Matches.Count];
-        var values = new object?[_fields.Length];
-        for (var i = 0; i < records.Length; i++)
-        {
-            var row = pass.Matches[i].Row;
-            var slice = snapshot.Slice(row.Slice);
-            for (var f = 0; f < _fields.Length; f++)
-                values[f] = RowValues.DetailAt(_bindings[_fields[f].Name], snapshot, slice, row.Offset);
-            records[i] = new PivotDetailRecord(values, snapshot.RecordAt(row));
-        }
+        var records = Records(snapshot, [.. pass.Matches.Select(match => match.Row)]);
         return new PivotDetailPage(query.SourceVersion, _fields, query.Start, pass.Total, records);
     }
 
@@ -257,9 +248,11 @@ public sealed class SnapshotPivotSource : PivotSource
     {
         ArgumentNullException.ThrowIfNull(batch);
         SnapshotChange change;
+        string from;
         string version;
         lock (_gate)
         {
+            from = VersionOf(_snapshot);
             change = _snapshot.Apply(batch);
             _snapshot = change.After;
             if (_held is { } held)
@@ -275,8 +268,44 @@ public sealed class SnapshotPivotSource : PivotSource
             version = VersionOf(_snapshot);
         }
         SnapshotChanged?.Invoke(change);
-        OnChanged(new PivotSourceChanged(version));
+        try
+        {
+            if (Batched is { } batched)
+                batched(new PivotServerChangeBatch(from, version, _fields, Records(change.Before, change.Removed), Records(change.After, change.Added)));
+        }
+        finally
+        {
+            // The batch is applied whatever a listener of Batched throws: Changed still says so.
+            OnChanged(new PivotSourceChanged(version));
+        }
         return change;
+    }
+
+    /// <summary>
+    /// Raised as a Change Batch is applied (<see cref="Apply"/>), after the source has moved on and just before
+    /// <see cref="PivotSource.Changed"/> names the same version: what the batch removed and added, as a server's Change
+    /// Batch (ADR-0370 section 3's note of 2026-10-30). A server that answers the Script Core's fetching source with
+    /// this source writes it with <see cref="PivotJson.Write(PivotServerChangeBatch)"/> for the fetching source to fold
+    /// into the answer it holds, where it would otherwise ask the whole question again. The records are read only while
+    /// someone listens. What a listener throws reaches the caller of <see cref="Apply"/> once
+    /// <see cref="PivotSource.Changed"/> has been raised: the batch is applied either way.
+    /// </summary>
+    public event Action<PivotServerChangeBatch>? Batched;
+
+    // The records at `rows` of `snapshot`, each with its values in the fields' order, as a record behind a cell carries them.
+    private PivotDetailRecord[] Records(Snapshot snapshot, IReadOnlyList<SnapshotRow> rows)
+    {
+        var records = new PivotDetailRecord[rows.Count];
+        var values = new object?[_fields.Length];
+        for (var i = 0; i < records.Length; i++)
+        {
+            var row = rows[i];
+            var slice = snapshot.Slice(row.Slice);
+            for (var f = 0; f < _fields.Length; f++)
+                values[f] = RowValues.DetailAt(_bindings[_fields[f].Name], snapshot, slice, row.Offset);
+            records[i] = new PivotDetailRecord(values, snapshot.RecordAt(row));
+        }
+        return records;
     }
 
     internal event Action<SnapshotChange>? SnapshotChanged;

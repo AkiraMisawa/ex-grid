@@ -2,7 +2,7 @@
 @implements IDisposable
 @using System.Globalization
 @* global::, and the components named in full, for the reasons SheetPage.razor gives. The Sheet is drawn by
-   ExSheet.Script.ExSheet and the grid by ExGrid.Script.ExGrid (ADR-0370). *@
+   ExSheet.Components.ExSheet and the grid by ExGrid.Components.ExGrid (ADR-0370). *@
 @using global::ExSheet
 @using global::ExSheet.Engine
 
@@ -31,10 +31,10 @@
 }
 
 <div class="demo-side-by-side">
-    <ExSheet.Script.ExSheet @ref="_script" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
+    <ExSheet.Components.ExSheet @ref="_script" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
                             PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
     <div id="pointing-positions">
-        <ExGrid.Script.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
+        <ExGrid.Components.ExGrid TRow="Position" Rows="Positions" Columns="PositionColumns" RowHeight="28"
                               ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
     </div>
 </div>
@@ -89,7 +89,7 @@
     private ViewportSize PositionsWidth => Narrow is null ? 330 : 260;
 
     // The Sheet, once drawn.
-    private ExSheet.Script.ExSheet? _script;
+    private ExSheet.Components.ExSheet? _script;
     private SheetDocument? _document = Opening();
     private readonly PointingScope _scope = new();
     private GridPointedAt<Position>? _positionsPointedAt;

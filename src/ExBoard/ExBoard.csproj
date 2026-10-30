@@ -20,30 +20,30 @@
   <ItemGroup>
     <!-- How a Snapshot crosses to a Script adapter's module, compiled into each adapter that sends one, so every one
          crosses them alike (ADR-0065's note of 2026-10-28). -->
-    <Compile Include="..\Shared\Script\SnapshotCrossing.cs" Link="Script\SnapshotCrossing.cs" />
+    <Compile Include="..\Shared\Components\SnapshotCrossing.cs" Link="Components\SnapshotCrossing.cs" />
     <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
          Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
-    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
-    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
     <!-- A C# Pivot Source asked by the browser's pivot, as ExPivot's adapter asks one: a pivot over a source. -->
-    <Compile Include="..\Shared\Script\PivotSourceCrossing.cs" Link="Script\PivotSourceCrossing.cs" />
-    <Compile Include="..\Shared\Script\PivotRefreshes.cs" Link="Script\PivotRefreshes.cs" />
+    <Compile Include="..\Shared\Components\PivotSourceCrossing.cs" Link="Components\PivotSourceCrossing.cs" />
+    <Compile Include="..\Shared\Components\PivotRefreshes.cs" Link="Components\PivotRefreshes.cs" />
     <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the grids' and the pivots'
          and the charts' slots, read and drawn as ExGrid's, ExPivot's and ExChart's own adapters read and draw them. -->
-    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
-    <Compile Include="..\ExGrid\Script\RazorSlot.cs" Link="Script\RazorSlot.cs" />
-    <Compile Include="..\ExGrid\Script\ScriptJson.cs" Link="Script\ScriptJson.cs" />
-    <Compile Include="..\ExPivot\Script\PivotRazorSlot.cs" Link="Script\PivotRazorSlot.cs" />
-    <Compile Include="..\ExChart\Script\ChartRazorSlot.cs" Link="Script\ChartRazorSlot.cs" />
-    <Compile Include="..\ExChart\Script\ChartWire.cs" Link="Script\ChartWire.cs" />
-    <Compile Include="..\Shared\Script\ScriptFunctionJson.cs" Link="Script\ScriptFunctionJson.cs" />
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\ExGrid\Components\RazorSlot.cs" Link="Components\RazorSlot.cs" />
+    <Compile Include="..\ExGrid\Components\ScriptJson.cs" Link="Components\ScriptJson.cs" />
+    <Compile Include="..\ExPivot\Components\PivotRazorSlot.cs" Link="Components\PivotRazorSlot.cs" />
+    <Compile Include="..\ExChart\Components\ChartRazorSlot.cs" Link="Components\ChartRazorSlot.cs" />
+    <Compile Include="..\ExChart\Components\ChartWire.cs" Link="Components\ChartWire.cs" />
+    <Compile Include="..\Shared\Components\ScriptFunctionJson.cs" Link="Components\ScriptFunctionJson.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="ExBoard.Tests" />
   </ItemGroup>
 
-  <!-- ExBoard's Script Core's module for ExBoard.Script.ExBoard (ADR-0370 section 1): the bridge, @ex-grid/board and
+  <!-- ExBoard's Script Core's module for ExBoard.Components.ExBoard (ADR-0370 section 1): the bridge, @ex-grid/board and
        the views it lays out, bundled from their sources in src/npm as this project builds, never committed, as
        ExPivot's is. The grid it draws through, and the data it reads, it imports from the Shared Script ExGrid ships,
        built against the same sources (ADR-0411). The module goes to wwwroot, where the package serves it; its version
@@ -66,7 +66,7 @@
 
   <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
           Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
-    <Exec Command="node ../scripts/build-blazor.mjs --name ex-board --namespace ExBoard.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-board.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-board --namespace ExBoard.Components --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-board.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
           WorkingDirectory="$(ScriptCoreWorkspace)board-blazor" />
   </Target>
 

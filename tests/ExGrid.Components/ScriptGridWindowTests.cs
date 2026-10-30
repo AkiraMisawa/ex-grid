@@ -19,13 +19,13 @@ public class ScriptGridWindowTests : BunitContext
     public ScriptGridWindowTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = _module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(int rows) => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(int rows) => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
         .Add(g => g.Rows, TestRows.Many(rows))
         .Add(g => g.Columns, TestRows.Columns()));
 
@@ -50,7 +50,7 @@ public class ScriptGridWindowTests : BunitContext
     public async Task ADR0350_rows_the_grid_asks_for_cross_with_a_margin_either_side()
     {
         var cut = Grid(10_000);
-        var bridge = Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+        var bridge = Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
             Assert.Single(_module.Invocations["attach"]).Arguments[1]);
 
         await cut.InvokeAsync(() => bridge.Value.NeedRange(1, 5_000, 20));

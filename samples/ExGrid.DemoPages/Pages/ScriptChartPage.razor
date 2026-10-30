@@ -1,7 +1,7 @@
 @page "/script-chart"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExChart
-@using global::ExChart.Script
+@using global::ExChart.Components
 @using global::ExChart.Engine
 @using ScriptFunction = global::ExGrid.Data.ScriptFunction
 
@@ -16,7 +16,7 @@
 <h1>ExChart over the Script Core</h1>
 
 <p>
-    The chart and the surface below are <code>ExChart.Script.ExChart</code> and <code>ExChart.Script.ExSurface</code>:
+    The chart and the surface below are <code>ExChart.Components.ExChart</code> and <code>ExChart.Components.ExSurface</code>:
     Blazor's Framework Adapter over <code>@@ex-grid/chart</code> (ADR-0370 section 1). The drawing, the tooltip, the
     legend, Chart Filters and the turning are the Script Core's, in the browser, on both hosting models. The data is
     /chart's, in .NET, and its Format crosses as the texts it writes each value; what the user changes comes back to
@@ -26,7 +26,7 @@
 <section id="script-exposure">
     <h2>Exposure profile</h2>
     <button type="button" id="script-chart-next-run" @onclick="NextRun">Next run</button>
-    <ExChart.Script.ExChart Definition="_exposure"
+    <ExChart.Components.ExChart Definition="_exposure"
                             Title="Exposure profile"
                             Width="760"
                             Height="420"
@@ -39,12 +39,12 @@
 
 <section id="script-functions">
     <h2>The page's own script</h2>
-    <ExChart.Script.ExChart Definition="Survival" Title="Survival" Width="560" Height="300" />
+    <ExChart.Components.ExChart Definition="Survival" Title="Survival" Width="560" Height="300" />
 </section>
 
 <section id="script-surface">
     <h2>Volatility surface</h2>
-    <ExChart.Script.ExSurface Definition="Volatility"
+    <ExChart.Components.ExSurface Definition="Volatility"
                               Title="Volatility"
                               Width="520"
                               Height="360"

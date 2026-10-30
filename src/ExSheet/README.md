@@ -26,7 +26,7 @@ computes, ExGrid paints, selects, navigates and reports.
 ## Showing a Sheet
 
 ```razor
-@using ExSheet.Script
+@using ExSheet.Components
 @using ExSheet.Engine
 
 <ExSheet @bind-Document="_document" ViewportHeight="480" ViewportWidth="900" />
@@ -159,9 +159,9 @@ more to write. For a grid in no Scope, you pass the list on yourself. It is empt
 
 ```razor
 @using ExGrid.Cells
-@using ExGrid.Script
+@using ExGrid.Components
 @using ExSheet
-@using ExSheet.Script
+@using ExSheet.Components
 
 <ExSheet @bind-Document="_document" OnLinkedColumnColoursChanged="Outline" />
 <ExGrid TRow="Position" Rows="_positions" Columns="_columns" OutlinedColumns="_outlined" />
@@ -196,9 +196,9 @@ and pass the declaration the Scope gives back to the grid:
 
 ```razor
 @using ExGrid.Cells
-@using ExGrid.Script
+@using ExGrid.Components
 @using ExSheet
-@using ExSheet.Script
+@using ExSheet.Components
 
 <ExSheet @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused" />
 <ExGrid TRow="Position" Rows="_positions" Columns="_columns" PointedAt="_pointedAt" />

@@ -93,6 +93,19 @@ public sealed class WorkbookDocument
     /// <summary>The Sheets, in the order their tabs stand, each under the Workbook's culture and declaring no Linked Table of its own.</summary>
     public IReadOnlyList<SheetDocument> Sheets { get; }
 
+    /// <summary>
+    /// The Workbook's one Sheet as a Sheet Document, declaring the Workbook's Linked Tables: the Sheet Document
+    /// that records what this Workbook Document records.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The Workbook holds several Sheets, which a Sheet Document cannot
+    /// record (ADR-0331).</exception>
+    public SheetDocument ToSheetDocument() => Sheets.Count == 1
+        ? Sheets[0].With(LinkedTables, Sheets[0].Cells)
+        : throw new InvalidOperationException($"The Workbook holds {Sheets.Count} Sheets, which a Sheet Document cannot record (ADR-0331).");
+
+    /// <summary>The document with <paramref name="sheets"/>, in the same order and of the same names, in place of its own.</summary>
+    internal WorkbookDocument WithSheets(IReadOnlyList<SheetDocument> sheets) => new(Culture, Shown, LinkedTables, sheets);
+
     /// <summary>Writes the document as JSON.</summary>
     public string ToJson()
     {
@@ -206,6 +219,5 @@ public sealed class WorkbookDocument
         }
     }
 
-    private static SheetDocument WithoutTables(SheetDocument sheet) =>
-        new(sheet.Culture, sheet.Name, [], sheet.Cells) { Columns = sheet.Columns, Rows = sheet.Rows, ColumnWidths = sheet.ColumnWidths };
+    private static SheetDocument WithoutTables(SheetDocument sheet) => sheet.With([], sheet.Cells);
 }

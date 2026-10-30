@@ -126,8 +126,7 @@
             and <code>--ex-header-group-expanded-icon</code> are CSS images painted in
             <code>--ex-header-group-toggle-color</code>, and the mark takes its state's own token. The Mantine and
             MUI Wrappers, and ExGrid.MudBlazor, set them from their design system's chevrons and theme. In Blazor the
-            toggle is drawn by the grid on the TypeScript core, <code>ExGrid.Script.ExGrid</code>; the C# core's grid
-            refuses a group that declares one rather than draw it without.
+            toggle is drawn by <code>ExGrid.Components.ExGrid</code> on the same TypeScript core.
         </p>
         <DocsExample Title="A group that opens and closes, with a Hidden Mark" Builtin="typeof(ExpandableGroups)"
                      Files="@(["Examples/Grid/Position.cs"])" />
@@ -226,7 +225,7 @@
                 <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still
                 takes a value accessor, and that value — never the markup — is what sorts, filters and copies.
                 Keep the template in a static field: a new lambda per render makes the column look changed.
-                <code>ExGrid.Script.ExGrid</code> takes the same column: each cell's markup is rendered in .NET from the
+                <code>ExGrid.Components.ExGrid</code> takes the same column: each cell's markup is rendered in .NET from the
                 row and moved into the cell by the grid's script, so a cell scrolled into view shows its content a round
                 trip later over Blazor Server (<a href="exgrid#a-grid-drawn-in-the-browser">a grid drawn in the browser</a>).
             </li>

@@ -40,7 +40,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, ExPivot's (`pivot/`), `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core), `sheetKeys`, no runner's: the keys ExSheet takes, which `@ex-grid/sheet` and the Docs Site's Keyboard page are both held to (`sheet/sheet-keys.json`), and `keyboardReference`, no runner's either: the keys the Script Core's table takes and answers, which the Docs Site's Keyboard page is held to (`keys/keyboard-reference.json`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, `documentChanges`, ExPivot's (`pivot/`), `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core), `sheetKeys`, no runner's: the keys ExSheet takes, which `@ex-grid/sheet` and the Docs Site's Keyboard page are both held to (`sheet/sheet-keys.json`), and `keyboardReference`, no runner's either: the keys the Script Core's table takes and answers, which the Docs Site's Keyboard page is held to (`keys/keyboard-reference.json`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -938,7 +938,7 @@ from `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula 
 of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
 forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
-That object is also the wire: `SheetWire` writes a `SheetEdit` in it, the text Blazor's `ExSheet.Script.ExSheet` sends
+That object is also the wire: `SheetWire` writes a `SheetEdit` in it, the text Blazor's `ExSheet.Components.ExSheet` sends
 to the Sheet in the browser, and the Script Core's `readSheetEdit` reads it (ADR-0370 section 1). Both runners send every
 edit of every case through it, so the corpus holds the writer and the reader together: xUnit writes the edit it read with
 `SheetWire`, reads that text back and requires the same text again, and Vitest reads the case's edit with `readSheetEdit`

@@ -49,7 +49,7 @@ public class WrapperStylesheetNoticeTests : MudTestContext
         Assert.Equal([expected], MudGridChrome.Default.Stylesheets);
         Assert.Equal([expected], new MudGridChrome { Label = _ => null }.Stylesheets);
 
-        Render<global::ExGrid.Script.ExGrid<Trade>>(ps => ps
+        Render<global::ExGrid.Components.ExGrid<Trade>>(ps => ps
             .Add(g => g.Rows, Rows(5))
             .Add(g => g.Columns, Columns())
             .Add(g => g.Chrome, MudGridChrome.Default));

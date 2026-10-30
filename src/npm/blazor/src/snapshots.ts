@@ -1,7 +1,7 @@
 // The Snapshots a Blazor component sends its Script Core (ADR-0065, ADR-0370 section 1), the browser's half: each
 // crosses once, as the Arrow stream ADR-0065 has a Snapshot travel, under the number .NET gave it; a later message
 // names it by that number alone, and the browser says which numbers it has let go, so .NET lets go of them too.
-// .NET's half is src/Shared/Script/SnapshotCrossing.cs, compiled into each adapter that sends Snapshots. Part of the
+// .NET's half is src/Shared/Components/SnapshotCrossing.cs, compiled into each adapter that sends Snapshots. Part of the
 // Shared Script (ADR-0411), so that every product's module crosses them alike.
 
 import { readArrowSnapshot, type Snapshot } from '@ex-grid/data';

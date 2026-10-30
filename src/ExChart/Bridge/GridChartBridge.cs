@@ -34,7 +34,7 @@ public static class GridChartCommands
 
 /// <summary>
 /// The grid's side of a chart, ready-made (ADR-0258): context-menu commands a Consumer adds to an
-/// <see cref="global::ExGrid.Script.ExGrid{TRow}"/> in one line, which turn the selection into a <see cref="GridChart"/>, and
+/// <see cref="global::ExGrid.Components.ExGrid{TRow}"/> in one line, which turn the selection into a <see cref="GridChart"/>, and
 /// the reading of that chart, by Row Key from the Consumer's data, into the Chart Definition an
 /// <c>ExChart</c> draws. ExGrid does not know it exists; where the chart is shown is the Consumer's.
 /// </summary>
@@ -60,7 +60,7 @@ public sealed class GridChartBridge<TRow>
 
     /// <summary>The grid whose selections are charted, set with <c>@ref</c>: give <see cref="Commands"/> to its
     /// <c>ContextCommands</c> and <see cref="GridChartCommands.Label"/> to its <c>ContextCommandLabel</c> (ADR-0421).</summary>
-    public global::ExGrid.Script.ExGrid<TRow>? ScriptGrid { get; set; }
+    public global::ExGrid.Components.ExGrid<TRow>? ScriptGrid { get; set; }
 
     /// <summary>The open charts the menu offers "Add to chart" for (ADR-0258, U7), in the menu's order.</summary>
     public IReadOnlyList<ChartTarget> Targets { get; set; } = [];

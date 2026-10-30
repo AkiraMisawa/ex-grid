@@ -10,7 +10,7 @@
 <h1>ExSheet over the Script Core</h1>
 
 <p>
-    The Sheet below is <code>ExSheet.Script.ExSheet</code>: Blazor's Framework Adapter over
+    The Sheet below is <code>ExSheet.Components.ExSheet</code>: Blazor's Framework Adapter over
     <code>@@ex-grid/sheet</code> (ADR-0370 section 1). The Workbook, its Formulas, the Formula Bar, the
     Sheet Tabs and the Selection Summary are the Script Core's, in the browser, on both hosting models.
     The page binds the Sheet Document two ways, as a page binds the Razor component's: each change
@@ -39,7 +39,7 @@
     <span id="script-sheet-file" role="status">@_file</span>
 </p>
 
-<ExSheet.Script.ExSheet @ref="_sheet"
+<ExSheet.Components.ExSheet @ref="_sheet"
                         @bind-Document="_document"
                         Culture="EnUs"
                         @bind-SummaryFigures="_figures"
@@ -53,7 +53,7 @@
     private SheetDocument _document = First;
     private SummaryFigures _figures = SummaryFigures.Default;
     private bool _editing;
-    private ExSheet.Script.ExSheet? _sheet;
+    private ExSheet.Components.ExSheet? _sheet;
     // Never empty: a line that appeared with the first answer would move the Sheet down under the pointer.
     private string _undone = "Nothing undone yet";
     // What Save wrote: the Workbook .NET was handed, as a document, and what its A3 computed in .NET.
@@ -104,5 +104,5 @@
     // Larger than the 32 KB a Server circuit's message carries, so the document the Sheet raises crosses as a stream.
     private Task LongNoteAsync() => Sheet().DoAsync(SheetEdit.Enter(CellAddress.Parse("B1"), new string('n', 40_000)));
 
-    private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
+    private ExSheet.Components.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the page.");
 }

@@ -167,6 +167,22 @@ describe('a C# Pivot Source seen from the browser (ADR-0370 sections 1 and 3)', 
         source.hear(PivotJson.writeSourceChanged({ sourceVersion: 'v3' }));
         expect(heard.map(changed => changed.sourceVersion)).toEqual(['v2']);
     });
+
+    it('folds a Change Batch .NET heard its source apply into the answer it holds, and asks .NET nothing more (ADR-0370 section 3)', async () => {
+        const dotnet = new FakeDotNet();
+        const source = new DotNetPivotSource(dotnet, wire);
+        const heard: PivotSourceChanged[] = [];
+        const stop = source.subscribe(changed => { heard.push(changed); });
+        // An extreme folds as a record is added; a sum of doubles, which subtraction does not keep exactly, is asked again.
+        const counted = pivotQuery({ rows: [{ field: 'Region' }], values: [{ field: 'Amount', parts: ['extremes'] }] });
+        const first = await source.aggregate(counted);
+        source.hear(PivotJson.writeChangeBatch({ kind: 'changeBatch', from: first.sourceVersion, to: 'v2', removed: [], added: [['East', 4]] }, source.fields));
+        const folded = await source.aggregate(counted);
+        stop();
+        expect(heard.map(changed => changed.sourceVersion)).toEqual(['v2']);
+        expect(folded.sourceVersion).toBe('v2');
+        expect(dotnet.calls.map(call => call.method)).toEqual(['Aggregate']);
+    });
 });
 
 describe('the words .NET answers for the pivot (ADR-0370 section 10)', () => {

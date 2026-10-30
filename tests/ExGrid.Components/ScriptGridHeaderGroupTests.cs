@@ -21,7 +21,7 @@ public class ScriptGridHeaderGroupTests : BunitContext
     public ScriptGridHeaderGroupTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -39,7 +39,7 @@ public class ScriptGridHeaderGroupTests : BunitContext
         new("Money", ["Amount"]) { Id = "money", Expanded = false, HiddenMark = new(CellState.Modified, "1 user-set field in hidden columns") },
     ];
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private JsonElement Attached()
@@ -51,7 +51,7 @@ public class ScriptGridHeaderGroupTests : BunitContext
     [Fact] // ADR-0400 / HG-18: the declaration crosses as the core spells it, and the toggle is heard only where handled
     public void ADR0400_a_groups_toggle_and_mark_cross_as_the_core_spells_them()
     {
-        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.HeaderGroups, Groups)
@@ -68,7 +68,7 @@ public class ScriptGridHeaderGroupTests : BunitContext
     public async Task ADR0400_the_toggle_the_core_notifies_reaches_OnHeaderGroupToggled()
     {
         var heard = new List<HeaderGroupToggle>();
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Window())
             .Add(g => g.Columns, Columns)
             .Add(g => g.HeaderGroups, Groups)
@@ -85,7 +85,7 @@ public class ScriptGridHeaderGroupTests : BunitContext
     {
         var refused = Assert.Throws<NotSupportedException>(() => HeaderGroupLayout.Resolve(Groups, ["Book", "Amount"], 0));
         Assert.Contains("Header Group 'Money'", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("ExGrid.Script.ExGrid", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("ExGrid.Components.ExGrid", refused.Message, StringComparison.Ordinal);
     }
 
     private static JsonElement Payload(string json)

@@ -213,7 +213,7 @@ else
         Describe();
     }
 
-    private RenderFragment Pivot => @<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
+    private RenderFragment Pivot => @<ExPivot.Components.ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
                                                              @bind-ShowFieldList="_showFieldList" Chrome="_pivotChrome"
                                                              OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
                                                              Culture="Culture" ViewportHeight="460" />;
@@ -226,7 +226,7 @@ else
     private PivotLayout _secondLayout = DemoPivotData.FirstLayout();
     private int _secondChanges;
 
-    private RenderFragment SecondPivot => @<ExPivot.Script.ExPivot Source="_source" @bind-Layout="_secondLayout" @bind-Layout:after="SecondChanged"
+    private RenderFragment SecondPivot => @<ExPivot.Components.ExPivot Source="_source" @bind-Layout="_secondLayout" @bind-Layout:after="SecondChanged"
                                                                    Chrome="_pivotChrome" Culture="Culture" ViewportHeight="200" />;
 
     private void SecondChanged() => _secondChanges++;

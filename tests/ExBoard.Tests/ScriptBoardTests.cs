@@ -10,7 +10,7 @@ using ExGrid.Data.Arrow;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using ScriptBoard = ExBoard.Script.ExBoard;
+using ScriptBoard = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -60,7 +60,7 @@ public sealed class ScriptBoardTests : BunitContext
     public ScriptBoardTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExBoard.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExBoard.Components.ScriptCoreAsset.Stamp);
         _view = _module.SetupModule("attach", _ => true);
         _view.SetupVoid("update", _ => true).SetVoidResult();
     }
@@ -73,8 +73,8 @@ public sealed class ScriptBoardTests : BunitContext
             more?.Invoke(ps);
         });
 
-    private DotNetObjectReference<global::ExBoard.Script.ScriptBridge> Bridge()
-        => Assert.IsType<DotNetObjectReference<global::ExBoard.Script.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
+    private DotNetObjectReference<global::ExBoard.Components.ScriptBridge> Bridge()
+        => Assert.IsType<DotNetObjectReference<global::ExBoard.Components.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
 
     private static JsonElement Parsed(object? json)
     {
@@ -156,15 +156,15 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Equal((BoardDiff.Empty.ToJson(), 2), (update.GetProperty("diff").GetString(), update.GetProperty("diffsSent").GetInt32()));
     }
 
-    [Fact] // ADR-0123, ADR-0370 section 1, ADR-0411: the bundled module ExBoard.Script.ExBoard imports answers the stamp the component is built with, over the Shared Script ExGrid ships
+    [Fact] // ADR-0123, ADR-0370 section 1, ADR-0411: the bundled module ExBoard.Components.ExBoard imports answers the stamp the component is built with, over the Shared Script ExGrid ships
     public void ADR0370_the_script_core_module_is_the_one_the_component_was_built_with()
     {
         const string module = "ex-board.min.js";
-        var stamp = global::ExBoard.Script.ScriptCoreAsset.Stamp;
+        var stamp = global::ExBoard.Components.ScriptCoreAsset.Stamp;
         var shipped = File.ReadAllText(ShippedFiles.PathOf("ExBoard", module));
         Assert.StartsWith($"/*! ex-board.js sha256:{stamp} ", shipped, StringComparison.Ordinal);
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
-        Assert.Equal(global::ExBoard.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExBoard", module));
+        Assert.Equal(global::ExBoard.Components.ScriptCoreAsset.Version, ShippedFiles.Version("ExBoard", module));
         Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
         var shared = Regex.Match(File.ReadAllText(ShippedFiles.PathOf("ExGrid", "ex-grid-script.min.js")), "^/\\*! ex-grid-script\\.js sha256:(?<stamp>[0-9a-f]{64}) ").Groups["stamp"].Value;
         Assert.Matches("^[0-9a-f]{64}$", shared);

@@ -99,7 +99,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   is .NET 10 too — SDK version and target framework are independent, and coincide today. The
   code is therefore C# 14; do not raise `LangVersion`
 - **Building ExGrid builds TypeScript.** `src/ExGrid` bundles the Script Core's module for
-  `ExGrid.Script.ExGrid` from `src/npm` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
+  `ExGrid.Components.ExGrid` from `src/npm` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
   so the default shell carries Node, and the first build runs `npm ci` in `src/npm`. The bundle is not
   committed
 - **Node is 26.12.1, the security release of 2026-10-21** (26 is LTS from 2026-10-28 to 2029-04-30). `.node-version` names it for CI's

@@ -6,8 +6,8 @@ namespace ExGrid.Components;
 /// What a reader of the grid looks at: the Selection, with the Row Sequence Version its positions are
 /// written in, and where the rows and columns are scrolled to. A Consumer that shows several sets of
 /// rows in one grid, one at a time — ExSheet's Sheets behind their tabs (ADR-0331) — keeps each set's
-/// view with <see cref="Script.ExGrid{TRow}.ReadViewAsync"/> and hands it back with
-/// <see cref="Script.ExGrid{TRow}.ShowViewWith(GridView)"/> when that set is shown again (ADR-0441).
+/// view with <see cref="ExGrid{TRow}.ReadViewAsync"/> and hands it back with
+/// <see cref="ExGrid{TRow}.ShowViewWith(GridView)"/> when that set is shown again (ADR-0441).
 /// </summary>
 /// <param name="RowSequenceVersion">The Row Sequence Version the Selection's positions are written in.</param>
 /// <param name="Selection">The Selection.</param>
@@ -15,7 +15,7 @@ namespace ExGrid.Components;
 /// <param name="ScrollLeftPx">The scroller's horizontal offset, in pixels.</param>
 public readonly record struct GridView(int RowSequenceVersion, GridSelection Selection, double ScrollTopPx, double ScrollLeftPx)
 {
-    /// <summary>The grid and the set of rows the view was read of (<see cref="Script.ExGrid{TRow}.ReadViewAsync"/>),
+    /// <summary>The grid and the set of rows the view was read of (<see cref="ExGrid{TRow}.ReadViewAsync"/>),
     /// carried through <c>with</c>, so a view handed back to that grid brings the same set again; none for a
     /// view that grid did not read, which brings a set of its own. The set is the number the browser keeps the
     /// view it read under (ADR-0441). Not part of the view's equality: two

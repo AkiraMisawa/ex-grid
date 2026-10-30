@@ -18,7 +18,7 @@ import {
     type SheetToolbarCommand, type SheetToolbarContent, type SheetWordId, type TableRow,
 } from '@ex-grid/sheet';
 import {
-    CellAddress, columnCount, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
+    CellAddress, columnCount, DocumentChanges, FormulaSyntaxError, readCellFormatChange, readLinkedRows, readSheetEdit, RepeatedKeyError, SheetDocumentError, SheetRefusedError,
     WorkbookDocument, writeCellFormat, writeLinkedRows, writeRepeatedKey, type SheetDay, type SheetMoment, type SheetRefusal, type Value,
     type Workbook,
 } from '@ex-grid/sheet-engine';
@@ -303,7 +303,9 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
     let words = wordsOf(init.words);
     // What .NET listens to, as the parameters last said.
     let hears: ReadonlySet<HeardKind> = new Set(init.options.hears);
-    const heard = handlers(send, kind => hears.has(kind), raised => { document = raised; }, () => documentsSent, () => made);
+    // What .NET was last handed of the documents raised, while it listens to either.
+    const changes = new DocumentChanges();
+    const heard = handlers(send, kind => hears.has(kind), raised => { document = raised; }, () => documentsSent, changes);
     // The Pointing Scope the parameters name, held in the page while this Sheet stands in it (ADR-0430).
     let inScope: { readonly id: string; readonly scope: SheetPageScope; readonly release: () => void } | undefined;
     const scopeNamed = (id: string | undefined): PointingScope | undefined => {
@@ -408,6 +410,8 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
             const nextWords = next.words === undefined ? words : wordsOf(next.words);
             // Heard as the parameters now say, events the update itself raises included.
             hears = new Set(next.options.hears);
+            // Unheard, the documents raised meanwhile are not handed, so the next one heard is handed whole.
+            if (!hears.has('workbookChanged') && !hears.has('documentChanged')) changes.forget();
             made.update(sheetOptions(
                 next.options, nextDocument, nextWords, heard, scopeNamed(next.options.pointingScope), chromeOf(next.options), toolbarOf(next.options, nextWords),
                 metrics,
@@ -479,7 +483,7 @@ export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): B
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the caller names the shape .NET wrote, and so the one assertion is here
 export function parsed<T>(json: string): T {
     if (typeof json !== 'string') throw new TypeError('Internal: .NET sent the bridge something other than JSON text.');
-    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExSheet.Script writes; each reader checks what it reads
+    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExSheet.Components writes; each reader checks what it reads
 }
 
 // A command's answer, or the Sheet's refusal of it, which crosses as data: any other failure is the command's.
@@ -591,17 +595,19 @@ type Handlers = Required<Pick<SheetOptions,
 // One function per event, made once, so the Sheet sees the same handler on every update.
 function handlers(
     send: (kind: HeardKind | 'editingChanged' | 'historyChanged', payload: unknown) => void, hearing: (kind: HeardKind) => boolean,
-    raised: (document: WorkbookDocument) => void, documentsSent: () => number, sheet: () => SheetHandle,
+    raised: (document: WorkbookDocument) => void, documentsSent: () => number, changes: DocumentChanges,
 ): Handlers {
     return Object.freeze({
-        // The document raised is kept whether or not .NET listens to both, since it is the Workbook on screen.
+        // The document raised is kept whether or not .NET listens to both, since it is the Workbook on screen. .NET is
+        // handed what changed in it, and builds the documents it raises: the Workbook's, and while the Workbook holds
+        // one Sheet, that Sheet's, as a Sheet Document records one Sheet whole and no more.
         onWorkbookChanged: (document: WorkbookDocument) => {
             raised(document);
-            send('workbookChanged', {
-                workbook: hearing('workbookChanged') ? document.toJson() : null,
-                sheet: hearing('documentChanged') ? sheetDocumentOf(sheet()) : null,
-                documentsSent: documentsSent(),
-            });
+            const workbook = hearing('workbookChanged');
+            const sheet = hearing('documentChanged') && document.sheets.length === 1;
+            // Neither raised, nothing crosses of it, and the next is handed whole.
+            if (!workbook && !sheet) changes.forget();
+            send('workbookChanged', { changes: workbook || sheet ? changes.write(document) : null, workbook, sheet, documentsSent: documentsSent() });
         },
         onSheetsChanged: change => { send('sheetsChanged', change); },
         onShowToolbarChanged: shown => { send('showToolbarChanged', shown); },

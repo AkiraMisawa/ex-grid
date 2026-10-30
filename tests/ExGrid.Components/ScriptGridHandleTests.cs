@@ -24,16 +24,16 @@ public class ScriptGridHandleTests : BunitContext
     public ScriptGridHandleTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = _module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
         _grid.SetupVoid("showView", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(
-        Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(
+        Action<ComponentParameterCollectionBuilder<global::ExGrid.Components.ExGrid<TestRow>>>? extra = null)
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Columns, TestRows.Columns());
             if (extra is null)
@@ -42,7 +42,7 @@ public class ScriptGridHandleTests : BunitContext
                 extra(ps);
         });
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private static JsonElement Json(string json)
@@ -187,7 +187,7 @@ public class ScriptGridHandleTests : BunitContext
     {
         var ran = false;
         Exception? refused = null;
-        IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>>? cut = null;
+        IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>>? cut = null;
         cut = Grid(ps => ps.Add(g => g.Rows, _rows).Add(g => g.DeclaredKeys, ["F9"]).Add(g => g.OnDeclaredKey, async (GridDeclaredKeyPress _) =>
         {
             var grid = cut?.Instance ?? throw new InvalidOperationException("The key was pressed before the grid was rendered.");

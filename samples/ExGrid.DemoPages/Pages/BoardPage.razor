@@ -1,6 +1,6 @@
 @page "/board"
 @using global::ExBoard
-@using global::ExChart.Script
+@using global::ExChart.Components
 @using global::ExGrid.Data
 @using global::ExPivot.Components
 
@@ -11,7 +11,7 @@
    by desk; its confirm hands on the chosen rows' days and traders, written under the Board. What the user
    changes is written as its Board Diff, and "Draw again" binds the Board afresh with it laid over
    (ExBoard ticket 07). The pivot's selected cells narrow the chart by trader (ExBoard ticket 11). The
-   Board is drawn by ExBoard.Script.ExBoard, Blazor's adapter over ExBoard's Script Core (ADR-0370 section 1):
+   Board is drawn by ExBoard.Components.ExBoard, Blazor's adapter over ExBoard's Script Core (ADR-0370 section 1):
    the Board crosses as JSON, each input's Snapshot as its Arrow stream (ADR-0065). *@
 <DemoChromeAssets>
     <Head>
@@ -21,7 +21,7 @@
 </DemoChromeAssets>
 
 <h1>A Board</h1>
-<ExBoard.Script.ExBoard Board="Reading" Data="_data" Width="1000" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
+<ExBoard.Components.ExBoard Board="Reading" Data="_data" Width="1000" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
 <pre id="raised" role="log">@_raised</pre>
 <button type="button" id="again" @onclick="DrawAgain">Draw again with these changes</button>
 <pre id="diff" role="log">@_diff</pre>

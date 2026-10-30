@@ -32,7 +32,7 @@
 
     <DocsSection Title="A pivot drawn in the browser">
         <p>
-            Blazor's ExPivot, <code>ExPivot.Script.ExPivot</code>, runs on the same TypeScript core as React's, as
+            Blazor's ExPivot, <code>ExPivot.Components.ExPivot</code>, runs on the same TypeScript core as React's, as
             ExGrid does. The report, the PivotTable Fields pane and the Pivot Toolbar run in the browser on both hosting
             models, so on Blazor Server a field dragged or a region collapsed does not cross the circuit. It takes the same
             <code>PivotSource</code> and <code>PivotLayout</code>. Your source still answers in .NET: each question the
@@ -68,7 +68,7 @@
             placed field's menu, Filter…, Field Settings…, Value Field Settings…, the Stale Report's notice, the
             PivotTable Fields pane, the sheet tabs Show Details opens and its dialog with MudBlazor's components, and
             dresses the report grid as
-            <code>MudGridChrome</code> dresses <code>ExGrid.Script.ExGrid</code>. A key typed as a menu opens is its
+            <code>MudGridChrome</code> dresses <code>ExGrid.Components.ExGrid</code>. A key typed as a menu opens is its
             first item's, on Blazor Server too, where the menu's Razor arrives a round trip later; a report with no
             values yet draws no grid to hold such a key in, and there it is not held yet. A panel's choices
             are native selects in MudBlazor's outline and its text fields are read in the browser as they are typed,
@@ -271,7 +271,7 @@
     </DocsSection>
 
     <DocsSection Title="API">
-        <ApiTable Type="typeof(global::ExPivot.Script.ExPivot)" />
+        <ApiTable Type="typeof(global::ExPivot.Components.ExPivot)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotLayout)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotCellItems)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotFields<>)" />

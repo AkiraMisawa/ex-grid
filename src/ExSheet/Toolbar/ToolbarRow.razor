@@ -25,7 +25,7 @@
     [CascadingParameter] internal ToolbarOrder? Order { get; set; }
 
     /// <summary>The ExSheet's toolbar, where the row declares itself. Internal, as its type is (ADR-0201).</summary>
-    [CascadingParameter] internal global::ExSheet.Script.ScriptToolbar? Script { get; set; }
+    [CascadingParameter] internal global::ExSheet.Components.ScriptToolbar? Script { get; set; }
 
     /// <summary>Where the row stands on the toolbar, and the scope its items take theirs from.</summary>
     internal ToolbarOrder Place { get; private set; } = new();

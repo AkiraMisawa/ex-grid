@@ -5,7 +5,7 @@
 @namespace ScriptSheetSupport
 @using global::ExSheet
 
-<ExSheet.Script.ExSheet @ref="Sheet" ShowToolbar="true">
+<ExSheet.Components.ExSheet @ref="Sheet" ShowToolbar="true">
     <ToolbarContent>
         <DefaultToolbarRow />
         <ToolbarRow Label="Review" KeyTip="R">
@@ -15,7 +15,7 @@
             <ToolbarButton Text="Flag" OnClick="Flag"><b class="flag-icon">F</b></ToolbarButton>
         </ToolbarRow>
     </ToolbarContent>
-</ExSheet.Script.ExSheet>
+</ExSheet.Components.ExSheet>
 
 @code {
     /// <summary>Why Mark reviewed cannot be pressed now.</summary>
@@ -25,7 +25,7 @@
     [Parameter] public Func<Task> OnFlag { get; set; } = () => Task.CompletedTask;
 
     /// <summary>The Sheet.</summary>
-    public global::ExSheet.Script.ExSheet? Sheet { get; private set; }
+    public global::ExSheet.Components.ExSheet? Sheet { get; private set; }
 
     /// <summary>How many times Mark reviewed was pressed.</summary>
     public int Reviewed { get; private set; }

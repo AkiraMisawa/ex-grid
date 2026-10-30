@@ -6,7 +6,7 @@ using ExGrid.Data;
 using ExPivot.Chrome;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using ScriptBoard = ExBoard.Script.ExBoard;
+using ScriptBoard = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
 
@@ -30,7 +30,7 @@ public sealed class ScriptBoardChromeTests : BunitContext
     public ScriptBoardChromeTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExBoard.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExBoard.Components.ScriptCoreAsset.Stamp);
         _view = _module.SetupModule("attach", _ => true);
         _view.SetupVoid("update", _ => true).SetVoidResult();
         _view.SetupVoid("slotRendered", _ => true).SetVoidResult();
@@ -84,8 +84,8 @@ public sealed class ScriptBoardChromeTests : BunitContext
         return document.RootElement.GetProperty("razorSlots").GetRawText();
     }
 
-    private global::ExBoard.Script.ScriptBridge Bridge()
-        => Assert.IsType<DotNetObjectReference<global::ExBoard.Script.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
+    private global::ExBoard.Components.ScriptBridge Bridge()
+        => Assert.IsType<DotNetObjectReference<global::ExBoard.Components.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     [Fact] // ADR-0410: the slots each Chrome fills cross as the Board attaches, the grid Chrome's for the report grids where one is given, as the Razor ExBoard has it
     public void ADR0410_the_slots_the_Chromes_fill_cross_as_the_Board_attaches()

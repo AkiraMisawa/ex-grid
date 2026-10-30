@@ -49,7 +49,7 @@ builder.RootComponents.Add<ExPivot.Components.ExPivotStylesheet>("head::after");
 
 ```razor
 @using ExPivot
-@using ExPivot.Script
+@using ExPivot.Components
 @using ExPivot.Engine
 
 <ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />

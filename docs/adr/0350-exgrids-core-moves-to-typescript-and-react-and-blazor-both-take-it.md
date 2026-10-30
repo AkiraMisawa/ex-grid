@@ -243,6 +243,14 @@ bridge waits until what a write of the user's holds is taken in, so the core hol
 rows moved rather than "no error". `OnFindError` takes a `Source` and is refused beside `Rows`, whose order the
 grid keeps out of the Consumer's sight.)*
 
+*(2026-10-30, step 2 replaced the one with the other: #501 removed `ExGrid.Components.ExGrid<TRow>` drawn in
+.NET, and the adapter then took its name, `ExGrid.Script.ExGrid<TRow>` becoming `ExGrid.Components.ExGrid<TRow>`
+with each other product's adapter (`ExSheet.Components.ExSheet`, `ExPivot.Components.ExPivot`,
+`ExChart.Components.ExChart` and `ExSurface`, `ExBoard.Components.ExBoard`) and the code under `src/<Package>/Script/`
+moving to `src/<Package>/Components/`. The `Script` namespace never shipped, and 0.1.0 shipped the `Components` one,
+so a page written against 0.1.0 keeps its `@using`. The notes above name the adapter as it was named when they
+were written.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a
@@ -388,6 +396,22 @@ make it slower and are measured first:
 today's C# core, and the numbers are recorded before step 1 and step 2 of section 7 are called done. A
 case that is slower is said in the record and in the Change Notes, and fixed or accepted with the user;
 performance still never gates CI.
+
+*(2026-10-30, measured and in part fixed: `spikes/render-bench/results/20261030-script-core/summary.txt` puts the
+Script Core beside the C# core on one machine. Keys are up to fifteen times faster on WebAssembly and twice as fast on
+Server. Three places were slower where .NET hands the browser data, as this section foresaw, and each is now cut down.
+The grid sent every row around the painted ones again whenever the Window changed, about 28 KB a push on Server and
+21 to 27 ms on WebAssembly; a row is a new instance when its data changes (ADR-0003), so a row the browser holds,
+the same instance under the same columns and Row Key reader, now crosses as its id and what it paints, and a new
+`Rows` list reading the same columns keeps their number. The bridge holds a row's values from the last state that
+carried them until .NET answers that it let the row go, and states are taken in in the order sent, so a row named by
+its id is never one the bridge cannot read; an answer to the browser's question, which may cross ahead of a state,
+carries its rows whole. A push of one row now crosses about 1.5 KB and takes 6 to 12 ms on either host over 10,000
+rows. ExSheet's raised documents cross as what changed (ADR-0370 section 1's note of this date), and ExPivot's Change
+Batches as the records they changed (ADR-0370 section 3's note of this date). What stays slower, said in the record and
+the Change Notes: a Window of all new rows, 100,000 rows on WebAssembly, where every push builds a new in-memory
+source over every row in .NET, and an amended trade in ExPivot, where the pivot engine lays the report out again from
+every leaf, about 50 ms on either host.)*
 
 ### 16. The Script Core's public shape
 

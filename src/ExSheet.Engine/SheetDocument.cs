@@ -132,6 +132,11 @@ public sealed class SheetDocument
     /// </summary>
     public IReadOnlyList<SheetDocumentColumnWidth> ColumnWidths { get; init; } = [];
 
+    /// <summary>The document declaring <paramref name="linkedTables"/> and holding <paramref name="cells"/>, in
+    /// row-major order, in place of its own, and recording everything else it records.</summary>
+    internal SheetDocument With(IReadOnlyList<SheetDocumentTable> linkedTables, IReadOnlyList<SheetDocumentCell> cells) =>
+        new(Culture, Name, linkedTables, cells) { Columns = Columns, Rows = Rows, ColumnWidths = ColumnWidths };
+
     /// <summary>Writes the document as JSON.</summary>
     public string ToJson()
     {

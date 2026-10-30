@@ -69,7 +69,21 @@
         const target = a && root()?.contains(a) ? a : root();
         const code = /^[0-9]$/.test(k) ? `Digit${k}` : k;
         const init = { key: k, code, ctrlKey: ctrl, bubbles: true, cancelable: true, composed: true };
-        for (const type of ['keydown', 'keyup']) target.dispatchEvent(new KeyboardEvent(type, init));
+        const typed = target.dispatchEvent(new KeyboardEvent('keydown', init));
+        // A character the browser would type: a dispatched keydown types nothing, so the text goes in as the
+        // browser puts it, beforeinput and then input on the field that holds the keyboard. The Script Core
+        // takes typed text from these (its Keyboard Field and its editor, ADR-0080); the C# core took it from
+        // the keydown, and its run had no field to type into.
+        const field = document.activeElement;
+        if (typed && k.length === 1 && !ctrl && (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)
+            && root()?.contains(field)) {
+            const data = { data: k, inputType: 'insertText', bubbles: true, cancelable: true, composed: true };
+            if (field.dispatchEvent(new InputEvent('beforeinput', data))) {
+                field.setRangeText(k, field.selectionStart ?? field.value.length, field.selectionEnd ?? field.value.length, 'end');
+                field.dispatchEvent(new InputEvent('input', { ...data, cancelable: false }));
+            }
+        }
+        target.dispatchEvent(new KeyboardEvent('keyup', init));
     };
 
     // Resolves with when the predicate first held: "dom" as the mutation that made it hold landed,

@@ -164,7 +164,7 @@ public interface ISheetChrome : IGridChrome
     RenderFragment? SheetTabAdd() => null;
 
     /// <summary>The Sheet's own slots this Chrome fills with Razor when the Script Core draws the Sheet
-    /// (<c>ExSheet.Script.ExSheet</c>, ADR-0410): each is asked for through its view overload, or through the overload
+    /// (<c>ExSheet.Components.ExSheet</c>, ADR-0410): each is asked for through its view overload, or through the overload
     /// above where that one takes data alone. <see cref="SheetScriptSlots.None"/>, the default, leaves every part the
     /// Script Core's own. The grid's slots are this Chrome's <see cref="IGridChrome.ScriptSlots"/>. Read as the
     /// Sheet's options are sent: answer the same each time.</summary>

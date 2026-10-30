@@ -104,7 +104,7 @@ internal sealed class HeaderGroupLayout
             if (group.Expanded is not null || group.HiddenMark is not null)
             {
                 throw new NotSupportedException($"Header Group '{group.Label}' declares a toggle or a Hidden Mark, which only "
-                    + "ExGrid.Script.ExGrid draws: this grid would draw the group without it (ADR-0400 section 10).");
+                    + "ExGrid.Components.ExGrid draws: this grid would draw the group without it (ADR-0400 section 10).");
             }
             var first = int.MaxValue;
             var last = int.MinValue;

@@ -3,7 +3,7 @@
 
 @* The same Board and data as the first Example, drawn by ExBoard's Script Core: the Board crosses to the browser as
    JSON and the trades as their Arrow stream, once; the output and the Diff come back to .NET. *@
-<ExBoard.Script.ExBoard Board="Board" Data="Data" Width="900" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
+<ExBoard.Components.ExBoard Board="Board" Data="Data" Width="900" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
 <div style="margin: 8px 0">
     <button type="button" disabled="@(_diff is null)" @onclick="DrawAgain">Draw with my changes</button>
 </div>

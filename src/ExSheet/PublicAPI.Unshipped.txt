@@ -1,5 +1,4 @@
 #nullable enable
-const ExSheet.Script.ExSheet.DefaultRowHeightPx = 28 -> double
 const ExSheet.SheetFindLabelIds.Within = "exsheet.find-within" -> string!
 const ExSheet.SheetFindLabelIds.WithinSheet = "exsheet.find-within-sheet" -> string!
 const ExSheet.SheetFindLabelIds.WithinWorkbook = "exsheet.find-within-workbook" -> string!
@@ -18,97 +17,23 @@ ExSheet.ISheetChrome.SheetScriptSlots.get -> ExSheet.SheetScriptSlots
 ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.ToolbarItem(ExSheet.SheetToolbarItemView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExSheet.Script.ExSheet
-ExSheet.Script.ExSheet.AllowCopyWithHeaders.get -> bool
-ExSheet.Script.ExSheet.AllowCopyWithHeaders.set -> void
-ExSheet.Script.ExSheet.CanRedo.get -> bool
-ExSheet.Script.ExSheet.CanUndo.get -> bool
-ExSheet.Script.ExSheet.CellFormatAtAsync(ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
-ExSheet.Script.ExSheet.CellFormatAtAsync(string! sheet, ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
-ExSheet.Script.ExSheet.Chrome.get -> ExGrid.Chrome.IGridChrome?
-ExSheet.Script.ExSheet.Chrome.set -> void
-ExSheet.Script.ExSheet.CommandLabel.get -> System.Func<string!, string?>?
-ExSheet.Script.ExSheet.CommandLabel.set -> void
-ExSheet.Script.ExSheet.Culture.get -> System.Globalization.CultureInfo?
-ExSheet.Script.ExSheet.Culture.set -> void
-ExSheet.Script.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExSheet.Script.ExSheet.DoAsync(ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.DoAsync(string! sheet, ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.Document.get -> ExSheet.Engine.SheetDocument?
-ExSheet.Script.ExSheet.Document.set -> void
-ExSheet.Script.ExSheet.DocumentChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetDocument!>
-ExSheet.Script.ExSheet.DocumentChanged.set -> void
-ExSheet.Script.ExSheet.EditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
-ExSheet.Script.ExSheet.EditingChanged.set -> void
-ExSheet.Script.ExSheet.ExSheet() -> void
-ExSheet.Script.ExSheet.IsEditing.get -> bool
-ExSheet.Script.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
-ExSheet.Script.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
-ExSheet.Script.ExSheet.OnFormatKeyRefused.set -> void
-ExSheet.Script.ExSheet.OnLinkedColumnColoursChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.LinkedColumnColours!>
-ExSheet.Script.ExSheet.OnLinkedColumnColoursChanged.set -> void
-ExSheet.Script.ExSheet.OnPointingRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.PointingRefusal!>
-ExSheet.Script.ExSheet.OnPointingRefused.set -> void
-ExSheet.Script.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
-ExSheet.Script.ExSheet.OnSelectionSummaryChanged.set -> void
-ExSheet.Script.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.PinnedColumnCount.get -> int
-ExSheet.Script.ExSheet.PinnedColumnCount.set -> void
-ExSheet.Script.ExSheet.PointingScope.get -> ExSheet.PointingScope?
-ExSheet.Script.ExSheet.PointingScope.set -> void
-ExSheet.Script.ExSheet.PushLinkedTableAsync(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.RedoAsync() -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.RowHeight.get -> double
-ExSheet.Script.ExSheet.RowHeight.set -> void
-ExSheet.Script.ExSheet.SaveAsync(System.Func<ExSheet.Engine.Workbook!, System.Threading.Tasks.Task!>! write) -> System.Threading.Tasks.Task!
-ExSheet.Script.ExSheet.Seed.get -> ulong?
-ExSheet.Script.ExSheet.Seed.set -> void
-ExSheet.Script.ExSheet.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
-ExSheet.Script.ExSheet.SelectionChanged.set -> void
-ExSheet.Script.ExSheet.SetAlignmentAsync(ExSheet.Engine.HorizontalAlignment alignment) -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.SetCellFormatAsync(ExSheet.Engine.CellFormatChange! change) -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.SetCellFormatFromFocusAsync(System.Func<ExSheet.Engine.CellFormat!, ExSheet.Engine.CellFormatChange!>! change) -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.SetNumberFormatAsync(ExSheet.Engine.NumberFormat? format) -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
-ExSheet.Script.ExSheet.SheetsChanged.set -> void
-ExSheet.Script.ExSheet.ShowColumnHeadings.get -> bool
-ExSheet.Script.ExSheet.ShowColumnHeadings.set -> void
-ExSheet.Script.ExSheet.ShowFormulaBar.get -> bool
-ExSheet.Script.ExSheet.ShowFormulaBar.set -> void
-ExSheet.Script.ExSheet.ShowRowHeadings.get -> bool
-ExSheet.Script.ExSheet.ShowRowHeadings.set -> void
-ExSheet.Script.ExSheet.ShowSelectionSummary.get -> bool
-ExSheet.Script.ExSheet.ShowSelectionSummary.set -> void
-ExSheet.Script.ExSheet.ShowSheetTabs.get -> bool
-ExSheet.Script.ExSheet.ShowSheetTabs.set -> void
-ExSheet.Script.ExSheet.ShowToolbar.get -> bool
-ExSheet.Script.ExSheet.ShowToolbar.set -> void
-ExSheet.Script.ExSheet.ShowToolbarChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
-ExSheet.Script.ExSheet.ShowToolbarChanged.set -> void
-ExSheet.Script.ExSheet.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
-ExSheet.Script.ExSheet.SummaryFigures.set -> void
-ExSheet.Script.ExSheet.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
-ExSheet.Script.ExSheet.SummaryFiguresChanged.set -> void
-ExSheet.Script.ExSheet.TimeZone.get -> System.TimeZoneInfo?
-ExSheet.Script.ExSheet.TimeZone.set -> void
-ExSheet.Script.ExSheet.Today.get -> System.DateOnly?
-ExSheet.Script.ExSheet.Today.set -> void
-ExSheet.Script.ExSheet.ToDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.SheetDocument!>!
-ExSheet.Script.ExSheet.ToolbarContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExSheet.Script.ExSheet.ToolbarContent.set -> void
-ExSheet.Script.ExSheet.ToWorkbookDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!
-ExSheet.Script.ExSheet.UndoAsync() -> System.Threading.Tasks.Task<bool>!
-ExSheet.Script.ExSheet.ViewportHeight.get -> ExGrid.ViewportSize
-ExSheet.Script.ExSheet.ViewportHeight.set -> void
-ExSheet.Script.ExSheet.ViewportWidth.get -> ExGrid.ViewportSize
-ExSheet.Script.ExSheet.ViewportWidth.set -> void
-ExSheet.Script.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
-ExSheet.Script.ExSheet.Workbook.set -> void
-ExSheet.Script.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
-ExSheet.Script.ExSheet.WorkbookChanged.set -> void
+ExSheet.Components.ExSheet.CellFormatAtAsync(ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
+ExSheet.Components.ExSheet.CellFormatAtAsync(string! sheet, ExSheet.Engine.CellAddress address) -> System.Threading.Tasks.Task<ExSheet.Engine.CellFormat!>!
+ExSheet.Components.ExSheet.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExSheet.Components.ExSheet.DoAsync(string! sheet, ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
+ExSheet.Components.ExSheet.LinkedTablesAsync() -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!>!
+ExSheet.Components.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
+ExSheet.Components.ExSheet.SaveAsync(System.Func<ExSheet.Engine.Workbook!, System.Threading.Tasks.Task!>! write) -> System.Threading.Tasks.Task!
+ExSheet.Components.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
+ExSheet.Components.ExSheet.SheetsChanged.set -> void
+ExSheet.Components.ExSheet.ShowSheetTabs.get -> bool
+ExSheet.Components.ExSheet.ShowSheetTabs.set -> void
+ExSheet.Components.ExSheet.ToDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.SheetDocument!>!
+ExSheet.Components.ExSheet.ToWorkbookDocumentAsync() -> System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!
+ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
+ExSheet.Components.ExSheet.Workbook.set -> void
+ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
+ExSheet.Components.ExSheet.WorkbookChanged.set -> void
 ExSheet.SheetFindLabelIds
 ExSheet.SheetFormatCellsBorder
 ExSheet.SheetFormatCellsBorder.<Clone>$() -> ExSheet.SheetFormatCellsBorder!
@@ -474,7 +399,6 @@ ExSheet.SheetToolbarItemView.HasContent.get -> bool
 ExSheet.SheetToolbarItemView.HasContent.init -> void
 *REMOVED*abstract ExSheet.ToolbarItemBase.Face() -> ExSheet.ToolbarItemFace!
 *REMOVED*abstract ExSheet.ToolbarItemBase.PressAsync() -> System.Threading.Tasks.Task!
-*REMOVED*const ExSheet.Components.ExSheet.DefaultRowHeightPx = 28 -> double
 *REMOVED*ExSheet.AlignmentItem
 *REMOVED*ExSheet.BuiltInToolbarItem
 *REMOVED*ExSheet.BuiltInToolbarItem.BuiltInToolbarItem() -> void
@@ -483,84 +407,10 @@ ExSheet.SheetToolbarItemView.HasContent.init -> void
 *REMOVED*ExSheet.BuiltInToolbarItem.Item.get -> ExSheet.ToolbarItemBase!
 *REMOVED*ExSheet.BuiltInToolbarItem.Item.set -> void
 *REMOVED*ExSheet.ColourItem
-*REMOVED*ExSheet.Components.ExSheet
-*REMOVED*ExSheet.Components.ExSheet.AllowCopyWithHeaders.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.AllowCopyWithHeaders.set -> void
-*REMOVED*ExSheet.Components.ExSheet.CanRedo.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.CanUndo.get -> bool
 *REMOVED*ExSheet.Components.ExSheet.CellFormatAt(ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFormat!
-*REMOVED*ExSheet.Components.ExSheet.Chrome.get -> ExGrid.Chrome.IGridChrome?
-*REMOVED*ExSheet.Components.ExSheet.Chrome.set -> void
-*REMOVED*ExSheet.Components.ExSheet.CommandLabel.get -> System.Func<string!, string?>?
-*REMOVED*ExSheet.Components.ExSheet.CommandLabel.set -> void
-*REMOVED*ExSheet.Components.ExSheet.Culture.get -> System.Globalization.CultureInfo?
-*REMOVED*ExSheet.Components.ExSheet.Culture.set -> void
-*REMOVED*ExSheet.Components.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> System.Threading.Tasks.Task!
-*REMOVED*ExSheet.Components.ExSheet.DeclareLinkedTableAsync(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> System.Threading.Tasks.Task!
 *REMOVED*ExSheet.Components.ExSheet.Dispose() -> void
-*REMOVED*ExSheet.Components.ExSheet.DoAsync(ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
-*REMOVED*ExSheet.Components.ExSheet.Document.get -> ExSheet.Engine.SheetDocument?
-*REMOVED*ExSheet.Components.ExSheet.Document.set -> void
-*REMOVED*ExSheet.Components.ExSheet.DocumentChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetDocument!>
-*REMOVED*ExSheet.Components.ExSheet.DocumentChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.EditingChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
-*REMOVED*ExSheet.Components.ExSheet.EditingChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ExSheet() -> void
-*REMOVED*ExSheet.Components.ExSheet.IsEditing.get -> bool
 *REMOVED*ExSheet.Components.ExSheet.LinkedTables.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!
-*REMOVED*ExSheet.Components.ExSheet.OnFormatKeyRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.SheetRefusal!>
-*REMOVED*ExSheet.Components.ExSheet.OnFormatKeyRefused.set -> void
-*REMOVED*ExSheet.Components.ExSheet.OnLinkedColumnColoursChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.LinkedColumnColours!>
-*REMOVED*ExSheet.Components.ExSheet.OnLinkedColumnColoursChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.OnPointingRefused.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.PointingRefusal!>
-*REMOVED*ExSheet.Components.ExSheet.OnPointingRefused.set -> void
-*REMOVED*ExSheet.Components.ExSheet.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SelectionSummary!>
-*REMOVED*ExSheet.Components.ExSheet.OnSelectionSummaryChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.OpenFormatCellsAsync() -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.PinnedColumnCount.get -> int
-*REMOVED*ExSheet.Components.ExSheet.PinnedColumnCount.set -> void
-*REMOVED*ExSheet.Components.ExSheet.PointingScope.get -> ExSheet.PointingScope?
-*REMOVED*ExSheet.Components.ExSheet.PointingScope.set -> void
-*REMOVED*ExSheet.Components.ExSheet.PushLinkedTableAsync(string! name, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>! rows) -> System.Threading.Tasks.Task!
-*REMOVED*ExSheet.Components.ExSheet.RedoAsync() -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.RowHeight.get -> double
-*REMOVED*ExSheet.Components.ExSheet.RowHeight.set -> void
-*REMOVED*ExSheet.Components.ExSheet.Seed.get -> ulong?
-*REMOVED*ExSheet.Components.ExSheet.Seed.set -> void
-*REMOVED*ExSheet.Components.ExSheet.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
-*REMOVED*ExSheet.Components.ExSheet.SelectionChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.SetAlignmentAsync(ExSheet.Engine.HorizontalAlignment alignment) -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.SetCellFormatAsync(ExSheet.Engine.CellFormatChange! change) -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.SetCellFormatFromFocusAsync(System.Func<ExSheet.Engine.CellFormat!, ExSheet.Engine.CellFormatChange!>! change) -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.SetNumberFormatAsync(ExSheet.Engine.NumberFormat? format) -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.ShowColumnHeadings.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.ShowColumnHeadings.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ShowFormulaBar.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.ShowFormulaBar.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ShowRowHeadings.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.ShowRowHeadings.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ShowSelectionSummary.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.ShowSelectionSummary.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ShowToolbar.get -> bool
-*REMOVED*ExSheet.Components.ExSheet.ShowToolbar.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ShowToolbarChanged.get -> Microsoft.AspNetCore.Components.EventCallback<bool>
-*REMOVED*ExSheet.Components.ExSheet.ShowToolbarChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
-*REMOVED*ExSheet.Components.ExSheet.SummaryFigures.set -> void
-*REMOVED*ExSheet.Components.ExSheet.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
-*REMOVED*ExSheet.Components.ExSheet.SummaryFiguresChanged.set -> void
-*REMOVED*ExSheet.Components.ExSheet.TimeZone.get -> System.TimeZoneInfo?
-*REMOVED*ExSheet.Components.ExSheet.TimeZone.set -> void
-*REMOVED*ExSheet.Components.ExSheet.Today.get -> System.DateOnly?
-*REMOVED*ExSheet.Components.ExSheet.Today.set -> void
 *REMOVED*ExSheet.Components.ExSheet.ToDocument() -> ExSheet.Engine.SheetDocument!
-*REMOVED*ExSheet.Components.ExSheet.ToolbarContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
-*REMOVED*ExSheet.Components.ExSheet.ToolbarContent.set -> void
-*REMOVED*ExSheet.Components.ExSheet.UndoAsync() -> System.Threading.Tasks.Task<bool>!
-*REMOVED*ExSheet.Components.ExSheet.ViewportHeight.get -> ExGrid.ViewportSize
-*REMOVED*ExSheet.Components.ExSheet.ViewportHeight.set -> void
-*REMOVED*ExSheet.Components.ExSheet.ViewportWidth.get -> ExGrid.ViewportSize
-*REMOVED*ExSheet.Components.ExSheet.ViewportWidth.set -> void
 *REMOVED*ExSheet.Components.FormatCellsPanel
 *REMOVED*ExSheet.Components.FormatCellsPanel.FormatCells.get -> ExSheet.FormatCellsContext!
 *REMOVED*ExSheet.Components.FormatCellsPanel.FormatCells.set -> void

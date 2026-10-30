@@ -38,7 +38,7 @@ const argument = (flag, otherwise) => {
 };
 const out = path.resolve(argument('--out', path.join(here, 'dist')));
 const name = argument('--name', 'ex-grid-core');
-const namespace = argument('--namespace', 'ExGrid.Script');
+const namespace = argument('--namespace', 'ExGrid.Components');
 const stampFile = path.resolve(argument('--stamp', path.join(out, `${name}.stamp.json`)));
 const cs = argument('--cs', null);
 const csFile = cs === null ? null : path.resolve(cs);

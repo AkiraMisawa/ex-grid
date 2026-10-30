@@ -1,5 +1,5 @@
 @using ExChart
-@using ExChart.Script
+@using ExChart.Components
 @using ExChart.Engine
 @using ExChart.MudBlazor
 
@@ -14,7 +14,7 @@
 @code {
     private static readonly ChartDefinition Definition = new(ChartAxis.Dates("Date"), ChartData.Exposure().Take(2).ToList());
 
-    private global::ExChart.Script.ExChart? _chart;
+    private global::ExChart.Components.ExChart? _chart;
 
     // The toolbar's buttons save CSV, SVG and PNG on one click; a page may call the same method.
     private async Task SavePng()

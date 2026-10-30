@@ -22,7 +22,7 @@ public class ScriptGridContextCommandTests : BunitContext
     public ScriptGridContextCommandTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -34,13 +34,13 @@ public class ScriptGridContextCommandTests : BunitContext
         new("Amount", ColumnType.Number, r => r.Amount),
     ];
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(Func<ContextMenuContext<TestRow>, IEnumerable<GridCommand>>? commands)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(Func<ContextMenuContext<TestRow>, IEnumerable<GridCommand>>? commands)
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, _rows).Add(g => g.Columns, Columns)
             .Add(g => g.ContextCommands, commands)
             .Add(g => g.ContextCommandLabel, id => id == "open-trade" ? "Open trade" : null));
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private JsonElement Attached()

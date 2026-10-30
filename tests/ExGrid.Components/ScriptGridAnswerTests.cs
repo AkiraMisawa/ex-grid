@@ -27,7 +27,7 @@ public class ScriptGridAnswerTests : BunitContext
     public ScriptGridAnswerTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         _grid = _module.SetupModule("attach", _ => true);
         _grid.SetupVoid("update", _ => true).SetVoidResult();
         _grid.SetupVoid("state", _ => true).SetVoidResult();
@@ -39,15 +39,15 @@ public class ScriptGridAnswerTests : BunitContext
         new("Amount", ColumnType.Number, r => r.Amount, editable: true),
     ];
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(
-        GridColumn<TestRow>[] columns, Action<ComponentParameterCollectionBuilder<global::ExGrid.Script.ExGrid<TestRow>>>? extra = null)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps =>
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(
+        GridColumn<TestRow>[] columns, Action<ComponentParameterCollectionBuilder<global::ExGrid.Components.ExGrid<TestRow>>>? extra = null)
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Rows, _rows).Add(g => g.Columns, columns);
             extra?.Invoke(ps);
         });
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() => Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
         Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private static JsonElement Parsed(object? json)
@@ -251,9 +251,9 @@ public class ScriptGridAnswerTests : BunitContext
         Assert.Equal(1, messages);
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Stepping(
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Stepping(
         InMemoryGridSource<TestRow> source, Func<GridErrorStepRequest, CancellationToken, Task<GridFindResult>> find)
-        => Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, source)
             .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book, editable: true)))
             .Add(g => g.OnFindError, find));
@@ -330,7 +330,7 @@ public class ScriptGridAnswerTests : BunitContext
     public async Task ADR0055_a_find_step_is_answered_by_the_source_in_dotnet()
     {
         var source = GridSource.From(_rows);
-        var cut = Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Source, source)
             .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book))));
         Assert.True(Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("source").GetProperty("finds").GetBoolean());

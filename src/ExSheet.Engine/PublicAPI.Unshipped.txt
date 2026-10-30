@@ -2,6 +2,9 @@
 const ExSheet.Engine.WorkbookDocument.CurrentVersion = 1 -> int
 const ExSheet.Engine.WorkbookDocument.OldestReadableVersion = 1 -> int
 ExSheet.Engine.DateSerial
+ExSheet.Engine.DocumentChangesReader
+ExSheet.Engine.DocumentChangesReader.DocumentChangesReader() -> void
+ExSheet.Engine.DocumentChangesReader.Read(string! json) -> ExSheet.Engine.WorkbookDocument!
 ExSheet.Engine.Entry.MovedBy(int rows, int columns) -> ExSheet.Engine.Entry!
 ExSheet.Engine.Entry.UnboundNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.Engine.Entry.UndeclaredFunctions.get -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -49,6 +52,7 @@ ExSheet.Engine.WorkbookDocument.LinkedTables.get -> System.Collections.Generic.I
 ExSheet.Engine.WorkbookDocument.Sheets.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.SheetDocument!>!
 ExSheet.Engine.WorkbookDocument.Shown.get -> string!
 ExSheet.Engine.WorkbookDocument.ToJson() -> string!
+ExSheet.Engine.WorkbookDocument.ToSheetDocument() -> ExSheet.Engine.SheetDocument!
 ExSheet.Engine.WorkbookDocument.Version.get -> int
 ExSheet.Engine.WorkbookDocument.WorkbookDocument(System.Globalization.CultureInfo! culture, string! shown, System.Collections.Generic.IEnumerable<ExSheet.Engine.SheetDocument!>! sheets) -> void
 ExSheet.Engine.WorkbookStep

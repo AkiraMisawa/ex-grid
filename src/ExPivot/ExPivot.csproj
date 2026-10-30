@@ -19,7 +19,7 @@
     <InternalsVisibleTo Include="ExPivot.Components.Tests" />
   </ItemGroup>
 
-  <!-- ExPivot's Script Core's module for ExPivot.Script.ExPivot (ADR-0370 section 1): the bridge, @ex-grid/pivot
+  <!-- ExPivot's Script Core's module for ExPivot.Components.ExPivot (ADR-0370 section 1): the bridge, @ex-grid/pivot
        and its engine, bundled from their sources in src/npm as this project builds, never committed, as ExGrid's is
        (ADR-0350 section 7). The grid it draws through, and the data it reads, it imports from the Shared Script
        ExGrid ships, built against the same sources (ADR-0411). The module goes to wwwroot, where the package serves it; its version and
@@ -42,7 +42,7 @@
 
   <Target Name="BuildScriptCore" DependsOnTargets="ResolveProjectReferences"
           Inputs="@(ScriptCoreSource)" Outputs="$(ScriptCoreModule);$(ScriptCoreConstants)">
-    <Exec Command="node ../scripts/build-blazor.mjs --name ex-pivot --namespace ExPivot.Script --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-pivot.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
+    <Exec Command="node ../scripts/build-blazor.mjs --name ex-pivot --namespace ExPivot.Components --out &quot;$(MSBuildThisFileDirectory)wwwroot&quot; --stamp &quot;$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)ScriptCore/ex-pivot.stamp.json&quot; --cs &quot;$(ScriptCoreConstants)&quot;"
           WorkingDirectory="$(ScriptCoreWorkspace)pivot-blazor" />
   </Target>
 
@@ -69,17 +69,17 @@
   <ItemGroup>
     <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
          Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
-    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
-    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
     <!-- A C# Pivot Source asked by the browser's pivot, as ExBoard's adapter asks one too. -->
-    <Compile Include="..\Shared\Script\PivotSourceCrossing.cs" Link="Script\PivotSourceCrossing.cs" />
-    <Compile Include="..\Shared\Script\PivotRefreshes.cs" Link="Script\PivotRefreshes.cs" />
+    <Compile Include="..\Shared\Components\PivotSourceCrossing.cs" Link="Components\PivotSourceCrossing.cs" />
+    <Compile Include="..\Shared\Components\PivotRefreshes.cs" Link="Components\PivotRefreshes.cs" />
     <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the report grid's slots,
          read and drawn as ExGrid's own adapter reads and draws them. -->
-    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
-    <Compile Include="..\Shared\Script\ScriptMetricsJson.cs" Link="Script\ScriptMetricsJson.cs" />
-    <Compile Include="..\ExGrid\Script\RazorSlot.cs" Link="Script\RazorSlot.cs" />
-    <Compile Include="..\ExGrid\Script\ScriptJson.cs" Link="Script\ScriptJson.cs" />
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\Shared\Components\ScriptMetricsJson.cs" Link="Components\ScriptMetricsJson.cs" />
+    <Compile Include="..\ExGrid\Components\RazorSlot.cs" Link="Components\RazorSlot.cs" />
+    <Compile Include="..\ExGrid\Components\ScriptJson.cs" Link="Components\ScriptJson.cs" />
   </ItemGroup>
 
 </Project>

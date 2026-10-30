@@ -357,7 +357,8 @@ export function attach(
     const slots = new RazorSlots(dotnet, slotHostOptionsOf(() => made.grid, 'grid'), claims);
     const columns = new ColumnSet(verdict, (slot, cell) => slots.template(slot, cell));
     columns.take(init.options.columns, init.options.columnsVersion);
-    const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
+    // .NET answers the rows it let go, whose values the bridge then lets go too.
+    const rows: RowSet = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen).then(answer => { rows.released(answer); }); });
     // A Selection Summary is asked of the source numbered `generation`, or of the component's OnSummarize (ADR-0130).
     const summarize: SummarizeOf = (generation, request, signal) => asking(signal, async number => {
         const answer = await dotnet.invokeMethodAsync('Summarize', number, generation === undefined ? null : generation, request);
@@ -631,7 +632,7 @@ function tableRowOf(row: BlazorRow): readonly unknown[] {
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the caller names the shape .NET wrote, and so the one assertion is here
 export function parsed<T>(json: string): T {
     if (typeof json !== 'string') throw new TypeError('Internal: .NET sent the bridge something other than JSON text.');
-    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExGrid.Script writes; each reader checks what it reads
+    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExGrid.Components writes; each reader checks what it reads
 }
 
 type Handlers = Required<Pick<GridOptions<BlazorRow>,
@@ -719,7 +720,7 @@ function refusalOf(answer: unknown): string | undefined {
     return answer;
 }
 
-/** .NET's Edit Verdict, as `ExGrid.Script` writes it. */
+/** .NET's Edit Verdict, as `ExGrid.Components` writes it. */
 function verdictOf(answer: unknown, column: string): EditVerdict {
     if (answer === null) throw new Error(`.NET gave no verdict on column '${column}': its Validate failed, and the component with it.`);
     if (typeof answer !== 'string') throw new TypeError(`Internal: .NET answered the verdict on column '${column}' with something other than JSON text.`);
@@ -773,7 +774,7 @@ function completionOf(answer: unknown): EditorCompletion | undefined {
     return new EditorCompletion(hint === undefined ? { candidates } : { candidates, hint: new EditorHint(hint) });
 }
 
-/** .NET's answer to an error step, as `ExGrid.Script` writes a Find result, or `moved` where .NET did not ask the
+/** .NET's answer to an error step, as `ExGrid.Components` writes a Find result, or `moved` where .NET did not ask the
  * Consumer, since what the step was asked under is gone there. A step .NET did not answer, its component gone or its
  * `OnFindError` taken away meanwhile, is given up: nothing moves, and nothing is claimed of cells nobody read. */
 function findResultOf(answer: unknown): GridFindResult | 'moved' {
@@ -829,7 +830,7 @@ function contextMenus(dotnet: DotNetCalls, held: () => { readonly generation: nu
     });
 }
 
-/** .NET's answer to a Context Menu's opening, as `ExGrid.Script` writes it: its commands, or `moved` where what the
+/** .NET's answer to a Context Menu's opening, as `ExGrid.Components` writes it: its commands, or `moved` where what the
  * menu was opened on is no longer what .NET holds. One .NET did not answer, its component gone, is given up. */
 function commandsOf(answer: unknown): readonly { readonly id: string; readonly enabled: boolean; readonly label: string | undefined }[] {
     if (answer === null) throw new DOMException('.NET gave the Context Menu no commands: the component is gone.', 'AbortError');
@@ -1222,7 +1223,7 @@ function figureNumberOf(value: unknown): number | undefined {
     return undefined;
 }
 
-/** .NET's answer to a copy, as `ExGrid.Script` writes a `GridCopyAnswer`; one .NET did not answer, its component gone, is
+/** .NET's answer to a copy, as `ExGrid.Components` writes a `GridCopyAnswer`; one .NET did not answer, its component gone, is
  * given up, and nothing is written. */
 function copyAnswerOf(answer: unknown): GridCopyAnswer {
     if (answer === null) throw new DOMException('.NET gave the copy no answer: the component is gone.', 'AbortError');
@@ -1235,7 +1236,7 @@ function copyAnswerOf(answer: unknown): GridCopyAnswer {
     throw new TypeError(`Internal: .NET answered a copy with ${answer}.`);
 }
 
-/** .NET's answer to a Replace All, as `ExGrid.Script` writes a `GridReplaceResult`. */
+/** .NET's answer to a Replace All, as `ExGrid.Components` writes a `GridReplaceResult`. */
 function replaceResultOf(answer: unknown): GridReplaceResult {
     if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a Replace All with something other than JSON text.');
     const read = parsed<{ readonly kind?: unknown; readonly count?: unknown; readonly cells?: unknown; readonly rowSequenceVersion?: unknown }>(answer);
@@ -1255,7 +1256,7 @@ function replaceResultOf(answer: unknown): GridReplaceResult {
     throw new TypeError(`Internal: .NET answered a Replace All with ${answer}.`);
 }
 
-/** .NET's answer to a Selection Summary, as `ExGrid.Script` writes a `GridSummaryResult`; one .NET did not answer, its
+/** .NET's answer to a Selection Summary, as `ExGrid.Components` writes a `GridSummaryResult`; one .NET did not answer, its
  * source replaced or its component gone, is given up, and no figure is shown for it. */
 function summaryResultOf(answer: unknown): GridSummaryResult {
     if (answer === null) throw new DOMException('.NET gave the Selection Summary no answer: its source or component is gone.', 'AbortError');

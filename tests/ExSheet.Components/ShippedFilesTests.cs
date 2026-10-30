@@ -20,15 +20,15 @@ public class ShippedFilesTests : BunitContext
         Assert.Equal($"_content/ExSheet/ex-sheet.min.css?v={ShippedFiles.Version("ExSheet", "ex-sheet.min.css")}", link.GetAttribute("href"));
     }
 
-    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExSheet.Script.ExSheet imports answers the stamp the component is built with, at the version its address carries
+    [Fact] // ADR-0123 / ADR-0370 s1 / ADR-0411: the bundled module ExSheet.Components.ExSheet imports answers the stamp the component is built with, at the version its address carries
     public void The_script_core_module_is_the_one_the_component_was_built_with()
     {
         const string module = "ex-sheet.min.js";
-        var stamp = global::ExSheet.Script.ScriptCoreAsset.Stamp;
+        var stamp = global::ExSheet.Components.ScriptCoreAsset.Stamp;
         var shipped = File.ReadAllText(ShippedFiles.PathOf("ExSheet", module));
         Assert.StartsWith($"/*! ex-sheet.js sha256:{stamp} ", shipped, StringComparison.Ordinal);
         Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
-        Assert.Equal(global::ExSheet.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExSheet", module));
+        Assert.Equal(global::ExSheet.Components.ScriptCoreAsset.Version, ShippedFiles.Version("ExSheet", module));
         Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
         // The grid core and the data come from the Shared Script ExGrid ships, at the address its stamp names, which the
         // module expects (ADR-0411).

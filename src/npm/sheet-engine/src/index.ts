@@ -16,6 +16,7 @@ export { CellRange } from './cell-range';
 export { Culture } from './culture';
 export { serialFromDate } from './date-serial';
 export { DeclaredFunction } from './declared-function';
+export { DocumentChanges } from './document-changes';
 export { Entry } from './entry';
 export {
     completeFormula, constantText, cycleReference, formulaHintAt, formulaPointAt, formulaReferences, LinkedTableColumn,

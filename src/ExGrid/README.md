@@ -76,7 +76,7 @@ version's stylesheet shows a notice of its own. The
 
 ```razor
 @using ExGrid
-@using ExGrid.Script
+@using ExGrid.Components
 
 <ExGrid TRow="Trade" Source="_source" Columns="_columns" />
 

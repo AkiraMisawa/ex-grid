@@ -7,7 +7,7 @@
 @using global::ExGrid.MudBlazor
 
 @* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /sheet does. The
-   Workbook is drawn by ExSheet.Script.ExSheet (ADR-0370). *@
+   Workbook is drawn by ExSheet.Components.ExSheet (ADR-0370). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -22,7 +22,7 @@
 </p>
 
 <div id="workbook">
-    @OnPaper(@<ExSheet.Script.ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+    @OnPaper(@<ExSheet.Components.ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
 </div>
 
 <p>Shown: <span id="workbook-shown">@_workbook?.Shown</span></p>

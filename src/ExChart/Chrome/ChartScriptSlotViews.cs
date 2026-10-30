@@ -4,7 +4,7 @@ namespace ExChart.Chrome;
 
 /// <summary>
 /// The Chrome slots an <see cref="IChartChrome"/> fills with Razor when the Script Core draws the chart
-/// (<c>ExChart.Script.ExChart</c>, ADR-0410): each named here is asked for through its view overload, and the Script
+/// (<c>ExChart.Components.ExChart</c>, ADR-0410): each named here is asked for through its view overload, and the Script
 /// Core draws its own part for every slot not named.
 /// </summary>
 [Flags]

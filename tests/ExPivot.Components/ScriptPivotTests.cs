@@ -25,21 +25,21 @@ public class ScriptPivotTests : BunitContext
     public ScriptPivotTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExPivot.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExPivot.Components.ScriptCoreAsset.Stamp);
         _module.Setup<string[]>("labelIds").SetResult(LabelIds);
         _pivot = _module.SetupModule("attach", _ => true);
         _pivot.SetupVoid("update", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExPivot.Script.ExPivot> Pivot(PivotSource source, Action<ComponentParameterCollectionBuilder<global::ExPivot.Script.ExPivot>>? more = null)
-        => Render<global::ExPivot.Script.ExPivot>(ps =>
+    private IRenderedComponent<global::ExPivot.Components.ExPivot> Pivot(PivotSource source, Action<ComponentParameterCollectionBuilder<global::ExPivot.Components.ExPivot>>? more = null)
+        => Render<global::ExPivot.Components.ExPivot>(ps =>
         {
             ps.Add(p => p.Source, source);
             more?.Invoke(ps);
         });
 
-    private DotNetObjectReference<global::ExPivot.Script.ScriptBridge> Bridge()
-        => Assert.IsType<DotNetObjectReference<global::ExPivot.Script.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
+    private DotNetObjectReference<global::ExPivot.Components.ScriptBridge> Bridge()
+        => Assert.IsType<DotNetObjectReference<global::ExPivot.Components.ScriptBridge>>(Assert.Single(_module.Invocations["attach"]).Arguments[1]);
 
     private static JsonElement Parsed(object? json)
     {
@@ -94,7 +94,7 @@ public class ScriptPivotTests : BunitContext
         var defaults = new global::ExGrid.GridPresentationDefaults(10.4, 8.0, 4.95, 14, global::ExGrid.GridDensity.Standard);
         Render<CascadingValue<global::ExGrid.GridPresentationDefaults>>(ps => ps
             .Add(c => c.Value, defaults)
-            .AddChildContent<global::ExPivot.Script.ExPivot>(pivot => pivot
+            .AddChildContent<global::ExPivot.Components.ExPivot>(pivot => pivot
                 .Add(p => p.Source, SalesData.Bundled())
                 .Add(p => p.CellMetrics, metrics)));
 
@@ -269,6 +269,45 @@ public class ScriptPivotTests : BunitContext
         Assert.Empty(_pivot.Invocations["changed"]);
         source.Notify("v2");
         cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+    }
+
+    private sealed record Deal(long Id, string Desk, decimal Amount);
+
+    private static PivotFields<Deal> Deals(bool keyed = false) => PivotFields.Of<Deal>()
+        .Key("Id", d => d.Id)
+        .Text("Desk", d => d.Desk, orderKey: keyed ? text => text : null)
+        .Number("Amount", d => d.Amount);
+
+    [Fact] // ADR-0370 section 3 (note of 2026-10-30): a batch the bundled source applies crosses as what it removed and added, and its notice is not told again
+    public void ADR0370_a_batch_the_bundled_source_applies_crosses_as_what_it_changed()
+    {
+        _pivot.SetupVoid("changed", _ => true).SetVoidResult();
+        var fields = Deals();
+        var source = PivotSource.From([new Deal(1, "Rates", 10m)], fields);
+        var cut = Pivot(source);
+
+        source.Apply(fields.Batch(changed: [new Deal(1, "Rates", 12m)]));
+
+        cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+        var told = PivotJson.ReadServerChangeBatch(Assert.IsType<string>(_pivot.Invocations["changed"][0].Arguments[1]));
+        Assert.Equal(source.SourceVersion, told.To);
+        var amount = told.Fields.ToList().FindIndex(field => field.Name == "Amount");
+        Assert.Equal(12m, Assert.Single(told.Added).Values[amount]);
+        Assert.Equal(10m, Assert.Single(told.Removed).Values[amount]);
+    }
+
+    [Fact] // ADR-0370 section 3, ADR-0412: a source with an Order Key is told by its notice alone, since a batch may bring an Item whose key no answer carried
+    public void ADR0370_a_source_with_an_order_key_is_told_by_its_notice()
+    {
+        _pivot.SetupVoid("changed", _ => true).SetVoidResult();
+        var fields = Deals(keyed: true);
+        var source = PivotSource.From([new Deal(1, "Rates", 10m)], fields);
+        var cut = Pivot(source);
+
+        source.Apply(fields.Batch(added: [new Deal(2, "FX", 5m)]));
+
+        cut.WaitForAssertion(() => Assert.Single(_pivot.Invocations["changed"]));
+        Assert.Equal(source.SourceVersion, PivotJson.ReadSourceChanged(Assert.IsType<string>(_pivot.Invocations["changed"][0].Arguments[1])).SourceVersion);
     }
 
     [Fact] // ADR-0412: an answer that names no Item of a field with an Order Key crosses as it is

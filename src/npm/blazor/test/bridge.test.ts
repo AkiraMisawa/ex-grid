@@ -233,6 +233,41 @@ describe('rows let go', () => {
         expect(held).toHaveLength(1);
     });
 
+    it('ADR-0350 section 15: a state names a row whose values an earlier state carried by its id, until .NET answers it let the row go', async () => {
+        const columns = new ColumnSet();
+        columns.take([book, notional], 1);
+        const collector = new FakeCollector();
+        const released: { readonly ids: readonly number[]; readonly seen: number }[] = [];
+        const rows = new RowSet(collector.make, (ids, seen) => { released.push({ ids, seen }); });
+        const [first] = rows.readState([rates], 1, columns);
+        const [named] = rows.readState([{ i: 1 }], 2, columns);
+        expect(named).toBe(first);
+        if (named === undefined) throw new Error('The row was read.');
+        collector.collect(named);
+        await Promise.resolve();
+        expect(released).toEqual([{ ids: [1], seen: 2 }]);
+        // .NET kept the row, since a state it sent after the bridge let go names it: its values are still held.
+        rows.released([]);
+        const [again] = rows.readState([{ i: 1, s: ['stale', 'normal'] }], 3, columns);
+        expect(again?.cells).toEqual(['Rates', 1500]);
+        expect(again?.states).toEqual(['stale', 'normal']);
+        rows.released([1]);
+        expect(() => rows.readState([{ i: 1 }], 4, columns)).toThrow(/no state the bridge holds carried its values/);
+    });
+
+    it('ADR-0350 section 15: a row named by its id is refused outside a state, and under columns other than read its values', () => {
+        const columns = new ColumnSet();
+        columns.take([book, notional], 1);
+        const rows = new RowSet(new FakeCollector().make, () => { throw new Error('Nothing is collected here.'); });
+        // An answer may cross before a state sent ahead of it, so its rows never seed a state's.
+        rows.read([rates], 1, columns);
+        expect(() => rows.readState([{ i: 1 }], 2, columns)).toThrow(/no state the bridge holds carried its values/);
+        expect(() => rows.read([{ i: 1 }], 3, columns)).toThrow(/by its id outside a state/);
+        rows.readState([rates], 4, columns);
+        columns.take([book, { ...notional, format: 'N0 en-GB' }], 2);
+        expect(() => rows.readState([{ i: 1 }], 5, columns)).toThrow(/its values were read by columns 1/);
+    });
+
     it('ADR-0006: a column whose format .NET changed takes its new texts, and the old ones are gone', () => {
         const columns = new ColumnSet();
         columns.take([book, notional], 1);

@@ -1,7 +1,7 @@
 @page "/script-chart-mud"
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
 @using global::ExChart
-@using global::ExChart.Script
+@using global::ExChart.Components
 @using global::ExChart.Engine
 @using global::ExChart.MudBlazor
 @using global::ExGrid.MudBlazor
@@ -23,7 +23,7 @@
 <h1>ExChart.MudBlazor over the Script Core</h1>
 
 <p>
-    The chart below is <code>ExChart.Script.ExChart</code> handed <code>MudChartChrome.Default</code> (ADR-0410): its
+    The chart below is <code>ExChart.Components.ExChart</code> handed <code>MudChartChrome.Default</code> (ADR-0410): its
     toolbar, Chart Filters and context menu are MudBlazor's components, rendered in .NET beside the chart and moved
     into the Script Core's slots by the adapter's script, which wires each control in the browser. A command runs, a
     typed range is read and a file is saved in the browser, inside the click; the range applied crosses to .NET and
@@ -31,7 +31,7 @@
 </p>
 
 <MudExGridPaper Elevation="0" Outlined="true">
-    <ExChart.Script.ExChart Definition="Exposure"
+    <ExChart.Components.ExChart Definition="Exposure"
                             Title="Exposure profile"
                             Width="760"
                             Height="420"

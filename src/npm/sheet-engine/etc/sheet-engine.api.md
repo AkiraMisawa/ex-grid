@@ -293,6 +293,12 @@ export class DeclaredFunction {
 }
 
 // @public
+export class DocumentChanges {
+    forget(): void;
+    write(document: WorkbookDocument): string;
+}
+
+// @public
 export class Entry {
     readonly constant: Value | undefined;
     equals(other: Entry | undefined): boolean;
@@ -822,6 +828,8 @@ export interface SheetDay {
 export class SheetDocument {
     // @internal
     constructor(culture: string, name: string, linkedTables: readonly SheetDocumentTable[], cells: readonly SheetDocumentCell[], layout?: SheetDocumentLayout);
+    // @internal
+    static cellJson(cell: SheetDocumentCell): string;
     readonly cells: readonly SheetDocumentCell[];
     readonly columns: readonly SheetDocumentAxisFormat[];
     readonly columnWidths: readonly SheetDocumentColumnWidth[];

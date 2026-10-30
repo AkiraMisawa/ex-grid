@@ -3,7 +3,8 @@
 @using global::ExGrid.Columns
 @using ExGrid.Components
 @* The core comparison's grid (/core/grid and /core/template, ADR-0350 section 15): the real ExGrid,
-   a Book column and twenty measures, read-only, over a Window the page pushes. The same component
+   a Book column and twenty measures, read-only, over a Window the page pushes, handed as Rows: a new
+   list is a new source, as for any Consumer of Rows. The same component
    on WebAssembly (Bench.Client) and on the circuit (Bench.Server), driven by wwwroot/core-bench.js,
    which reads only the DOM contract and the controls below. A Script Core host serves the same page:
    the same ids, the same rows from CoreData's formula, the same columns and geometry.
@@ -41,7 +42,7 @@
     </div>
     @if (_mounted)
     {
-        <ExGrid TRow="CoreRow" Window="_window" TotalCount="_window.Length" Columns="Templates ? TemplateColumns : PlainColumns"
+        <ExGrid TRow="CoreRow" Rows="_window" Columns="Templates ? TemplateColumns : PlainColumns"
                 RowHeight="22" ViewportHeight="600" ViewportWidth="1200" />
     }
 </div>

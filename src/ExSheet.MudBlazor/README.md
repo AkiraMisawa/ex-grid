@@ -51,7 +51,7 @@ builder.RootComponents.Add<ExSheet.MudBlazor.MudExSheetStylesheet>("head::after"
 
 ```razor
 @using ExGrid.MudBlazor
-@using ExSheet.Script
+@using ExSheet.Components
 @using ExSheet.Engine
 @using ExSheet.MudBlazor
 

@@ -217,11 +217,12 @@ export class DotNetPivotSource extends FetchingPivotSource {
         this.#link = link;
     }
 
-    /** Takes what .NET heard its source say: a `PivotSourceChanged` in PivotJson. Heard while nothing listens, it
-     * is nobody's: a listener that subscribes later asks afresh. */
+    /** Takes what .NET heard its source say: a `PivotSourceChanged`, or a bundled source's Change Batch, which the
+     * source folds into the answer it holds (ADR-0370 section 3's note of 2026-10-30), in PivotJson. Heard while
+     * nothing listens, it is nobody's: a listener that subscribes later asks afresh. */
     hear(json: string): void {
-        const changed = PivotJson.readSourceChanged(json);
-        this.#link.notify?.(changed.sourceVersion === undefined ? { kind: 'changed' } : { kind: 'changed', sourceVersion: changed.sourceVersion });
+        const notice = PivotJson.readServerNotice(json, this.fields);
+        this.#link.notify?.(notice);
     }
 
     /** Excel's Refresh: lets go of the answer held, and asks .NET to refresh its source. The next question waits for

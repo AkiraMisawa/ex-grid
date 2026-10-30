@@ -249,31 +249,31 @@ ExBoard.LinkCondition.LinkCondition(System.Collections.Generic.IReadOnlyList<str
 ExBoard.LinkCondition.Matches(object?[]! tuple) -> bool
 ExBoard.LinkCondition.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExBoard.LinkCondition.Values.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<object?>!>!
-ExBoard.Script.ExBoard
-ExBoard.Script.ExBoard.Board.get -> ExBoard.BoardReading!
-ExBoard.Script.ExBoard.Board.set -> void
-ExBoard.Script.ExBoard.ChartChrome.get -> ExChart.Chrome.IChartChrome?
-ExBoard.Script.ExBoard.ChartChrome.set -> void
-ExBoard.Script.ExBoard.Chrome.get -> ExGrid.Chrome.IGridChrome?
-ExBoard.Script.ExBoard.Chrome.set -> void
-ExBoard.Script.ExBoard.Culture.get -> System.Globalization.CultureInfo?
-ExBoard.Script.ExBoard.Culture.set -> void
-ExBoard.Script.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
-ExBoard.Script.ExBoard.Data.set -> void
-ExBoard.Script.ExBoard.Diff.get -> ExBoard.BoardDiff?
-ExBoard.Script.ExBoard.Diff.set -> void
-ExBoard.Script.ExBoard.DisposeAsync() -> System.Threading.Tasks.ValueTask
-ExBoard.Script.ExBoard.ExBoard() -> void
-ExBoard.Script.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardDiff!>
-ExBoard.Script.ExBoard.OnDiff.set -> void
-ExBoard.Script.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
-ExBoard.Script.ExBoard.OnOutput.set -> void
-ExBoard.Script.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
-ExBoard.Script.ExBoard.PivotChrome.set -> void
-ExBoard.Script.ExBoard.Sources.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardSource!>?
-ExBoard.Script.ExBoard.Sources.set -> void
-ExBoard.Script.ExBoard.Width.get -> double
-ExBoard.Script.ExBoard.Width.set -> void
+ExBoard.Components.ExBoard
+ExBoard.Components.ExBoard.Board.get -> ExBoard.BoardReading!
+ExBoard.Components.ExBoard.Board.set -> void
+ExBoard.Components.ExBoard.ChartChrome.get -> ExChart.Chrome.IChartChrome?
+ExBoard.Components.ExBoard.ChartChrome.set -> void
+ExBoard.Components.ExBoard.Chrome.get -> ExGrid.Chrome.IGridChrome?
+ExBoard.Components.ExBoard.Chrome.set -> void
+ExBoard.Components.ExBoard.Culture.get -> System.Globalization.CultureInfo?
+ExBoard.Components.ExBoard.Culture.set -> void
+ExBoard.Components.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.Components.ExBoard.Data.set -> void
+ExBoard.Components.ExBoard.Diff.get -> ExBoard.BoardDiff?
+ExBoard.Components.ExBoard.Diff.set -> void
+ExBoard.Components.ExBoard.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExBoard.Components.ExBoard.ExBoard() -> void
+ExBoard.Components.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardDiff!>
+ExBoard.Components.ExBoard.OnDiff.set -> void
+ExBoard.Components.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
+ExBoard.Components.ExBoard.OnOutput.set -> void
+ExBoard.Components.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
+ExBoard.Components.ExBoard.PivotChrome.set -> void
+ExBoard.Components.ExBoard.Sources.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardSource!>?
+ExBoard.Components.ExBoard.Sources.set -> void
+ExBoard.Components.ExBoard.Width.get -> double
+ExBoard.Components.ExBoard.Width.set -> void
 override ExBoard.BoardCell.Equals(object? obj) -> bool
 override ExBoard.BoardCell.GetHashCode() -> int
 override ExBoard.BoardCell.ToString() -> string!

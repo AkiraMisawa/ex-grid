@@ -63,7 +63,7 @@ builder.RootComponents.Add<ExPivot.MudBlazor.MudExPivotStylesheet>("head::after"
 
 ```razor
 @using ExGrid.MudBlazor
-@using ExPivot.Script
+@using ExPivot.Components
 @using ExPivot.Engine
 @using ExPivot.MudBlazor
 

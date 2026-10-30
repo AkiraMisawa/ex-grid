@@ -15,7 +15,7 @@
     <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => _document = Expenses.Document()">Start again</MudButton>
 </MudStack>
 
-<ExSheet.Script.ExSheet @ref="_sheet" @bind-Document="_document" OnSelectionSummaryChanged="Summarised"
+<ExSheet.Components.ExSheet @ref="_sheet" @bind-Document="_document" OnSelectionSummaryChanged="Summarised"
                         ViewportHeight="330" ViewportWidth="ViewportSize.Stretch" ShowToolbar="true" Chrome="MudSheetChrome.Default">
     @* Declared as components: the Script Core draws the rows, and a press on the button runs its
        OnClick here, in .NET, before the Sheet takes the next key. *@
@@ -25,7 +25,7 @@
             <ToolbarButton Text="Mark reviewed" KeyTip="M" OnClick="MarkReviewedAsync"><MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" /></ToolbarButton>
         </ToolbarRow>
     </ToolbarContent>
-</ExSheet.Script.ExSheet>
+</ExSheet.Components.ExSheet>
 
 @* Never empty, so the line is there before the first answer and the Sheet does not move under the pointer. *@
 <MudText Class="mt-3" role="status">The document holds @_document.Cells.Count cells.@_selected @_undone</MudText>
@@ -33,7 +33,7 @@
 @code {
     // The page keeps the document: it crosses to the browser as JSON, and every change comes back.
     private SheetDocument _document = Expenses.Document();
-    private ExSheet.Script.ExSheet? _sheet;
+    private ExSheet.Components.ExSheet? _sheet;
 
     // The page's own command on the Selection, run through the Sheet's public command:
     // a toggle, made from the Focus cell as it shows when the press runs, so a reviewed cell is unmarked.
@@ -74,7 +74,7 @@
         _undone = await Sheet().OpenAsync(_ => Task.FromResult(copy)) ? "Back to the copy." : "Nothing opened.";
     }
 
-    private ExSheet.Script.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
+    private ExSheet.Components.ExSheet Sheet() => _sheet ?? throw new InvalidOperationException("The Sheet is rendered with the Example.");
 
     // A command asked from .NET of the Sheet in the browser; its refusal comes back to .NET.
     private async Task UndoAsync()

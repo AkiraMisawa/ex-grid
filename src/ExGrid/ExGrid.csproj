@@ -37,7 +37,7 @@
     <InternalsVisibleTo Include="ExGrid.Docs.Generator.Tests" />
   </ItemGroup>
 
-  <!-- The Script Core's module for ExGrid.Script.ExGrid (ADR-0350 section 7): the bridge, bundled from its sources
+  <!-- The Script Core's module for ExGrid.Components.ExGrid (ADR-0350 section 7): the bridge, bundled from its sources
        in src/npm as this project builds, never committed, so a change to the core is in the next build of every
        Blazor host with nothing to regenerate by hand; and the Shared Script beside it, @ex-grid/core and the data it
        reads, which the bridge and every other product's Blazor module import by one address (ADR-0411). Both go to
@@ -90,11 +90,11 @@
   <ItemGroup>
     <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
          Script adapter, beside the Shared Script's half (src/npm/blazor/src/held-messages.ts). -->
-    <Compile Include="..\Shared\Script\HeldCalls.cs" Link="Script\HeldCalls.cs" />
-    <Compile Include="..\Shared\Script\CrossedText.cs" Link="Script\CrossedText.cs" />
-    <Compile Include="..\Shared\Script\RazorSlotHolders.cs" Link="Script\RazorSlotHolders.cs" />
-    <Compile Include="..\Shared\Script\ScriptMetricsJson.cs" Link="Script\ScriptMetricsJson.cs" />
-    <Compile Include="..\Shared\Script\ScriptFunctionJson.cs" Link="Script\ScriptFunctionJson.cs" />
+    <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
+    <Compile Include="..\Shared\Components\RazorSlotHolders.cs" Link="Components\RazorSlotHolders.cs" />
+    <Compile Include="..\Shared\Components\ScriptMetricsJson.cs" Link="Components\ScriptMetricsJson.cs" />
+    <Compile Include="..\Shared\Components\ScriptFunctionJson.cs" Link="Components\ScriptFunctionJson.cs" />
   </ItemGroup>
 
 </Project>

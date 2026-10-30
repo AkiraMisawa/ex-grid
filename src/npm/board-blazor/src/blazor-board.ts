@@ -303,5 +303,5 @@ function boardOptions(
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the caller names the shape .NET wrote, and so the one assertion is here
 export function parsed<T>(json: string): T {
     if (typeof json !== 'string') throw new TypeError('Internal: .NET sent the bridge something other than JSON text.');
-    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExBoard.Script writes; each reader checks what it reads
+    return JSON.parse(json) as T; // oxlint-disable-line typescript/no-unsafe-type-assertion -- the shapes ExBoard.Components writes; each reader checks what it reads
 }

@@ -21,7 +21,7 @@ public abstract class MudTestContext : BunitContext
         Services.AddMudServices();
         JSInterop.Mode = JSRuntimeMode.Loose;
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();

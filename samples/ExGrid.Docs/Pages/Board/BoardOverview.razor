@@ -273,7 +273,7 @@ const output = bound.confirm('chosen');                         // the values ch
     <DocsSection Title="A Board drawn in the browser">
         <p>
             Blazor's ExBoard runs on the same TypeScript core as React's, as ExGrid and ExPivot do: every Example on
-            this site draws <code>ExBoard.Script.ExBoard</code>. Binding,
+            this site draws <code>ExBoard.Components.ExBoard</code>. Binding,
             layout, links, the confirm and the Board Diff run in the browser on both hosting models, so on Blazor Server
             a selection, a narrowing or a sort never crosses the circuit. It takes a <code>BoardReading</code>,
             <code>Data</code>, <code>Width</code>, <code>Culture</code>, <code>OnOutput</code>, <code>Diff</code> and
@@ -288,7 +288,7 @@ const output = bound.confirm('chosen');                         // the values ch
             the grid Chrome dresses the grids and the pivots' report grids, the pivot Chrome the pivots, its grid Chrome
             the report grids where no <code>Chrome</code> is given, and the chart Chrome the charts. Each part a Chrome
             names in its <code>ScriptSlots</code> is drawn by its Razor inside the view the browser draws, as on
-            <code>ExGrid.Script.ExGrid</code>, <code>ExPivot.Script.ExPivot</code> and <code>ExChart.Script.ExChart</code>,
+            <code>ExGrid.Components.ExGrid</code>, <code>ExPivot.Components.ExPivot</code> and <code>ExChart.Components.ExChart</code>,
             so the MudBlazor switch below dresses the same Board with <code>MudGridChrome</code>,
             <code>MudPivotChrome</code> and <code>MudChartChrome</code>. Which parts are filled is read as the Board
             attaches: Chromes naming other slots need a new ExBoard.
@@ -300,7 +300,7 @@ const output = bound.confirm('chosen');                         // the values ch
             the links' narrowing, for a chart's thinned points and for the values under a pivot's selected cells, and a
             question the Board gives up is cancelled through the token your source is handed. A pivot reads the
             <code>PivotSource</code> your <code>Pivot</code> makes over each narrowing through .NET too, as
-            <code>ExPivot.Script.ExPivot</code> reads one: the engine in the browser builds the report and its totals from
+            <code>ExPivot.Components.ExPivot</code> reads one: the engine in the browser builds the report and its totals from
             the Leaf Aggregates it answers. A page crosses back as its Arrow stream and a chart's points and the values
             under cells with every value exact. An output taken from rows the server held comes back with the version the
             server answered them at, and <code>Take</code> holds it to that version.
@@ -312,7 +312,7 @@ const output = bound.confirm('chosen');                         // the values ch
         <p>
             ExBoard is one package, <code>ExBoard</code>, published at the family's one version with exact references
             to the ExGrid, ExPivot and ExChart it was built with, and to <code>ExGrid.Data.Arrow</code>, in which
-            <code>ExBoard.Script.ExBoard</code> sends each Snapshot to the browser. It has no MudBlazor Wrapper: each view already takes
+            <code>ExBoard.Components.ExBoard</code> sends each Snapshot to the browser. It has no MudBlazor Wrapper: each view already takes
             its product's Chrome, and the Board passes <code>Chrome</code>, <code>PivotChrome</code> and
             <code>ChartChrome</code> through, so a MudBlazor application hands it the Wrappers' Chromes, as the
             Examples above do under the MudBlazor switch.
@@ -327,6 +327,6 @@ const output = bound.confirm('chosen');                         // the values ch
         <ApiTable Type="typeof(global::ExBoard.BoardQuery)" />
         <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
         <ApiTable Type="typeof(global::ExBoard.BoardDiff)" />
-        <ApiTable Type="typeof(global::ExBoard.Script.ExBoard)" />
+        <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
     </DocsSection>
 </DocsPage>

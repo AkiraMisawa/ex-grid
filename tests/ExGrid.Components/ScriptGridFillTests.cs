@@ -19,24 +19,24 @@ public class ScriptGridFillTests : BunitContext
     public ScriptGridFillTests()
     {
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
-        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Script.ScriptCoreAsset.Stamp);
+        _module.Setup<string?>("stamp").SetResult(global::ExGrid.Components.ScriptCoreAsset.Stamp);
         var grid = _module.SetupModule("attach", _ => true);
         grid.SetupVoid("update", _ => true).SetVoidResult();
         grid.SetupVoid("state", _ => true).SetVoidResult();
     }
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(Action<GridFillIntent> onFill) =>
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(Action<GridFillIntent> onFill) =>
         Grid(intent => { onFill(intent); return Task.CompletedTask; });
 
-    private IRenderedComponent<global::ExGrid.Script.ExGrid<TestRow>> Grid(Func<GridFillIntent, Task> onFill) =>
-        Render<global::ExGrid.Script.ExGrid<TestRow>>(ps => ps
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Grid(Func<GridFillIntent, Task> onFill) =>
+        Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
             .Add(g => g.Rows, TestRows.Many(10))
             .Add(g => g.Columns, TestRows.Columns())
             .Add(g => g.ShowFillHandle, true)
             .Add(g => g.OnFill, onFill));
 
-    private global::ExGrid.Script.ScriptBridge<TestRow> Bridge() =>
-        Assert.IsType<DotNetObjectReference<global::ExGrid.Script.ScriptBridge<TestRow>>>(
+    private global::ExGrid.Components.ScriptBridge<TestRow> Bridge() =>
+        Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
             Assert.Single(_module.Invocations["attach"]).Arguments[1]).Value;
 
     private static JsonElement Json(string text)
