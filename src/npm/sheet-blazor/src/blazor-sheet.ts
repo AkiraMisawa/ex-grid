@@ -8,7 +8,8 @@ import {
     type SummaryFigure, type ViewportSize,
 } from '@ex-grid/core';
 import {
-    crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, WireMetrics, type GridRazorSlotName, type PagePointingScope,
+    crossingCalls, HeldMessages, holdPointingScope, isGridRazorSlotName, RazorSlotHost, slotHostOptionsOf, takeMount, WireMetrics, type GridRazorSlotName,
+    type PagePointingScope,
     type WireHeld, type WirePresentationDefaults,
 } from '@ex-grid/blazor-shared';
 import { decimalText } from '@ex-grid/data';
@@ -273,6 +274,7 @@ export interface DotNetHandle {
  */
 export function attach(root: HTMLElement, bridge: DotNetHandle, json: string): BlazorSheet {
     const init = parsed<WireAttach>(json);
+    takeMount(root);
     let stopped = false;
     // An event or a save's Workbook too large for a message of its own is held, and .NET takes it in its turn, as the
     // Shared Script crosses every product's: the hub would otherwise close the circuit.

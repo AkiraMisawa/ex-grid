@@ -159,7 +159,9 @@
                 <MudLink Href="exgrid/selection">Settled Mark</MudLink>, <code>data-ex-settled</code> on its root,
                 once the keys and presses it has taken are handled and painted. Field List and settings drafts
                 still take effect through their committing command. A report being rebuilt is said by
-                its loading indication instead.
+                its loading indication instead. On Blazor, until its script has attached, the report's element is
+                marked <code>aria-busy="true"</code> and <code>data-ex-mounting="pivot"</code>; wait until nothing on
+                the page is mounting before finding one.
             </li>
         </ul>
     </DocsSection>
