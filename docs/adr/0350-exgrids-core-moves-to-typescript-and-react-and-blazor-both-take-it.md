@@ -170,6 +170,16 @@ the machinery not ported, one piece's reason outlived it: the Script Core also t
 [ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md) says which of its sections hold over the
 Script Core.)*
 
+*(2026-11-01, decided with the user: "every listener scoped to the instance root" also admits a listener on the
+document or the window that answers only its instance's own popup or part, and is attached only while that popup is
+open or that part is owed something. A list closed by a press outside it hears presses outside its root by its nature,
+which is how a design system's menus close; what ADR-0018 prevents is another instance reacting, and a listener that
+answers only its own open popup cannot make one. Such a listener is removed when the popup closes or what was owed is
+settled, so an instance at rest listens to nothing outside itself. Three stood on 2026-10-30: ExSheet's toolbar list
+in `packages/sheet-react/src/toolbar-item.ts` and `packages/sheet-blazor/src/razor-sheet-slots.ts`, already attached
+only while the list is open, and ExPivot's keyboard hand-off in `packages/pivot/src/parts.ts`, which listened for the
+pivot's whole life and now listens only while a control is owed the keyboard.)*
+
 ### 7. Blazor's ExGrid moves onto the Script Core in 0.3.0, once React's holds
 
 Blazor's ExGrid becomes a Framework Adapter over the Script Core in the same version. The order inside
@@ -412,6 +422,11 @@ Batches as the records they changed (ADR-0370 section 3's note of this date). Wh
 the Change Notes: a Window of all new rows, 100,000 rows on WebAssembly, where every push builds a new in-memory
 source over every row in .NET, and an amended trade in ExPivot, where the pivot engine lays the report out again from
 every leaf, about 50 ms on either host.)*
+
+*(2026-11-01, accepted with the user for 0.3.0: the two cases that stay slower, a Window of all new rows over
+100,000 rows on WebAssembly and an amended trade in ExPivot laid out again from every leaf, ship as measured. Each
+costs tens of milliseconds, where the three fixed above cost up to a second, and the pivot's is the engine's own, the
+same under React. The record and the Change Note keep their numbers.)*
 
 ### 16. The Script Core's public shape
 

@@ -2739,6 +2739,33 @@ describe('ExPivot\'s Chrome slots (ADR-0390)', () => {
         root.remove();
     });
 
+    it('ADR-0350 section 6: the document is heard only while a control is owed the keyboard, and not once it is given', () => {
+        const root = document.createElement('div');
+        document.body.append(root);
+        const added: string[] = [];
+        const removed: string[] = [];
+        const add = vi.spyOn(document, 'addEventListener').mockImplementation(function (this: Document, type: string, listener, options) {
+            added.push(type);
+            if (typeof options === 'object') options.signal?.addEventListener('abort', () => { removed.push(type); });
+            EventTarget.prototype.addEventListener.call(this, type, listener, options);
+        });
+        try {
+            const parts = new PartElements(root);
+            const heardIdle = added.length;
+            parts.focus('retry');
+            parts.focus('retry');
+            const heardOwed = [...added];
+            const retry = document.createElement('button');
+            root.append(retry);
+            parts.handInControl('retry', retry);
+            expect([heardIdle, heardOwed, removed, document.activeElement === retry]).toEqual([0, ['focusin', 'pointerdown'], ['focusin', 'pointerdown'], true]);
+            parts.dispose();
+        } finally {
+            add.mockRestore();
+            root.remove();
+        }
+    });
+
     it('ADR-0390: a toolbar that cannot be drawn is refused by name once and the built-in one stands; one that hands in no anchor for Layout ▾ is refused as it is pressed', async () => {
         const options: PivotViewOptions = { source: local(), layout: byRegion };
         const { root, view } = mount(options);
