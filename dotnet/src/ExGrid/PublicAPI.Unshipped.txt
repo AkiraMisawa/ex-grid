@@ -330,6 +330,8 @@ ExGrid.Chrome.GridPopoverContext.InOrder.get -> System.Func<ExGrid.Chrome.GridIn
 ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
+ExGrid.Components.ExGrid<TRow>.OnCountErrors.get -> System.Func<ExGrid.Validation.GridErrorCountRequest!, System.Threading.CancellationToken, System.Threading.Tasks.Task<ExGrid.Validation.GridErrorCount!>!>?
+ExGrid.Components.ExGrid<TRow>.OnCountErrors.set -> void
 ExGrid.GridColumn<TRow>.IsQueryable.init -> void
 ExGrid.GridColumn<TRow>.ValidateAsync.get -> System.Func<TRow, string!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditVerdict>>?
 ExGrid.GridColumn<TRow>.ValidateAsync.init -> void
@@ -597,6 +599,23 @@ ExGrid.Validation.BreachCell.Deconstruct(out object! RowKey, out string! Column)
 ExGrid.Validation.BreachCell.Equals(ExGrid.Validation.BreachCell other) -> bool
 ExGrid.Validation.BreachCell.RowKey.get -> object!
 ExGrid.Validation.BreachCell.RowKey.init -> void
+ExGrid.Validation.GridErrorCount
+ExGrid.Validation.GridErrorCount.<Clone>$() -> ExGrid.Validation.GridErrorCount!
+ExGrid.Validation.GridErrorCount.Count.get -> int
+ExGrid.Validation.GridErrorCount.Count.init -> void
+ExGrid.Validation.GridErrorCount.Deconstruct(out int Count, out int Hidden) -> void
+ExGrid.Validation.GridErrorCount.Equals(ExGrid.Validation.GridErrorCount? other) -> bool
+ExGrid.Validation.GridErrorCount.GridErrorCount(int Count, int Hidden) -> void
+ExGrid.Validation.GridErrorCount.Hidden.get -> int
+ExGrid.Validation.GridErrorCount.Hidden.init -> void
+ExGrid.Validation.GridErrorCountRequest
+ExGrid.Validation.GridErrorCountRequest.<Clone>$() -> ExGrid.Validation.GridErrorCountRequest!
+ExGrid.Validation.GridErrorCountRequest.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExGrid.Validation.GridErrorCountRequest.Columns.init -> void
+ExGrid.Validation.GridErrorCountRequest.Equals(ExGrid.Validation.GridErrorCountRequest? other) -> bool
+ExGrid.Validation.GridErrorCountRequest.GridErrorCountRequest() -> void
+ExGrid.Validation.GridErrorCountRequest.RowSequenceVersion.get -> int
+ExGrid.Validation.GridErrorCountRequest.RowSequenceVersion.init -> void
 ExGrid.Validation.GridErrorStepRequest
 ExGrid.Validation.GridErrorStepRequest.<Clone>$() -> ExGrid.Validation.GridErrorStepRequest!
 ExGrid.Validation.GridErrorStepRequest.Backward.get -> bool
@@ -610,6 +629,7 @@ ExGrid.Validation.GridErrorStepRequest.GridErrorStepRequest() -> void
 ExGrid.Validation.GridErrorStepRequest.RowSequenceVersion.get -> int
 ExGrid.Validation.GridErrorStepRequest.RowSequenceVersion.init -> void
 ExGrid.Validation.GridRuleset<TRow>.Breaches.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Validation.Breach!>!
+ExGrid.Validation.GridRuleset<TRow>.CountErrors(ExGrid.Validation.GridErrorCountRequest! request, System.Collections.Generic.IReadOnlyList<TRow!>! rowsInOrder) -> ExGrid.Validation.GridErrorCount!
 ExGrid.Validation.GridRuleset<TRow>.FindError(ExGrid.Validation.GridErrorStepRequest! request, System.Collections.Generic.IReadOnlyList<TRow!>! rowsInOrder) -> ExGrid.Finding.GridFindResult!
 ExGrid.Validation.GridRuleset<TRow>.GridRuleset(System.Func<TRow!, object!>! rowKey) -> void
 ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.IReadOnlyList<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Validation.Breach!>!>! rule) -> ExGrid.Validation.GridRuleset<TRow!>!
@@ -716,6 +736,12 @@ override ExGrid.Validation.Breach.Equals(object? obj) -> bool
 override ExGrid.Validation.Breach.GetHashCode() -> int
 override ExGrid.Validation.Breach.ToString() -> string!
 override ExGrid.Validation.BreachCell.GetHashCode() -> int
+override ExGrid.Validation.GridErrorCount.Equals(object? obj) -> bool
+override ExGrid.Validation.GridErrorCount.GetHashCode() -> int
+override ExGrid.Validation.GridErrorCount.ToString() -> string!
+override ExGrid.Validation.GridErrorCountRequest.Equals(object? obj) -> bool
+override ExGrid.Validation.GridErrorCountRequest.GetHashCode() -> int
+override ExGrid.Validation.GridErrorCountRequest.ToString() -> string!
 override ExGrid.Validation.GridErrorStepRequest.Equals(object? obj) -> bool
 override ExGrid.Validation.GridErrorStepRequest.GetHashCode() -> int
 override ExGrid.Validation.GridErrorStepRequest.ToString() -> string!
@@ -797,6 +823,10 @@ static ExGrid.Validation.Breach.operator !=(ExGrid.Validation.Breach? left, ExGr
 static ExGrid.Validation.Breach.operator ==(ExGrid.Validation.Breach? left, ExGrid.Validation.Breach? right) -> bool
 static ExGrid.Validation.BreachCell.operator !=(ExGrid.Validation.BreachCell left, ExGrid.Validation.BreachCell right) -> bool
 static ExGrid.Validation.BreachCell.operator ==(ExGrid.Validation.BreachCell left, ExGrid.Validation.BreachCell right) -> bool
+static ExGrid.Validation.GridErrorCount.operator !=(ExGrid.Validation.GridErrorCount? left, ExGrid.Validation.GridErrorCount? right) -> bool
+static ExGrid.Validation.GridErrorCount.operator ==(ExGrid.Validation.GridErrorCount? left, ExGrid.Validation.GridErrorCount? right) -> bool
+static ExGrid.Validation.GridErrorCountRequest.operator !=(ExGrid.Validation.GridErrorCountRequest? left, ExGrid.Validation.GridErrorCountRequest? right) -> bool
+static ExGrid.Validation.GridErrorCountRequest.operator ==(ExGrid.Validation.GridErrorCountRequest? left, ExGrid.Validation.GridErrorCountRequest? right) -> bool
 static ExGrid.Validation.GridErrorStepRequest.operator !=(ExGrid.Validation.GridErrorStepRequest? left, ExGrid.Validation.GridErrorStepRequest? right) -> bool
 static ExGrid.Validation.GridErrorStepRequest.operator ==(ExGrid.Validation.GridErrorStepRequest? left, ExGrid.Validation.GridErrorStepRequest? right) -> bool
 virtual ExGrid.Finding.FindMatchOf<TRow>.Invoke(TRow row, ExGrid.GridColumn<TRow>! column, ExGrid.Finding.GridFindPattern! pattern) -> bool

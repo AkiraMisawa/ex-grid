@@ -123,6 +123,11 @@ export const japaneseGridWordTable: ReadonlyMap<string, string> = new Map([
     ['summary-sum', '合計'],
     ['summary-pending', '計算中…'],
     ['summary-menu', 'ステータス バーのユーザー設定'],
+
+    ['error-count', 'エラー {count} 件'],
+    ['error-count-hidden', 'エラー {count} 件 (うち {hidden} 件は非表示)'],
+    ['error-count-pending', 'エラーを数えています…'],
+    ['error-count-step', '次のエラーへ移動 (F8)'],
 ]);
 
 /** The built-in Chrome's words in Japanese: `昇順で並べ替え`, `(すべて選択)`, `{count} 個のセルを選択中`, `合計`. Handed

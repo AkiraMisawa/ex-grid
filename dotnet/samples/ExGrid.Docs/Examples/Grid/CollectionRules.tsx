@@ -1,6 +1,6 @@
 import { useCallback, useState, type ReactElement } from 'react';
 import {
-    GridRuleset, GridSource, type GridColumn, type GridEditIntent, type GridErrorStepRequest, type GridFindResult, type GridPasteIntent,
+    GridRuleset, GridSource, type GridColumn, type GridEditIntent, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest, type GridFindResult, type GridPasteIntent,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { oneCurvePerCsa, sampleCurveTrades, type CurveTrade } from './CurveTrades';
@@ -22,6 +22,13 @@ async function findError(request: GridErrorStepRequest, signal: AbortSignal): Pr
     const count = source.snapshot().totalCount;
     if (count === undefined) throw new Error('The rows are not counted yet.');
     return rules.findError(request, await source.rows({ start: 0, count }, signal));
+}
+
+// The status line counts the error cells, those a Filter hides said apart, asked again after every judgement.
+async function countErrors(request: GridErrorCountRequest, signal: AbortSignal): Promise<GridErrorCount> {
+    const count = source.snapshot().totalCount;
+    if (count === undefined) throw new Error('The rows are not counted yet.');
+    return rules.countErrors(request, await source.rows({ start: 0, count }, signal));
 }
 
 // The rows a paste lands on in the Curve column, each once with the text it writes: ranges of a selection may
@@ -73,7 +80,7 @@ export default function CollectionRules(): ReactElement {
                 <span>{message}</span>
             </div>
             <ExGrid source={source} columns={columns} pinnedColumnCount={1} cellState={paint.cellState} cellMessage={paint.cellMessage}
-                findError={findError} onEdit={onEdit} onPaste={onPaste} viewportHeight={300} viewportWidth="stretch" />
+                findError={findError} countErrors={countErrors} onEdit={onEdit} onPaste={onPaste} viewportHeight={300} viewportWidth="stretch" />
         </>
     );
 }

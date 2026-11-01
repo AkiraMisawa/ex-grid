@@ -745,6 +745,13 @@ to a valid collection often passes through invalid ones
 ([ADR-0381](./docs/adr/0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)).
 _Avoid_: violation (that is one row's), constraint error, conflict
 
+**Error Count**:
+How many cells wear Error, and how many of those the step to the next error cannot reach because a
+Filter hides their row or their column is hidden. The grid asks whoever holds the errors, as it asks
+for the step, and shows only the answer to the current question in the status line
+([ADR-0381](./docs/adr/0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)).
+_Avoid_: breach count (a Breach can span many cells), problems, issue count
+
 **Context Menu**:
 The menu a secondary click opens over the grid. Its items are Commands the core decides and the
 Consumer extends, and Chrome only lays them out — the same ownership the column menu has. A

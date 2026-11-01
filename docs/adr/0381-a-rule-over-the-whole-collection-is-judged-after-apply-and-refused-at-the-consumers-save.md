@@ -88,6 +88,29 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
   grid is made, since the key would mean two things. Excel's F8 is Extend Selection mode, which ExGrid does not take; adopting it later means choosing
   another key for this step.)*
 
+  *(2026-11-01, decided with the user, who chose this shape over the two others put beside it: no count, the
+  Consumer showing one in its own surface as the Docs Site's Example did; and a count the Consumer hands the grid as a
+  value. **The Error Count is asked of the Consumer, as the step is**:*
+
+  - *A seam `countErrors(request)`, answered with **the error cells**, the cells the step visits, and **how many of
+    them the step cannot reach**: in a row the Filter hides or a column that is hidden. The request carries the
+    visible columns in the grid's order and the Row Sequence Version, as the step's does. The bundled ruleset answers
+    it from what its last `evaluate` marked, read through the rows in the grid's order (`countErrors(request,
+    rowsInOrder)`). Cells, not Breaches: a column rule's or a row rule's Flag has no Breach, and the number the line
+    shows is the number of times F8 can be pressed before it comes round, plus the cells it says it cannot reach.*
+  - *The cells the step cannot reach are counted, and said apart: "Errors: 3 (1 hidden)". A count of only the
+    reachable cells would read 0 while the save refuses, which is the quiet wrong this ADR exists to prevent.*
+  - *It is asked again whenever what it counts may have moved: another judgement (the cell state or message function
+    the grid is handed is another one, as it is after each `evaluate`, or the count function itself is), another
+    source, another Row Sequence Version, or another set of visible columns. While a question is out the line says
+    so; an answer to a question no longer in force is dropped, never shown, as the Selection Summary's is (ADR-0130).
+    A value handed in by the Consumer was refused for that reason: after a Filter, a value nobody updated would still
+    stand.*
+  - *It stands in the status line, which then stands for as long as the seam is given, zero included ("Errors: 0"),
+    so the line does not come and go with the last error. Pressing it is the step forward from the Focus, F8's. The
+    count is offered only beside the step it counts: `countErrors` without `findError` is refused when the grid is
+    made.)*
+
 ### 4. Paste, fill and program code reach the same marks
 
 A set rule is judged after apply, so it does not matter how the change came: a typed edit, a paste, a fill,

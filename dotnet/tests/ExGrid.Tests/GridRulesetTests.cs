@@ -271,4 +271,25 @@ public class GridRulesetTests
         Assert.Equal((0, "Curve"), (self.Row, self.Column));
         Assert.False(rules.FindError(new GridErrorStepRequest { Columns = ["Id", "Csa"], RowSequenceVersion = 1 }, lone).IsFound);
     }
+
+    [Fact] // ADR-0381 section 3's note of 2026-11-01 / ED-39: every marked cell is counted, and those the step cannot reach are said as hidden
+    public void ED39_the_error_count_counts_every_marked_cell_and_says_the_hidden_apart()
+    {
+        var rules = DealRules().Row(d => d.Id.StartsWith('T') ? [] : [new RuleViolation("Id", "An id starts with T.")]);
+        Deal[] deals = [new("T1", "ABC", "SOFR"), new("T2", "ABC", "FF"), new("X3", "XYZ", "FF")];
+        rules.Evaluate(deals, DealColumns());
+        string[] columns = ["Id", "Csa", "Curve"];
+
+        // Two Curve cells by the Breach, one Id cell by the row rule: cells, not Breaches.
+        Assert.Equal(new GridErrorCount(3, 0), rules.CountErrors(new GridErrorCountRequest { Columns = columns, RowSequenceVersion = 1 }, deals));
+        // T2 filtered out: its Curve cell is still an error, and the step cannot reach it.
+        Assert.Equal(new GridErrorCount(3, 1), rules.CountErrors(new GridErrorCountRequest { Columns = columns, RowSequenceVersion = 1 }, [deals[0], deals[2]]));
+        // The Curve column hidden: both of its marks are out of the step's reach.
+        Assert.Equal(new GridErrorCount(3, 2), rules.CountErrors(new GridErrorCountRequest { Columns = ["Id", "Csa"], RowSequenceVersion = 1 }, deals));
+        var twice = Assert.Throws<ArgumentException>(() => rules.CountErrors(new GridErrorCountRequest { Columns = columns, RowSequenceVersion = 1 }, [.. deals, deals[1]]));
+        Assert.Contains("twice", twice.Message);
+
+        rules.Evaluate([new Deal("T1", "ABC", "SOFR")], DealColumns());
+        Assert.Equal(new GridErrorCount(0, 0), rules.CountErrors(new GridErrorCountRequest { Columns = columns, RowSequenceVersion = 1 }, []));
+    }
 }

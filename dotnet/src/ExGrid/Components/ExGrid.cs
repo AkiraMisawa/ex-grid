@@ -244,6 +244,19 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public Func<Validation.GridErrorStepRequest, CancellationToken, Task<Finding.GridFindResult>>? OnFindError { get; set; }
 
     /// <summary>
+    /// The Error Count (ADR-0381 section 3's note of 2026-11-01), shown in the status line: every cell that wears
+    /// Error, and how many of them the error step cannot reach, in a row the Filter hides or a column that is hidden.
+    /// The grid knows only the cells it paints, so the count is the Consumer's;
+    /// <see cref="Validation.GridRuleset{TRow}.CountErrors"/> answers it from the rows the Source holds in the grid's
+    /// order. It is asked again whenever what it counts may have moved: another <see cref="CellState"/> or
+    /// <see cref="CellMessageOf"/> (a ruleset hands new ones after each Evaluate), another source, another order or
+    /// other visible columns, and an answer to an earlier question is dropped. Pressing the count steps to the next
+    /// error, as F8 does, so it is set only beside <see cref="OnFindError"/>, and, like it, takes a
+    /// <see cref="Source"/>.
+    /// </summary>
+    [Parameter] public Func<Validation.GridErrorCountRequest, CancellationToken, Task<Validation.GridErrorCount>>? OnCountErrors { get; set; }
+
+    /// <summary>
     /// Completion and the argument hint (ADR-0051): asked with the editor's text and caret as the user types or moves
     /// the caret, in the Cell Editor and the Formula Bar alike, in its turn among the grid's events. The grid shows the
     /// answer beneath the surface typed in, unless the text has changed since it was asked: an answer for older text is
@@ -451,6 +464,11 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             throw new InvalidOperationException("OnFindError answers in the order the grid shows, which a Consumer reads from its Source, and "
                 + "the grid orders Rows out of its sight: give the grid a Source, GridSource.From(rows) for rows held in memory (ADR-0381).");
+        }
+        if (OnCountErrors is not null && OnFindError is null)
+        {
+            throw new InvalidOperationException("OnCountErrors is set beside OnFindError: the Error Count counts the cells the error step visits, and "
+                + "pressing it is that step (ADR-0381).");
         }
         ScriptColumns.Check(Columns);
         TakeScripts();
@@ -1114,6 +1132,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cellMessages", _judgement);
         if (OnFindError is not null)
             json.WriteBoolean("findsErrors", true);
+        // The judgement's number, which moves with each one the Consumer hands, so the browser asks the count again.
+        if (OnCountErrors is not null)
+            json.WriteNumber("countsErrors", _judgement);
         if (CompleteEditorText is not null)
             json.WriteBoolean("completesText", true);
         if (Scripts().Any())
@@ -1698,6 +1719,32 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             return await FoundJsonAsync(found);
         }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>The Error Count the browser numbered <paramref name="number"/> (ADR-0381 section 3's note of
+    /// 2026-11-01), asked of <see cref="OnCountErrors"/> in its turn among the events, and answered aside, as a
+    /// Selection Summary is: the events after it do not wait for its answer. One asked of a source since replaced, or
+    /// under another order, is not handed to the Consumer and is answered as moved; the browser asks again under what
+    /// it now holds. One asked as the Consumer took <see cref="OnCountErrors"/> away is answered as withdrawn.</summary>
+    internal Task<string?> CountErrorsAsync(long number, int generation, JsonElement request)
+    {
+        var asked = new Validation.GridErrorCountRequest
+        {
+            Columns = ScriptJson.Texts(request.GetProperty("columns")),
+            RowSequenceVersion = request.GetProperty("rowSequenceVersion").GetInt32(),
+        };
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            if (OnCountErrors is not { } count)
+                return """{"withdrawn":true}""";
+            if (SourceOf(generation) is not { } source || source.RowSequenceVersion != asked.RowSequenceVersion)
+                return """{"moved":true}""";
+            var counted = await count(asked, cancelled) ?? throw new InvalidOperationException("OnCountErrors answered no count (ADR-0381).");
+            cancelled.ThrowIfCancellationRequested();
+            if (counted.Count < 0 || counted.Hidden < 0 || counted.Hidden > counted.Count)
+                throw new InvalidOperationException($"OnCountErrors answered {counted}: a count and a hidden count no more than it, neither below zero (ADR-0381).");
+            return $$"""{"count":{{counted.Count}},"hidden":{{counted.Hidden}}}""";
+        }), Answers: true, SendsState: false, Aside: true));
     }
 
     /// <summary>The Find step the browser numbered <paramref name="number"/> (ADR-0055), asked of the source's

@@ -323,6 +323,70 @@ public class ScriptGridAnswerTests : BunitContext
         Assert.Contains("OnFindError", refused.Message);
     }
 
+    private IRenderedComponent<global::ExGrid.Components.ExGrid<TestRow>> Counting(
+        InMemoryGridSource<TestRow> source, Func<GridErrorCountRequest, CancellationToken, Task<GridErrorCount>> count)
+        => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book, editable: true)))
+            .Add(g => g.OnFindError, (_, _) => Task.FromResult(GridFindResult.NotFound))
+            .Add(g => g.OnCountErrors, count));
+
+    private static JsonElement CountAsked(int rowSequenceVersion) => Payload(
+        $$"""{"columns":["Book","Amount"],"rowSequenceVersion":{{rowSequenceVersion}}}""");
+
+    [Fact] // ED-39: the Error Count is answered by .NET from the request the browser made, and asked again with each judgement
+    public async Task ED39_ADR0381_the_error_count_is_asked_of_the_consumer_and_moves_with_the_judgement()
+    {
+        GridErrorCountRequest? asked = null;
+        var source = GridSource.From(_rows);
+        var cut = Counting(source, (request, _) =>
+        {
+            asked = request;
+            return Task.FromResult(new GridErrorCount(3, 1));
+        });
+        var judgement = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options").GetProperty("countsErrors").GetInt32();
+
+        var answer = await cut.InvokeAsync(() => Bridge().CountErrors(1, 1, CountAsked(source.RowSequenceVersion)));
+
+        Assert.Equal("""{"count":3,"hidden":1}""", answer);
+        Assert.NotNull(asked);
+        Assert.Equal(["Book", "Amount"], asked.Columns);
+        Assert.Equal(source.RowSequenceVersion, asked.RowSequenceVersion);
+        // Another judgement moves the number, which the browser hears as another question.
+        cut.Render(ps => ps.Add(g => g.CellState, (_, _) => CellState.Error));
+        var updated = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("options");
+        Assert.NotEqual(judgement, updated.GetProperty("countsErrors").GetInt32());
+    }
+
+    [Fact] // ADR-0381 / ADR-0011: a count asked under an order the source has left is not handed to the Consumer
+    public async Task ADR0381_an_error_count_asked_under_another_order_is_answered_as_moved()
+    {
+        var asked = 0;
+        var source = GridSource.From(_rows);
+        var cut = Counting(source, (_, _) =>
+        {
+            asked++;
+            return Task.FromResult(new GridErrorCount(0, 0));
+        });
+        var version = source.RowSequenceVersion;
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
+
+        var answer = await cut.InvokeAsync(() => Bridge().CountErrors(1, 1, CountAsked(version)));
+
+        Assert.Equal("""{"moved":true}""", answer);
+        Assert.Equal(0, asked);
+    }
+
+    [Fact] // ADR-0381 section 3's note of 2026-11-01: the count is the cells the step visits, so it is refused without the step
+    public void ADR0381_an_error_count_without_the_error_step_is_refused()
+    {
+        var refused = Assert.Throws<InvalidOperationException>(() => Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, GridSource.From(_rows))
+            .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book)))
+            .Add(g => g.OnCountErrors, (_, _) => Task.FromResult(new GridErrorCount(0, 0)))));
+        Assert.Contains("OnFindError", refused.Message);
+    }
+
     private static JsonElement FindStep(string text, int rowSequenceVersion) => Payload(
         $$"""{"text":"{{text}}","matchCase":false,"wholeCell":false,"backward":false,"from":{"row":0,"column":0},"columns":["Book","Amount"],"rowSequenceVersion":{{rowSequenceVersion}}}""");
 

@@ -61,6 +61,31 @@ export interface GridErrorStepRequest {
 }
 
 /**
+ * The question the Error Count answers (ADR-0381 section 3's note of 2026-11-01), asked of the Consumer as the error
+ * step is: the grid knows only the cells it paints, so how many cells wear Error across the collection is the
+ * Consumer's.
+ */
+export interface GridErrorCountRequest {
+    /** The visible columns' names in the grid's current order: a marked cell in another column is one the step
+     * cannot reach. */
+    readonly columns: readonly string[];
+    /** The order the result was read in (ADR-0011). An answer the grid receives under another version is dropped. */
+    readonly rowSequenceVersion: number;
+}
+
+/**
+ * The Error Count (ADR-0381 section 3's note of 2026-11-01): every cell that wears Error, and how many of them the
+ * error step cannot reach, in a row the Filter hides or a column that is hidden. The status line says both, so a
+ * count never reads less than the save will refuse.
+ */
+export interface GridErrorCount {
+    /** Every error cell, those the step cannot reach included. */
+    readonly count: number;
+    /** Of {@link GridErrorCount.count}, the cells the step cannot reach. */
+    readonly hidden: number;
+}
+
+/**
  * The bundled ruleset (ADR-0034). It holds both kinds of rule and answers both display channels, so one
  * implementation runs whether a change arrived by a single edit, by a paste, or from program code.
  *
@@ -78,6 +103,7 @@ export class GridRuleset<Row extends object> {
     readonly #rowKey: RowKeyOf<Row> | undefined;
     #marked: (row: Row) => ReadonlyMap<string, string> | undefined = () => undefined;
     #breaches: readonly Breach[] = Object.freeze([]);
+    #errorCells = 0;
     #cellState: (row: Row, column: GridColumn<Row>) => CellState = () => 'normal';
     #cellMessage: (row: Row, column: GridColumn<Row>) => string | undefined = () => undefined;
 
@@ -207,6 +233,16 @@ export class GridRuleset<Row extends object> {
             }
         }
         this.#breaches = Object.freeze(breaches);
+        let errorCells = 0;
+        if (keyed === undefined) {
+            for (const row of all) {
+                const found = byRow.get(row);
+                if (found !== undefined) errorCells += found.size;
+            }
+        } else {
+            for (const found of byKey.values()) errorCells += found.size;
+        }
+        this.#errorCells = errorCells;
         // The rows a grid paints are mostly the instances handed here: looked up by instance, they spare the
         // Consumer's key function a call per cell per paint, and a ruleset with nothing marked asks nothing.
         const handed = new WeakMap<Row, ReadonlyMap<string, string> | undefined>();
@@ -261,6 +297,29 @@ export class GridRuleset<Row extends object> {
             });
         });
         return found;
+    }
+
+    /**
+     * The Error Count (ADR-0381 section 3's note of 2026-11-01), for a grid's `countErrors`: every cell the last
+     * {@link GridRuleset.evaluate} marked, and how many of them the error step cannot reach through `rowsInOrder`, the
+     * result in the order the grid shows it, and the request's visible columns. A marked row the Filter hides, or a
+     * marked column that is hidden, is counted and said as hidden, never left out.
+     */
+    countErrors(request: GridErrorCountRequest, rowsInOrder: readonly Row[]): GridErrorCount {
+        const columns = new Set(request.columns);
+        let reachable = 0;
+        for (const row of rowsInOrder) {
+            const marked = this.#marked(row);
+            if (marked === undefined) continue;
+            for (const column of marked.keys()) if (columns.has(column)) reachable += 1;
+        }
+        // More reachable cells than were marked means a row handed twice, or rows the ruleset never judged under
+        // another key: either way not the rows evaluate was handed, and a count read in them would be another's.
+        if (reachable > this.#errorCells) {
+            throw new RangeError(`The Error Count found ${reachable} marked cells in the ${rowsInOrder.length} rows it was handed, more than the `
+                + `${this.#errorCells} the last evaluate marked: rowsInOrder holds a row twice (ADR-0381).`);
+        }
+        return Object.freeze({ count: this.#errorCells, hidden: this.#errorCells - reachable });
     }
 
     /** The grid's `cellState`, replaced by every {@link GridRuleset.evaluate}: hand the grid this, read again after
