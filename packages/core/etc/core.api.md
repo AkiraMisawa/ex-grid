@@ -396,6 +396,7 @@ export const errorCountLabelIds: Readonly<{
     readonly count: 'error-count';
     readonly countHidden: 'error-count-hidden';
     readonly pending: 'error-count-pending';
+    readonly failed: 'error-count-failed';
     readonly step: 'error-count-step';
 }>;
 

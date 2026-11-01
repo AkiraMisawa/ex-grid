@@ -307,6 +307,10 @@ describe('the Error Count (ADR-0381 section 3\'s note of 2026-11-01)', () => {
         await painted();
         await settle();
         expect([held.length, root.getAttribute('data-ex-settled')]).toEqual([1, null]);
+        // Another counter alone, as one written inline is on every render, is not another question.
+        view.update({ ...options, countErrors: (request, signal) => options.countErrors(request, signal) });
+        await settle();
+        expect(held).toHaveLength(1);
         // The trade moved back to SOFR: the ruleset hands new functions, which is another judgement.
         deals[90] = { id: 'T90', csa: 'C1', curve: 'SOFR' };
         rules.evaluate(deals, dealColumns);
@@ -335,6 +339,6 @@ describe('the Error Count (ADR-0381 section 3\'s note of 2026-11-01)', () => {
             process.off('unhandledRejection', heard);
         }
         expect([failures.some(failure => failure instanceof TypeError && /hidden no more than count/.test(failure.message)), line(bad.root)])
-            .toEqual([true, 'Counting errors…']);
+            .toEqual([true, 'Errors: not counted']);
     });
 });

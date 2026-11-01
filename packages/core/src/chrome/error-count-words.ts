@@ -7,6 +7,8 @@ export const errorCountLabelIds = Object.freeze({
     countHidden: 'error-count-hidden',
     /** What the line says while the question is out. */
     pending: 'error-count-pending',
+    /** What the line says when the counter failed, or answered something that is not a count. */
+    failed: 'error-count-failed',
     /** What pressing the count does, said as its title. */
     step: 'error-count-step',
 } as const);
@@ -16,5 +18,6 @@ export const errorCountWords: readonly (readonly [string, string])[] = Object.fr
     [errorCountLabelIds.count, 'Errors: {count}'],
     [errorCountLabelIds.countHidden, 'Errors: {count} ({hidden} hidden)'],
     [errorCountLabelIds.pending, 'Counting errors…'],
+    [errorCountLabelIds.failed, 'Errors: not counted'],
     [errorCountLabelIds.step, 'Go to the next error (F8)'],
 ]);

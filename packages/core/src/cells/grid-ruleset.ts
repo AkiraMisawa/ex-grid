@@ -235,7 +235,8 @@ export class GridRuleset<Row extends object> {
         this.#breaches = Object.freeze(breaches);
         let errorCells = 0;
         if (keyed === undefined) {
-            for (const row of all) {
+            // A row instance handed twice is one row, marked once.
+            for (const row of new Set(all)) {
                 const found = byRow.get(row);
                 if (found !== undefined) errorCells += found.size;
             }

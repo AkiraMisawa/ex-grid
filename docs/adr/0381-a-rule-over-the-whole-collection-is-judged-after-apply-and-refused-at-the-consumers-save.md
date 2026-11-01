@@ -101,9 +101,12 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
   - *The cells the step cannot reach are counted, and said apart: "Errors: 3 (1 hidden)". A count of only the
     reachable cells would read 0 while the save refuses, which is the quiet wrong this ADR exists to prevent.*
   - *It is asked again whenever what it counts may have moved: another judgement (the cell state or message function
-    the grid is handed is another one, as it is after each `evaluate`, or the count function itself is), another
-    source, another Row Sequence Version, or another set of visible columns. While a question is out the line says
+    the grid is handed is another one, as it is after each `evaluate`), another source, another Row Sequence Version,
+    or another set of visible columns. The count function's own identity is not part of the question: one written
+    inline is another function on every render, and would ask on every render. While a question is out the line says
     so; an answer to a question no longer in force is dropped, never shown, as the Selection Summary's is (ADR-0130).
+    A counter that fails, or answers something that is not a count, is said on the line ("Errors: not counted") and
+    its failure reaches the page, never left as a count still coming.
     A value handed in by the Consumer was refused for that reason: after a Filter, a value nobody updated would still
     stand.*
   - *It stands in the status line, which then stands for as long as the seam is given, zero included ("Errors: 0"),

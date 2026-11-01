@@ -127,6 +127,7 @@ export const japaneseGridWordTable: ReadonlyMap<string, string> = new Map([
     ['error-count', 'エラー {count} 件'],
     ['error-count-hidden', 'エラー {count} 件 (うち {hidden} 件は非表示)'],
     ['error-count-pending', 'エラーを数えています…'],
+    ['error-count-failed', 'エラー: 数えられませんでした'],
     ['error-count-step', '次のエラーへ移動 (F8)'],
 ]);
 

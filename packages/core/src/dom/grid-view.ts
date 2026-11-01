@@ -554,9 +554,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Error, and how many of them the error step cannot reach, in a row the Filter hides or a column that is hidden.
      * The grid knows only the cells it paints, so the count is the Consumer's; `GridRuleset.countErrors` answers it
      * from what the ruleset marked, given the rows in the grid's order. Asked again whenever what it counts may have
-     * moved: another `cellState`, `cellMessage` or `countErrors` function (a ruleset hands new ones after each
-     * `evaluate`), another source, another order, or other visible columns. An answer to an earlier question is
-     * dropped. Pressing the count steps to the next error, as F8 does, so it is given only beside `findError`.
+     * moved: another `cellState` or `cellMessage` function (a ruleset hands new ones after each `evaluate`), another
+     * source, another order, or other visible columns; another `countErrors` function alone is not another question,
+     * so one written inline does not ask on every render. An answer to an earlier question is dropped, and a failure
+     * is said on the line. Pressing the count steps to the next error, as F8 does, so it is given only beside
+     * `findError`.
      */
     readonly countErrors?: (request: GridErrorCountRequest, signal: AbortSignal) => GridErrorCount | PromiseLike<GridErrorCount>;
     /** Whether Find searches the column headers and Header Group labels too (ADR-0333): true unless given. A
@@ -1830,6 +1832,7 @@ export class GridView<Row> {
     #countErrors: ((request: GridErrorCountRequest, signal: AbortSignal) => GridErrorCount | PromiseLike<GridErrorCount>) | undefined;
     readonly #errorCount: ErrorCountQuestions;
     readonly #errorCountBox: ErrorCountBox;
+    #errorCountColumns: { readonly of: unknown; readonly names: readonly string[] } = { of: undefined, names: [] };
     #findsHeaders = true;
     // The per-cell declarations (ADR-0050, items 6, 7, 11 and 15), the row appearances resolved from them, and
     // the generated stylesheet their classes name, last in the root (ADR-0071).
@@ -2436,6 +2439,7 @@ export class GridView<Row> {
         this.#rowMarks.destroy();
         this.#summary.destroy();
         this.#errorCount.destroy();
+        this.#errorCountBox.destroy();
         this.#summaryBox.hide();
         this.#completionBox.hide();
         this.#messageSlot.hide();
@@ -10660,7 +10664,7 @@ export class GridView<Row> {
         // error (ADR-0381 section 3's note of 2026-11-01).
         this.#reviewErrorCount();
         if (this.#countErrors !== undefined) {
-            this.#errorCountBox.paint(this.#errorCount.count, id => this.#labelOf(id));
+            this.#errorCountBox.paint(this.#errorCount.count, this.#errorCount.failed, id => this.#labelOf(id));
             shown.push(this.#errorCountBox.element);
         }
         // The menu's ticks are the figures handed back, which a press on it does not change by itself. It goes with
@@ -10871,18 +10875,25 @@ export class GridView<Row> {
     // status line paints: the judgement painted, the source, the order and the visible columns. A different one clears
     // the count in this very pass and owes the asking to the pass's end.
     #reviewErrorCount(): void {
-        const counter = this.#countErrors;
-        this.#errorCount.review(counter === undefined ? undefined : {
-            binding: this.#source, rowSequenceVersion: this.#state.rowSequenceVersion,
-            columns: this.#columns.map(({ column }) => column.name),
-            judgement: [this.#cellPaint.cellState, this.#cellMessage, counter],
+        if (this.#countErrors === undefined) {
+            this.#errorCount.review(undefined);
+            return;
+        }
+        // The names are read again only when the columns are other ones: this runs on every pass, scrolls included.
+        if (this.#errorCountColumns.of !== this.#columns) {
+            this.#errorCountColumns = { of: this.#columns, names: Object.freeze(this.#columns.map(({ column }) => column.name)) };
+        }
+        this.#errorCount.review({
+            binding: this.#source, rowSequenceVersion: this.#state.rowSequenceVersion, columns: this.#errorCountColumns.names,
+            cellState: this.#cellPaint.cellState, cellMessage: this.#cellMessage,
         });
     }
 
     // A press on the count is the step forward from the Focus, F8's (ADR-0381 section 3's note of 2026-11-01).
     readonly #onErrorCountPressed = (): void => {
-        // Not past an edit left open (ED-26), as F8 is not: the step would move the Focus out from under it.
-        if (this.#destroyed || this.#findError === undefined || this.#edit !== undefined) return;
+        // An edit left open commits first, as the line's other buttons commit it (ED-26): the step would otherwise move
+        // the Focus out from under it.
+        if (this.#destroyed || this.#findError === undefined || !this.#commitEdit()) return;
         this.#takeKeyboard();
         this.#stepToError(false);
     };

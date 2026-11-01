@@ -17,9 +17,11 @@ export interface ErrorCountQuestion {
     readonly binding: object;
     readonly rowSequenceVersion: number;
     readonly columns: readonly string[];
-    /** The judgement painted, told apart by identity: the cell state and message functions and the counter itself,
-     * which a Consumer hands afresh after each judgement (ADR-0003). */
-    readonly judgement: readonly unknown[];
+    /** The judgement painted, told apart by identity: the cell state and message functions, which a Consumer hands
+     * afresh after each judgement (ADR-0003). The counter's own identity is not part of it, so a counter written
+     * inline, another function on every render, does not ask again on every render. */
+    readonly cellState: unknown;
+    readonly cellMessage: unknown;
 }
 
 function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
@@ -28,7 +30,7 @@ function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
 
 function sameQuestion(a: ErrorCountQuestion, b: ErrorCountQuestion): boolean {
     return a.binding === b.binding && a.rowSequenceVersion === b.rowSequenceVersion && sameItems(a.columns, b.columns)
-        && sameItems(a.judgement, b.judgement);
+        && a.cellState === b.cellState && a.cellMessage === b.cellMessage;
 }
 
 /** The question in force and its answer, asked once the pass that showed the question has painted. */
@@ -37,6 +39,7 @@ export class ErrorCountQuestions {
     #question: ErrorCountQuestion | undefined;
     #request: GridErrorCountRequest | undefined;
     #count: GridErrorCount | undefined;
+    #failed = false;
     #asking: AbortController | undefined;
     #askOwed = false;
 
@@ -45,14 +48,20 @@ export class ErrorCountQuestions {
         this.#answered = answered;
     }
 
-    /** The answer to the question in force; undefined while it is out or none stands. */
+    /** The answer to the question in force; undefined while it is out, none stands, or the counter failed. */
     get count(): GridErrorCount | undefined {
         return this.#count;
     }
 
+    /** Whether the counter failed the question in force, or answered it with something that is not a count: the line
+     * says no count can be given, rather than go on saying it is counting. */
+    get failed(): boolean {
+        return this.#failed;
+    }
+
     /** Whether a question is out, unanswered: the grid has not settled while it is (ADR-0220). */
     get asking(): boolean {
-        return this.#question !== undefined && this.#count === undefined;
+        return this.#question !== undefined && this.#count === undefined && !this.#failed;
     }
 
     /** The question the grid's state asks, or none: one different from the question in force clears the count now
@@ -63,6 +72,7 @@ export class ErrorCountQuestions {
             this.#question = undefined;
             this.#request = undefined;
             this.#count = undefined;
+            this.#failed = false;
             return;
         }
         if (this.#question !== undefined && sameQuestion(this.#question, question)) return;
@@ -70,6 +80,7 @@ export class ErrorCountQuestions {
         this.#question = question;
         this.#request = Object.freeze({ columns: question.columns, rowSequenceVersion: question.rowSequenceVersion });
         this.#count = undefined;
+        this.#failed = false;
         this.#askOwed = true;
     }
 
@@ -100,19 +111,23 @@ export class ErrorCountQuestions {
     async #ask(question: ErrorCountQuestion, request: GridErrorCountRequest, counter: ErrorCounter): Promise<void> {
         const asking = new AbortController();
         this.#asking = asking;
-        let answer: GridErrorCount;
+        let count: GridErrorCount;
         try {
-            answer = await counter(request, asking.signal);
-        // oxlint-disable-next-line ex-grid/no-catch -- a question the grid let go may end in its cancellation, which nobody hears; any other failure is rethrown
+            const answer = await counter(request, asking.signal);
+            // Another question has been asked since, or none stands: this answer counts another judgement or another
+            // result, and is shown nowhere.
+            if (asking.signal.aborted || question !== this.#question) return;
+            count = checkedCount(answer);
+        // oxlint-disable-next-line ex-grid/no-catch -- a question the grid let go may end in its cancellation, which nobody hears; any other failure is said on the line and rethrown
         } catch (error) {
-            if (asking.signal.aborted) return;
+            if (asking.signal.aborted || question !== this.#question) return;
+            this.#asking = undefined;
+            this.#failed = true;
+            this.#answered();
             throw error;
         }
-        // Another question has been asked since, or none stands: this answer counts another judgement or another
-        // result, and is shown nowhere.
-        if (asking.signal.aborted || question !== this.#question) return;
         this.#asking = undefined;
-        this.#count = checkedCount(answer);
+        this.#count = count;
         this.#answered();
     }
 }
@@ -136,7 +151,10 @@ export class ErrorCountBox {
     readonly element: HTMLButtonElement;
     #painted = '';
 
+    readonly #pressed: () => void;
+
     constructor(doc: Document, pressed: () => void) {
+        this.#pressed = pressed;
         this.element = doc.createElement('button');
         this.element.type = 'button';
         this.element.className = 'ex-error-count';
@@ -144,12 +162,17 @@ export class ErrorCountBox {
         this.element.addEventListener('click', pressed);
     }
 
-    /** Writes the count, or the pending words while the question is out. */
-    paint(count: GridErrorCount | undefined, words: (id: string) => string): void {
-        const text = count === undefined ? words(errorCountLabelIds.pending)
+    /** The button's listener goes: the grid is going. */
+    destroy(): void {
+        this.element.removeEventListener('click', this.#pressed);
+    }
+
+    /** Writes the count, the words that say none could be given, or the pending words while the question is out. */
+    paint(count: GridErrorCount | undefined, failed: boolean, words: (id: string) => string): void {
+        const text = failed ? words(errorCountLabelIds.failed) : count === undefined ? words(errorCountLabelIds.pending)
             : words(count.hidden > 0 ? errorCountLabelIds.countHidden : errorCountLabelIds.count)
                 .replaceAll('{count}', String(count.count)).replaceAll('{hidden}', String(count.hidden));
-        const className = count === undefined ? 'ex-error-count ex-error-count-pending'
+        const className = failed ? 'ex-error-count ex-error-count-some' : count === undefined ? 'ex-error-count ex-error-count-pending'
             : count.count > 0 ? 'ex-error-count ex-error-count-some' : 'ex-error-count';
         const title = words(errorCountLabelIds.step);
         const key = JSON.stringify([text, className, title]);
