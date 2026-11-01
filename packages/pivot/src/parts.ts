@@ -26,21 +26,36 @@ export class PartElements {
     // since a press on nothing focusable moves the keyboard to the page without a focus event. A key does not: one
     // that moves the keyboard moves focus, and one typed while the control is on its way is held in the pivot's Input
     // Order on an adapter that holds (ADR-0410 section 5), to be taken where the control stands once it does.
+    // The document is heard only while something is owed, and its listeners answer only that (ADR-0350 section 6's
+    // note of 2026-11-01): a pivot owing nothing listens to nothing outside itself.
     #owed: string | undefined;
-    readonly #listening = new AbortController();
+    #listening: AbortController | undefined;
 
     constructor(root: HTMLElement) {
         this.#root = root;
-        const settled = (): void => { this.#owed = undefined; };
-        for (const type of ['focusin', 'pointerdown']) {
-            root.ownerDocument.addEventListener(type, settled, { capture: true, signal: this.#listening.signal });
-        }
     }
 
     /** The pivot is gone: nothing is heard, and nothing owed is given. */
     dispose(): void {
-        this.#listening.abort();
+        this.#settle();
+    }
+
+    // The keyboard is owed to `name` until it is given, or focus moves or a press lands anywhere meanwhile.
+    #owe(name: string): void {
+        this.#owed = name;
+        if (this.#listening !== undefined) return;
+        this.#listening = new AbortController();
+        const settled = (): void => { this.#settle(); };
+        for (const type of ['focusin', 'pointerdown']) {
+            this.#root.ownerDocument.addEventListener(type, settled, { capture: true, signal: this.#listening.signal });
+        }
+    }
+
+    // Nothing is owed any longer, and the document is no longer heard.
+    #settle(): void {
         this.#owed = undefined;
+        this.#listening?.abort();
+        this.#listening = undefined;
     }
 
     /** The refs by which one mount of a Chrome's contents hands in its controls and anchors: the same function for a
@@ -102,10 +117,10 @@ export class PartElements {
     focus(name: string): void {
         const control = this.#controls.get(name);
         if (control?.isConnected === true) {
-            this.#owed = undefined;
+            this.#settle();
             control.focus();
         } else {
-            this.#owed = name;
+            this.#owe(name);
         }
     }
 
@@ -148,7 +163,7 @@ export class PartElements {
         if (this.#owed !== name) return;
         const give = (): void => {
             if (this.#owed !== name || !element.isConnected || this.#controls.get(name) !== element) return;
-            this.#owed = undefined;
+            this.#settle();
             if (keyboardIsThePivots(this.#root)) element.focus();
         };
         if (element.isConnected) give();

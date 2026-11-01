@@ -40,8 +40,9 @@ What it protected holds for every Script Core (ADR-0350 section 6), and is what 
   synchronously itself.
 - **Nothing per cell is bound to a listener**, and nothing per cell crosses to .NET.
 - **Every listener belongs to one instance** ([ADR-0018](docs/adr/0018-multiple-instances-must-be-independent.md)):
-  attached to its root, its Input Root or an element inside them, and one on the document or the window acts only
-  on events its own root contains.
+  attached to its root, its Input Root or an element inside them. One on the document or the window acts only on
+  events its own root contains, or answers only its own open popup or owed part and is attached only while it is open
+  or owed (ADR-0350 section 6's note of 2026-11-01).
 - **What deliberately stays out** — text measurement for overflow, a popover placed by measuring its anchor — is
   ADR-0021's list, still read as written.
 
