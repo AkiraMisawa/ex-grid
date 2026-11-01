@@ -423,6 +423,11 @@ the Change Notes: a Window of all new rows, 100,000 rows on WebAssembly, where e
 source over every row in .NET, and an amended trade in ExPivot, where the pivot engine lays the report out again from
 every leaf, about 50 ms on either host.)*
 
+*(2026-11-01, accepted with the user for 0.3.0: the two cases that stay slower, a Window of all new rows over
+100,000 rows on WebAssembly and an amended trade in ExPivot laid out again from every leaf, ship as measured. Each
+costs tens of milliseconds, where the three fixed above cost up to a second, and the pivot's is the engine's own, the
+same under React. The record and the Change Note keep their numbers.)*
+
 ### 16. The Script Core's public shape
 
 Section 14 left the shape to be designed; these are its decisions. Where one changes a concept rather
