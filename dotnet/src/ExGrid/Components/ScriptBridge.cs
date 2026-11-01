@@ -31,6 +31,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task<string?> FindError(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindErrorAsync(number, generation, request));
 
     [JSInvokable]
+    public Task<string?> CountErrors(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.CountErrorsAsync(number, generation, request));
+
+    [JSInvokable]
     public Task<string?> Find(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindAsync(number, generation, request));
 
     [JSInvokable]
@@ -162,6 +165,8 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
                 return await grid.SummarizeAsync(At(0).GetInt64(), At(1).ValueKind == JsonValueKind.Null ? null : At(1).GetInt32(), At(2));
             case nameof(FindError):
                 return await grid.FindErrorAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
+            case nameof(CountErrors):
+                return await grid.CountErrorsAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
             case "SetSorts":
                 await grid.SetSortsAsync(At(0).GetInt32(), Text(1), At(2).GetInt64());
                 return null;

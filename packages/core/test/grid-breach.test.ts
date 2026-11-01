@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 // Layer 2 (ADR-0350 section 13): rules over the whole collection (ADR-0381). The bundled ruleset's set rules mark
 // every cell a Breach names by Row Key, the rows that never changed included, and the error step, F8 and Shift+F8,
-// is asked of the Consumer as a Find step is, so it reaches an error far outside the Window. The C# core answers
-// the same cases in GridRulesetTests.
+// is asked of the Consumer as a Find step is, so it reaches an error far outside the Window; so is the Error Count
+// the status line shows. The C# ruleset answers the same cases in GridRulesetTests.
 import { afterEach, describe, expect, it } from 'vitest';
-import { GridRuleset, type Breach, type GridErrorStepRequest } from '../src/cells/grid-ruleset';
+import { GridRuleset, type Breach, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest } from '../src/cells/grid-ruleset';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridSelection } from '../src/selection/selection';
 import { foundAt, notFound, type GridFindResult } from '../src/finding/find';
@@ -238,5 +238,107 @@ describe('the error step (ADR-0381 section 3)', () => {
         await settle();
         expect([late.selection().focus, announced(late.root)])
             .toEqual([undefined, 'The rows moved while the next error was looked for, so the step was set aside. Press F8 again.']);
+    });
+});
+
+const counted = (request: Partial<GridErrorCountRequest>): GridErrorCountRequest => ({ columns: ['Id', 'Csa', 'Curve'], rowSequenceVersion: 1, ...request });
+
+// Two trades of C1 on two curves among a hundred, the count read from the Source in the grid's order, as the
+// Docs Site's Example reads it.
+function counting(countErrors?: (request: GridErrorCountRequest, signal: AbortSignal) => GridErrorCount | PromiseLike<GridErrorCount>) {
+    const deals: Deal[] = Array.from({ length: 100 }, (_, i) => ({ id: `T${i}`, csa: `C${i}`, curve: 'SOFR' }));
+    deals[90] = { id: 'T90', csa: 'C1', curve: 'FF' };
+    const rules = dealRules();
+    rules.evaluate(deals, dealColumns);
+    const source = GridSource.from(deals, { rowKey: deal => deal.id });
+    const inOrder = async (signal: AbortSignal): Promise<readonly Deal[]> =>
+        source.rows({ start: 0, count: defined(source.snapshot().totalCount, 'the count of the rows') }, signal);
+    let selection: GridSelection | undefined;
+    const options = {
+        columns: dealColumns, source, rowHeight: 24, viewportHeight: 300, viewportWidth: 600,
+        cellState: rules.cellState, cellMessage: rules.cellMessage, onSelectionChanged: (next: GridSelection) => { selection = next; },
+        findError: async (request: GridErrorStepRequest, signal: AbortSignal) => rules.findError(request, await inOrder(signal)),
+        countErrors: countErrors ?? (async (request: GridErrorCountRequest, signal: AbortSignal) => rules.countErrors(request, await inOrder(signal))),
+    };
+    const { root, view } = mount<Deal>(options);
+    return { root, view, rules, deals, source, options, selection: () => defined(selection, 'the Selection heard') };
+}
+const line = (root: HTMLElement): string | null => q(root, '.ex-error-count').textContent;
+
+describe('the Error Count (ADR-0381 section 3\'s note of 2026-11-01)', () => {
+    it('ED-39: every marked cell is counted, and those in rows the result leaves out or hidden columns are said as hidden', () => {
+        const rules = dealRules().column('Id', (_, text) => (text.startsWith('T') ? { kind: 'accept' } : { kind: 'flag', message: 'An id starts with T.' }));
+        const deals: Deal[] = [
+            { id: 'T1', csa: 'ABC', curve: 'SOFR' }, { id: 'T2', csa: 'ABC', curve: 'FF' }, { id: 'X3', csa: 'XYZ', curve: 'FF' },
+        ];
+        rules.evaluate(deals, dealColumns);
+        // Two Curve cells by the Breach, one Id cell by the column rule: cells, not Breaches.
+        expect(rules.countErrors(counted({}), deals)).toEqual({ count: 3, hidden: 0 });
+        // T2 filtered out: its Curve cell is still an error, and the step cannot reach it.
+        expect(rules.countErrors(counted({}), [defined(deals[0], 'T1'), defined(deals[2], 'X3')])).toEqual({ count: 3, hidden: 1 });
+        // The Curve column hidden: both of its marks are out of the step's reach.
+        expect(rules.countErrors(counted({ columns: ['Id', 'Csa'] }), deals)).toEqual({ count: 3, hidden: 2 });
+        expect(() => rules.countErrors(counted({}), [...deals, defined(deals[1], 'T2')])).toThrow(/twice/);
+        rules.evaluate([{ id: 'T1', csa: 'ABC', curve: 'SOFR' }], dealColumns);
+        expect(rules.countErrors(counted({}), [])).toEqual({ count: 0, hidden: 0 });
+    });
+
+    it('ED-39: the count stands in the status line, a Filter says the cells it hides apart, and the press steps as F8', async () => {
+        const { root, source, selection } = counting();
+        await painted();
+        expect(line(root)).toBe('Counting errors…');
+        await settle();
+        expect(line(root)).toBe('Errors: 2');
+        // Another order is another question: T90 filtered out is still an error, said as hidden, never left out.
+        source.setFilter({ columns: { Id: { clauses: [{ operator: 'notEquals', value: 'T90' }] } } });
+        await settle();
+        expect(line(root)).toBe('Errors: 2 (1 hidden)');
+        source.setFilter(undefined);
+        await settle();
+        click(root, 10, 5);
+        q(root, '.ex-error-count').click();
+        await settle();
+        expect(selection().focus).toEqual({ row: 1, column: 2 });
+    });
+
+    it('ED-39: a new judgement asks again, an earlier answer arriving late is dropped, and the line stands at zero', async () => {
+        const held: ((count: GridErrorCount) => void)[] = [];
+        const { root, view, rules, deals, options } = counting(() => new Promise(resolve => { held.push(resolve); }));
+        await painted();
+        await settle();
+        expect([held.length, root.getAttribute('data-ex-settled')]).toEqual([1, null]);
+        // Another counter alone, as one written inline is on every render, is not another question.
+        view.update({ ...options, countErrors: (request, signal) => options.countErrors(request, signal) });
+        await settle();
+        expect(held).toHaveLength(1);
+        // The trade moved back to SOFR: the ruleset hands new functions, which is another judgement.
+        deals[90] = { id: 'T90', csa: 'C1', curve: 'SOFR' };
+        rules.evaluate(deals, dealColumns);
+        view.update({ ...options, cellState: rules.cellState, cellMessage: rules.cellMessage });
+        await settle();
+        expect(held).toHaveLength(2);
+        defined(held[0], 'the first question')({ count: 2, hidden: 0 });
+        await settle();
+        expect(line(root)).toBe('Counting errors…');
+        defined(held[1], 'the second question')({ count: 0, hidden: 0 });
+        await settle();
+        expect([line(root), root.querySelector('.ex-status')?.contains(q(root, '.ex-error-count'))]).toEqual(['Errors: 0', true]);
+    });
+
+    it('ED-39: countErrors without findError is refused at mount, and an answer that is not a count is named', async () => {
+        expect(() => mount<Deal>({ columns: dealColumns, rows: [], rowHeight: 24, viewportHeight: 300, countErrors: () => ({ count: 0, hidden: 0 }) }))
+            .toThrow(/findError/);
+        const bad = counting(() => ({ count: 1, hidden: 2 }));
+        const failures: unknown[] = [];
+        const heard = (reason: unknown): void => { failures.push(reason); };
+        process.on('unhandledRejection', heard);
+        try {
+            await painted();
+            await settle();
+        } finally {
+            process.off('unhandledRejection', heard);
+        }
+        expect([failures.some(failure => failure instanceof TypeError && /hidden no more than count/.test(failure.message)), line(bad.root)])
+            .toEqual([true, 'Errors: not counted']);
     });
 });

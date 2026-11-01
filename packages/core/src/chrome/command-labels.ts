@@ -1,4 +1,5 @@
 import { gridCommandIds, gridLabelIds, reloadNoticeLabelIds } from './command-ids';
+import { errorCountWords } from './error-count-words';
 import { filterPanelWords } from './filter-panel-words';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
@@ -36,6 +37,7 @@ const words: ReadonlyMap<string, string> = new Map([
     ...markWords,
     ...selectionWords,
     ...summaryWords,
+    ...errorCountWords,
 ]);
 
 /**

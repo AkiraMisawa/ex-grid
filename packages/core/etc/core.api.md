@@ -392,6 +392,15 @@ export type EditVerdict = {
 export function engineFilterOf(filter: GridFilter | undefined, columnOf: (column: string) => FilteredColumn | undefined): GridFilter | undefined;
 
 // @public
+export const errorCountLabelIds: Readonly<{
+    readonly count: 'error-count';
+    readonly countHidden: 'error-count-hidden';
+    readonly pending: 'error-count-pending';
+    readonly failed: 'error-count-failed';
+    readonly step: 'error-count-step';
+}>;
+
+// @public
 export interface ExactDecimal {
     readonly mantissa: bigint;
     readonly scale: number;
@@ -946,6 +955,18 @@ export interface GridEditorRewrite {
 }
 
 // @public
+export interface GridErrorCount {
+    readonly count: number;
+    readonly hidden: number;
+}
+
+// @public
+export interface GridErrorCountRequest {
+    readonly columns: readonly string[];
+    readonly rowSequenceVersion: number;
+}
+
+// @public
 export interface GridErrorStepRequest {
     readonly backward: boolean;
     readonly columns: readonly string[];
@@ -1198,6 +1219,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
+    readonly countErrors?: (request: GridErrorCountRequest, signal: AbortSignal) => GridErrorCount | PromiseLike<GridErrorCount>;
     readonly cycleReference?: (text: string, start: number, end: number) => GridEditorRewrite | undefined;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly declaredKeys?: readonly string[];
@@ -1524,6 +1546,7 @@ export class GridRuleset<Row extends object> {
     get cellMessage(): (row: Row, column: GridColumn<Row>) => string | undefined;
     get cellState(): (row: Row, column: GridColumn<Row>) => CellState;
     column(column: string, rule: (row: Row, text: string) => EditVerdict): this;
+    countErrors(request: GridErrorCountRequest, rowsInOrder: readonly Row[]): GridErrorCount;
     evaluate(rows: Iterable<Row>, columns: readonly GridColumn<Row>[]): void;
     findError(request: GridErrorStepRequest, rowsInOrder: readonly Row[]): GridFindResult;
     row(rule: (row: Row) => Iterable<RuleViolation>): this;

@@ -60,7 +60,7 @@ export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridFillIntent } from './selection/fill-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
-export { GridRuleset, type Breach, type BreachCell, type GridErrorStepRequest, type RuleViolation } from './cells/grid-ruleset';
+export { GridRuleset, type Breach, type BreachCell, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest, type RuleViolation } from './cells/grid-ruleset';
 export { actionColumn, markColumn } from './dom/grid-column';
 export type {
     AutoColumnWidth, FixedColumnWidth, GridAction, GridActionEvent, GridColumn, GridColumnWidth, GridTemplate, GridTemplateCell,
@@ -89,6 +89,7 @@ export { applyQuery } from './query/query-engine';
 export { answeredSummary, declinedSummary, GridSummaryCells, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';
 export type { SelectionSummary, SelectionSummaryStatus, SummaryFigureShown } from './dom/selection-summary';
 export { summaryLabelIds } from './chrome/summary-words';
+export { errorCountLabelIds } from './chrome/error-count-words';
 export type { MarkRefusalReason, RowMarkHeaderState, RowMarks } from './rows/row-marks';
 export type { RowRange } from './viewport/row-range';
 export type { RowKeyOf } from './source/row-key';

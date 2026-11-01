@@ -1,6 +1,7 @@
 @using ExGrid.Cells
 @using ExGrid.Clipboard
 @using ExGrid.Columns
+@using ExGrid.Finding
 @using ExGrid.Selection
 @using ExGrid.Validation
 
@@ -11,7 +12,7 @@
     </ToolBarContent>
     <ChildContent>
         <ExGrid TRow="CurveTrade" Source="_source" Columns="_columns" PinnedColumnCount="1"
-                CellState="_rules.State" CellMessageOf="_rules.Message"
+                CellState="_rules.State" CellMessageOf="_rules.Message" OnFindError="_findError" OnCountErrors="_countErrors"
                 OnEdit="OnEdit" OnPaste="OnPaste" Chrome="_chrome"
                 ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
@@ -30,12 +31,19 @@
         new("Counterparty", ColumnType.Text, t => t.Counterparty, width: new(ColumnWidth.Fixed(140))),
         new("Curve", ColumnType.Text, t => t.Curve, header: "Discount curve", width: new(ColumnWidth.Fixed(140)), editable: true),
     ];
+    // Held in fields: a method group would be another delegate on every render (ADR-0003).
+    private readonly Func<GridErrorStepRequest, CancellationToken, Task<GridFindResult>> _findError;
+    private readonly Func<GridErrorCountRequest, CancellationToken, Task<GridErrorCount>> _countErrors;
     private string _message = "CSA ABC discounts on USD-SOFR. Move its trades to USD-FF one by one.";
 
     public CollectionRulesMud()
     {
         _source = GridSource.From(_trades);
         _rules.Evaluate(_trades, _columns);
+        // F8 and Shift+F8 step through the error cells in the order the grid shows, and the status line counts them,
+        // those a Filter hides said apart. An in-memory Source holds its whole result, in that order, as its Window.
+        _findError = (request, _) => Task.FromResult(_rules.FindError(request, _source.Window));
+        _countErrors = (request, _) => Task.FromResult(_rules.CountErrors(request, _source.Window));
     }
 
     private void OnEdit(GridEditIntent<CurveTrade> edit) => Apply([(edit.Row, edit.Value)]);

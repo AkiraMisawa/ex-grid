@@ -1300,6 +1300,10 @@
     justify-content: flex-end;
     white-space: nowrap;
 }
+/* The Error Count (ADR-0381 section 3's note of 2026-11-01): a button in the status line, pressed
+   to step to the next error, in the error colour while it counts any. */
+.ex-error-count { white-space: nowrap; }
+.ex-error-count-some { color: var(--ex-state-error-color, #b3261e); }
 .ex-summary-menu { display: flex; flex-direction: column; align-items: stretch; min-width: 12em; }
 .ex-summary-menu-item {
     font: inherit;

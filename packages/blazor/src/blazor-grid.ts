@@ -6,7 +6,7 @@
 
 import {
     createGrid, EditorCompletion, EditorHint, gridInputRoot, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
-    type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorStepRequest, type GridEditorReference,
+    type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest, type GridEditorReference,
     type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
     type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
@@ -52,6 +52,9 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly referenceMarks?: true;
     /** Whether the Consumer answers the error step, F8 and Shift+F8, which .NET is asked as it is taken (ADR-0381). */
     readonly findsErrors?: true;
+    /** Where the Consumer answers the Error Count, which .NET is asked as the status line paints (ADR-0381): the number
+     * of the Consumer's judgement, which moves when it hands another, so the count is asked again. */
+    readonly countsErrors?: number;
     /** Whether the Consumer answers completion, which .NET is asked as the editor's text or caret moves (ADR-0051). */
     readonly completesText?: true;
     /** Whether the Consumer adds commands to the Context Menu, which .NET is asked for as it opens (ADR-0421). */
@@ -376,7 +379,7 @@ export function attach(
     let pointedAt: GridPointedAt<BlazorRow> | undefined;
     const scripts = new ScriptHooks(functionOf, columns);
     const optionsNow = (): GridOptions<BlazorRow> => {
-        const options = gridOptions(wired, columns, source, heard, paint, findError, completeEditorText, slots, menus, metrics, scripts, asked);
+        const options = gridOptions(wired, columns, source, heard, paint, findError, countErrors, completeEditorText, slots, menus, metrics, scripts, asked);
         return pointedAt === undefined ? options : { ...options, pointedAt };
     };
 
@@ -425,6 +428,32 @@ export function attach(
             return { found: false };
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    // The Error Count, asked of the source the grid holds now (ADR-0381 section 3's note of 2026-11-01). One .NET answers
+    // as moved was asked under a source or an order it no longer holds: once what it sent meanwhile is taken in, the core
+    // holds the newer one and asks again, which lets this question go. Nothing is shown for it meanwhile.
+    const countErrorsAsked: CountErrorsOf = (request, signal) =>
+        asking(signal, async number => {
+            const askedOf = source;
+            const answer = await dotnet.invokeMethodAsync('CountErrors', number, askedOf.generation, request);
+            signal.throwIfAborted();
+            givenUp(answer);
+            const counted = errorCountOf(answer);
+            if (counted !== 'moved') return counted;
+            await gate.released();
+            signal.throwIfAborted();
+            if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+                throw new Error('Internal: .NET answered the Error Count as moved, and sent no other source or order.');
+            }
+            return new Promise<GridErrorCount>((_, reject) => {
+                signal.addEventListener('abort', () => { reject(new DOMException('The Error Count was asked again.', 'AbortError')); }, { once: true });
+            });
+        });
+    let countErrorsMade: { readonly judgement: number; readonly count: CountErrorsOf } | undefined;
+    // The same function while the judgement is, and another when it moves, which the core hears as another question.
+    const countErrors = (judgement: number): CountErrorsOf => {
+        if (countErrorsMade?.judgement !== judgement) countErrorsMade = { judgement, count: (request, signal) => countErrorsAsked(request, signal) };
+        return countErrorsMade.count;
+    };
     // Asked of .NET for the text and caret the core hands; the core drops an answer for text it no longer holds.
     const completeEditorText = latestOnly(async (text, caret) => completionOf(await dotnet.invokeMethodAsync('Complete', text, caret)));
     const menus = contextMenus(numbered, () => ({ generation: source.generation, columnsVersion: columns.version }));
@@ -732,6 +761,8 @@ function verdictOf(answer: unknown, column: string): EditVerdict {
 
 type FindErrorOf = (request: GridErrorStepRequest, signal: AbortSignal) => Promise<GridFindResult>;
 
+type CountErrorsOf = (request: GridErrorCountRequest, signal: AbortSignal) => Promise<GridErrorCount>;
+
 type CompleteEditorTextOf = (text: string, caret: number) => Promise<EditorCompletion | undefined>;
 
 /**
@@ -786,6 +817,19 @@ function findResultOf(answer: unknown): GridFindResult | 'moved' {
     if (found.found === false) return { found: false };
     if (found.found === true && typeof found.row === 'number' && typeof found.column === 'string') return { found: true, row: found.row, column: found.column };
     throw new TypeError(`Internal: .NET answered the error step with ${JSON.stringify(found)}.`);
+}
+
+/** .NET's answer to the Error Count, as `ExGrid.Components` writes it, or `moved` where .NET did not ask the Consumer,
+ * since what the count was asked under is gone there. A count .NET did not answer, its component gone or its
+ * `OnCountErrors` taken away meanwhile, is given up: nothing is shown for it. */
+function errorCountOf(answer: unknown): GridErrorCount | 'moved' {
+    if (answer === null) throw new DOMException('.NET gave the Error Count no answer: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the Error Count with something other than JSON text.');
+    const counted = parsed<{ readonly count?: unknown; readonly hidden?: unknown; readonly moved?: unknown; readonly withdrawn?: unknown }>(answer);
+    if (counted.withdrawn === true) throw new DOMException('The Consumer took OnCountErrors away as the count was asked.', 'AbortError');
+    if (counted.moved === true) return 'moved';
+    if (typeof counted.count === 'number' && typeof counted.hidden === 'number') return { count: counted.count, hidden: counted.hidden };
+    throw new TypeError(`Internal: .NET answered the Error Count with ${JSON.stringify(counted)}.`);
 }
 
 /** The Consumer's Context Menu commands, and their words, as the core takes them (ADR-0421). */
@@ -908,7 +952,7 @@ const noAppearance: CellAppearance = Object.freeze({});
 
 function gridOptions(
     wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint, findError: FindErrorOf,
-    completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics, scripts: ScriptHooks, asked: Asked,
+    countErrors: (judgement: number) => CountErrorsOf, completeEditorText: CompleteEditorTextOf, slots: RazorSlots, menus: ContextMenus, metrics: WireMetrics, scripts: ScriptHooks, asked: Asked,
 ): GridOptions<BlazorRow> {
     const cellMetrics = metrics.cellMetrics(wire.cellMetrics);
     const presentationDefaults = metrics.presentationDefaults(wire.presentationDefaults);
@@ -943,6 +987,7 @@ function gridOptions(
         ...(hears.has('summaryFiguresChanged') ? { onSummaryFiguresChanged: asked.onSummaryFiguresChanged } : {}),
         ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(wire.findsErrors === true ? { findError } : {}),
+        ...(wire.countsErrors === undefined ? {} : { countErrors: countErrors(wire.countsErrors) }),
         ...(wire.completesText === true ? { completeEditorText } : {}),
         ...(wire.referenceMarks === true ? { findMatch: referenceMark } : {}),
         ...scripts.options(wire.scripts),

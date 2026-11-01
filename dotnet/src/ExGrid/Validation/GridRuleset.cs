@@ -42,6 +42,30 @@ public sealed record GridErrorStepRequest
 }
 
 /// <summary>
+/// The question the Error Count answers (ADR-0381 section 3's note of 2026-11-01), asked of the Consumer as
+/// the error step is: the grid knows only the cells it paints, so how many cells wear Error across the
+/// collection is the Consumer's.
+/// </summary>
+public sealed record GridErrorCountRequest
+{
+    /// <summary>The visible columns' names in the grid's current order: a marked cell in another column is one
+    /// the step cannot reach.</summary>
+    public required IReadOnlyList<string> Columns { get; init; }
+
+    /// <summary>The order the result was read in (ADR-0011). An answer under another version is dropped.</summary>
+    public required int RowSequenceVersion { get; init; }
+}
+
+/// <summary>
+/// The Error Count (ADR-0381 section 3's note of 2026-11-01): every cell that wears Error, and how many of
+/// them the error step cannot reach, in a row the Filter hides or a column that is hidden. The status line
+/// says both, so a count never reads less than the save will refuse.
+/// </summary>
+/// <param name="Count">Every error cell, those the step cannot reach included.</param>
+/// <param name="Hidden">Of <paramref name="Count"/>, the cells the step cannot reach.</param>
+public sealed record GridErrorCount(int Count, int Hidden);
+
+/// <summary>
 /// The bundled ruleset (ADR-0034). <b>Ownership and driving are the Consumer's; the
 /// implementation ships with the library</b> — the same arrangement as the undo stack
 /// (ADR-0007) and <c>GridSource</c> (ADR-0001). The grid never references this class.
@@ -71,6 +95,7 @@ public sealed class GridRuleset<TRow> where TRow : class
     // instance spares the Consumer's key function a call per cell per render.
     private Dictionary<TRow, Dictionary<string, string>?> _byInstance = new(ReferenceEqualityComparer.Instance);
     private IReadOnlyList<Breach> _breaches = [];
+    private int _errorCells;
 
     /// <summary>A ruleset keyed by row instance, holding column and row rules (ADR-0034).</summary>
     public GridRuleset()
@@ -230,6 +255,7 @@ public sealed class GridRuleset<TRow> where TRow : class
         for (var i = 0; i < all.Count; i++)
             byInstance[all[i]] = next.GetValueOrDefault(keyed[i]);
         _violations = next;
+        _errorCells = next.Values.Sum(found => found.Count);
         _byInstance = byInstance;
         _breaches = breaches;
         // New instances, deliberately: their identity is what tells the rows that what
@@ -299,6 +325,33 @@ public sealed class GridRuleset<TRow> where TRow : class
             }
         }
         return found;
+    }
+
+    /// <summary>
+    /// The Error Count (ADR-0381 section 3's note of 2026-11-01), for a grid's <c>OnCountErrors</c>: every cell
+    /// the last <see cref="Evaluate"/> marked, and how many of them the error step cannot reach through
+    /// <paramref name="rowsInOrder"/>, the result in the order the grid shows it, and the request's visible
+    /// columns. A marked row the Filter hides, or a marked column that is hidden, is counted and said as hidden,
+    /// never left out.
+    /// </summary>
+    public GridErrorCount CountErrors(GridErrorCountRequest request, IReadOnlyList<TRow> rowsInOrder)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(rowsInOrder);
+        var columns = request.Columns.ToHashSet(StringComparer.Ordinal);
+        var reachable = 0;
+        foreach (var row in rowsInOrder)
+        {
+            if (MarksOf(row) is not { } marked)
+                continue;
+            reachable += marked.Keys.Count(columns.Contains);
+        }
+        // More reachable cells than were marked means a row handed twice, or rows the ruleset never judged: not the
+        // rows Evaluate was handed, and a count read in them would be another's.
+        if (reachable > _errorCells)
+            throw new ArgumentException($"The Error Count found {reachable} marked cells in the {rowsInOrder.Count} rows it was handed, more than the "
+                + $"{_errorCells} the last Evaluate marked: rowsInOrder holds a row twice (ADR-0381).", nameof(rowsInOrder));
+        return new GridErrorCount(_errorCells, _errorCells - reachable);
     }
 
     // The Focus as an ordinal of the walk. A Focus outside the rows handed over means they are not the rows the
