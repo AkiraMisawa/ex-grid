@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/01/2026 - 01:22:39 |
+| Generated on: | 11/01/2026 - 10:42:31 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1106 |
+| Classes: | 1108 |
 | Files: | 494 |
-| **Line coverage:** | 86.9% (60292 of 69317) |
-| Covered lines: | 60292 |
-| Uncovered lines: | 9025 |
-| Coverable lines: | 69317 |
-| Total lines: | 105612 |
-| **Branch coverage:** | 82.9% (36377 of 43873) |
-| Covered branches: | 36377 |
-| Total branches: | 43873 |
+| **Line coverage:** | 86.9% (60348 of 69380) |
+| Covered lines: | 60348 |
+| Uncovered lines: | 9032 |
+| Coverable lines: | 69380 |
+| Total lines: | 105717 |
+| **Branch coverage:** | 82.9% (36404 of 43911) |
+| Covered branches: | 36404 |
+| Total branches: | 43911 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -345,9 +345,9 @@
 |ExGrid.Components.ExGrid.Heard<TRow>|100%||
 |ExGrid.Components.ExGrid.Turn<TRow>|100%||
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow, T>|71.3%|70%|
-|ExGrid.Components.ExGrid<TRow>|71.3%|70%|
-|ExGrid.Components.ExGrid<TRow>|84.2%|76.6%|
+|ExGrid.Components.ExGrid<TRow, T>|71.4%|69.6%|
+|ExGrid.Components.ExGrid<TRow>|71.4%|69.6%|
+|ExGrid.Components.ExGrid<TRow>|84.4%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
 |ExGrid.Components.GridRefusal.Action<TRow>|0%||
@@ -370,8 +370,8 @@
 |ExGrid.Components.RowPaint<TRow>|88.3%|84.7%|
 |ExGrid.Components.RowSetStamp|100%||
 |ExGrid.Components.RowsRead|100%|100%|
-|ExGrid.Components.ScriptBridge<TRow>|61.4%|12.5%|
-|ExGrid.Components.ScriptBridge<TRow>|88.5%|50%|
+|ExGrid.Components.ScriptBridge<TRow>|61%|12.5%|
+|ExGrid.Components.ScriptBridge<TRow>|88.8%|50%|
 |ExGrid.Components.ScriptColumns|79.1%|75%|
 |ExGrid.Components.ScriptFunctionJson|100%||
 |ExGrid.Components.ScriptJson|100%|91.6%|
@@ -479,9 +479,11 @@
 |ExGrid.Summarizing.SummaryFigureOrder.Entry|100%||
 |ExGrid.Validation.Breach|100%||
 |ExGrid.Validation.BreachCell|100%||
+|ExGrid.Validation.GridErrorCount|100%||
+|ExGrid.Validation.GridErrorCountRequest|66.6%||
 |ExGrid.Validation.GridErrorStepRequest|80%||
-|ExGrid.Validation.GridRuleset<TRow>|33.3%||
-|ExGrid.Validation.GridRuleset<TRow>|98.8%|88.7%|
+|ExGrid.Validation.GridRuleset<TRow>|50%||
+|ExGrid.Validation.GridRuleset<TRow>|98.3%|88.6%|
 |ExGrid.Validation.RuleViolation|100%||
 |ExGrid.ViewportGeometry|100%|97.9%|
 |ExGrid.ViewportSize|90.9%|50%|
