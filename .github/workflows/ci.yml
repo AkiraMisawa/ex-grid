@@ -550,10 +550,10 @@ jobs:
         run: |
           ./windows/display-scale.ps1 -Set 100
           $env:EXGRID_HOSTING = 'react'
-          npx playwright test windows-desktop.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "SH-4|SH-5|FN-12e" --project=chrome --project=msedge
+          npx playwright test windows-desktop.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "ADR-0450|FN-12e" --project=chrome --project=msedge
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $env:EXGRID_HOSTING = 'wasm'
-          npx playwright test windows-desktop.spec.mjs --grep "SH-5" --project=chrome --project=msedge
+          npx playwright test windows-desktop.spec.mjs --grep "SH-52" --project=chrome --project=msedge
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
       - name: At 125%, VZ-14
@@ -595,7 +595,7 @@ jobs:
     timeout-minutes: 45
     env:
       EXGRID_HOSTS: ${{ github.workspace }}/hosts
-      KB3: 'ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13|on an Apple platform'
+      KB3: 'ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform'
     steps:
       - uses: actions/checkout@v7
 

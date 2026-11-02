@@ -32,9 +32,9 @@ public static class OsKeys {
         { "pageup", 0x21 }, { "pagedown", 0x22 }, { "imeon", 0x16 }, { "imeoff", 0x1A },
         { "f1", 0x70 }, { "f2", 0x71 }, { "f3", 0x72 }, { "f4", 0x73 }, { "f5", 0x74 }, { "f6", 0x75 },
         { "f7", 0x76 }, { "f8", 0x77 }, { "f9", 0x78 }, { "f10", 0x79 }, { "f11", 0x7A }, { "f12", 0x7B },
-        // F24: a key nothing binds, which the browser hands the page; os-input.mjs sends it last to
-        // learn that every key before it was the page's to take.
-        { "f24", 0x87 },
+        // F23 and F24: keys nothing binds, which the browser hands the page; os-input.mjs sends one last
+        // to learn where every key before it went.
+        { "f23", 0x86 }, { "f24", 0x87 },
     };
     // The keys Windows marks extended: the arrows and the block above them.
     static readonly HashSet<ushort> Extended = new HashSet<ushort> { 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2E };

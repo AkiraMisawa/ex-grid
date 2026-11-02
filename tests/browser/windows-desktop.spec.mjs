@@ -2,7 +2,7 @@ import { test, expect, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { decodePng, sameColour } from './pixels.mjs';
-import { onWindowsDesktop, osKeys } from './os-input.mjs';
+import { onWindowsDesktop, osKeys, osKeysLandOn } from './os-input.mjs';
 
 // The rows the Definition of Done once checked by hand on a Windows desktop, run by CI's Windows
 // runner instead (ADR-0450): the browser's own keys, and a real browser zoom over a real display
@@ -25,36 +25,72 @@ const font = (page) => page.locator('#sheet-focus-font');
 const toolbar = (page) => page.locator('.ex-sheet-toolbar');
 const keyTips = (page) => toolbar(page).locator('.ex-sheet-keytip');
 
-// SH-42: Ctrl+1 to Ctrl+5 reach /sheet before the browser's tab switching. Ctrl+N switches to the
-// window's Nth tab unless the page takes the key, so the Sheet's tab is never the one a key names:
-// the first sheet is tab 1 and takes Ctrl+2 to Ctrl+5, the second is tab 2 and takes Ctrl+1. A key the
-// browser took leaves its tab, and F24 after it goes to the tab it switched to (os-input.mjs).
-test('SH-42/ADR-0071/ADR-0450: Ctrl+1 to Ctrl+5 through the OS reach /sheet before the browser switches tabs @behaviour', async ({ page, context }) => {
-    await openSheet(page);
-    const second = await context.newPage();
-    await openSheet(second);
-    for (const n of [3, 4, 5]) {
-        const other = await context.newPage();
-        await other.setContent(`<title>tab ${n}</title><p>tab ${n}</p>`);
+// The window's tabs, which Ctrl+1 to Ctrl+8 name by place. With the OS drawing the window, each test of
+// this file opens pages of its own, and they stay open after it; the window's first tab is the page the
+// harness opened for the file, which no test here uses. A test that counts tabs closes the others first,
+// and checks the places it counts on. Playwright lists a context's pages in the order it opened them,
+// which is the order of the window's tabs: the control below fails if it is not.
+async function onlyTabs(context, ...keep) {
+    const [harness] = context.pages();
+    for (const other of context.pages().filter((p) => p !== harness && !keep.includes(p))) {
+        await other.close();
     }
+}
+const tabOf = (context, page) => context.pages().indexOf(page) + 1;
 
-    const grid = sheet(page);
+// The method's own control: keys sent through the OS meet the browser before the page, so a test that
+// passes here would fail if the page let the browser have them. On two plain pages that take no key, the
+// window's second and third tabs, Ctrl+2 from the third switches to the second, which F24 then reaches;
+// and Alt released alone puts the keyboard in the browser's menu, which takes F23 until Escape gives it
+// back. Without this, every test below could pass on keys that reached the page alone, as Playwright's do.
+test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the next key @behaviour', async ({ context }) => {
+    await onlyTabs(context);
+    const second = await context.newPage();
+    await second.setContent('<title>second tab</title><p>second</p>');
+    const third = await context.newPage();
+    await third.setContent('<title>third tab</title><p>third</p>');
+    expect([tabOf(context, second), tabOf(context, third)]).toEqual([2, 3]);
+
+    const switched = await osKeysLandOn(third, second, 'ctrl+2', 'f24');
+    expect(switched.from, 'the third tab saw Ctrl+2 and left it to the browser').toEqual(['Control', '2']);
+    expect(switched.to, 'F24 went to the tab Ctrl+2 switched to').toEqual(['F24']);
+
+    const menu = await osKeysLandOn(second, second, 'alt', 'f23', 'escape', 'f24');
+    expect(menu.to, 'the page saw Alt, never F23, which the browser\'s menu took, then F24 once Escape gave the keyboard back').toEqual(['Alt', 'F24']);
+});
+
+// SH-42: Ctrl+1 to Ctrl+5 reach /sheet before the browser's tab switching. Ctrl+N switches to the
+// window's Nth tab unless the page takes the key, so the Sheet's tab is never the one a key names: one
+// sheet is tab 2 and takes Ctrl+1, the other is tab 6, after three plain tabs, and takes Ctrl+2 to Ctrl+5.
+// A key the browser took leaves its tab, and F24 after it goes to the tab it switched to (os-input.mjs).
+test('SH-42/ADR-0071/ADR-0450: Ctrl+1 to Ctrl+5 through the OS reach /sheet before the browser switches tabs @behaviour', async ({ page, context }) => {
+    await onlyTabs(context, page);
+    await openSheet(page);
+    for (const n of [3, 4, 5]) {
+        const plain = await context.newPage();
+        await plain.setContent(`<title>tab ${n}</title><p>tab ${n}</p>`);
+    }
+    const sixth = await context.newPage();
+    await openSheet(sixth);
+    expect([tabOf(context, page), tabOf(context, sixth)]).toEqual([2, 6]);
+
+    const grid = sheet(sixth);
     await pressCell(grid, 'A2');
-    await expect(font(page)).toHaveText('regular');
+    await expect(font(sixth)).toHaveText('regular');
     for (const [digit, emphasis] of [['2', 'bold'], ['3', 'italic'], ['4', 'underline'], ['5', 'strikethrough']]) {
-        await osKeys(page, `ctrl+${digit}`);
-        await expect(font(page), `Ctrl+${digit} sets ${emphasis}`).toHaveText(emphasis);
-        await osKeys(page, `ctrl+${digit}`);
-        await expect(font(page), `Ctrl+${digit} again takes ${emphasis} off`).toHaveText('regular');
+        await osKeys(sixth, `ctrl+${digit}`);
+        await expect(font(sixth), `Ctrl+${digit} sets ${emphasis}`).toHaveText(emphasis);
+        await osKeys(sixth, `ctrl+${digit}`);
+        await expect(font(sixth), `Ctrl+${digit} again takes ${emphasis} off`).toHaveText('regular');
     }
     await expect(cell(grid, 'A2')).toHaveText('Apples');
     await expectKeyboardOn(grid);
 
-    const other = sheet(second);
+    const other = sheet(page);
     await pressCell(other, 'C2');
-    await osKeys(second, 'ctrl+1');
+    await osKeys(page, 'ctrl+1');
     await expect(other.locator('.ex-popover-consumer'), 'Ctrl+1 opens Format Cells').toBeVisible();
-    await osKeys(second, 'escape');
+    await osKeys(page, 'escape');
     await expect(other.locator('.ex-popover-consumer')).toHaveCount(0);
     await expectKeyboardOn(other);
 });
@@ -125,7 +161,11 @@ for (const chrome of ['builtin', 'mud']) {
 /** The grid's Device Pixel as its root's inline token says it, and the page's devicePixelRatio. */
 function toldScale(grid) {
     return grid.evaluate((root) => {
-        const told = /--ex-dp:\s*([0-9.]+)/.exec(root.getAttribute('style') ?? '');
+        const style = root.getAttribute('style');
+        if (style === null) {
+            throw new Error('The grid root has no inline style, where its Grid Metrics are emitted (ADR-0028)');
+        }
+        const told = /--ex-dp:\s*([0-9.]+)/.exec(style);
         return { dpr: devicePixelRatio, dp: told ? Number(told[1]) : null };
     });
 }

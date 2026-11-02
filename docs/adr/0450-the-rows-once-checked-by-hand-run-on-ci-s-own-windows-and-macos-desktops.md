@@ -41,10 +41,12 @@ there, which is all KB-3 and FN-12e on macOS ask of a Mac.
 
 ### The rows CI runs
 
-CI's long run runs two jobs on the hosted desktops (`.github/workflows/ci.yml`): the weekly schedule, a
-dispatch that asks for them, and the long run `release.yml` calls for a release candidate and for a
-version without a suffix (ADR-0205). A red job fails that call, so each row gates every release candidate
-and every version without a suffix, at its own commit.
+Two jobs run on the hosted desktops (`.github/workflows/ci.yml`), `windows-desktop` and `macos-desktop`.
+They run in the long run: weekly, on a dispatch that asks for them, and in the long run `release.yml` calls
+for a release candidate and for a version without a suffix (ADR-0205). A red job fails that call, so each
+row gates every release candidate and every version without a suffix, at its own commit. They also run on a
+pull request that changes their own machinery (`os-input.mjs`, `windows/`, `windows-desktop.spec.mjs`,
+`ci.yml`), so a change to how they send keys is judged before it merges.
 
 | Row | Job | What runs |
 |---|---|---|
@@ -64,10 +66,17 @@ A key the browser took for itself left F24 to the tab it switched to, or to the 
 wait fails naming the chords. This is the reading ADR-0220 asks for: the result does not depend on when
 the test looks, because F24 reaches the page only after every key before it has been handled.
 
+**The method is held by a negative control.** `windows-desktop.spec.mjs`'s first test sends keys the
+browser is known to take, on plain pages that prevent nothing: Ctrl+2 switches to the second tab, which sees
+only the sentinel, and Alt released alone opens the browser's menu, so the next key is the menu's and the
+page sees Alt and the closing sentinel only. Were the keys reaching the page first, as Playwright's do, that
+test would fail, so a pass of the rows above is not a pass that would have come anyway.
+
 **A row CI runs leaves the record index.** Its row goes from the Definition of Done's Step 4 table and from
 `verification/by-hand.json`, so the release check no longer asks for a record of it. What held it, a
 record whose paths have not changed, is replaced by the run itself at the commit being released, which is
-stronger: the record held while the paths it named were unchanged, and the run holds whatever changed.
+stronger: the record held while the paths it named were unchanged, and the run holds whatever changed. FN-12e and KB-3 on macOS, made Known limitations of `0.2.0` on 2026-10-25 because no Mac would run
+them, are run, and are no longer Known limitations of it.
 
 ### What stays by hand, and why
 
@@ -75,8 +84,11 @@ stronger: the record held while the paths it named were unchanged, and the run h
   take about half an hour to add). Whether a composition it starts from keys sent through the OS reaches
   Chrome and Edge as a person's does is the next measurement. Until it is made, ED-30 stays by hand, and
   this ADR is amended when it is.
-- **VZ-18, the remote-isolation PC.** Its check is about one PC, where the white Viewport was seen, and no
-  runner reaches it. It stays a Known limitation where the Definition of Done says so.
+- **VZ-18, the remote-isolation PC: withdrawn, not kept by hand.** The user answered the question the
+  Definition of Done's §21 held open since 2026-10-09: what that PC showed was its remote browser isolation
+  mirror, not Citrix, and the user asked that it no longer be tested. Its check by hand leaves the
+  Definition of Done; VZ-18's mechanism stays held by `virtualisation.spec.mjs`, which still gates, and the
+  repaint stays, harmless elsewhere.
 - **WR-10, the Wrappers' MudBlazor floor run.** It runs nothing a hosted Linux runner cannot. Moving it
   into CI is a change of its own, not made here.
 

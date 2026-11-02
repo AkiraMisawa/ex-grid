@@ -18,8 +18,13 @@ public partial class RepositoryTests
     /// person makes once and its record carries forward (ADR-0205's notes of 2026-10-12).
     /// </summary>
     // §21.11's screen-reader check left the rows on 2026-10-13: no screen reader is run to verify a
-    // release (ADR-0033, ADR-0208's note of that date).
-    private static readonly string[] IndexedRows = ["VZ-14", "VZ-16", "FN-12e", "ED-30", "SH-42", "SH-51", "SH-52", "KB-3", "VZ-18", "WR-10"];
+    // release (ADR-0033, ADR-0208's note of that date). VZ-14, VZ-16, FN-12e, SH-42, SH-51, SH-52 and
+    // KB-3 on macOS left them on 2026-11-02, run by CI's own desktops at the commit being released, and
+    // VZ-18's check on the remote-isolation PC was withdrawn the same day (ADR-0450).
+    private static readonly string[] IndexedRows = ["ED-30", "WR-10"];
+
+    /// <summary>The rows CI's Windows and macOS desktop jobs run in place of a record (ADR-0450).</summary>
+    private static readonly string[] RunOnCiDesktops = ["VZ-14", "VZ-16", "FN-12e", "SH-42", "SH-51", "SH-52", "KB-3"];
 
     [Fact] // ADR-0208: the record index and the Definition of Done's table cannot drift
     public void The_record_index_and_the_table_name_the_same_rows_and_paths()
@@ -44,17 +49,11 @@ public partial class RepositoryTests
         Assert.Equal(IndexedRows.Order(StringComparer.Ordinal), index.Select(r => r.Row).Distinct().Order(StringComparer.Ordinal));
     }
 
-    [Fact] // ADR-0208 (2026-10-12): FN-12e is a Windows row and a macOS row, and WR-10 reads every file below each Wrapper and the demo pages
-    public void FN_12e_is_two_rows_and_WR_10_names_the_wrappers_and_the_demo_pages()
+    [Fact] // ADR-0208 (2026-10-12): WR-10 reads every file below each Wrapper and the demo pages
+    public void WR_10_names_the_wrappers_and_the_demo_pages()
     {
         var index = ByHand.ReadIndex(Tree, new Report())!;
 
-        Assert.Equal(["Windows", "macOS"], index.Where(r => r.Row == "FN-12e").Select(r => r.Where));
-        Assert.All(index.Where(r => r.Row == "FN-12e"), r =>
-        {
-            Assert.Contains("dotnet/src/ExGrid.MudBlazor/MudExGridPresentation.cs", r.Paths);
-            Assert.Contains("dotnet/src/ExGrid.MudBlazor/RobotoGlyphTable.cs", r.Paths);
-        });
         var wr10 = Assert.Single(index, r => r.Row == "WR-10");
         Assert.Equal([":(glob)dotnet/src/*.MudBlazor/**", "dotnet/samples/ExGrid.DemoPages/"], wr10.Paths);
         var wrappers = Tree.Matches(wr10.Paths[0]);
@@ -81,7 +80,7 @@ public partial class RepositoryTests
 
         Assert.All(index.Where(r => r.Record is not null), r => Assert.Equal(ByHand.TagFor(r.Record!.Path), r.Record!.Tag));
         // Not vacuous: a row with a record is read, whichever run made it last.
-        Assert.StartsWith("verified/", Assert.Single(index, r => r.Row == "SH-42").Record!.Tag);
+        Assert.StartsWith("verified/", Assert.Single(index, r => r.Row == "ED-30").Record!.Tag);
     }
 
     [Fact] // ADR-0208: a path that names nothing is a list nobody reviewed when its code moved
@@ -199,28 +198,23 @@ public partial class RepositoryTests
         Assert.All(Skips.Allowed, a => Assert.Contains(a.Project, projects));
     }
 
-    [Fact] // ADR-0208 (decided with the user 2026-10-25): VZ-18, and FN-12e and KB-3 on macOS, are Known limitations of 0.2.0 in the index and the table, with no record
-    public void VZ_18_and_FN_12e_and_KB_3_on_macOS_are_known_limitations_of_0_2_0()
+    [Fact] // ADR-0450 (decided with the user 2026-11-02): the rows CI's desktops run, and VZ-18 withdrawn, are neither indexed nor Known limitations
+    public void The_rows_CI_s_desktops_run_are_out_of_the_index_and_none_is_a_known_limitation()
     {
         var report = new Report();
         var index = ByHand.ReadIndex(Tree, report)!;
         var table = ByHandTable.Read(Tree, report)!;
 
         Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
-        var vz18 = Assert.Single(index, r => r.Row == "VZ-18");
-        Assert.Null(vz18.Record);
-        Assert.Equal(new KnownLimitation("0.2.0", "2026-10-25",
-            "VZ-18, the check on the remote-isolation PC, is a Known limitation of 0.2.0 as it was of 0.1.0 (2026-10-12). It is not run for it."), vz18.Limitation);
-        foreach (var row in new[] { "FN-12e", "KB-3" })
-        {
-            var mac = Assert.Single(index, r => r.Row == row && r.Where == "macOS");
-            Assert.Null(mac.Record);
-            Assert.Equal(new KnownLimitation("0.2.0", "2026-10-25",
-                $"{row} on macOS is a Known limitation of 0.2.0. It is not run for it, and its record at 0.1.0-rc.3's commit, which no longer holds, is not carried."), mac.Limitation);
-            Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == row && r.Where == "macOS").KnownLimitation);
-        }
-        Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == "VZ-18").KnownLimitation);
-        Assert.All(index.Where(r => r.Row != "VZ-18" && !(r.Where == "macOS" && r.Row is "FN-12e" or "KB-3")), r => Assert.Null(r.Limitation));
+        Assert.DoesNotContain(index, r => RunOnCiDesktops.Contains(r.Row) || r.Row == "VZ-18");
+        Assert.DoesNotContain(table.Rows, r => RunOnCiDesktops.Contains(r.Row) || r.Row == "VZ-18");
+        Assert.All(index, r => Assert.Null(r.Limitation));
+        Assert.All(table.Rows, r => Assert.Null(r.KnownLimitation));
+        // What runs them instead: both jobs, in the long run release.yml calls for a release candidate and a stable version.
+        var ci = Tree.ReadText(".github/workflows/ci.yml")!;
+        Assert.Contains("  windows-desktop:\n", ci);
+        Assert.Contains("  macos-desktop:\n", ci);
+        Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", Tree.ReadText(".github/workflows/release.yml")!);
     }
 
     // Every .cs file of every test project but this one, whose own tests write the patterns as text.

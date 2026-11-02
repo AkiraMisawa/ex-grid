@@ -46,14 +46,10 @@ async function ask(command) {
 let calls = 0;
 
 /**
- * Brings the page's tab and window to the front, then sends each chord ('ctrl+1', 'alt', 'f10', 'h')
- * through the OS input queue, all in one SendInput call: the keys of a person typing at machine speed.
- * Then F24, which nothing binds, and waits until the page has seen it: the keys before it have all
- * reached the browser by then, and each one the browser took for itself — a tab switched to, its menu
- * opened — left F24 to another tab or to the menu, so the wait fails naming the chords. Answers the
- * keys the page saw, by `key`, before F24.
+ * Starts recording the keys `page` sees, by `key`, in the capture phase on its window, before any of
+ * the page's own listeners. Answers a function that reads them.
  */
-export async function osKeys(page, ...chords) {
+async function recordKeys(page) {
     const name = `exOsKeys${++calls}`;
     await alterPage(page, (record) => {
         const seen = [];
@@ -65,21 +61,45 @@ export async function osKeys(page, ...chords) {
             delete window[record];
         };
     }, name);
-    await page.bringToFront();
-    const title = await page.title();
+    return () => page.evaluate((record) => window[record], name);
+}
+
+/**
+ * Brings `from`'s tab and window to the front, refusing when the window in front is still another's,
+ * and sends each chord through the OS input queue, all in one SendInput call. Then waits until `to` has
+ * seen the last key: every key before it has reached the browser by then. Answers the keys each page
+ * saw, by `key`.
+ */
+export async function osKeysLandOn(from, to, ...chords) {
+    const sentinel = chords.at(-1);
+    if (sentinel === undefined || !/^f\d+$/i.test(sentinel)) {
+        throw new Error(`osKeysLandOn ends on an F key nothing binds, so where it lands is read; it was given ${chords.join(', ')}`);
+    }
+    const last = sentinel.toUpperCase();
+    const seenFrom = await recordKeys(from);
+    const seenTo = to === from ? seenFrom : await recordKeys(to);
+    await from.bringToFront();
+    const title = await from.title();
     const front = await ask('foreground');
     if (!front.startsWith(title)) {
         throw new Error(`The window in front is "${front}", not the page's "${title}": keys sent now would go there.`);
     }
-    await ask(`keys ${[...chords, 'f24'].join(' ')}`);
-    await expect.poll(() => page.evaluate((record) => window[record].includes('F24'), name), {
-        message: `${chords.join(', ')} then F24, sent through the OS: F24 never reached the page, so the browser took one of the keys before it`,
+    await ask(`keys ${chords.join(' ')}`);
+    await expect.poll(async () => (await seenTo()).includes(last), {
+        message: `${chords.join(', ')}, sent through the OS: ${last} never reached ${to === from ? 'the page' : 'the other page'}, so a key before it went elsewhere`,
     }).toBe(true);
-    const seen = await page.evaluate((record) => window[record], name);
-    return seen.slice(0, seen.indexOf('F24'));
+    return { from: await seenFrom(), to: await seenTo() };
 }
 
-/** The title of the window in front: the browser's names its tab in front, so it says which tab that is. */
-export function foregroundTitle() {
-    return ask('foreground');
+/**
+ * Brings the page's tab and window to the front, then sends each chord ('ctrl+1', 'alt', 'f10', 'h')
+ * through the OS input queue, all in one SendInput call: the keys of a person typing at machine speed.
+ * Then F24, which nothing binds, and waits until the page has seen it: the keys before it have all
+ * reached the browser by then, and each one the browser took for itself — a tab switched to, its menu
+ * opened — left F24 to another tab or to the menu, so the wait fails naming the chords. Answers the
+ * keys the page saw, by `key`, before F24.
+ */
+export async function osKeys(page, ...chords) {
+    const { from: seen } = await osKeysLandOn(page, page, ...chords, 'f24');
+    return seen.slice(0, seen.indexOf('F24'));
 }
