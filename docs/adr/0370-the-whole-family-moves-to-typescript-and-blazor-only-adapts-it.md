@@ -698,6 +698,9 @@ file is written where today's layout puts it.
   tools beside the packages they bundle, and `"private": true` already keeps them off npm; so `packages/`
   holds what the workspace builds as a package, and what npm publishes is every member not marked private.
   Moving them beside their C# was the alternative, which puts a workspace member inside `dotnet/`.
+  *(2026-11-02, decided with the user: this stands. A folder of their own, `packages-internal/`, was the
+  other alternative, which would let a folder's name say what npm publishes at the price of a second
+  top-level folder named in the workspace, the lint and the API check.)*
 - **Every by-hand row's record lapses.** A record holds while its paths are unchanged (ADR-0208), and every
   path moved, so the release workflow refuses a version without a suffix, and a release candidate, until
   the rows are run again. That is the rule working: nothing checks that a moved file is the same file.
