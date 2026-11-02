@@ -204,12 +204,42 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: cancelling over the report clears the removal indication without removing (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
             await open(page, chrome);
+            // The drag here has failed to start on CI's Server host after #506 and #508, never locally (Hunt of
+            // 2026-11-02, mud on Chrome, once in ten): a failure says what stood at the press and what the page heard.
+            await alterPage(page, () => {
+                const name = (element) => (element instanceof Element
+                    ? `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}[${element.getAttribute('aria-label') ?? ''}]`
+                    : String(element));
+                const journal = [];
+                window.exDragJournal = journal;
+                const heard = (event) => {
+                    journal.push(`${Math.round(performance.now())} ${event.type} ${name(event.target)} at (${event.clientX}, ${event.clientY})`
+                        + `${event.defaultPrevented ? ' prevented' : ''}`);
+                };
+                const types = ['pointerdown', 'mousedown', 'dragstart', 'dragend', 'pointercancel', 'drop'];
+                for (const type of types) document.addEventListener(type, heard, true);
+                return () => {
+                    for (const type of types) document.removeEventListener(type, heard, true);
+                    delete window.exDragJournal;
+                };
+            });
             const from = await entry(page, 'Desk').boundingBox();
             const to = await report(page).boundingBox();
-            await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+            const press = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+            const under = await page.evaluate(({ x, y }) => {
+                const element = document.elementFromPoint(x, y);
+                return element === null ? 'nothing' : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`;
+            }, press);
+            await page.mouse.move(press.x, press.y);
             await page.mouse.down();
             await page.mouse.move(to.x + 80, to.y + 60, { steps: 10 });
-            await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+            try {
+                await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+            } catch (error) {
+                const heard = await page.evaluate(() => window.exDragJournal);
+                throw new Error(`No removal indication over the report: pressed at (${press.x}, ${press.y}) on ${under}; `
+                    + `heard ${JSON.stringify(heard)}`, { cause: error });
+            }
             await page.keyboard.press('Escape');
             await page.mouse.up();
             await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveCount(0);
