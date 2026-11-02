@@ -657,6 +657,16 @@ public class ScriptSheetTests : BunitContext
         Assert.Throws<ArgumentOutOfRangeException>(() => new global::ExSheet.SheetSize(10, 16_385));
     }
 
+    [Fact] // ADR-0460: either count of a SheetSize may be given alone, the other staying Excel's; neither is refused
+    public void ADR0460_a_sheet_size_given_one_count_keeps_excels_other()
+    {
+        var rowsOnly = new global::ExSheet.SheetSize(rows: 10);
+        Assert.Equal((10, global::ExSheet.SheetSize.MaxColumns), (rowsOnly.Rows, rowsOnly.Columns));
+        var columnsOnly = new global::ExSheet.SheetSize(columns: 10);
+        Assert.Equal((global::ExSheet.SheetSize.MaxRows, 10), (columnsOnly.Rows, columnsOnly.Columns));
+        Assert.Throws<ArgumentException>(() => new global::ExSheet.SheetSize());
+    }
+
     [Fact] // ADR-0036, ADR-0370 section 10: CommandLabel is asked for each id the module names, and crosses again only when its answers changed
     public void ADR0370_command_label_crosses_as_the_words_it_answers()
     {

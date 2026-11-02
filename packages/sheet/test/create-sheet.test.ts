@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, type CellFormat, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, GridPresentationDefaults, type GridHandle } from '@ex-grid/core';
-import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetSizeOptions } from '../src/create-sheet';
 import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
 import type { SheetFormatCellsSlotContext, SheetTabSlotContext } from '../src/sheet-chrome-slots';
 import { PointingScope } from '../src/pointing-scope';
@@ -2364,6 +2364,19 @@ describe('A Sheet Size (ADR-0460)', () => {
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('A10'); });
         key('ArrowRight', { ctrlKey: true });
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('J10'); });
+    });
+
+    it('ADR-0460: a size given only its rows or only its columns keeps Excel\'s count of the other', async () => {
+        const rowsOnly: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 10 } };
+        const { element, sheet } = sheetOf(rowsOnly);
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['11', '16384']); });
+        expect(sheet.workbook.size.lastCell.toString()).toBe('XFD10');
+        sheet.update({ ...rowsOnly, sheetSize: { columns: 10 } });
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['1048577', '10']); });
+        expect(sheet.workbook.size.lastCell.toString()).toBe('J1048576');
+        expect(() => sheetOf({ sheetSize: { rows: '10' } as unknown as SheetSizeOptions })).toThrow("A Sheet's sheetSize.rows is a number (ADR-0460).");
+        expect(() => sheetOf({ sheetSize: { row: 10 } as unknown as SheetSizeOptions })).toThrow("A Sheet's sheetSize is { rows, columns }, one of them or both; it was given { row } (ADR-0460).");
+        expect(() => sheetOf({ sheetSize: {} })).toThrow("A Sheet's sheetSize is { rows, columns }, one of them or both; it was given {} (ADR-0460).");
     });
 
     it('ADR-0460: the Name Box takes whole columns as long as the size, and refuses a place past it by name', async () => {

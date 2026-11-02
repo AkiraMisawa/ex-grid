@@ -112,10 +112,12 @@ const sheetSlotNames: readonly string[] = ['toolbarItem', 'formatCells', 'sheetT
 
 /** How many rows and columns every Sheet holds (ADR-0460), each from 1 to Excel's 1,048,576 rows and 16,384 columns. */
 export interface SheetSizeOptions {
-    /** How many rows, from 1 to 1,048,576. */
-    readonly rows: number;
-    /** How many columns, from 1 to 16,384 (`A` to `XFD`). */
-    readonly columns: number;
+    /** How many rows, from 1 to 1,048,576; Excel's 1,048,576 unless given, so `{ columns: 10 }` narrows only the
+     * columns. */
+    readonly rows?: number;
+    /** How many columns, from 1 to 16,384 (`A` to `XFD`); Excel's 16,384 unless given, so `{ rows: 10 }` shortens only
+     * the rows. */
+    readonly columns?: number;
 }
 
 /** What a Sheet is drawn with. */
@@ -207,12 +209,13 @@ export interface SheetOptions {
     readonly rowHeight?: number;
     /**
      * How many rows and columns every Sheet holds (ADR-0460): `{ rows: 10, columns: 10 }` draws `A1:J10` and nothing
-     * past it. Excel's 1,048,576 × 16,384 unless given. Every move stops at the edge, and a paste, a fill or an insertion
-     * that would put an Entry past it is refused by name, never cut; a spilled array that would pass it is `#SPILL!`. A
-     * Reference past it still reads the empty cell it names, so a Formula means what it means in Excel. A document with
-     * an Entry past it is refused when it is opened, and a smaller size handed in later that would leave one outside, or
-     * while a cell is being edited, is refused, the Sheet keeping the size it had; a smaller size taken empties the undo
-     * stack, whose steps could put an Entry back past it. The size is the screen's, not the document's: it is not saved.
+     * past it, and `{ rows: 10 }` holds ten rows of Excel's 16,384 columns. Excel's 1,048,576 × 16,384 unless given.
+     * Every move stops at the edge, and a paste, a fill or an insertion that would put an Entry past it is refused by
+     * name, never cut; a spilled array that would pass it is `#SPILL!`. A Reference past it still reads the empty cell
+     * it names, so a Formula means what it means in Excel. A document with an Entry past it is refused when it is
+     * opened, and a smaller size handed in later that would leave one outside, or while a cell is being edited, is
+     * refused, the Sheet keeping the size it had; a smaller size taken empties the undo stack, whose steps could put an
+     * Entry back past it. The size is the screen's, not the document's: it is not saved.
      */
     readonly sheetSize?: SheetSizeOptions;
     /** The grid's width: pixels, or `stretch` to fill the element's box. */
@@ -3451,9 +3454,18 @@ function sheetSizeOf(options: SheetOptions): SheetSize {
     const given: unknown = options.sheetSize;
     if (given === undefined) return SheetSize.excel;
     if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's sheetSize is { rows, columns } (ADR-0460).");
+    const keys = Object.keys(given);
+    if (keys.length === 0 || keys.some(key => key !== 'rows' && key !== 'columns'))
+        throw new TypeError(`A Sheet's sheetSize is { rows, columns }, one of them or both; it was given ${keys.length === 0 ? '{}' : `{ ${keys.join(', ')} }`} (ADR-0460).`);
     const { rows, columns }: { readonly rows?: unknown; readonly columns?: unknown } = given;
-    if (typeof rows !== 'number' || typeof columns !== 'number') throw new TypeError("A Sheet's sheetSize is { rows, columns }, two numbers (ADR-0460).");
-    return new SheetSize(rows, columns);
+    return new SheetSize(countOf(rows, 'rows', SheetSize.excel.rows), countOf(columns, 'columns', SheetSize.excel.columns));
+}
+
+/** A count of a `sheetSize`, Excel's when it is not given; one given as anything but a number is refused by name. */
+function countOf(given: unknown, name: 'rows' | 'columns', excel: number): number {
+    if (given === undefined) return excel;
+    if (typeof given !== 'number') throw new TypeError(`A Sheet's sheetSize.${name} is a number (ADR-0460).`);
+    return given;
 }
 
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();

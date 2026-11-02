@@ -268,7 +268,7 @@ ExSheet.SheetSize.<Clone>$() -> ExSheet.SheetSize!
 ExSheet.SheetSize.Columns.get -> int
 ExSheet.SheetSize.Equals(ExSheet.SheetSize? other) -> bool
 ExSheet.SheetSize.Rows.get -> int
-ExSheet.SheetSize.SheetSize(int rows, int columns) -> void
+ExSheet.SheetSize.SheetSize(int? rows = null, int? columns = null) -> void
 ExSheet.SheetTabContext
 ExSheet.SheetTabContext.<Clone>$() -> ExSheet.SheetTabContext!
 ExSheet.SheetTabContext.Deconstruct(out string! Name, out bool Selected) -> void

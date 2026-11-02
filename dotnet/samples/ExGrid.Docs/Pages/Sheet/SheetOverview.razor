@@ -139,6 +139,8 @@
             For a form or a small table, give it fewer: <code>SheetSize="new(10, 10)"</code>
             (<code>sheetSize=&#123;&#123; rows: 10, columns: 10 &#125;&#125;</code> under React) draws <code>A1:J10</code> and
             nothing past it. The Headings run 1 to 10 and A to J, and below and to the right of them is empty space.
+            Either count may be given alone, the other staying Excel's: <code>SheetSize="new(rows: 100)"</code>
+            (<code>sheetSize=&#123;&#123; rows: 100 &#125;&#125;</code>) holds a hundred rows of every column.
         </p>
         <DocsExample Builtin="typeof(SmallSheet)" Mud="typeof(SmallSheetMud)" />
         <ul>

@@ -460,8 +460,8 @@ export interface SheetsChange {
 
 // @public
 export interface SheetSizeOptions {
-    readonly columns: number;
-    readonly rows: number;
+    readonly columns?: number;
+    readonly rows?: number;
 }
 
 // @public

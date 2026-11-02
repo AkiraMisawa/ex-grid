@@ -1,7 +1,7 @@
 # A Sheet may be given a smaller size, and nothing is held past it
 
 *Decided with the user on 2026-11-02, in the project thread that answers
-[issue #511](https://github.com/AkiraMisawa/ex-grid/issues/511). The user chose to put it in 0.3.0, and chose both
+[issue #511](https://github.com/AkiraMisawa/ex-grid/issues/511). The user chose to put it in the next release, 0.2.0, and chose both
 options recommended below: the size is an option of the ExSheet, and a Reference past it reads the empty cell. It rewrites
 the second half of [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)'s
 "One row height, and Excel's full extent", which said a Sheet always shows 1,048,576 rows × 16,384 columns.*
@@ -27,7 +27,10 @@ a Sheet is Excel's full extent and nothing in this ADR changes anything. A size 
 less than one row or one column, is refused by name.
 
 **The size is an option of the ExSheet, for every Sheet it shows, and is not saved** (`sheetSize` on `createSheet` and
-React's `ExSheet`, `SheetSize` on Blazor's). A Sheet added from the Sheet Tabs takes it.
+React's `ExSheet`, `SheetSize` on Blazor's). A Sheet added from the Sheet Tabs takes it. Either count may be given
+alone, the other staying Excel's — `{ rows: 10 }` is ten rows of every column — because limiting only the rows is the
+common case, and a Consumer made to write 16,384 to mean "as Excel" is a Consumer that can mistype it (asked by the
+user, 2026-11-02).
 
 **The size is a boundary on content, not on the address space.** A Sheet still addresses `A1` to `XFD1048576`,
 its formulas are Excel's formulas, and its `.xlsx` is Excel's `.xlsx`. What the size changes is where a cell may
