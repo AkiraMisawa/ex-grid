@@ -119,6 +119,7 @@ public static partial class ByHand
                     continue;
                 }
                 var name = $"{row} on {where}";
+                Unread(item, RowKeys, $"{name} in {IndexPath}", report);
                 var paths = new List<string>();
                 if (item.TryGetProperty("paths", out var list) && list.ValueKind == JsonValueKind.Array)
                 {
@@ -337,6 +338,7 @@ public static partial class ByHand
     // A record as the index writes it: commit, tag, path and verdict. Null, refused, when any of it is malformed.
     private static ByHandRecord? Record(JsonElement held, string what, Report report)
     {
+        Unread(held, RecordKeys, $"{what} in {IndexPath}", report);
         var commit = Text(held, "commit") ?? "";
         var tag = Text(held, "tag") ?? "";
         var at = Text(held, "path") ?? "";
@@ -397,6 +399,20 @@ public static partial class ByHand
         path.StartsWith(Git.GlobMagic, StringComparison.Ordinal) ? tree.Matches(path).Count > 0
         : path.EndsWith('/') ? tree.IsDirectory(path)
         : tree.IsFile(path);
+
+    /// <summary>What a row of the index may say; 'note' is for a reader and is not read.</summary>
+    public static readonly IReadOnlyList<string> RowKeys = ["row", "where", "paths", "record", KnownLimitationKey, "note"];
+
+    /// <summary>What a record may say.</summary>
+    public static readonly IReadOnlyList<string> RecordKeys = ["commit", "tag", "path", "verdict"];
+
+    // Refuses a key the check does not read, so that nothing in the index looks held that is not: WR-10's
+    // 'versions' and 'laterRecords', read until 2026-11-02 (ADR-0450), among them.
+    private static void Unread(JsonElement item, IReadOnlyList<string> keys, string what, Report report)
+    {
+        foreach (var property in item.EnumerateObject().Where(p => !keys.Contains(p.Name)))
+            report.Refuse($"{what} says '{property.Name}', which the release check does not read. It reads {string.Join(", ", keys)}.", IndexPath);
+    }
 
     private static string? Text(JsonElement item, string name) =>
         item.ValueKind == JsonValueKind.Object && item.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;

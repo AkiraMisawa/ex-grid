@@ -5,8 +5,8 @@
 //     node tools/scripts/mudblazor-range.mjs '[9.6.0,10.0.0)'
 //
 // The versions come from the package's registration, which says whether each is listed; a page the index does not
-// inline is fetched. Anything the registration does not say refuses the run, rather than letting a version go
-// unrun: a version left out is a version the Wrappers claim and nothing has run.
+// inline is fetched. Anything the registration does not say, or says in a form this does not read, refuses the run,
+// rather than letting a version go unrun: a version left out is a version the Wrappers claim and nothing has run.
 
 const REGISTRATION = 'https://api.nuget.org/v3/registration5-gz-semver2/mudblazor/index.json';
 
@@ -29,7 +29,7 @@ const compare = (a, b) => {
 
 /** @param {string} url @returns {Promise<any>} */
 async function read(url) {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
     if (!response.ok) throw new Error(`${url} answered ${response.status}.`);
     return response.json();
 }
@@ -43,7 +43,8 @@ for (const page of index.items) {
     for (const leaf of leaves) {
         const entry = leaf.catalogEntry;
         if (typeof entry?.version !== 'string') throw new Error(`A version in ${page['@id']} has no catalog entry naming it.`);
-        if (!/^\d+\.\d+\.\d+$/.test(entry.version)) continue; // a prerelease is not in the range the Wrappers claim
+        if (entry.version.includes('-')) continue; // a prerelease is not in the range the Wrappers claim
+        if (!/^\d+\.\d+\.\d+$/.test(entry.version)) throw new Error(`MudBlazor ${entry.version} is a stable version this does not read as three numbers.`);
         if (entry.listed === false) continue;
         if (compare(entry.version, floor) >= 0 && compare(entry.version, ceiling) < 0) versions.push(entry.version);
     }

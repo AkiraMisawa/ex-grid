@@ -84,9 +84,9 @@ jobs:
           if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-desktop\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
             echo "desktops=true" >> "$GITHUB_OUTPUT"
           fi
-          # WR-10's runs (ADR-0450's note of 2026-11-02): a pull request that changes the range a Wrapper
-          # declares, or how the runs read it, runs them.
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^(dotnet/src/[^/]+\.MudBlazor/[^/]+\.csproj|tools/scripts/mudblazor-range\.mjs|\.github/workflows/ci\.yml)$'; then
+          # WR-10's runs (ADR-0450's note of 2026-11-02): a pull request that changes a Wrapper, or how the
+          # runs read the range it declares, runs them.
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(dotnet/src/[^/]+\.MudBlazor/.*|tools/scripts/mudblazor-range\.mjs|\.github/workflows/ci\.yml)$'; then
             echo "floor=true" >> "$GITHUB_OUTPUT"
           fi
           others=$(git diff --name-only HEAD^1 HEAD | grep -vE '^(docs/.*|[^/]+\.md)$' || true)
@@ -649,8 +649,7 @@ jobs:
   # Every other run stays on the version the demo pages pin. Once a person's run before a sign-off, held by
   # its record while its paths were unchanged; now the long run's, which release.yml calls for a release
   # candidate and a version without a suffix, so it gates both at the commit being released, with the
-  # versions listed that day. A pull request that changes a Wrapper's declared range, or this file, runs
-  # it too.
+  # versions listed that day. A pull request that changes a Wrapper, or this file, runs it too.
   mudblazor-floor-hosts:
     name: Layer 3's Blazor hosts at the Wrappers' MudBlazor floor
     needs: changes
@@ -658,7 +657,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      floor: ${{ steps.floor.outputs.floor }}
+      range: ${{ steps.floor.outputs.range }}
     steps:
       - uses: actions/checkout@v7
 
@@ -675,6 +674,7 @@ jobs:
           floor=$(echo "${ranges}" | sed -nE 's/.*Version="\[([0-9]+\.[0-9]+\.[0-9]+),[0-9.]+\)"/\1/p')
           test -n "${floor}" || { echo "::error::The range is not written [floor,ceiling)"; exit 1; }
           echo "floor=${floor}" >> "$GITHUB_OUTPUT"
+          echo "range=$(echo "${ranges}" | sed -E 's/.*Version="([^"]*)"/\1/')" >> "$GITHUB_OUTPUT"
 
       # Every sample the hosts reference that pins MudBlazor is pinned to the floor, or the pin is a
       # downgrade and nothing builds (the record of 2026-10-25: ExChart.Showcases pins its own).
@@ -766,7 +766,8 @@ jobs:
           retention-days: 30
 
   # Beside the floor run, each Wrapper's layer-2 suite with MudBlazor pinned in its test project to every
-  # stable version nuget.org lists within the declared range on the day of the run. The pin is the nearest
+  # stable version nuget.org lists within the declared range on the day of the run, the range the hosts job
+  # read from every Wrapper. ExChart.MudBlazor's tests are ExChart.Components'. The pin is the nearest
   # reference, so NuGet takes it over the Wrapper's range, and the version each run loaded is read back.
   # Layer 2 sees markup and a component's state, not focus or timing: it adds to the floor run and replaces
   # nothing.
@@ -782,9 +783,10 @@ jobs:
 
       - name: Every listed stable version within the range
         id: versions
+        env:
+          RANGE: ${{ needs.mudblazor-floor-hosts.outputs.range }}
         run: |
-          range=$(grep -hoE 'Include="MudBlazor" Version="[^"]*"' dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj | sed -E 's/.*Version="([^"]*)"/\1/')
-          versions=$(node tools/scripts/mudblazor-range.mjs "${range}")
+          versions=$(node tools/scripts/mudblazor-range.mjs "${RANGE}")
           echo "${versions}" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "versions=$(echo ${versions})" >> "$GITHUB_OUTPUT"
 
@@ -794,7 +796,7 @@ jobs:
           VERSIONS: ${{ steps.versions.outputs.versions }}
         run: |
           for v in ${VERSIONS}; do
-            for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests; do
+            for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests ExChart.Components; do
               echo "::group::${t}, MudBlazor ${v}"
               sed -i "s|</Project>|  <ItemGroup><PackageReference Include=\"MudBlazor\" Version=\"${v}\" /></ItemGroup>\n</Project>|" tests/${t}/${t}.csproj
               dotnet test tests/${t}

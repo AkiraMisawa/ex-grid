@@ -1144,7 +1144,7 @@ VZ-18's layer-3 half, `virtualisation.spec.mjs`, still gates.
 **WR-10's floor run is CI's too** *(2026-11-02, decided with the user, ADR-0450's note of that date)*: the
 `mudblazor-floor-hosts`, `mudblazor-floor` and `mudblazor-range` jobs run it in the same long run, at the commit
 being released, with the versions nuget.org lists that day ("The Wrappers' MudBlazor floor" below), and a pull
-request that changes a Wrapper's declared range runs them. Its entry left the index below.
+request that changes a Wrapper runs them. Its entry left the index below.
 
 **Rows checked by hand, and the code each covers**
 
@@ -1303,14 +1303,14 @@ leaves nothing for a record to carry forward.)* The jobs:
   second kind joins `WRAPPED` when it is written.
 - **`mudblazor-range`** lists the stable versions within the range the Wrappers declare that nuget.org's
   registration lists that day (`tools/scripts/mudblazor-range.mjs`, which refuses a list it cannot read), and
-  runs `ExGrid.MudBlazor.Tests`, `ExSheet.MudBlazor.Tests` and `ExPivot.MudBlazor.Tests` with each pinned in
-  the test project. The pin is the nearest reference, so NuGet takes it over the Wrapper's range, and the version
+  runs `ExGrid.MudBlazor.Tests`, `ExSheet.MudBlazor.Tests`, `ExPivot.MudBlazor.Tests` and `ExChart.Components`
+  (where `ExChart.MudBlazor`'s tests are, which the person's run left out) with each pinned in the test project. The pin is the nearest reference, so NuGet takes it over the Wrapper's range, and the version
   each run loaded is read back. Layer 2 sees markup and a component's state, not focus or timing: it adds to the
   floor run and replaces nothing.
 
 They run in the long run, so they gate a release candidate and a version without a suffix; weekly; on a
-dispatch that asks for the desktops; and on a pull request that changes a Wrapper's project or how the runs read
-the range. A failure at the floor that also fails at the demo pages' version is that test's, judged by the full
+dispatch that asks for the desktops; and on a pull request that changes a Wrapper or how the runs read the
+range. A failure at the floor that also fails at the demo pages' version is that test's, judged by the full
 run.
 
 ### Step 5 — The randomised consistency run

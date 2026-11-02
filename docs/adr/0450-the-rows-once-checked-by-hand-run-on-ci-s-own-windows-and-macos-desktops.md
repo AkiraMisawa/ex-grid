@@ -112,8 +112,9 @@ runs across their declared range beside it, are three jobs of `ci.yml`: `mudblaz
 two Blazor hosts and the demo API server with every sample's MudBlazor pinned to the floor the Wrappers declare,
 and reads back the version each host loads; `mudblazor-floor` runs the tests under a Wrapper against them, on
 both hosts, in each browser project, sharded as the full run is; `mudblazor-range` runs each Wrapper's layer-2
-suite at every stable version nuget.org's registration lists within the range that day. They run when the
-desktop rows do, in the long run among them, and on a pull request that changes a Wrapper's project.
+suite at every stable version nuget.org's registration lists within the range that day, `ExChart.Components`
+among them, where `ExChart.MudBlazor`'s tests are. They run when the desktop rows do, in the long run among
+them, and on a pull request that changes a Wrapper.
 
 So WR-10 leaves the record index as the desktop rows did, and with it what ADR-0205's notes of 2026-10-12 built
 for a run a person made once: the floor record held by its paths, the layer-2 records of versions published

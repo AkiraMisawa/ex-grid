@@ -424,7 +424,7 @@ public class ByHandTests
         Assert.Equal(["src/A/", "src/B.cs"], table.Rows[0].Paths);
     }
 
-    [Theory] // ADR-0208: the index is held to its shape
+    [Theory] // ADR-0208: the index is held to its shape, and says nothing the check does not read (ADR-0450, 2026-11-02)
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/*.cs"], "record": null}]}""", "which is not a path from the repository's root")]
     [InlineData("""{"rows": [{"row": "XX-1", "where": "Linux", "paths": [":(glob)dotnet/src/ExGrid.MudBlazor/"], "record": null}]}""", "which is not a path from the repository's root")]
     [InlineData("""{"rows": [{"row": "XX-1", "where": "Linux", "paths": [":(icase)src/*.MudBlazor/**"], "record": null}]}""", "which is not a path from the repository's root")]
@@ -440,6 +440,8 @@ public class ByHandTests
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-Windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass"}}]}""", "names the tag 'verified/2026-10-01-Windows-15'")]
     [InlineData("""{"rows": [{"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": null}, {"row": "VZ-14", "where": "Windows", "paths": ["src/"], "record": null}]}""", "is written twice")]
     [InlineData("""{"rows": [{"row": "VZ-14", "paths": ["src/"], "record": null}]}""", "does not say which row it is and where")]
+    [InlineData("""{"rows": [{"row": "WR-10", "where": "Linux", "paths": ["src/"], "record": null, "laterRecords": []}]}""", "says 'laterRecords', which the release check does not read")]
+    [InlineData("""{"rows": [{"row": "ED-30", "where": "Windows", "paths": ["src/"], "record": {"commit": "16552992f8fa6838114b7934c81190b788b3f32c", "tag": "verified/2026-10-01-windows-15", "path": "verification/2026-10-01-windows-15/r.md", "verdict": "pass", "versions": ["9.6.0"]}}]}""", "says 'versions', which the release check does not read")]
     [InlineData("""{"records": []}""", "holds no 'rows' array")]
     [InlineData("""{"rows": [""", "is not JSON")]
     public void An_index_out_of_shape_is_refused(string json, string why)
