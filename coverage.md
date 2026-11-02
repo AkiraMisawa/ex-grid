@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 19:26:24 |
+| Generated on: | 11/02/2026 - 20:09:25 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1108 |
-| Files: | 494 |
-| **Line coverage:** | 86.9% (60387 of 69414) |
-| Covered lines: | 60387 |
-| Uncovered lines: | 9027 |
-| Coverable lines: | 69414 |
-| Total lines: | 105743 |
-| **Branch coverage:** | 82.9% (36417 of 43919) |
-| Covered branches: | 36417 |
-| Total branches: | 43919 |
+| Classes: | 1109 |
+| Files: | 495 |
+| **Line coverage:** | 86.9% (60414 of 69442) |
+| Covered lines: | 60414 |
+| Uncovered lines: | 9028 |
+| Coverable lines: | 69442 |
+| Total lines: | 105815 |
+| **Branch coverage:** | 82.9% (36441 of 43943) |
+| Covered branches: | 36441 |
+| Total branches: | 43943 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -978,11 +978,11 @@
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 60%</summary>
+<details><summary>ExSheet - 60.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**60%**|**50.7%**|
+|**ExSheet**|**60.4%**|**51.7%**|
 |ExGrid.Components.CrossedText|92%|72.2%|
 |ExGrid.Components.HeldCalls|80.4%|75%|
 |ExGrid.Components.HeldCalls<T>|80.4%|75%|
@@ -992,7 +992,7 @@
 |ExGrid.Components.ScriptJson|23.3%|29.1%|
 |ExGrid.Components.ScriptMetricsJson|35.7%|33.3%|
 |ExGrid.Components.ScriptMetricsJson.Written|0%||
-|ExSheet.Components.ExSheet|84.2%|78.3%|
+|ExSheet.Components.ExSheet|84.4%|78.5%|
 |ExSheet.Components.ExSheet.Opening|100%||
 |ExSheet.Components.ExSheet.Press|100%||
 |ExSheet.Components.ExSheet.Saving|100%||
@@ -1031,10 +1031,11 @@
 |ExSheet.SheetFormatCellsSwatch|100%||
 |ExSheet.SheetFormatCellsView|80%||
 |ExSheet.SheetsChange|88.8%||
+|ExSheet.SheetSize|92.8%|100%|
 |ExSheet.SheetTabContext|100%||
 |ExSheet.SheetToolbarChoiceView|100%||
 |ExSheet.SheetToolbarItemView|53.3%||
-|ExSheet.SheetWords|27.3%|35%|
+|ExSheet.SheetWords|27.8%|35%|
 |ExSheet.ToolbarButton|100%||
 |ExSheet.ToolbarItemBase|100%|50%|
 |ExSheet.ToolbarOrder|91.6%|66.6%|
