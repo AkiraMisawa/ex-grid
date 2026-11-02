@@ -11,7 +11,7 @@
 // every change the Sheet reports, so an answer never walks the blanks between two blocks.
 
 import type { GridDirection } from '@ex-grid/core';
-import { CellAddress, columnCount, rowCount, type Sheet, type SheetChange } from '@ex-grid/sheet-engine';
+import { CellAddress, SheetSize, type Sheet, type SheetChange } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
 
 /** The first index of a sorted list whose value is at least `value`; the list's length when none is. */
@@ -51,13 +51,13 @@ export class SheetEdges {
         for (const address of change.valueChanges) this.#set(address, sheet.getEntry(address) !== undefined);
     }
 
-    /** The cell Ctrl+arrow reaches from `from` in the direction. */
-    find(from: CellAddress, direction: GridDirection): CellAddress {
+    /** The cell Ctrl+arrow reaches from `from` in the direction, on a Sheet of `size`, whose edge it stops at (ADR-0460). */
+    find(from: CellAddress, direction: GridDirection, size: SheetSize = SheetSize.excel): CellAddress {
         switch (direction) {
-            case 'up': return new CellAddress(along(this.#rowsByColumn.get(from.column), from.row, -1, rowCount - 1), from.column);
-            case 'down': return new CellAddress(along(this.#rowsByColumn.get(from.column), from.row, 1, rowCount - 1), from.column);
-            case 'left': return new CellAddress(from.row, along(this.#columnsByRow.get(from.row), from.column, -1, columnCount - 1));
-            case 'right': return new CellAddress(from.row, along(this.#columnsByRow.get(from.row), from.column, 1, columnCount - 1));
+            case 'up': return new CellAddress(along(this.#rowsByColumn.get(from.column), from.row, -1, size.rows - 1), from.column);
+            case 'down': return new CellAddress(along(this.#rowsByColumn.get(from.column), from.row, 1, size.rows - 1), from.column);
+            case 'left': return new CellAddress(from.row, along(this.#columnsByRow.get(from.row), from.column, -1, size.columns - 1));
+            case 'right': return new CellAddress(from.row, along(this.#columnsByRow.get(from.row), from.column, 1, size.columns - 1));
             default: return unreachable(direction);
         }
     }

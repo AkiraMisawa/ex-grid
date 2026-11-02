@@ -998,6 +998,13 @@ extent. The product is **ExSheet**; a Sheet is what it holds. Its rows and colum
 inserting a row changes what the rows below hold, and moves none of them ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: worksheet, tab, spreadsheet
 
+**Sheet Size**:
+How many rows and columns the Sheets of an ExSheet hold: Excel's 1,048,576 × 16,384 unless the
+Consumer gives fewer. It bounds where a cell may hold an Entry and what the user reaches, not the
+address space: a Reference past it reads the empty cell it names. Nothing is held past it, and what
+would put something there is refused by name ([ADR-0460](./docs/adr/0460-a-sheet-may-be-given-a-smaller-size-and-nothing-is-held-past-it.md)).
+_Avoid_: extent (that is the Selection's moving end), dimensions, used range, scroll area
+
 **Workbook**:
 The ordered Sheets one ExSheet shows, with one engine and one undo stack. A Reference may reach
 any Sheet of it (`Sheet2!A1`), and inserting a row on one Sheet rewrites the References to it on

@@ -736,3 +736,18 @@ static ExSheet.SheetToolbarItemView.operator ==(ExSheet.SheetToolbarItemView? le
 const ExSheet.SheetScriptSlotAttributes.Content = "data-ex-sheet-content" -> string!
 ExSheet.SheetToolbarItemView.HasContent.get -> bool
 ExSheet.SheetToolbarItemView.HasContent.init -> void
+const ExSheet.SheetSize.MaxColumns = 16384 -> int
+const ExSheet.SheetSize.MaxRows = 1048576 -> int
+ExSheet.Components.ExSheet.SheetSize.get -> ExSheet.SheetSize?
+ExSheet.Components.ExSheet.SheetSize.set -> void
+ExSheet.SheetSize
+ExSheet.SheetSize.<Clone>$() -> ExSheet.SheetSize!
+ExSheet.SheetSize.Columns.get -> int
+ExSheet.SheetSize.Equals(ExSheet.SheetSize? other) -> bool
+ExSheet.SheetSize.Rows.get -> int
+ExSheet.SheetSize.SheetSize(int? rows = null, int? columns = null) -> void
+override ExSheet.SheetSize.Equals(object? obj) -> bool
+override ExSheet.SheetSize.GetHashCode() -> int
+override ExSheet.SheetSize.ToString() -> string!
+static ExSheet.SheetSize.operator !=(ExSheet.SheetSize? left, ExSheet.SheetSize? right) -> bool
+static ExSheet.SheetSize.operator ==(ExSheet.SheetSize? left, ExSheet.SheetSize? right) -> bool

@@ -83,6 +83,16 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     /// <summary>Every row's height, in pixels, when <see cref="RowHeight"/> is not given: Excel's at 100% zoom.</summary>
     public const double DefaultRowHeightPx = 28;
 
+    /// <summary>
+    /// How many rows and columns every Sheet holds (ADR-0460); null is Excel's 1,048,576 by 16,384. Every move stops at
+    /// its edge, and a paste, a fill or an insertion that would put an Entry past it is refused by name, never cut; a
+    /// spilled array that would pass it is <c>#SPILL!</c>. A document with an Entry past it is refused when it is
+    /// opened, and a smaller size given later that would leave one outside, or while a cell is edited, is refused, the
+    /// Sheet keeping the size it had; a smaller size taken empties the undo stack. It is the screen's, not the
+    /// document's: it is not saved.
+    /// </summary>
+    [Parameter] public SheetSize? SheetSize { get; set; }
+
     // What a Wrapper's paper hands down (ADR-0030): the cells are painted in its font, so the Sheet measures its columns
     // and decides what fits in that font's widths, at its Density. Private: a cascade a Consumer never writes.
     [CascadingParameter] private GridPresentationDefaults? Presentation { get; set; }
@@ -635,6 +645,13 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
         json.WriteEndArray();
         json.WriteBoolean("allowCopyWithHeaders", AllowCopyWithHeaders);
         json.WriteNumber("rowHeight", RowHeight);
+        if (SheetSize is { } size)
+        {
+            json.WriteStartObject("sheetSize");
+            json.WriteNumber("rows", size.Rows);
+            json.WriteNumber("columns", size.Columns);
+            json.WriteEndObject();
+        }
         if (Presentation is { } presentation)
             ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         WriteSize(json, "viewportWidth", ViewportWidth);
@@ -732,7 +749,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     // A Selection Summary as the browser writes it: its status, the question and the answer, an exact figure as its
     // decimal's digits. Read as Blazor's ExPivot reads its own, but for the columns, which are the Sheet's letters
     // always: the browser checks that and sends none, so 16,384 names do not cross on every selection.
-    private static SelectionSummary SummaryOf(JsonElement json)
+    private SelectionSummary SummaryOf(JsonElement json)
     {
         var status = Member<SelectionSummaryStatus>(Text(json.GetProperty("status")));
         var request = json.GetProperty("request");
@@ -743,13 +760,23 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     }
 
     // The Sheet's columns by their ids, A to XFD, as the Sheet's grid names them: made the first time a
-    // summary is heard, and only then.
+    // summary is heard, and only then. A Sheet Size of fewer columns names the first of them (ADR-0460).
     private static IReadOnlyList<string>? _letters;
 
     private static IReadOnlyList<string> Letters
         => _letters ??= Array.AsReadOnly(Enumerable.Range(0, Sheet.ColumnCount).Select(CellAddress.ColumnName).ToArray());
 
-    private static GridSummaryRequest SummaryRequestOf(JsonElement json)
+    // The first letters for a Sheet Size's columns, made once per count heard rather than on every summary.
+    private IReadOnlyList<string>? _sizedLetters;
+
+    private IReadOnlyList<string> LettersUpTo(int count)
+    {
+        if (count == Letters.Count) return Letters;
+        if (_sizedLetters?.Count != count) _sizedLetters = Array.AsReadOnly(Letters.Take(count).ToArray());
+        return _sizedLetters;
+    }
+
+    private GridSummaryRequest SummaryRequestOf(JsonElement json)
     {
         var focus = json.GetProperty("focus");
         return new GridSummaryRequest
@@ -757,7 +784,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             Ranges = [.. json.GetProperty("ranges").EnumerateArray().Select(range => new SelectionRange(
                 range.GetProperty("topRow").GetInt32(), range.GetProperty("leftColumn").GetInt32(),
                 range.GetProperty("rowCount").GetInt32(), range.GetProperty("columnCount").GetInt32()))],
-            Columns = Letters,
+            Columns = LettersUpTo(json.GetProperty("columnCount").GetInt32()),
             RowSequenceVersion = json.GetProperty("rowSequenceVersion").GetInt32(),
             Figures = FiguresFrom(json.GetProperty("figures")),
             Focus = focus.ValueKind == JsonValueKind.Null ? null : new CellPosition(focus.GetProperty("row").GetInt32(), focus.GetProperty("column").GetInt32()),

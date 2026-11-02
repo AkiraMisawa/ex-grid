@@ -1,0 +1,12 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" SheetSize="_size" ViewportHeight="360" ViewportWidth="ViewportSize.Stretch" ShowSheetTabs="false" />
+
+@code {
+    // Ten rows by ten columns, A1:J10: nothing lies past them, and every move stops at their edge.
+    private readonly SheetSize _size = new(10, 10);
+
+    private SheetDocument? _document;
+}

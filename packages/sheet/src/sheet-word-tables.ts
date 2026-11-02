@@ -18,6 +18,7 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
     'formulaUnreadable': "This Formula cannot be read at character {0}: {1}",
     'addressUnreadable':
         "'{0}' is not a cell address. Type an address such as D200, a range such as A1:C3, a column such as B:B or a row such as 5:5.",
+    'addressPastEdge': "'{0}' lies past the Sheet's edge ({1}).",
     'sheetNotNamed':
         "Nothing was changed: the Workbook holds {0} Sheets, and the command names none. Name the Sheet it acts on.",
     'editIsOpen': `Nothing was changed: a cell is being edited. ${editOpenThenTryAgain}`,
@@ -128,7 +129,7 @@ export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Obje
     'pasteRefused.tooLarge': "Nothing was pasted: the clipboard holds more than a paste reads at once.",
     'pasteRefused.unreadable': "Nothing was pasted: the clipboard could not be read. Paste again.",
     'pasteRefused.cancelled': "Nothing was pasted: the paste was cancelled.",
-    'pasteRefused.spillPastExtent': "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
+    'pasteRefused.spillPastExtent': "Nothing was pasted: the block would run past the Sheet's edge ({0}).",
     'pasteRefused.nothingToFillFrom': "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",
     'pasteRefused.multipleRanges': "Nothing was filled: a fill works on one range. Select one range.",
     'pasteRefused.sourceUnavailable': "Nothing was filled: the cells to fill from could not be read.",
@@ -309,6 +310,7 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
     'formulaUnreadable': "この数式は {0} 文字目で読み取れません: {1}",
     'addressUnreadable':
         "'{0}' はセル番地ではありません。D200 のような番地、A1:C3 のような範囲、B:B のような列、5:5 のような行を入力してください。",
+    'addressPastEdge': "'{0}' はシートの端 ({1}) より外にあります。",
     'sheetNotNamed':
         "何も変更されませんでした: ブックには {0} 枚のシートがあり、コマンドはどのシートも指定していません。対象のシートを指定してください。",
     'editIsOpen': `何も変更されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
@@ -419,7 +421,7 @@ export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Obj
     'pasteRefused.tooLarge': "何も貼り付けられませんでした: クリップボードの内容が、1 回の貼り付けで読み取れる量を超えています。",
     'pasteRefused.unreadable': "何も貼り付けられませんでした: クリップボードを読み取れませんでした。もう一度貼り付けてください。",
     'pasteRefused.cancelled': "何も貼り付けられませんでした: 貼り付けは取り消されました。",
-    'pasteRefused.spillPastExtent': "何も貼り付けられませんでした: ブロックがシートの端 (XFD1048576) を越えてしまいます。",
+    'pasteRefused.spillPastExtent': "何も貼り付けられませんでした: ブロックがシートの端 ({0}) を越えてしまいます。",
     'pasteRefused.nothingToFillFrom': "何もフィルされませんでした: 選択範囲の上に行がないか、左に列がないため、フィル元がありません。",
     'pasteRefused.multipleRanges': "何もフィルされませんでした: フィルは 1 つの範囲に対して行います。1 つの範囲を選択してください。",
     'pasteRefused.sourceUnavailable': "何もフィルされませんでした: フィル元のセルを読み取れませんでした。",
