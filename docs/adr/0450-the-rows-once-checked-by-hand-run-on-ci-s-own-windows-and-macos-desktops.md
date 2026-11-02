@@ -69,18 +69,19 @@ the test looks, because F24 reaches the page only after every key before it has 
 **A key the page leaves to the browser can be acted on late.** The browser opens its menu for Alt
 released alone once the page has answered the key, and keys sent in the same call can land on the page
 before that: on this ADR's branch, 2026-11-02, a page that prevented nothing saw Alt, F23 and Escape in
-Chrome, and Alt and F23 in Edge, whose menu then took the Escape. So `osKeys` sends a second F24 in a call
-of its own once the first has landed, waits for it too, and then reads that the page still holds the
-keyboard (`document.hasFocus()`); a menu opened late takes that F24, or the keyboard. This narrows what a
-single call could miss, and is not a proof: a menu opened later than that round trip would still go
-unseen. The rows' later steps send more keys, which such a menu would take.
+Chrome, and Alt and F23 in Edge, whose menu then took the Escape. Nor does the page learn of it:
+`document.hasFocus()` stayed true while the menu held the keyboard. So `osKeys` sends a second F24 in a
+call of its own once the first has landed, without bringing the page to the front (which would hand it the
+keyboard back), and waits for it too; a menu opened late takes it. This narrows what a single call could
+miss, and is not a proof: a menu opened later than that round trip would go unseen, until the row's next
+keys, which such a menu would take.
 
 **The method is held by a negative control.** `windows-desktop.spec.mjs`'s first test sends keys the
 browser is known to take, on plain pages that prevent nothing: Ctrl+2 switches to the second tab, which
-sees only the F24 after it; and Alt released alone takes the keyboard from the page, read by waiting for
-`document.hasFocus()` to turn false, until Escape gives it back. Were the keys reaching the page first, as
-Playwright's do, that test would fail, so a pass of the rows above is not a pass that would have come
-anyway.
+sees only the F24 after it; and once the page has seen Alt released alone, F23 and Escape, each in a call
+of its own, are the menu's, so the page sees only the F24 sent after them. Were the keys reaching the page
+first, as Playwright's do, that test would fail, so a pass of the rows above is not a pass that would have
+come anyway.
 
 **A row CI runs leaves the record index.** Its row goes from the Definition of Done's Step 4 table and from
 `verification/by-hand.json`, so the release check no longer asks for a record of it. What held it, a

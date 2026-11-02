@@ -2,7 +2,7 @@ import { test, expect, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { decodePng, sameColour } from './pixels.mjs';
-import { onWindowsDesktop, osKeys, osKeysLandOn, osKeysSent, holdsKeyboard } from './os-input.mjs';
+import { onWindowsDesktop, osKeys, osKeysLandOn, osKeysSent, osKeysThen, osKeysThenLandOn, keysSeenBy } from './os-input.mjs';
 
 // The rows the Definition of Done once checked by hand on a Windows desktop, run by CI's Windows
 // runner instead (ADR-0450): the browser's own keys, and a real browser zoom over a real display
@@ -32,13 +32,14 @@ const tabOf = (context, page) => context.pages().indexOf(page) + 1;
 
 // The method's own control: keys sent through the OS meet the browser before the page, so a test that
 // passes here would fail if the page let the browser have them. On two plain pages that take no key,
-// Ctrl+2 from the first tab switches to the second, which F24 then reaches; and Alt released alone moves
-// the keyboard to the browser's menu, which the page loses until Escape gives it back. The menu opens once
-// the page has answered the Alt, which can be after keys sent with it land (the first run of this test,
-// 2026-11-02: Edge took the Escape after an F23, Chrome neither), so it is read by the keyboard leaving the
-// page, waited for. Without this, every test below could pass on keys that reached the page alone, as
-// Playwright's do.
-test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the keyboard @behaviour', async ({ page, context }) => {
+// Ctrl+2 from the first tab switches to the second, which F24 then reaches; and Alt released alone puts
+// the keyboard in the browser's menu, which takes the keys after it until Escape gives it back. The menu
+// opens once the page has answered Alt's keyup, and keys sent in the same call can land before it (the
+// first run of this test, 2026-11-02: Edge's menu took an Escape after the F23 that followed Alt, Chrome's
+// neither), so each key after Alt goes in a call of its own, once the page has seen Alt released; the
+// page never answers which of them were the menu's, so they are read once an F24 after them has landed.
+// Without this, every test below could pass on keys that reached the page alone, as Playwright's do.
+test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the next key @behaviour', async ({ page, context }) => {
     await page.setContent('<title>first tab</title><p>first</p>');
     const second = await context.newPage();
     await second.setContent('<title>second tab</title><p>second</p>');
@@ -48,12 +49,14 @@ test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page tha
     expect(switched.from, 'the first tab saw Ctrl+2 and left it to the browser').toEqual(['Control', '2']);
     expect(switched.to, 'F24 went to the tab Ctrl+2 switched to').toEqual(['F24']);
 
-    await expect.poll(() => holdsKeyboard(second), { message: 'the second tab, in front, holds the keyboard' }).toBe(true);
+    const released = await keysSeenBy(second, 'keyup');
     await osKeysSent(second, 'alt');
-    await expect.poll(() => holdsKeyboard(second), { message: 'Alt released alone, left to the browser, takes the keyboard to its menu' }).toBe(false);
-    await osKeysSent(second, 'escape');
-    await expect.poll(() => holdsKeyboard(second), { message: 'Escape gives the keyboard back to the page' }).toBe(true);
-    await osKeysLandOn(second, second, 'f24');
+    await expect.poll(released, { message: 'the page saw Alt released' }).toEqual(['Alt']);
+    const seen = await keysSeenBy(second);
+    await osKeysThen(second, 'f23');
+    await osKeysThen(second, 'escape');
+    await osKeysThenLandOn(second, second, 'f24');
+    expect(await seen(), 'F23 was the menu\'s, and Escape, which closed it, then F24 reached the page').toEqual(['F24']);
 });
 
 // SH-42: Ctrl+1 to Ctrl+5 reach /sheet before the browser's tab switching. Ctrl+N switches to the

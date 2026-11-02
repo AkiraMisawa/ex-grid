@@ -66,30 +66,31 @@ let calls = 0;
 
 /**
  * Starts recording the keys `page` sees, by `key`, in the capture phase on its window, before any of
- * the page's own listeners. Answers a function that reads them.
+ * the page's own listeners: their `keydown`, or with `type` their `keyup`. Answers a function that reads
+ * them.
  */
-async function recordKeys(page) {
+export async function keysSeenBy(page, kind = 'keydown') {
     const name = `exOsKeys${++calls}`;
-    await alterPage(page, (record) => {
+    await alterPage(page, ({ record, type }) => {
         const seen = [];
         window[record] = seen;
         const note = (event) => seen.push(event.key);
-        window.addEventListener('keydown', note, true);
+        window.addEventListener(type, note, true);
         return () => {
-            window.removeEventListener('keydown', note, true);
+            window.removeEventListener(type, note, true);
             delete window[record];
         };
-    }, name);
+    }, { record: name, type: kind });
     return () => page.evaluate((record) => window[record], name);
 }
 
 /**
- * Brings the page's tab and window to the front, refusing when the window in front is still another's,
- * and sends each chord through the OS input queue, all in one SendInput call. Waits for nothing: what the
- * keys did is the caller's to read.
+ * Sends each chord through the OS input queue, all in one SendInput call, refusing when the window in
+ * front is not the page's. Waits for nothing: what the keys did is the caller's to read. It leaves the
+ * window as it is, so a key that follows one the browser took meets what that key opened: bringing the
+ * page to the front would give it the keyboard back.
  */
-export async function osKeysSent(page, ...chords) {
-    await page.bringToFront();
+export async function osKeysThen(page, ...chords) {
     const title = await page.title();
     if (title === '') {
         throw new Error('The page has no title, so the window in front cannot be told to be its own: give it one.');
@@ -101,28 +102,40 @@ export async function osKeysSent(page, ...chords) {
     await ask(`keys ${chords.join(' ')}`);
 }
 
-/**
- * Sends the chords from `from`'s tab, as osKeysSent does, then waits until `to` has seen the last key, an
- * F key nothing binds: every key before it has reached the browser by then. Answers the keys each page
- * saw, by `key`.
- */
-export async function osKeysLandOn(from, to, ...chords) {
+/** Brings the page's tab and window to the front, then sends the chords as osKeysThen does. */
+export async function osKeysSent(page, ...chords) {
+    await page.bringToFront();
+    await osKeysThen(page, ...chords);
+}
+
+async function landOn(send, from, to, chords) {
     const sentinel = chords.at(-1);
     if (sentinel === undefined || !/^f\d+$/i.test(sentinel)) {
         throw new Error(`osKeysLandOn ends on an F key nothing binds, so where it lands is read; it was given ${chords.join(', ')}`);
     }
     const last = sentinel.toUpperCase();
-    const seenFrom = await recordKeys(from);
-    const seenTo = to === from ? seenFrom : await recordKeys(to);
-    await osKeysSent(from, ...chords);
+    const seenFrom = await keysSeenBy(from);
+    const seenTo = to === from ? seenFrom : await keysSeenBy(to);
+    await send(from, ...chords);
     await expect.poll(async () => (await seenTo()).includes(last), {
         message: `${chords.join(', ')}, sent through the OS: ${last} never reached ${to === from ? 'the page' : 'the other page'}, so a key before it went elsewhere`,
     }).toBe(true);
     return { from: await seenFrom(), to: await seenTo() };
 }
 
-/** Whether the page's document has the keyboard: false while the browser's own menu or toolbar holds it. */
-export const holdsKeyboard = (page) => page.evaluate(() => document.hasFocus());
+/**
+ * Sends the chords from `from`'s tab, brought to the front, then waits until `to` has seen the last key,
+ * an F key nothing binds: every key before it has reached the browser by then. Answers the keys each page
+ * saw, by `key`.
+ */
+export function osKeysLandOn(from, to, ...chords) {
+    return landOn(osKeysSent, from, to, chords);
+}
+
+/** As osKeysLandOn, from the window as it is (osKeysThen). */
+export function osKeysThenLandOn(from, to, ...chords) {
+    return landOn(osKeysThen, from, to, chords);
+}
 
 /**
  * Brings the page's tab and window to the front, then sends each chord ('ctrl+1', 'alt', 'f10', 'h')
@@ -132,12 +145,11 @@ export const holdsKeyboard = (page) => page.evaluate(() => document.hasFocus());
  * another tab, so the wait fails naming the chords. A key the page left to the browser can also be acted
  * on only once the page has answered it, after the keys sent with it have landed: Alt released alone
  * opened Edge's menu after the next key had reached the page (ADR-0450's control, 2026-11-02). So a
- * second F24 goes in a call of its own once the first has landed, and must land too, and the page must
- * still hold the keyboard. Answers the keys the page saw, by `key`, before the first F24.
+ * second F24 goes in a call of its own once the first has landed, and must land too: a menu opened late
+ * takes it. Answers the keys the page saw, by `key`, before the first F24.
  */
 export async function osKeys(page, ...chords) {
     const { from: seen } = await osKeysLandOn(page, page, ...chords, 'f24');
-    await osKeysLandOn(page, page, 'f24');
-    expect(await holdsKeyboard(page), `${chords.join(', ')}, sent through the OS, left the keyboard to the browser`).toBe(true);
+    await osKeysThenLandOn(page, page, 'f24');
     return seen.slice(0, seen.indexOf('F24'));
 }
