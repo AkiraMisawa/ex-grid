@@ -14,14 +14,14 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 22:11:47 |
+| Generated on: | 11/02/2026 - 23:11:00 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1109 |
 | Files: | 495 |
-| **Line coverage:** | 86.9% (60413 of 69442) |
-| Covered lines: | 60413 |
-| Uncovered lines: | 9029 |
+| **Line coverage:** | 86.9% (60414 of 69442) |
+| Covered lines: | 60414 |
+| Uncovered lines: | 9028 |
 | Coverable lines: | 69442 |
 | Total lines: | 105815 |
 | **Branch coverage:** | 82.9% (36440 of 43943) |
@@ -589,7 +589,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
