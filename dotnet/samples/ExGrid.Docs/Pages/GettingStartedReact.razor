@@ -1,0 +1,86 @@
+@page "/getting-started/react"
+
+<DocsPage Title="Installation for React"
+          Lead="Install the packages from npm, import their stylesheets once, and put a grid in a component. A Mantine or MUI application adds the Wrappers and nothing else changes.">
+
+    <DocsSection Title="Requirements">
+        <ul>
+            <li><b>Chrome or Edge.</b> They are the supported browsers. Safari and Firefox are out of scope.</li>
+            <li><b>React 19.</b> The adapters take <code>react</code> and <code>react-dom</code> 19.0 or a later 19.x, and the Wrappers 19.2 or later, as peer dependencies your application provides.</li>
+            <li>
+                <b>A bundler that imports a package's stylesheet</b>, as Vite does: each package that draws reads a
+                stylesheet you import once, by the path its <code>exports</code> name.
+            </li>
+            <li>
+                <b>Temporal, for a date column's filter.</b> A date typed into a filter is made with the Temporal you hand
+                the grid as <code>temporal</code>: the browser's own, or a polyfill such as <code>temporal-polyfill</code>.
+                The grid never reads the global one, and refuses a date column whose filter is offered without it, naming
+                the column.
+            </li>
+            <li>
+                <b>Mantine 9.7 or a later 9.x, or MUI 9.5 or a later 9.x, for the Wrappers.</b> MUI's take Emotion with it,
+                and a theme made with <code>createTheme({ cssVariables: true })</code>: a theme without CSS variables is
+                refused, naming the option, because the Wrapper's stylesheet reads them.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Install">
+        <p>
+            The family is published to npm under <code>@@ex-grid</code>, at the same version as its NuGet packages. Each
+            package depends on exactly the versions of the others it was built with, so upgrade them together. Add the
+            products you use, and each one's Wrapper in a Mantine or MUI application. Each package's README on npm says
+            what it is, which peers it takes and which stylesheets it reads. What each version holds, and what it
+            breaks, is in the <a href="release-notes">Release notes</a>.
+        </p>
+        <CodeBlock Path="Examples/Setup/install-react.sh" />
+        <p>
+            A prerelease and a release candidate are published under npm's <code>next</code> tag, so <code>npm install</code>
+            without a version takes the latest version without a suffix. Name the version to take a prerelease.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Import the stylesheets">
+        <p>
+            <code>@@ex-grid/core</code> carries the grid's stylesheet, and <code>@@ex-grid/sheet</code>,
+            <code>@@ex-grid/pivot</code> and <code>@@ex-grid/chart</code> each carry their product's, as
+            <code>styles.css</code>. Each is the very file the product's NuGet package serves, so a grid under React
+            and a grid under Blazor read the same rules. Import the grid's and each product's you use, once, in the
+            module that starts the application:
+        </p>
+        <CodeBlock Path="Examples/Setup/stylesheets.ts" />
+        <p>
+            A grid that reads a stylesheet of another version than its script's says so, <b>"This page holds another
+            version's stylesheet. Reload the page."</b>, as under Blazor
+            (<a href="getting-started#when-a-page-holds-another-version-s-files">When a page holds another version's
+            files</a>), and one with no stylesheet is plainly unstyled. Import the stylesheets from the packages you
+            installed, never a copy of your own.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A first grid">
+        <p>
+            Hand the grid a source and its columns, made once outside the component: a new source or a new column
+            list on every render would render every row again.
+        </p>
+        <DocsExample Builtin="typeof(ExGrid.Docs.Examples.Grid.FirstGrid)" Mud="typeof(ExGrid.Docs.Examples.Grid.FirstGridMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="In a Mantine or MUI application">
+        <p>
+            Set the design system up as usual: Mantine's <code>MantineProvider</code>, or MUI's
+            <code>ThemeProvider</code> with a theme made with <code>createTheme({ cssVariables: true })</code>. Then
+            import each product's stylesheet followed by its Wrapper's. A Mantine application imports Mantine's own
+            first:
+        </p>
+        <CodeBlock Path="Examples/Setup/stylesheets-mantine.ts" />
+        <CodeBlock Path="Examples/Setup/stylesheets-mui.ts" />
+        <p>
+            Put the grid in the Wrapper's component, <code>MantineExGrid</code> or <code>MuiExGrid</code>, in place of
+            <code>ExGrid</code>. It stands the grid on the design system's surface, draws its menus, filter panel,
+            find panel and Cell Editor with the design system's own controls, and follows the theme, dark included.
+            The grid's behaviour does not change: switch the site's Chrome at the top and try the Example above again.
+        </p>
+    </DocsSection>
+</DocsPage>

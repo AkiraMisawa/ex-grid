@@ -42,6 +42,9 @@ console.log('== what each tarball holds');
 const unpacked = fs.mkdtempSync(path.join(os.tmpdir(), 'ex-grid-npm-unpacked-'));
 const root = JSON.parse(fs.readFileSync(path.join(workspace, 'package.json'), 'utf8'));
 const stylesheetOf = Object.fromEntries(Object.entries(stylesheets).map(([dir, file]) => [`@ex-grid/${dir}`, file]));
+// The packages whose script writes a stylesheet notice with the stamp of the stylesheet it was built with
+// (shipped-stylesheet.ts, which tools/assets/minify.mjs writes). ExSheet's and ExPivot's draw through ExGrid's.
+const stamped = new Set(['@ex-grid/core', '@ex-grid/chart']);
 for (const { name, manifest, tarball } of packed) {
     const entries = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' }).split('\n').filter(line => line !== '').toSorted();
     const expected = ['package.json', 'README.md', 'LICENSE', ...manifest.files].map(file => `package/${file}`).toSorted();
@@ -70,9 +73,10 @@ for (const { name, manifest, tarball } of packed) {
     }
     for (const file of ['dist/index.js', 'dist/index.d.ts']) {
         const source = fs.readFileSync(at(file), 'utf8');
-        // A static import or re-export as a statement of its own, and a dynamic import or an import type.
-        const statements = /^\s*(?:import|export)\b[^'";]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/gm;
-        const specifiers = [...source.matchAll(statements)].map(match => match[1] ?? match[2] ?? match[3]); // oxlint-disable-line ex-grid/no-stand-in-default -- one of the three alternatives matched
+        // A static import or re-export as a statement of its own; a dynamic import or an import type; a require that
+        // esbuild left for a module it did not bundle; and a declaration file's reference to a package's types.
+        const statements = /^\s*(?:import|export)\b[^'";]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)|\b(?:__)?require\(\s*['"]([^'"]+)['"]\s*\)|^\/\/\/\s*<reference\s+types=['"]([^'"]+)['"]/gm;
+        const specifiers = [...source.matchAll(statements)].map(match => match.slice(1).find(group => group !== undefined));
         for (const specifier of new Set(specifiers)) {
             if (specifier.startsWith('.')) {
                 refuse(`${name}'s ${file} imports ${specifier}, a file of its own, where the build bundles every module it has.`);
@@ -96,9 +100,8 @@ for (const { name, manifest, tarball } of packed) {
         const stamp = /\[data-ex-stamp="([0-9a-f]{64})"\]/.exec(fs.readFileSync(at(carried), 'utf8'));
         if (stamp === null) {
             refuse(`${name}'s ${carried} has no stamp rule.`);
-        } else if (/stylesheetStamp\b|data-ex-stamp/.test(fs.readFileSync(at('dist/index.js'), 'utf8'))
-            && !fs.readFileSync(at('dist/index.js'), 'utf8').includes(stamp[1])) {
-            refuse(`${name}'s script writes a stamp other than its stylesheet's ${stamp[1]}: the grid would show its stylesheet notice.`);
+        } else if (stamped.has(name) && !fs.readFileSync(at('dist/index.js'), 'utf8').includes(stamp[1])) {
+            refuse(`${name}'s script does not write its stylesheet's stamp, ${stamp[1]}: what it draws would show its stylesheet notice.`);
         }
     }
 }

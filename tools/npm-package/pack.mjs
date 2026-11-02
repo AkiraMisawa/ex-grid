@@ -16,8 +16,11 @@ export const workspace = path.resolve(path.dirname(fileURLToPath(import.meta.url
 /** The version the workspace's manifests carry, which only a pack replaces. */
 const devVersion = '0.0.0-dev';
 
-/** A version as SemVer writes it, a prerelease or build suffix included. */
-const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
+/**
+ * A version as SemVer writes it, a prerelease suffix included and no build metadata: npm drops a `+…` as it reads a
+ * version, so the version published would not be the one asked for.
+ */
+const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 
 /** Every published package of the workspace, `{ dir, manifest }`, each after the family's packages it depends on. */
 export function packOrder() {
@@ -85,7 +88,7 @@ export function publishedManifest(manifest, version) {
 /** Packs every published package at `version` into `out`, which is emptied first. Returns the tarballs, in order. */
 export function packAll(version, out) {
     if (!semver.test(version)) {
-        throw new Error(`'${version}' is not a version as SemVer writes it.`);
+        throw new Error(`'${version}' is not a version as SemVer writes it, without build metadata.`);
     }
     fs.rmSync(out, { recursive: true, force: true });
     const stages = path.join(out, 'stage');

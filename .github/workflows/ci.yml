@@ -203,9 +203,11 @@ jobs:
       - name: The npm packages, taken as a Consumer takes them
         run: node tools/npm-package/check.mjs "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
 
-      # What the release publishes to npm: these files, not a rebuild, in publish-order.txt's order. The directory
-      # is a dot directory, which upload-artifact skips unless told otherwise.
-      - uses: actions/upload-artifact@v7
+      # What the release publishes to npm: these files, not a rebuild, in publish-order.txt's order. Kept only for
+      # the release, which alone reads them. The directory is a dot directory, which upload-artifact skips unless
+      # told otherwise.
+      - if: inputs.version
+        uses: actions/upload-artifact@v7
         with:
           name: npm-packages
           path: tools/npm-package/.tarballs/

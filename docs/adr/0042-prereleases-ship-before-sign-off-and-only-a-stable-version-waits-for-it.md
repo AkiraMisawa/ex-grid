@@ -371,6 +371,11 @@ said the release would do and `release.yml` had not yet done. What holds for NuG
   named, and moves it to whatever is published without a tag. A prerelease and a release candidate are published
   under `next`; a version without a suffix under `latest` when it is the latest stable line, which is when it
   publishes the Docs Site (the admit job's `site`), and under `release-<major>.<minor>` when it is a patch to an
-  older line.
-- **A re-run finishes a publish that stopped halfway.** A version already on npm is left as it is, as
-  `--skip-duplicate` leaves one on nuget.org.
+  older line. One exception npm makes itself: a package's first version also takes `latest`, whatever its tag, and
+  `latest` cannot be removed. So until 0.3.0 is published, `npm install @ex-grid/react` takes the first 0.3.0
+  prerelease, and the Release Notes of that prerelease say so.
+- **npm goes second.** The npm job waits for the NuGet push, so a version refused there, or stopped by a reviewer of
+  the `nuget` environment, is on neither registry.
+- **A re-run finishes a publish that stopped halfway.** A version already on npm is left as it is when its
+  integrity is the tarball's, as `--skip-duplicate` leaves one on nuget.org; one that is another tarball refuses the
+  job, and so does any answer from npm but "not found".

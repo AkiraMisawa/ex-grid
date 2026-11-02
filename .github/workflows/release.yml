@@ -330,15 +330,12 @@ jobs:
               --verify-tag "$prerelease" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 
-  # The Docs Site for this version, once nuget.org and npm have it (ADR-0110, ADR-0042): the site states a
-  # version only after its packages can be installed, and the day they could be (ADR-0190).
-  # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
-  # The site describes the latest stable version once one is tagged (ADR-0205): a prerelease then
-  # publishes none, its notes being on its GitHub release, and neither does a stable version some
-  # stable tag is above, a patch to an older line. The admit job decides it, and says so.
+  # npm's packages, once nuget.org has the version: they go second, so a refused NuGet push, or a reviewer of the
+  # nuget environment who stops it, leaves npm without the version too, and a version is never on npm alone. A
+  # publish that stops halfway on npm is finished by re-running this job (ADR-0042's note of 2026-11-02).
   publish-npm:
     name: Publish to npm
-    needs: [admit, verify]
+    needs: [admit, verify, publish]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # A required reviewer can be added to this environment in the repository's settings. Each package's
@@ -396,8 +393,9 @@ jobs:
             exit 1
           fi
 
-      # A version already on npm is left as it is, so a re-run finishes a publish that stopped halfway: npm never
-      # replaces a version, and refuses one published before.
+      # A version already on npm is left as it is when it is this tarball, so a re-run finishes a publish that
+      # stopped halfway: npm never replaces a version, and refuses one published before. One that is on npm and is
+      # not this tarball, by its integrity, refuses the job, as does any answer from npm but "not found".
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -409,14 +407,33 @@ jobs:
             *) tag=next ;;
           esac
           while IFS= read -r tarball; do
-            name=$(tar -xzOf "npm-tarballs/$tarball" package/package.json | node -e "process.stdin.on('data', d => process.stdout.write(JSON.parse(d).name))")
-            if [[ "$(npm view "$name@$VERSION" version 2> /dev/null || true)" == "$VERSION" ]]; then
-              echo "$name@$VERSION is on npm already"
-              continue
+            file="npm-tarballs/$tarball"
+            name=$(tar -xzOf "$file" package/package.json | node -e "process.stdin.on('data', d => process.stdout.write(JSON.parse(d).name))")
+            integrity="sha512-$(openssl dgst -sha512 -binary "$file" | base64 -w 0)"
+            if published=$(npm view "$name@$VERSION" dist.integrity 2> "$RUNNER_TEMP/view.err"); then
+              if [[ -z "$published" ]]; then
+                :   # npm answers nothing, and succeeds, for a package that exists without this version
+              elif [[ "$published" == "$integrity" ]]; then
+                echo "$name@$VERSION is on npm already, and is this tarball"
+                continue
+              else
+                echo "::error::$name@$VERSION is on npm already as $published, which is not the tarball CI tested ($integrity)."
+                exit 1
+              fi
+            elif ! grep -q E404 "$RUNNER_TEMP/view.err"; then
+              cat "$RUNNER_TEMP/view.err"
+              echo "::error::npm could not say whether $name@$VERSION is published."
+              exit 1
             fi
-            npm publish "npm-tarballs/$tarball" --access public --tag "$tag" --provenance
+            npm publish "$file" --access public --tag "$tag" --provenance
           done < npm-tarballs/publish-order.txt
 
+  # The Docs Site for this version, once nuget.org and npm have it (ADR-0110, ADR-0042): the site states a
+  # version only after its packages can be installed, and the day they could be (ADR-0190).
+  # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
+  # The site describes the latest stable version once one is tagged (ADR-0205): a prerelease then
+  # publishes none, its notes being on its GitHub release, and neither does a stable version some
+  # stable tag is above, a patch to an older line. The admit job decides it, and says so.
   docs:
     name: The Docs Site
     needs: [admit, publish, publish-npm]
