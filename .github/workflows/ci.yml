@@ -62,6 +62,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       layer3: ${{ steps.which.outputs.layer3 }}
+      desktops: ${{ steps.which.outputs.desktops }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -76,6 +77,11 @@ jobs:
           if [ "${EVENT}" != pull_request ]; then
             echo "layer3=true" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          # The desktop rows' own machinery (ADR-0450): a pull request that changes it runs them, so a
+          # change to them is proved before a release candidate first needs them.
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-desktop\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
+            echo "desktops=true" >> "$GITHUB_OUTPUT"
           fi
           others=$(git diff --name-only HEAD^1 HEAD | grep -vE '^(docs/.*|[^/]+\.md)$' || true)
           if [ -z "${others}" ]; then
@@ -507,11 +513,11 @@ jobs:
   # does. At 100%, SH-42, SH-51 and SH-52's browser keys, and FN-12e's painting; at 125% and at 150%,
   # VZ-14 with the OS doing the scaling; at 150%, VZ-16's real zoom to 2.25. The long run's, and a
   # dispatch that asks for it: release.yml calls the long run for a release candidate and a version
-  # without a suffix, so these gate both.
+  # without a suffix, so these gate both. A pull request that changes their own files runs them too.
   windows-desktop:
     name: The Windows desktop rows (VZ-14, VZ-16, FN-12e, SH-42, SH-51, SH-52)
-    needs: hosts
-    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true
+    needs: [changes, hosts]
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.desktops == 'true'
     runs-on: windows-latest
     timeout-minutes: 60
     defaults:
@@ -583,8 +589,8 @@ jobs:
   # desktop. The long run's, as the Windows rows are.
   macos-desktop:
     name: The macOS desktop rows (KB-3, FN-12e)
-    needs: hosts
-    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true
+    needs: [changes, hosts]
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.desktops == 'true'
     runs-on: macos-latest
     timeout-minutes: 45
     env:
