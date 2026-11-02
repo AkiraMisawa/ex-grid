@@ -1,0 +1,51 @@
+// Temporary probe: a real Microsoft IME composing in a plain field, through SendInput, on one channel.
+import { chromium } from 'playwright-core';
+import { spawn } from 'node:child_process';
+import readline from 'node:readline';
+import { fileURLToPath } from 'node:url';
+
+const channel = process.argv[2];
+const helper = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', fileURLToPath(new URL('./input-server.ps1', import.meta.url))], { stdio: ['pipe', 'pipe', 'inherit'] });
+const lines = readline.createInterface({ input: helper.stdout });
+const waiting = [];
+lines.on('line', (l) => { const w = waiting.shift(); if (w) w(l.trim()); else console.log('helper:', l); });
+const ask = (cmd) => new Promise((done) => { waiting.push((l) => { console.log(`> ${cmd}\n< ${l}`); done(l); }); helper.stdin.write(cmd + '\n'); });
+await new Promise((done) => waiting.push(done));
+
+const TITLE = `imeprobe-${channel}`;
+const browser = await chromium.launch({ channel, headless: false, args: ['--window-size=1000,700'] });
+const page = await (await browser.newContext({ viewport: null })).newPage();
+await page.setContent(`<!doctype html><title>${TITLE}</title><input id=f style="font-size:24px;width:600px"><script>
+window.log = [];
+for (const t of ['keydown', 'keyup']) addEventListener(t, (e) => log.push(t + ' ' + e.key + ' kc=' + e.keyCode + ' composing=' + e.isComposing), true);
+for (const t of ['compositionstart', 'compositionupdate', 'compositionend']) addEventListener(t, (e) => log.push(t + ' ' + JSON.stringify(e.data)), true);
+addEventListener('input', (e) => log.push('input ' + e.inputType + ' ' + JSON.stringify(e.data)), true);
+</script>`);
+await page.bringToFront();
+await page.click('#f');
+const read = async (label) => console.log(`--- ${channel} ${label}: ${JSON.stringify(await page.evaluate(() => ({ log: log.splice(0), value: document.getElementById('f').value, focus: document.hasFocus() })))}`);
+await ask(`front ${TITLE}`);
+await ask(`layout ${TITLE}`);
+await ask(`japanese ${TITLE}`);
+await ask(`imestate ${TITLE}`);
+await ask('imeon');
+await ask(`imestate ${TITLE}`);
+await read('ime on');
+await ask('type 60 kana');
+await page.waitForTimeout(400);
+await read('kana');
+await ask('type 60 {SPACE}');
+await page.waitForTimeout(400);
+await read('space');
+await ask('type 60 {ENTER}');
+await page.waitForTimeout(400);
+await read('enter');
+await ask('type 60 nihon{SPACE}');
+await page.waitForTimeout(400);
+await read('nihon space');
+await ask('type 60 {ESC}{ESC}');
+await page.waitForTimeout(400);
+await read('escape escape');
+await ask('imeui');
+await ask('quit');
+await browser.close();
