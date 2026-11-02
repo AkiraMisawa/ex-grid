@@ -287,7 +287,8 @@ builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 }
 ```
 
-The whole family is published to NuGet as prereleases at one shared version, `0.1.0-beta.N` and then `0.1.0-rc.N`
+The whole family is published to NuGet at one shared version. `0.1.0` is the first stable version; each version
+after it ships first as betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`
 ([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
 Each package depends on exactly the versions of the others it was built with, so upgrade them
 together. A MudBlazor application adds each product's Wrapper:
@@ -357,10 +358,11 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 
 ## Status
 
-**Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between prereleases. The family's sixteen packages ship together as `0.1.0-beta.N`, then as release
-candidates `0.1.0-rc.N`; a stable version waits
-for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
+**0.x, stable from `0.1.0`.** The specification is settled and every test layer passes in CI. `0.1.0`
+was signed off against the [Definition of Done](docs/definition-of-done.md); each version after it
+ships first as betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`, whose API may change from
+one to the next, and its stable version waits for its own sign-off. Being 0.x, a stable version
+promises the sign-off, not a frozen API. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).
 
 ## Contributing
