@@ -2,7 +2,7 @@ import { test, expect, chromeHost } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { decodePng, sameColour } from './pixels.mjs';
-import { onWindowsDesktop, osKeys, osKeysLandOn, osKeysSent, osKeysThen, osKeysThenLandOn, keysSeenBy } from './os-input.mjs';
+import { onWindowsDesktop, osKeys, osKeysSent, osKeysThen, osKeysThenLandOn, keysSeenBy } from './os-input.mjs';
 
 // The rows the Definition of Done once checked by hand on a Windows desktop, run by CI's Windows
 // runner instead (ADR-0450): the browser's own keys, and a real browser zoom over a real display
@@ -38,6 +38,9 @@ const tabOf = (context, page) => context.pages().indexOf(page) + 1;
 // first run of this test, 2026-11-02: Edge's menu took an Escape after the F23 that followed Alt, Chrome's
 // neither), so each key after Alt goes in a call of its own, once the page has seen Alt released; the
 // page never answers which of them were the menu's, so they are read once an F24 after them has landed.
+// Ctrl+2 goes alone too: the browser switches tabs after it has taken the key, so an F24 sent in the same
+// call can still be delivered to the tab Ctrl+2 left (Edge's first run on PR #519, 2026-11-02: F24 never
+// reached the second tab). F24 follows once the second tab is the one shown, and the window's title says so.
 // Without this, every test below could pass on keys that reached the page alone, as Playwright's do.
 test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the next key @behaviour', async ({ page, context }) => {
     await page.setContent('<title>first tab</title><p>first</p>');
@@ -45,8 +48,11 @@ test('ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page tha
     await second.setContent('<title>second tab</title><p>second</p>');
     expect([tabOf(context, page), tabOf(context, second)]).toEqual([1, 2]);
 
-    const switched = await osKeysLandOn(page, second, 'ctrl+2', 'f24');
-    expect(switched.from, 'the first tab saw Ctrl+2 and left it to the browser').toEqual(['Control', '2']);
+    const left = await keysSeenBy(page);
+    await osKeysSent(page, 'ctrl+2');
+    await expect.poll(() => second.evaluate(() => document.visibilityState), { message: 'Ctrl+2 switched to the second tab' }).toBe('visible');
+    expect(await left(), 'the first tab saw Ctrl+2 and left it to the browser').toEqual(['Control', '2']);
+    const switched = await osKeysThenLandOn(second, second, 'f24');
     expect(switched.to, 'F24 went to the tab Ctrl+2 switched to').toEqual(['F24']);
 
     const released = await keysSeenBy(second, 'keyup');

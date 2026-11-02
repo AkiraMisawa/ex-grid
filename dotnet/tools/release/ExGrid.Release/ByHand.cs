@@ -6,10 +6,9 @@ namespace ExGrid.Release;
 /// <summary>
 /// The latest record of a row checked by hand: the commit it was made at; the <c>verified/*</c> tag its run
 /// put on that commit, <c>verified/</c> followed by the name of the record's directory under
-/// <c>verification/</c>, through which the release workflow fetches it; the file that holds it; its verdict;
-/// and, on WR-10's records only, the MudBlazor versions their layer-2 runs covered.
+/// <c>verification/</c>, through which the release workflow fetches it; the file that holds it; and its verdict.
 /// </summary>
-public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict, IReadOnlyList<string>? Versions = null);
+public sealed record ByHandRecord(string Commit, string Tag, string Path, string Verdict);
 
 /// <summary>
 /// A row put out of a version by decision, as a Known limitation of it, rather than left unrecorded: the version
@@ -21,12 +20,10 @@ public sealed record KnownLimitation(string Version, string Decided, string Deci
 
 /// <summary>
 /// A row the Definition of Done checks by hand, where it is checked, the paths whose change could
-/// change its result, and its latest record, or none when it has never been recorded. WR-10 alone may name
-/// besides, in <see cref="Later"/>, the records of layer-2 runs at a MudBlazor version published after its
-/// floor record, each a run of its own. A row with no record may be marked, in <see cref="Limitation"/>, a Known
-/// limitation of a version by decision.
+/// change its result, and its latest record, or none when it has never been recorded. A row with no record may
+/// be marked, in <see cref="Limitation"/>, a Known limitation of a version by decision.
 /// </summary>
-public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record, IReadOnlyList<ByHandRecord>? Later = null, KnownLimitation? Limitation = null)
+public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> Paths, ByHandRecord? Record, KnownLimitation? Limitation = null)
 {
     /// <summary>How a message names the row: <c>FN-12e on macOS</c>.</summary>
     public string Name => $"{Row} on {Where}";
@@ -46,17 +43,10 @@ public sealed record ByHandRow(string Row, string Where, IReadOnlyList<string> P
 /// <c>verified/</c> followed by the name of the record's directory under <c>verification/</c>, and nothing
 /// else, one tag per record directory, whatever the platform or the run's purpose (decided with the user,
 /// 2026-10-12): <c>verification/2026-10-01-windows-browser-11/keys.md</c> is tagged
-/// <c>verified/2026-10-01-windows-browser-11</c>. WR-10's floor run, an automated run a person makes once
-/// and its record carries forward, is indexed beside the rows, with its paths written as a <c>:(glob)</c>
-/// pattern where a directory name varies (ADR-0205's note of 2026-10-12); its record names the MudBlazor
-/// versions its layer-2 runs covered. A layer-2 run at a MudBlazor 9.x published after the floor record is a
-/// run of its own, with a record in a directory of its own, tagged by that directory, which WR-10's entry names
-/// besides the floor record (decided with the user, 2026-10-12); the index names it in <c>laterRecords</c>. Every record the entry
-/// names is checked: each is a pass, names its commit, and is fetched through its tag, which names that commit;
-/// and each holds while the row's paths are unchanged between its own commit and the target, as every record
-/// checked by hand is held. The versions the records
-/// cover between them are held to those published within the Wrappers' declared range before X
-/// (<see cref="WrapperRange"/>, 2026-10-12).</para>
+/// <c>verified/2026-10-01-windows-browser-11</c>. A row's paths may be written as a <c>:(glob)</c> pattern where
+/// a directory name varies. (2026-11-02, ADR-0450: WR-10's floor run, once indexed beside the rows with the
+/// MudBlazor versions its layer-2 runs covered, is CI's long run's, which runs at the commit being released with
+/// the versions listed that day; its entry, and what this check held its records to, went.)</para>
 /// <para>A row put out of a version by decision is marked in the index with <c>knownLimitation</c>: the version, the
 /// day it was decided and the decision's words. For that version's release candidates and the version itself the row
 /// is reported in a notice, not refused, and it never holds; for any other version, or when no version is given, it is
@@ -129,6 +119,7 @@ public static partial class ByHand
                     continue;
                 }
                 var name = $"{row} on {where}";
+                Unread(item, RowKeys, $"{name} in {IndexPath}", report);
                 var paths = new List<string>();
                 if (item.TryGetProperty("paths", out var list) && list.ValueKind == JsonValueKind.Array)
                 {
@@ -151,7 +142,7 @@ public static partial class ByHand
                 }
                 else if (held.ValueKind == JsonValueKind.Object)
                 {
-                    record = Record(held, row, name, $"{name}'s record", report);
+                    record = Record(held, $"{name}'s record", report);
                 }
                 else if (held.ValueKind != JsonValueKind.Null)
                 {
@@ -166,43 +157,9 @@ public static partial class ByHand
                         report.Refuse($"{name} in {IndexPath} names a record and '{KnownLimitationKey}'. A row put out of a version by decision has no record, and a row with a record is held by it; the two together would leave whether it holds to whichever is read (2026-10-12).", IndexPath);
                 }
 
-                var later = new List<ByHandRecord>();
-                if (item.TryGetProperty(LaterRecords, out var laterList))
-                {
-                    if (row != WrapperRange.Row)
-                    {
-                        report.Refuse($"{name} in {IndexPath} names '{LaterRecords}', and only {WrapperRange.Row}'s entry does: the records of layer-2 runs at a {WrapperRange.Package} version published after its floor record (2026-10-12).", IndexPath);
-                    }
-                    else if (laterList.ValueKind != JsonValueKind.Array)
-                    {
-                        report.Refuse($"{name}'s '{LaterRecords}' in {IndexPath} is not a list of records.", IndexPath);
-                    }
-                    else
-                    {
-                        // A floor record that is there but malformed has been refused already.
-                        if ((!item.TryGetProperty("record", out var floor) || floor.ValueKind == JsonValueKind.Null) && laterList.GetArrayLength() > 0)
-                            report.Refuse($"{name} in {IndexPath} names records in '{LaterRecords}' and no floor record. A later layer-2 run stands beside the floor run, never in its place (ADR-0205, 2026-10-12).", IndexPath);
-                        var number2 = 0;
-                        foreach (var entry in laterList.EnumerateArray())
-                        {
-                            number2++;
-                            if (entry.ValueKind != JsonValueKind.Object)
-                            {
-                                report.Refuse($"Record {number2} of {name}'s '{LaterRecords}' in {IndexPath} is not a record.", IndexPath);
-                                continue;
-                            }
-                            if (Record(entry, row, name, $"{name}'s later record {number2}", report) is { } each) later.Add(each);
-                        }
-                        // One tag per record directory (2026-10-12): two records the entry names in one directory would share it.
-                        var all = (record is null ? later : [record, .. later]).ToList();
-                        foreach (var shared in all.GroupBy(r => r.Tag, StringComparer.Ordinal).Where(g => g.Count() > 1))
-                            report.Refuse($"{name} in {IndexPath} names {string.Join(", ", shared.Select(r => r.Path))} in one directory, tagged {shared.Key}. A layer-2 run at a later version is a run of its own, whose record goes in a directory of its own, one tag for each record directory (2026-10-12).", IndexPath);
-                    }
-                }
-
                 if (read.Any(r => r.Name == name))
                     report.Refuse($"{name} is written twice in {IndexPath}.", IndexPath);
-                read.Add(new ByHandRow(row, where, paths, record, later, limitation));
+                read.Add(new ByHandRow(row, where, paths, record, limitation));
             }
             return read;
         }
@@ -211,14 +168,11 @@ public static partial class ByHand
     /// <summary>
     /// Refuses the tag unless every row checked by hand holds at <paramref name="target"/>: the commit
     /// being signed off for a stable version, the tagged commit for a release candidate. The index and
-    /// the table are read from <paramref name="tree"/>, the tag's. WR-10's records, once the floor record
-    /// otherwise holds, are held besides to the MudBlazor versions <paramref name="mudBlazor"/> gives as published
-    /// within the range the Wrappers declare at <paramref name="target"/> before its commit time, or with no date, and listed;
-    /// with no list, or one that cannot be read, the row is refused as unchecked. <paramref name="version"/> is the
+    /// the table are read from <paramref name="tree"/>, the tag's. <paramref name="version"/> is the
     /// version being released, with or without its suffix: a row the index marks a Known limitation of its three
     /// numbers is reported, not refused; with no version, no such mark applies.
     /// </summary>
-    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, IPublishedVersions? mudBlazor = null, string? version = null)
+    public static void Check(Git git, ISourceTree tree, string target, Report report, bool fetchMissing, string? version = null)
     {
         var refusedBefore = report.Refusals.Count;
         var index = ReadIndex(tree, report);
@@ -252,7 +206,7 @@ public static partial class ByHand
                 continue;
             }
             var record = row.Record;
-            if (!Verified(git, tree, row, record, "record", fetchMissing, report))
+            if (!Verified(git, tree, row, record, fetchMissing, report))
             {
                 if (record.Verdict != "pass") toRun.Add(row.Name);
                 continue;
@@ -265,33 +219,6 @@ public static partial class ByHand
                 report.Refuse($"{row.Name}: the code it covers changed between its record ({record.Path}, made at {commit[..12]}) and {target[..12]}: {shown}. Run it again at the commit to be signed off, and record it (ADR-0208).", IndexPath);
                 toRun.Add(row.Name);
                 continue;
-            }
-            if (row.Row == WrapperRange.Row)
-            {
-                // Every later record the entry names is read as the floor record is: a pass, naming its commit, fetched
-                // through its tag, which names that commit, and its paths unchanged between its commit and the target, as
-                // every record checked by hand is held (ADR-0208; 2026-10-12). The versions are the union of those the
-                // records that hold cover.
-                var covered = new List<string>(record.Versions ?? []);
-                var laterHold = true;
-                foreach (var later in row.Later ?? [])
-                {
-                    var verified = Verified(git, tree, row, later, "later record", fetchMissing, report);
-                    if (verified && LaterHolds(git, row, later, target, report))
-                    {
-                        covered.AddRange(later.Versions ?? []);
-                        continue;
-                    }
-                    laterHold = false;
-                    if (later.Verdict != "pass") toRun.Add($"{row.Name}'s later record {later.Path}, which reads '{later.Verdict}'");
-                    else if (verified) toRun.Add($"{row.Name}'s later record {later.Path}, whose paths changed since its commit");
-                }
-                // A MudBlazor version published after the floor record and before X asks for the layer-2 runs at it (2026-10-12).
-                var unrun = WrapperRange.Check(row, covered.Distinct(StringComparer.Ordinal).ToList(), targetTree, git.CommitTime(target), git.CommitTime(commit), mudBlazor, report);
-                if (unrun is { Count: > 0 })
-                    toRun.Add($"{row.Name}'s layer-2 runs at {WrapperRange.Package} {string.Join(", ", unrun.Select(u => u.Version))}");
-                // A later record that does not hold keeps the row from holding, though no version is missing.
-                if (unrun is not { Count: 0 } || !laterHold) continue;
             }
             holding.Add(row.Name);
         }
@@ -342,43 +269,32 @@ public static partial class ByHand
     // Refuses a record whose file at the tag does not name its commit, and returns whether the rest of the record
     // can be judged: its verdict is a pass, and its commit is had through its tag, which names it (2026-10-12), asked
     // of the remote when this clone does not have the tag. Each failure is refused.
-    private static bool Verified(Git git, ISourceTree tree, ByHandRow row, ByHandRecord record, string what, bool fetchMissing, Report report)
+    private static bool Verified(Git git, ISourceTree tree, ByHandRow row, ByHandRecord record, bool fetchMissing, Report report)
     {
         var held = tree.ReadText(record.Path);
         if (held is null)
-            report.Refuse($"{row.Name}'s {what}, {record.Path}, is not at the tag.", IndexPath);
+            report.Refuse($"{row.Name}'s record, {record.Path}, is not at the tag.", IndexPath);
         else if (!SignOff.Names(held, record.Commit))
-            report.Refuse($"{row.Name}'s {what}, {record.Path}, does not name the commit {record.Commit[..12]} that {IndexPath} says it was made at. A record names the commit it verified.", record.Path);
+            report.Refuse($"{row.Name}'s record, {record.Path}, does not name the commit {record.Commit[..12]} that {IndexPath} says it was made at. A record names the commit it verified.", record.Path);
         if (record.Verdict != "pass")
         {
-            report.Refuse($"{row.Name}'s {(what == "record" ? "latest record" : what)}, {record.Path}, reads '{record.Verdict}', and a row holds only on a pass (ADR-0208; the Definition of Done's Step 7).", IndexPath);
+            report.Refuse($"{row.Name}'s latest record, {record.Path}, reads '{record.Verdict}', and a row holds only on a pass (ADR-0208; the Definition of Done's Step 7).", IndexPath);
             return false;
         }
         var tagged = git.TagCommit(record.Tag) ?? (fetchMissing ? git.FetchTag(record.Tag) : null);
         if (tagged is null)
         {
-            report.Refuse($"{row.Name}'s {what} was made at {record.Commit[..12]}, and the tag {record.Tag} that keeps that commit is not in this repository"
+            report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and the tag {record.Tag} that keeps that commit is not in this repository"
                 + (fetchMissing ? $", and {git.Remote} did not give it" : " (fetch the tags, or run with --fetch-missing)")
                 + ", so whether its code changed since cannot be checked. The run that made the record tags the commit it verified and pushes the tag (ADR-0208, 2026-10-12).", IndexPath);
             return false;
         }
         if (tagged != record.Commit)
         {
-            report.Refuse($"{row.Name}'s {what} was made at {record.Commit[..12]}, and its tag {record.Tag} names {tagged[..12]}. A run's tag names the commit it verified and is never moved, so one of the two is wrong (ADR-0208, 2026-10-12).", IndexPath);
+            report.Refuse($"{row.Name}'s record was made at {record.Commit[..12]}, and its tag {record.Tag} names {tagged[..12]}. A run's tag names the commit it verified and is never moved, so one of the two is wrong (ADR-0208, 2026-10-12).", IndexPath);
             return false;
         }
         return true;
-    }
-
-    // Whether a later record's paths, the row's, are unchanged between its commit and the target, as a record checked by
-    // hand is held (ADR-0208); refused, naming the files, when they are not.
-    private static bool LaterHolds(Git git, ByHandRow row, ByHandRecord later, string target, Report report)
-    {
-        var changed = git.ChangedPaths(later.Commit, target, row.Paths);
-        if (changed.Count == 0) return true;
-        var shown = string.Join(", ", changed.Take(12)) + (changed.Count > 12 ? $", and {changed.Count - 12} more" : "");
-        report.Refuse($"{row.Name}: the code it covers changed between its later record ({later.Path}, made at {later.Commit[..12]}) and {target[..12]}: {shown}. A later record is held as every record checked by hand is, while its paths are unchanged (ADR-0208, 2026-10-12).", IndexPath);
-        return false;
     }
 
     /// <summary>The key of a row that marks it a Known limitation of a version by decision.</summary>
@@ -419,13 +335,10 @@ public static partial class ByHand
         return good ? new KnownLimitation(version, decided, decision.Trim()) : null;
     }
 
-    /// <summary>The key of WR-10's entry that names the records of its later layer-2 runs.</summary>
-    public const string LaterRecords = "laterRecords";
-
-    // A record as the index writes it: commit, tag, path, verdict, and on WR-10 the versions. Null, refused, when
-    // any of it is malformed.
-    private static ByHandRecord? Record(JsonElement held, string row, string name, string what, Report report)
+    // A record as the index writes it: commit, tag, path and verdict. Null, refused, when any of it is malformed.
+    private static ByHandRecord? Record(JsonElement held, string what, Report report)
     {
+        Unread(held, RecordKeys, $"{what} in {IndexPath}", report);
         var commit = Text(held, "commit") ?? "";
         var tag = Text(held, "tag") ?? "";
         var at = Text(held, "path") ?? "";
@@ -457,15 +370,7 @@ public static partial class ByHand
             report.Refuse($"{what} in {IndexPath} has the verdict '{verdict}', and a verdict is one of {string.Join(", ", Verdicts)}.", IndexPath);
             good = false;
         }
-        IReadOnlyList<string>? versions = null;
-        if (row == WrapperRange.Row)
-        {
-            // Each of WR-10's records names the MudBlazor versions its layer-2 runs covered, so that a version
-            // published after the floor record can be asked for (ADR-0205, ADR-0208, 2026-10-12).
-            versions = Versions(held, what, report);
-            if (versions is null) good = false;
-        }
-        return good ? new ByHandRecord(commit, tag, at, verdict, versions) : null;
+        return good ? new ByHandRecord(commit, tag, at, verdict) : null;
     }
 
     /// <summary>
@@ -495,28 +400,18 @@ public static partial class ByHand
         : path.EndsWith('/') ? tree.IsDirectory(path)
         : tree.IsFile(path);
 
-    // WR-10's 'versions': the stable MudBlazor versions its layer-2 runs covered, at least one.
-    private static IReadOnlyList<string>? Versions(JsonElement held, string what, Report report)
+    /// <summary>What a row of the index may say; 'note' is for a reader and is not read.</summary>
+    public static readonly IReadOnlyList<string> RowKeys = ["row", "where", "paths", "record", KnownLimitationKey, "note"];
+
+    /// <summary>What a record may say.</summary>
+    public static readonly IReadOnlyList<string> RecordKeys = ["commit", "tag", "path", "verdict"];
+
+    // Refuses a key the check does not read, so that nothing in the index looks held that is not: WR-10's
+    // 'versions' and 'laterRecords', read until 2026-11-02 (ADR-0450), among them.
+    private static void Unread(JsonElement item, IReadOnlyList<string> keys, string what, Report report)
     {
-        if (!held.TryGetProperty("versions", out var list) || list.ValueKind != JsonValueKind.Array || list.GetArrayLength() == 0)
-        {
-            report.Refuse($"{what} in {IndexPath} names no 'versions'. Each of WR-10's records names the {WrapperRange.Package} versions its layer-2 runs covered, as [\"9.6.0\", \"9.7.0\"], and a stable version published within the Wrappers' declared range before X that none of them names refuses the tag (ADR-0205, ADR-0208, 2026-10-12).", IndexPath);
-            return null;
-        }
-        var versions = new List<string>();
-        var good = true;
-        foreach (var item in list.EnumerateArray())
-        {
-            var value = item.ValueKind == JsonValueKind.String ? item.GetString()! : item.ToString();
-            if (item.ValueKind != JsonValueKind.String || PackageVersion.Parse(value) is not { IsStable: true })
-            {
-                report.Refuse($"{what} in {IndexPath} names '{value}' among its 'versions', and each is a stable {WrapperRange.Package} version its layer-2 runs covered, as 9.6.0.", IndexPath);
-                good = false;
-                continue;
-            }
-            versions.Add(value);
-        }
-        return good ? versions : null;
+        foreach (var property in item.EnumerateObject().Where(p => !keys.Contains(p.Name)))
+            report.Refuse($"{what} says '{property.Name}', which the release check does not read. It reads {string.Join(", ", keys)}.", IndexPath);
     }
 
     private static string? Text(JsonElement item, string name) =>

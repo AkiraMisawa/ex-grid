@@ -1141,6 +1141,10 @@ and none of them is indexed below. They also run weekly, and on a pull request t
 **VZ-18's check on the remote-isolation PC is withdrawn** *(2026-11-02, decided with the user)*: what that PC
 showed was its remote browser isolation mirror, not Citrix, and the user asked that it no longer be tested.
 VZ-18's layer-3 half, `virtualisation.spec.mjs`, still gates.
+**WR-10's floor run is CI's too** *(2026-11-02, decided with the user, ADR-0450's note of that date)*: the
+`mudblazor-floor-hosts`, `mudblazor-floor` and `mudblazor-range` jobs run it in the same long run, at the commit
+being released, with the versions nuget.org lists that day ("The Wrappers' MudBlazor floor" below), and a pull
+request that changes a Wrapper runs them. Its entry left the index below.
 
 **Rows checked by hand, and the code each covers**
 
@@ -1170,12 +1174,13 @@ change could change its result.
     its paths compared from its own commit; or a stable MudBlazor version within the range the Wrappers
     declare, listed on nuget.org and published before X's commit time by its registration index or given no
     date there, is not among the versions its records' layer-2 runs covered; or that index cannot be read
-    *(2026-10-12, how the release workflow checks the WR-10 row's notes below)*.
+    *(2026-10-12, how the release workflow checks the WR-10 row's notes below)* *(2026-11-02: no longer read.
+    WR-10 left the index; CI runs it with the versions listed that day, ADR-0450)*.
 - **The records are indexed in `verification/by-hand.json`.** For each row it names the same paths as
   this table, the row's latest record, the commit that record was made at, and the record's tag. *(2026-10-12,
   how the release workflow checks the WR-10 row: for WR-10 each record names besides the MudBlazor versions
   its layer-2 runs covered, and the entry names the records of later layer-2 runs, by the row's notes,
-  besides the floor record.)* *(2026-10-12, how the release workflow reads a row put out of a version by
+  besides the floor record; no longer read since 2026-11-02, when WR-10 left the index, ADR-0450.)* *(2026-10-12, how the release workflow reads a row put out of a version by
   decision: the index marks it `knownLimitation`, naming the version without a suffix, the day of the decision
   and its words, and gives it no record, and this table's row says "Known limitation of" that version. The
   mark reaches that version's release candidates and the version, and no other; the workflow refuses it on a
@@ -1220,16 +1225,15 @@ the Windows row checks the painting, as the macOS row does. The row named one re
 which was never the name committed.)* *(2026-11-02, ADR-0450: both rows left this table. CI's desktop jobs
 run FN-12e's painting on Windows and on macOS, Chrome and Edge, at the commit being released.)*
 
-**WR-10's floor run is indexed beside the rows**
+**WR-10's floor run was indexed beside the rows**
 ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)'s
-notes of 2026-10-12). It is automated, but a person makes it once, not CI, and its record carries it
-forward while the Wrappers and the demo pages are unchanged, so the release workflow reads its paths as a
-row's and refuses a tag whose Wrappers or demo pages changed since the run.
+notes of 2026-10-12). It was automated, but a person made it once, not CI, and its record carried it
+forward while the Wrappers and the demo pages were unchanged. *(2026-11-02, ADR-0450's note of that date: CI's
+long run makes it at the commit being released, and its row left this table and the index.)*
 
 | Row | Where | Checked by hand | The code it covers |
 |---|---|---|---|
 | **ED-30** | Windows | A real IME on Chrome and Edge, on `/sheet` on the React host, and on `/sheet?chrome=mud` on both Blazor hosts and behind 150 ms on the Server host: the sixteenth run's cases k1 to k16, and DC-47's. *(2026-10-16, decided with the user: k8 is run with the Microsoft IME's Predictive input turned Off, by the method of `verification/2026-10-12-windows-ed30-k8/`, and the setting put back afterwards. With it on, the IME's prediction list stands under the composition and takes the press on D12, which never reaches the page, as in the sixteenth and seventeenth runs.)* | `dotnet/src/ExGrid/Assets/`, `dotnet/src/ExGrid/wwwroot/`, `dotnet/src/ExGrid/Cells/`, `dotnet/src/ExGrid/Chrome/`, `dotnet/src/ExGrid/Components/`, `dotnet/src/ExGrid/Keys/`, `dotnet/src/ExGrid/Selection/`, `dotnet/src/ExGrid.MudBlazor/`, `dotnet/src/ExSheet/Assets/`, `dotnet/src/ExSheet/wwwroot/`, `dotnet/src/ExSheet/Components/`, `packages/sheet/src/sheet-formula-aids.ts`, `dotnet/src/ExSheet.MudBlazor/`, `dotnet/samples/ExGrid.DemoPages/DemoChrome.cs`, `dotnet/samples/ExGrid.DemoPages/Pages/SheetPage.razor`, `dotnet/samples/ExGrid.DemoPages/SheetCases.cs`, `packages/core/src/`, `packages/blazor/src/`, `packages/sheet/src/`, `packages/sheet-blazor/src/`, `dotnet/src/ExSheet/Components/` |
-| **WR-10** | Windows or Linux | Step 4's floor run: the layer-3 tests that run under a Wrapper, against a DemoHost built with the MudBlazor every Wrapper declares as its floor, on both Blazor hosts, in Chrome and in Edge; and beside it each Wrapper's layer-2 suite at every published version of its declared range. *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only; the floor run, layer 3 at 9.6.0, holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own; its record goes in its own `verification/<date>-<name>/` directory, the run tags the commit it verified `verified/` followed by that directory's name, and WR-10's entry in `verification/by-hand.json` names that record besides the floor record. The release check reads every record the entry names: the floor record's paths hold since its commit, and each later record's tag names its commit.)* | `:(glob)dotnet/src/*.MudBlazor/**`, `dotnet/samples/ExGrid.DemoPages/` |
 
 The run must capture `page.on('console')` and `page.on('pageerror')` into `console.json` for
 CON-1..4 and CON-8, and read `Performance.getMetrics` into `metrics.json` for MEM-2/5, DOM-5,
@@ -1269,126 +1273,45 @@ React host's run above.)*
 discharges.)*
 
 **The Wrappers' MudBlazor floor** ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md), WR-10).
-*(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0.)* Once before the
-sign-off, the layer-3 tests that run under a Wrapper run against a DemoHost built with the MudBlazor
-every Wrapper declares as its floor, 9.6.0, on both Blazor hosts, in Chrome and in Edge, and at 150 % where
-`chrome-150` runs some of them. Every other run stays on the version the demo pages pin. The run is made
-at a commit, `C` below, from a clean tree, and its record goes in a directory of its own under
-`verification/`, `R` below. The demo pages are pinned for the run only, both Blazor hosts are built from
-clean, and the version each will load is read back before the run:
+*(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0.)* The layer-3 tests that run
+under a Wrapper run against hosts built with the MudBlazor every Wrapper declares as its floor, on both
+Blazor hosts, in Chrome and in Edge, and at 150 % where `chrome-150` runs some of them; and beside them each
+Wrapper's layer-2 suite runs with MudBlazor pinned in its test project to every stable version nuget.org lists
+within the declared range. Every other run stays on the version the demo pages pin.
 
-```sh
-C=$(git rev-parse HEAD)            # the commit the run verifies
-R=verification/<date>-<name>       # the record's own directory
-mkdir -p "$R"
-sed -i -E 's|(Include="MudBlazor" Version=")[^"]*"|\19.6.0"|' dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
-rm -rf dotnet/samples/ExGrid.DemoHost/bin dotnet/samples/ExGrid.DemoHost/obj/Debug \
-       dotnet/samples/ExGrid.DemoHost.Server/bin dotnet/samples/ExGrid.DemoHost.Server/obj/Debug
-nix develop -c bash -c 'cd dotnet && dotnet build samples/ExGrid.DemoHost'
-nix develop -c bash -c 'cd dotnet && dotnet build samples/ExGrid.DemoHost.Server'
-nix develop -c bash -c 'cd dotnet && dotnet build samples/ExGrid.DemoApi'
-# both name 9.6.0
-strings -el dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot/_framework/MudBlazor.*.wasm | grep -A1 '^FileVersion'
-strings -el dotnet/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'
+*(2026-11-02, decided with the user,
+[ADR-0450](adr/0450-the-rows-once-checked-by-hand-run-on-ci-s-own-windows-and-macos-desktops.md)'s note of that
+date: **CI's long run makes it, at the commit being released.** Until then a person made the run once before the
+sign-off, from a clean tree, recorded it under `verification/` and tagged its commit; the record carried it
+forward while `src/*.MudBlazor/` and the demo pages were unchanged, a MudBlazor published after it asked for
+layer-2 runs at that version alone, each a run of its own named in WR-10's entry in `verification/by-hand.json`,
+and the release check held the records to nuget.org's list. The last such record,
+`verification/2026-10-25-linux-mudblazor-floor/`, is kept as it was. The procedure moved into
+`.github/workflows/ci.yml` as it was written, the floor and the versions read rather than typed, and the
+record, its tag and its index entry went: a run at the commit being released, with the versions listed that day,
+leaves nothing for a record to carry forward.)* The jobs:
 
-cd tests/browser
-G="[Mm]ud|is not the grid's \(KB-35|apply the condition \(KB-31, SRV-5\)|Escape, Escape straight after an Inner Popup|a menu taking the keyboard a round trip late|with and without a Wrapper|SH-46/DC-59: the Selection's outline|the palette reaches the pane|RI-3: every page opens|inspectors\.spec\.mjs|WR-7a|DC-58: a bold number that fits"
-# every project: chrome, msedge, and chrome-150's Wrapper tests
-npx playwright test --grep "$G" 2>&1 | tee "../../$R/mudblazor-floor.log"
-EXGRID_HOSTING=server npx playwright test --grep "$G" 2>&1 \
-  | tee "../../$R/mudblazor-floor-server.log"
-cd ../..
-git checkout -- dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj
-```
+- **`mudblazor-floor-hosts`** reads the floor from the Wrappers' projects, refusing them when they declare
+  different ranges; pins every sample that pins MudBlazor to it (the demo pages and `ExChart.Showcases`, which
+  the demo pages reference, or the pin is a downgrade and nothing builds); publishes the WebAssembly host, the
+  Server host and the demo API server; and reads back the version each host will load from the file it serves
+  (`strings -el … | grep -A1 '^FileVersion$'`), failing unless it is the floor.
+- **`mudblazor-floor`** runs the tests that run under a Wrapper against those hosts, on each host, each of
+  `chrome`, `msedge` and `chrome-150`, in the shards the full run uses, headed under xvfb. They are the tests
+  its `WRAPPED` names: those whose file, `describe` or title names MudBlazor or `mud` (the `?chrome=mud`
+  variants among them), and, by name, those that open a page under a Wrapper without saying so. A test of the
+  second kind joins `WRAPPED` when it is written.
+- **`mudblazor-range`** lists the stable versions within the range the Wrappers declare that nuget.org's
+  registration lists that day (`tools/scripts/mudblazor-range.mjs`, which refuses a list it cannot read), and
+  runs `ExGrid.MudBlazor.Tests`, `ExSheet.MudBlazor.Tests`, `ExPivot.MudBlazor.Tests` and `ExChart.Components`
+  (where `ExChart.MudBlazor`'s tests are, which the person's run left out) with each pinned in the test project. The pin is the nearest reference, so NuGet takes it over the Wrapper's range, and the version
+  each run loaded is read back. Layer 2 sees markup and a component's state, not focus or timing: it adds to the
+  floor run and replaces nothing.
 
-`G` is the tests that run under a Wrapper: those whose file, `describe` or title names MudBlazor or
-`mud` (the `?chrome=mud` variants among them), and, by name, those that open a page under a Wrapper
-without saying so. A test of the second kind joins `G` when it is written. On a machine without GNU
-`strings`, each `MudBlazor` file's version is read back another way; it is never assumed.
-
-Beside it, each Wrapper's layer-2 suite runs with MudBlazor pinned in its test project to every
-published version of the declared range: each 9.x from 9.6.0 on nuget.org at the time of the run, which
-the record names. The pin is the nearest reference, so NuGet takes it over the Wrapper's range, and the
-version each run loaded is read back. Layer 2 sees markup and a component's state, not focus or timing:
-it adds to the floor run and replaces nothing. Each version's output goes to a log of its own, which
-names the commit it ran at.
-
-```sh
-versions=$(curl -s https://api.nuget.org/v3-flatcontainer/mudblazor/index.json \
-  | grep -oE '"9\.[0-9]+\.[0-9]+"' | tr -d '"' | awk -F. '$2 >= 6' | sort -V)
-for v in $versions; do
-  for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests; do
-    sed -i "s|</Project>|  <ItemGroup><PackageReference Include=\"MudBlazor\" Version=\"$v\" /></ItemGroup>\n</Project>|" \
-      dotnet/tests/$t/$t.csproj
-    echo "== $t, MudBlazor $v, at $(git rev-parse HEAD)"
-    nix develop -c bash -c "cd dotnet && dotnet test tests/$t"
-    strings -el dotnet/tests/$t/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion'   # names $v
-    git checkout -- dotnet/tests/$t/$t.csproj
-  done 2>&1 | tee "$R/mudblazor-layer2-$v.log"
-done
-```
-
-**The run tags the commit it verified.** *(2026-10-12, decided with the user: a verified commit's tag
-is `verified/` followed by the name of the record's directory under `verification/`, and nothing else,
-one tag per record directory.)* The record names `C` in full. In the same commit as the record, WR-10's
-entry in `verification/by-hand.json` names the commit, the tag, the record's path, the verdict and the
-MudBlazor versions its layer-2 runs covered, and empties `laterRecords`: a new floor run's layer-2 runs
-cover every published version of the range, and earlier later records were made on the Wrappers it
-replaces. The session that made the run then pushes the tag:
-
-```sh
-git add "$R" verification/by-hand.json
-git commit -m "WR-10: the Wrappers' MudBlazor floor run"
-git tag -a "verified/${R#verification/}" "$C" -m "The commit the Wrappers' MudBlazor floor run verified"
-git push origin "verified/${R#verification/}"
-```
-
-**The floor run's record, with the layer-2 runs beside it, holds while `src/*.MudBlazor/` and
-`dotnet/samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X** (ADR-0205's note of
-2026-10-12, the shape of ADR-0208's rows checked by hand). It is the one automated run of this step that
-a record carries forward, an exception to the note of 2026-10-11 above. *(2026-10-12, decided with the
-user: a later layer-2 run's record, a run of its own, is carried forward too.)* Whether a record still holds is
-read with git, from the commit its tag names, the glob spelled out so that it reaches every file below
-each Wrapper:
-
-```sh
-git diff --quiet <the record's tag> X -- ':(glob)dotnet/src/*.MudBlazor/**' dotnet/samples/ExGrid.DemoPages/ \
-  && echo "the floor record holds"
-```
-
-A change to either path asks for the floor run and the layer-2 runs again, at the floor then declared.
-*(2026-10-12, decided with the user: **a MudBlazor 9.x published after the floor record and before X
-asks for the layer-2 runs at that version only.** The floor run (layer 3 at 9.6.0) holds while its paths
-are unchanged.)* *(2026-10-12, decided with the user: **an unlisted version is not asked for.** The
-release check reports it as out of the check because it is unlisted.)*
-
-**A layer-2 run at a later 9.x is a run of its own.** *(2026-10-12, decided with the user: its record
-goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified
-`verified/` followed by that directory's name, as every run does. WR-10's entry in
-`verification/by-hand.json` names that record (commit, tag, path, verdict, the version it covered)
-besides the floor record. The release check reads every record WR-10's entry names: the floor record's
-paths hold since its commit, and each later record's tag names its commit.)* The run is the loop above,
-with `C`, `R` and `versions` set for it first:
-
-```sh
-C=$(git rev-parse HEAD)                  # the commit the run verifies
-R=verification/<date>-<name>             # a directory of its own
-mkdir -p "$R"
-versions=<the new version>
-```
-
-In the same commit as its record, WR-10's entry names the record in `laterRecords`, and the floor record
-stays in `record`; the session that made the run then pushes its tag. The later record holds, as every
-record checked by hand does (ADR-0208) and as the floor record does, while `src/*.MudBlazor/` and
-`dotnet/samples/ExGrid.DemoPages/` are unchanged between its commit and X; a run made where they differ from X's
-does not count.
-
-```sh
-git add "$R" verification/by-hand.json
-git commit -m "WR-10: the Wrappers' layer-2 runs at MudBlazor $versions"
-git tag -a "verified/${R#verification/}" "$C" -m "The commit the Wrappers' layer-2 runs at MudBlazor $versions verified"
-git push origin "verified/${R#verification/}"
-```
+They run in the long run, so they gate a release candidate and a version without a suffix; weekly; on a
+dispatch that asks for the desktops; and on a pull request that changes a Wrapper or how the runs read the
+range. A failure at the floor that also fails at the demo pages' version is that test's, judged by the full
+run.
 
 ### Step 5 — The randomised consistency run
 
@@ -1510,7 +1433,7 @@ holding nothing of any real Consumer's domain.
 | **WR-7a** | MUST | Inside `MudExGridPaper` a Stretch-height grid takes the paper's height below the toolbar; a declared-height grid lays out as before (ADR-0030, 2026-09-26) | Layer 3 on the MudBlazor pages *Hosts: both Blazor.* | the grid's bottom meets the paper's content bottom; the declared grids' boxes are unchanged |
 | **WR-8** | MUST | The Wrapper adds no script: no `.js` in the package and no interop call of its own; what MudBlazor's components run for themselves is MudBlazor's (ADR-0021 as narrowed by ADR-0039) | inspect the package; grep for `IJSRuntime`, `IJSObjectReference`, `.js` | none |
 | **WR-9** | MUST | The Wrapper's own suites hold the core's console rules: zero errors, zero page errors, zero warnings from ExGrid's or the Wrapper's code, no unhandled exception (CON-1/2/3/6) | the shared layer-3 fixture; layer 2's unobserved-exception handler | as the core's |
-| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both Blazor hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, recorded under `verification/`. The record holds while `src/*.MudBlazor/` and `dotnet/samples/ExGrid.DemoPages/` are unchanged from the commit it was made at up to X (ADR-0205's note of 2026-10-12, the shape of ADR-0208). *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, whose record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified `verified/` followed by that directory's name; WR-10's entry in `verification/by-hand.json` names that record besides the floor record; the release check reads every record the entry names.)* Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words *Hosts: both Blazor.* | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
+| **WR-10** | MUST | Each MudBlazor Wrapper works at the floor it declares, 9.6.0, and across its declared range: the layer-3 tests run under `ExGrid.MudBlazor`, `ExSheet.MudBlazor` and `ExPivot.MudBlazor` pass against a DemoHost built with the floor's MudBlazor, on both Blazor hosts, in Chrome and in Edge; and each Wrapper's layer-2 suite passes with MudBlazor pinned to every published version of its declared range ([ADR-0205](adr/0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md)). *(Added 2026-10-12, decided with the user, when the floor was raised to 9.6.0: the Wrappers' layer-3 tests, run that day on Playwright's Chromium against a DemoHost at 9.0.0, failed on both hosts, and bisected over 9.0.0 to 9.9.0, the lowest version at which they passed, but for two failures that are not MudBlazor's, was 9.6.0. That record is not this row's floor run.)* | Step 4's floor run and its layer-2 runs, made by CI's `mudblazor-floor` and `mudblazor-range` jobs in the long run, at the commit being released, with the versions nuget.org lists that day (ADR-0450's note of 2026-11-02; until then recorded under `verification/` and held while `src/*.MudBlazor/` and `dotnet/samples/ExGrid.DemoPages/` were unchanged from the commit it was made at up to X, ADR-0205's note of 2026-10-12, the shape of ADR-0208). *(2026-10-12, decided with the user: a MudBlazor 9.x published after the floor record and before X asks for the layer-2 runs at that version only. The floor run (layer 3 at 9.6.0) holds while its paths are unchanged.)* *(2026-10-12, decided with the user: an unlisted version is not asked for; the release check reports it as out of the check because it is unlisted.)* *(2026-10-12, decided with the user: a layer-2 run at such a version is a run of its own, whose record goes in its own `verification/<date>-<name>/` directory, and the run tags the commit it verified `verified/` followed by that directory's name; WR-10's entry in `verification/by-hand.json` names that record besides the floor record; the release check reads every record the entry names.)* Between floor runs, Step 1 holds the floor on every run: the Wrappers' suites resolve 9.6.0, and their WR-10 tests pin the role and name on the focusable element of every MudSelect a Wrapper draws, and a refused operand's words *Hosts: both Blazor.* | zero failures; a layer-3 failure that also fails at the demo pages' version is that test's, and is judged by the run at that version |
 
 ---
 

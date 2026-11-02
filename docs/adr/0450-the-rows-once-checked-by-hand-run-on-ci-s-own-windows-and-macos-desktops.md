@@ -101,7 +101,28 @@ them, are run, and are no longer Known limitations of it.
   Definition of Done; VZ-18's mechanism stays held by `virtualisation.spec.mjs`, which still gates, and the
   repaint stays, harmless elsewhere.
 - **WR-10, the Wrappers' MudBlazor floor run.** It runs nothing a hosted Linux runner cannot. Moving it
-  into CI is a change of its own, not made here.
+  into CI is a change of its own, not made here. *(2026-11-02, later the same day, as the user's request of
+  the morning asked: made. See "WR-10 moves into CI" below.)*
+
+### WR-10 moves into CI
+
+*(2026-11-02, a note added the same day, under the user's request that the rows checked by hand be checked
+by a machine wherever one can.)* The floor run of the Definition of Done's Step 4, and the Wrappers' layer-2
+runs across their declared range beside it, are three jobs of `ci.yml`: `mudblazor-floor-hosts` publishes the
+two Blazor hosts and the demo API server with every sample's MudBlazor pinned to the floor the Wrappers declare,
+and reads back the version each host loads; `mudblazor-floor` runs the tests under a Wrapper against them, on
+both hosts, in each browser project, sharded as the full run is; `mudblazor-range` runs each Wrapper's layer-2
+suite at every stable version nuget.org's registration lists within the range that day, `ExChart.Components`
+among them, where `ExChart.MudBlazor`'s tests are. They run when the desktop rows do, in the long run among
+them, and on a pull request that changes a Wrapper.
+
+So WR-10 leaves the record index as the desktop rows did, and with it what ADR-0205's notes of 2026-10-12 built
+for a run a person made once: the floor record held by its paths, the layer-2 records of versions published
+after it, each a run of its own in `laterRecords`, and the release check's reading of nuget.org's list against
+the versions the records named. A run at the commit being released, with the versions listed that day, asks
+for each of those by running it. The release tool's `--mudblazor-index` and the code that read the list went
+with them. The procedure is the one a person ran; what it typed, the floor `9.6.0` and the version list, it
+now reads, from the Wrappers' projects and from nuget.org.
 
 ### What a runner is not
 

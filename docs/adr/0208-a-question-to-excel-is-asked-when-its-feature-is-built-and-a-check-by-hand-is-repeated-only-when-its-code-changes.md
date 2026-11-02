@@ -12,6 +12,8 @@ that can be automated", is taken. VZ-14, VZ-16, FN-12e on Windows and on macOS, 
 on macOS run on CI's hosted Windows and macOS desktops at the commit being released, and leave the record
 index this ADR made. VZ-18's check on the remote-isolation PC is withdrawn. ED-30, a real IME, and WR-10 stay
 indexed, held by their records as this ADR says.)*
+*(2026-11-02, later the same day, ADR-0450's note "WR-10 moves into CI": WR-10's floor run and its layer-2
+runs are CI's long run's too, and its entry left the index. ED-30 stays.)*
 
 The seventeenth Windows run takes about half a day of a person at a Windows desktop. ADR-0205 asks every
 stable version to pass all of §22, a patch included. Read with the by-hand rows, that is half a day at

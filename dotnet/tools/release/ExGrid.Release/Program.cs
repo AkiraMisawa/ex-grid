@@ -9,11 +9,6 @@ using ExGrid.Release;
 //   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD --version 0.1.0
 //   dotnet run --project tools/release/ExGrid.Release -- skips --trx ../verification/<date>
 //
-// WR-10's records are held to the MudBlazor versions nuget.org gives as published within the range the
-// Wrappers declare before X's commit time, or with no date, an unlisted version left out (2026-10-12): read from --mudblazor-index, nuget.org's
-// registration index unless another address, or a saved copy of it with its pages inlined, is given. A
-// list that cannot be read refuses the tag.
-//
 // Exit code 0 admits, 1 refuses, 2 is a usage error or a check that could not be made.
 
 const string Usage = """
@@ -22,15 +17,11 @@ const string Usage = """
               Reads the tag, refuses a malformed version or a commit on neither main nor a release/*
               branch, and writes version, kind, long and site to $GITHUB_OUTPUT when it is set.
       gate    --tag <v-tag> --commit <rev> [--repo <dir>] [--remote <name>] [--fetch-missing]
-              [--mudblazor-index <url or file>]
               For a stable version: the Signed off block, X a release candidate's commit, and the
               structural check (ADR-0205). For a stable version and a release candidate: the corpus
               check and the rows checked by hand (ADR-0208). A plain prerelease passes.
               --fetch-missing asks the remote for a record's verified/* tag this clone lacks.
-              --mudblazor-index is where MudBlazor's published versions and their dates are
-              listed, for WR-10's records (default: nuget.org's registration index).
       by-hand --at <rev> [--version <x.y.z>] [--repo <dir>] [--remote <name>] [--fetch-missing]
-              [--mudblazor-index <url or file>]
               Which rows checked by hand would hold if <rev> were signed off, and which need a run,
               reading the record index and the table from the working tree (ADR-0208). --version is
               the version to be released; a row the index marks a Known limitation of that version
@@ -73,8 +64,6 @@ string? Option(string name) => options.TryGetValue(name, out var value) ? value 
 
 var git = new Git(Option("--repo") ?? Directory.GetCurrentDirectory()) { Remote = Option("--remote") ?? "origin" };
 var report = new Report();
-// Read only when WR-10's record otherwise holds, and then once.
-var mudBlazor = new NuGetRegistration(Option("--mudblazor-index") ?? WrapperRange.Registration);
 
 try
 {
@@ -98,7 +87,7 @@ try
             var full = git.Commit(commit);
             if (full is null) report.Refuse($"{commit} is not a commit of this repository.");
             if (version is not null && full is not null)
-                Gate.Run(git, version, full, report, flags.Contains("--fetch-missing"), mudBlazor);
+                Gate.Run(git, version, full, report, flags.Contains("--fetch-missing"));
             report.WriteTo(Console.Out);
             return report.Admitted ? 0 : 1;
         }
@@ -117,7 +106,7 @@ try
                 Console.Error.WriteLine($"--version takes a version without a suffix, as 0.1.0, not '{released}'.");
                 return 2;
             }
-            ByHand.Check(git, new DirectoryTree(git.Repository), full, report, flags.Contains("--fetch-missing"), mudBlazor, released);
+            ByHand.Check(git, new DirectoryTree(git.Repository), full, report, flags.Contains("--fetch-missing"), released);
             report.WriteTo(Console.Out);
             return report.Admitted ? 0 : 1;
         }

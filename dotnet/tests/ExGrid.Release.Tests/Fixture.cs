@@ -4,19 +4,15 @@ using System.Text.Json;
 namespace ExGrid.Release.Tests;
 
 /// <summary>
-/// A row of a fixture's record index and table, the <c>verified/*</c> tag its record names, and, for WR-10, the
-/// MudBlazor versions its record's layer-2 runs covered.
+/// A row of a fixture's record index and table, and the <c>verified/*</c> tag its record names.
 /// </summary>
-public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, string[]? Versions = null, Later[]? Later = null, Limited? Limited = null);
+public sealed record Row(string Name, string Where, string[] Paths, (string Commit, string Path, string Verdict)? Record = null, string Tag = Fixture.RunTag, Limited? Limited = null);
 
 /// <summary>
 /// A row put out of a version by decision: the index's <c>knownLimitation</c>, and whether the table's row says so
 /// (2026-10-12).
 /// </summary>
 public sealed record Limited(string Version = "0.1.0", string Decided = "2026-10-12", string Decision = "VZ-18 is a Known limitation of 0.1.0.", bool InTable = true);
-
-/// <summary>A later layer-2 run's record WR-10's entry names besides its floor record (2026-10-12).</summary>
-public sealed record Later(string Commit, string Tag, string Path, string Verdict, string[] Versions);
 
 /// <summary>The files a fixture repository holds, written as the release check reads them.</summary>
 public static class Fixture
@@ -47,10 +43,8 @@ public static class Fixture
                     ["row"] = r.Name,
                     ["where"] = r.Where,
                     ["paths"] = r.Paths,
-                    ["record"] = r.Record is { } held ? Record(held, r.Tag, r.Versions) : null,
+                    ["record"] = r.Record is { } held ? Record(held, r.Tag) : null,
                 };
-                if (r.Later is not null)
-                    row["laterRecords"] = r.Later.Select(l => Record((l.Commit, l.Path, l.Verdict), l.Tag, l.Versions)).ToList();
                 if (r.Limited is { } limited)
                     row["knownLimitation"] = new Dictionary<string, string> { ["version"] = limited.Version, ["decided"] = limited.Decided, ["decision"] = limited.Decision };
                 return row;
@@ -59,22 +53,8 @@ public static class Fixture
         return JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true });
     }
 
-    private static Dictionary<string, object> Record((string Commit, string Path, string Verdict) held, string tag, string[]? versions)
-    {
-        var record = new Dictionary<string, object> { ["commit"] = held.Commit, ["tag"] = tag, ["path"] = held.Path, ["verdict"] = held.Verdict };
-        if (versions is not null) record["versions"] = versions;
-        return record;
-    }
-
-    /// <summary>A Wrapper's project declaring MudBlazor at <paramref name="range"/>, as the Wrappers do.</summary>
-    public static string WrapperProject(string range) =>
-        $"""
-        <Project Sdk="Microsoft.NET.Sdk.Razor">
-          <ItemGroup>
-            <PackageReference Include="MudBlazor" Version="{range}" />
-          </ItemGroup>
-        </Project>
-        """;
+    private static Dictionary<string, object> Record((string Commit, string Path, string Verdict) held, string tag) =>
+        new() { ["commit"] = held.Commit, ["tag"] = tag, ["path"] = held.Path, ["verdict"] = held.Verdict };
 
     /// <summary>A Markdown file holding the table of these rows under its heading, as the Definition of Done would.</summary>
     public static string Table(params Row[] rows)
