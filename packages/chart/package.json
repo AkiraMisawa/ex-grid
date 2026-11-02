@@ -10,17 +10,22 @@
   },
   "homepage": "https://akiramisawa.github.io/ex-grid/",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./ex-chart.min.css"
   },
   "files": [
     "dist/index.js",
     "dist/index.js.map",
-    "dist/index.d.ts"
+    "dist/index.d.ts",
+    "ex-chart.min.css",
+    "ex-chart.min.css.map"
   ],
   "scripts": {
     "build": "node ../../tools/scripts/build.mjs",

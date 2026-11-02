@@ -10,17 +10,22 @@
   },
   "homepage": "https://akiramisawa.github.io/ex-grid/",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "*.css"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./ex-sheet.min.css"
   },
   "files": [
     "dist/index.js",
     "dist/index.js.map",
-    "dist/index.d.ts"
+    "dist/index.d.ts",
+    "ex-sheet.min.css",
+    "ex-sheet.min.css.map"
   ],
   "dependencies": {
     "@ex-grid/core": "0.0.0-dev",

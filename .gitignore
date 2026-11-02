@@ -31,6 +31,13 @@ docs/agent-runs/
 node_modules/
 packages/*/dist/
 packages/*/temp/
+# The npm packages' check (tools/npm-package/check.mjs): the tarballs it packed and tested
+tools/npm-package/.tarballs/
+
+# The stylesheet a Script Core package carries, copied by its build from dotnet/src/<Package>/wwwroot/
+# (tools/scripts/stylesheets.mjs), where the committed file is.
+packages/*/*.min.css
+packages/*/*.min.css.map
 
 # The React DemoHost (ADR-0350 section 13): what `vite build` writes for layer 3
 samples/ExGrid.DemoHost.React/dist/

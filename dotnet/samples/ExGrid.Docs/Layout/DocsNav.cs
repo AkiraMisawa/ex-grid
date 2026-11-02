@@ -83,6 +83,7 @@ public static class DocsNav
         [
             new("Introduction", ""),
             new("Installation", "getting-started"),
+            new("Installation for React", "getting-started/react"),
             new("Packages", "getting-started/packages"),
             new("Feature matrix", "features"),
             new("Design", "design"),
