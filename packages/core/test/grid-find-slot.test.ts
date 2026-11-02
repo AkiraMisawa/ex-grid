@@ -217,6 +217,65 @@ describe('the find panel\'s slot', () => {
         expect(focusOf(selections)).toEqual({ row: 3, column: 1 });
     });
 
+    it('ADR-0332 §3 / spine rule 6: a Replace All answered before a slow Chrome drew it waiting gives the button the keyboard back once the drawings stand, and a key typed meanwhile waits for it', async () => {
+        // A Chrome that draws a round trip away, as a Razor slot does: each view it is told of is drawn, in order, only
+        // when the test lets it, and holds the Settled Mark until then (ADR-0410 section 5).
+        const owed: { readonly disabled: boolean; readonly release: () => void }[] = [];
+        const holder: { grid?: { holdSettled(): () => void } } = {};
+        // Its elements outlive a mount, as a Razor slot's contents do when a focus request mounts it again.
+        let current: GridFindPanelSlotContext | undefined;
+        const slowField = document.createElement('input');
+        slowField.className = 'slow-field';
+        slowField.addEventListener('input', () => { defined(current, 'a mount').setText(slowField.value); });
+        const slowReplaceAll = document.createElement('button');
+        slowReplaceAll.type = 'button';
+        slowReplaceAll.className = 'slow-replace-all';
+        slowReplaceAll.addEventListener('click', () => { defined(current, 'a mount').replaceAll(); });
+        const slow: GridChromeSlot<GridFindPanelSlotContext> = (slot, context) => {
+            current = context;
+            slot.append(slowField, slowReplaceAll);
+            const stop = context.subscribe(() => {
+                owed.push({ disabled: context.view().replaceWaiting, release: defined(holder.grid, 'the grid').holdSettled() });
+            });
+            context.takeFocus(slowField);
+            return () => {
+                stop();
+                current = undefined;
+            };
+        };
+        let later: ((result: GridReplaceResult) => void) | undefined;
+        let asked = 0;
+        const { root, view } = mount<Deal>({
+            columns, rows: deals, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false, chrome: { findPanel: slow },
+            onEdit: () => undefined, onReplace: () => { asked += 1; return new Promise(resolve => { later = resolve; }); },
+        });
+        holder.grid = view;
+        const drawOwed = (): void => {
+            for (const drawing of owed.splice(0)) {
+                slowReplaceAll.disabled = drawing.disabled;
+                drawing.release();
+            }
+        };
+        await painted();
+        key(root, 'h', { ctrlKey: true });
+        typeInto(slowField, 'novak');
+        drawOwed();
+        slowReplaceAll.focus();
+        slowReplaceAll.click();
+        // Lent to the field while the answer is out; the answer comes before the Chrome drew the button waiting.
+        expect(active()).toBe(slowField);
+        defined(later, 'the answer')(replacedCells(100, 0));
+        await settle();
+        expect([active(), slowReplaceAll.disabled, root.hasAttribute('data-ex-settled')]).toEqual([slowField, false, false]);
+        // An Enter typed now waits for the keyboard to be given back, as it would had the drawing come at once.
+        key(slowField, 'Enter');
+        // The drawings stand, the one that disabled it among them: then the button has the keyboard back, and the
+        // Enter presses it, a second Replace All, which lends the keyboard to the field again.
+        drawOwed();
+        await settle();
+        expect([asked, active()]).toEqual([2, slowField]);
+    });
+
     it('ADR-0332 §3: a panel opened again while a Replace All is out waits for its answer too', async () => {
         let later: ((result: GridReplaceResult) => void) | undefined;
         const { root, drawn } = grid({ onEdit: () => undefined, onReplace: () => new Promise(resolve => { later = resolve; }) });

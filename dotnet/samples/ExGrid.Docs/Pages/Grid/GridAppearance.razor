@@ -235,7 +235,9 @@
         <p>
             The find panel (<code>findPanel</code>) draws <code>useFindPanel(context).view</code>: the text, the two
             options, whether Replace is shown and whether a Replace All is still out, and what the last step came to,
-            in the grid's words, for a live region. Each change and step goes to the context (<code>setText</code>,
+            in the grid's words, for a live region. Draw Replace and Replace All disabled while one is out: the grid
+            lends the keyboard of a button pressed to the find field meanwhile, so a button your drawing disables
+            never drops it to the page. Each change and step goes to the context (<code>setText</code>,
             <code>setMatchCase</code>, <code>next</code>, <code>replaceAll</code>, …); the search, its answer and the
             Focus it moves stay the grid's. Hand the hook's <code>field</code> ref to the find field, which takes the
             keyboard with its text selected when Find opens, and as it was after a Tab off either end of the panel. Enter and Shift+Enter in a field step through the

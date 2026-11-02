@@ -1987,6 +1987,8 @@ export class GridView<Row> {
     // What a Framework Adapter still owes the page, each held until it stands: a slot's contents a round trip away
     // (ADR-0410 section 5).
     #settledHolds = 0;
+    // What waits for every slot's contents to stand, called once no hold is left, or as the grid goes.
+    readonly #heldDrawn: (() => void)[] = [];
     #destroyed = false;
 
     constructor(root: HTMLElement, options: GridOptions<Row>, reports: BrowserReports) {
@@ -2380,6 +2382,7 @@ export class GridView<Row> {
     destroy(): void {
         if (this.#destroyed) return;
         this.#destroyed = true;
+        for (const drawn of this.#heldDrawn.splice(0)) drawn();
         this.#cancelSettle?.();
         this.#cancelAnnounce?.();
         this.#cancelBoxTold?.();
@@ -7847,8 +7850,18 @@ export class GridView<Row> {
             if (!held) return;
             held = false;
             this.#settledHolds -= 1;
-            if (!this.#destroyed) this.#lookSettled();
+            if (this.#destroyed) return;
+            if (this.#settledHolds === 0) for (const drawn of this.#heldDrawn.splice(0)) drawn();
+            this.#lookSettled();
         };
+    }
+
+    // Answers once every slot's contents a Framework Adapter owes the page stand (ADR-0410 section 5), or the grid goes.
+    #slotsDrawn(): Promise<void> {
+        return new Promise(resolve => {
+            if (this.#settledHolds === 0 || this.#destroyed) resolve();
+            else this.#heldDrawn.push(resolve);
+        });
     }
 
     /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
@@ -8618,7 +8631,7 @@ export class GridView<Row> {
         // (the spine's sixth rule).
         this.#replacing += 1;
         // A button that waits disabled drops the keyboard to the page, where no key reaches the panel, Escape
-        // included: a Replace button pressed hands it to the find field meanwhile, and has it back once it is
+        // included: a Replace button pressed hands it to the find field meanwhile, and has it back once it can be
         // pressed again, where nothing has moved it since, so a second Enter presses it again.
         const doc = this.#root.ownerDocument;
         const pressed = doc.activeElement;
@@ -8629,12 +8642,25 @@ export class GridView<Row> {
         }
         popover.panel.waitForReplace(true);
         this.#invalidate();
+        const giveBack = (): void => {
+            if (!this.#destroyed && lentTo !== null && doc.activeElement === lentTo && pressed instanceof HTMLButtonElement && pressed.isConnected
+                && !pressed.disabled) {
+                pressed.focus();
+            }
+        };
         const answered = (): void => {
             this.#replacing -= 1;
             const standing = this.#popover;
             if (standing?.kind === 'find') standing.panel.waitForReplace(false);
-            if (lentTo !== null && doc.activeElement === lentTo && pressed instanceof HTMLButtonElement && pressed.isConnected && !pressed.disabled) {
-                pressed.focus();
+            // A Framework Adapter's slot draws the buttons a round trip away, and may not yet show them waiting at all:
+            // given back now, the keyboard would be on a button a drawing still owed disables, which drops it to the
+            // page. Where the panel is a slot and a drawing is owed, it is given back once what is owed stands, and the
+            // inputs made meanwhile wait for it, so a key lands where it would had the drawing come at once (spine rule
+            // 6). What is owed is the grid's whole, which may wait on more than the panel: later, never elsewhere.
+            if (lentTo !== null && standing?.kind === 'find' && standing.panel instanceof SlottedFindPanel && this.#settledHolds > 0 && !this.#destroyed) {
+                void this.inOrder(async () => { await this.#slotsDrawn(); giveBack(); });
+            } else {
+                giveBack();
             }
             this.#invalidate();
         };
