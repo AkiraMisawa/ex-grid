@@ -21,6 +21,13 @@ note on the platform's math library on 2026-10-26. Section 3's live server data 
 on 2026-10-26 too: the Consumer's transport tells the source by a notice or a Change Batch. Section 9's
 layout was settled with the user on 2026-10-26.)*
 
+*(2026-11-02, decided with the user: the version this ADR and ADR-0350 call `0.3.0` is published as
+`0.2.0`. The `0.2.0` prepared over the C# core, whose `0.2.0-rc.1` notes stand on `release/0.2`, was
+never tagged, so the next version after `0.1.0` takes the number. Where an ADR says `0.3.0`, read
+`0.2.0`; the ADRs are not rewritten for it. The Known limitations decided for "`0.2.0`" on 2026-10-25,
+FN-12e and KB-3 on macOS and VZ-18, were decided for the C# core's version; whether each reaches this
+one is decided in the Definition of Done's Step 4 table, which the release check reads.)*
+
 ## Context
 
 [ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md) moved

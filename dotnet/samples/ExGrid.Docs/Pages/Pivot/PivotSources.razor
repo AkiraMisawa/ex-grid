@@ -135,7 +135,7 @@
             <code>pivotLeafBound</code>.
             The Field List that shows the counts, marks a drop target past the cap and words the refusal by the field
             (<em>Customer (1,020,000 items) in Rows makes more than 200,000 combinations, the most server data allows</em>)
-            comes with the TypeScript engine's UI in 0.3.0; ExPivot today does not ask for the counts.
+            comes with the TypeScript engine's UI in 0.2.0; ExPivot today does not ask for the counts.
         </p>
         <p id="level-aggregates">
             A collapsed report shows far fewer cells than it has leaves, so a server's source may answer <strong>Level
@@ -182,7 +182,7 @@ return answer.Build();</code></pre>
             <code>answersLevels</code> asks every question with the groups its layout shows, and a cube made from Level
             Aggregates (<code>cube.isLevels</code>) holds only those, so an expand asks the server again, one round trip,
             where a cube of leaves already holds it; a collapse of groups it holds is laid out from it. ExPivot lays its report out with the TypeScript engine
-            under both frameworks; <code>ExPivot.Engine</code>'s own cube, which leaves with it in 0.3.0, still refuses
+            under both frameworks; <code>ExPivot.Engine</code>'s own cube, which leaves with it in 0.2.0, still refuses
             an answer of cells by name.
         </p>
         <p id="level-windows">
@@ -246,7 +246,7 @@ return answer.Build();</code></pre>
             <code>RecordPivotSource</code> over your objects, <code>FetchingPivotSource</code> asking a server), the same
             Leaf Aggregates with decimals summed exactly, and the same report in each form, locale and set of words. It is
             the engine ExPivot's React and Blazor packages draw with (ADR-0370), built in this repository and published
-            with 0.3.0.
+            with 0.2.0.
         </p>
         <pre class="docs-code"><code>import { createPivotLayout, pivotCube, pivotReport, queryForLayout, SnapshotPivotSource } from '@@ex-grid/pivot-engine';
 

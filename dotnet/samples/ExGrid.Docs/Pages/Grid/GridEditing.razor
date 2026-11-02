@@ -76,7 +76,7 @@
         </p>
         <p>
             <strong>A verdict may come later.</strong> In ExGrid for React (<code>@@ex-grid/react</code>, published with
-            0.3.0) a column's <code>validate</code> may answer a promise of a verdict, and <code>onEdit</code> may return a
+            0.2.0) a column's <code>validate</code> may answer a promise of a verdict, and <code>onEdit</code> may return a
             promise, before which <code>intent.refuse(message)</code> still holds the editor. Each is handed an
             <code>AbortSignal</code>. In Blazor's <code>ExGrid.Components.ExGrid</code> a column declares
             <code>ValidateAsync</code>, answering a <code>ValueTask&lt;EditVerdict&gt;</code> with a
@@ -143,7 +143,7 @@
             through every error rather than only the painted ones.
         </p>
         <p>
-            In ExGrid for React (<code>@@ex-grid/react</code>, published with 0.3.0) the same ruleset is
+            In ExGrid for React (<code>@@ex-grid/react</code>, published with 0.2.0) the same ruleset is
             <code>new GridRuleset(rowKey).set(rule)</code>, and the step has its keys: give the grid
             <code>findError</code>, and <kbd>F8</kbd> brings the Focus to the next error cell and
             <kbd>Shift</kbd>+<kbd>F8</kbd> to the previous, wherever it stands, as Visual Studio and VS Code step
