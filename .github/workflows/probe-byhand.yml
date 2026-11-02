@@ -16,9 +16,9 @@ jobs:
         with: { node-version-file: .node-version }
       - run: npm init -y > $null; npm i playwright-core@1.62.1 --no-audit --no-fund
       - name: Session, displays, fonts, browsers
+        continue-on-error: true
         run: |
           [Environment]::UserInteractive
-          query user 2>&1
           Get-CimInstance Win32_VideoController | Format-List Name, CurrentHorizontalResolution, CurrentVerticalResolution | Out-String
           Get-Command Set-DisplayResolution -ErrorAction SilentlyContinue | Out-String
           Test-Path 'C:\Windows\Fonts\segoeui.ttf'; Test-Path 'C:\Windows\Fonts\YuGothM.ttc'; Test-Path 'C:\Windows\Fonts\msgothic.ttc'
@@ -26,10 +26,13 @@ jobs:
           Test-Path 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
           ./scale.ps1
       - name: dpr at the start
+        continue-on-error: true
         run: node dpr.mjs
       - name: Keys on Chrome
+        continue-on-error: true
         run: node keys.mjs chrome
       - name: Keys on Edge
+        continue-on-error: true
         run: node keys.mjs msedge
       - name: Larger resolution, if the runner takes one
         continue-on-error: true
@@ -38,11 +41,15 @@ jobs:
           Get-CimInstance Win32_VideoController | Format-List CurrentHorizontalResolution, CurrentVerticalResolution | Out-String
           ./scale.ps1
       - name: Scale 125%
+        continue-on-error: true
         run: ./scale.ps1 -Set 125; Start-Sleep 3; ./scale.ps1
       - run: node dpr.mjs
+        continue-on-error: true
       - name: Scale 150%
+        continue-on-error: true
         run: ./scale.ps1 -Set 150; Start-Sleep 3; ./scale.ps1
       - run: node dpr.mjs
+        continue-on-error: true
   ime:
     runs-on: windows-latest
     timeout-minutes: 40
@@ -53,6 +60,8 @@ jobs:
         with: { node-version-file: .node-version }
       - run: npm init -y > $null; npm i playwright-core@1.62.1 --no-audit --no-fund
       - name: Japanese input
+        continue-on-error: true
         run: ./ime.ps1
       - name: Compose on Chrome
+        continue-on-error: true
         run: node keys.mjs chrome --ime
