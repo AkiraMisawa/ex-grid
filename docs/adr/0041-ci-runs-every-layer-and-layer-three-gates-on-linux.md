@@ -7,6 +7,10 @@ automatically, because there is no CI". Layers 1 and 2 gated only in the sense t
 "CI verifies everything in one run" when it put every package in one repository, and nothing
 ever built that CI.
 
+*(2026-11-02, [ADR-0450](./0450-the-rows-once-checked-by-hand-run-on-ci-s-own-windows-and-macos-desktops.md): layer 3 no longer gates on Linux alone. Two jobs run the rows once checked by hand
+on the hosted Windows and macOS desktops, in the long run that gates a release candidate and a version
+without a suffix. The Linux shards stay what gates every push.)*
+
 What that cost was visible by 2026-09-24. Every layer-3 test written that day had run only on a
 cloud container's bundled Chromium, headless, with two settings that are not the project's, and
 `docs/implementation-status.md` carried a growing list of runs still owed on `chrome` and

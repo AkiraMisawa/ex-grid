@@ -2191,8 +2191,9 @@ class SheetView {
     };
 
     // The Sheet Toolbar's keys (ADR-0100), while it is shown: the Alt key alone and F10 start the KeyTips where the grid
-    // takes keys, unless an edit is open; Escape in a list a KeyTip opened goes back to its row's KeyTips, as Excel's
-    // does (R2 (b)). Answers whether the key was one of them.
+    // takes keys; while an edit is open they start nothing, and the browser's menu does not open from them either, which
+    // would take the keyboard from the edit (ADR-0450's run, 2026-11-02: Chrome's did). Escape in a list a KeyTip opened
+    // goes back to its row's KeyTips, as Excel's does (R2 (b)). Answers whether the key was one of them.
     #toolbarKey(event: KeyboardEvent): boolean {
         if (this.#options.showToolbar !== true) return false;
         const target = event.target;
@@ -2209,12 +2210,16 @@ class SheetView {
         }
         const plain = !event.ctrlKey && !event.metaKey && !event.shiftKey;
         if (event.key === 'Alt') {
-            this.#altAlone = plain && !this.#editing && this.#takesGridKeys(target);
+            this.#altAlone = plain && this.#takesGridKeys(target);
             return this.#altAlone;
         }
         // Any other key between an Alt's press and its release: that Alt is not alone.
         this.#altAlone = false;
-        if (event.key !== 'F10' || !plain || event.altKey || this.#editing || !this.#takesGridKeys(target)) return false;
+        if (event.key !== 'F10' || !plain || event.altKey || !this.#takesGridKeys(target)) return false;
+        if (this.#editing) {
+            event.preventDefault();
+            return true;
+        }
         if (!this.#toolbar.startKeyTips()) return false;
         event.preventDefault();
         event.stopPropagation();
@@ -2222,12 +2227,12 @@ class SheetView {
     }
 
     // The Alt key's release, when it went down alone, starts the KeyTips; its default, which would take the keyboard to
-    // the browser's menu, is the KeyTips' too.
+    // the browser's menu, is the KeyTips' too. While an edit is open it starts nothing, and its default is still held.
     readonly #onSheetKeyUp = (event: KeyboardEvent): void => {
         if (event.key !== 'Alt' || !this.#altAlone) return;
         this.#altAlone = false;
-        if (this.#options.showToolbar !== true || this.#editing || !this.#takesGridKeys(event.target)) return;
-        if (this.#toolbar.startKeyTips()) event.preventDefault();
+        if (this.#options.showToolbar !== true || !this.#takesGridKeys(event.target)) return;
+        if (this.#editing || this.#toolbar.startKeyTips()) event.preventDefault();
     };
 
     // The keyboard leaving where it was between an Alt's press and its release, as Alt+Tab takes it from the page: no

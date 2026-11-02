@@ -7,6 +7,12 @@ their diff reaches", for the rows checked by hand. It also amends
 [ADR-0202](./0202-what-0-1-0-holds-of-exsheet-and-expivot-and-where-it-says-what-it-does-not-do.md)'s
 note of the same day, which split the sign-off's Windows run.)*
 
+*(2026-11-02, decided with the user, [ADR-0450](./0450-the-rows-once-checked-by-hand-run-on-ci-s-own-windows-and-macos-desktops.md): the option this ADR left open, "a Windows runner on CI for the rows
+that can be automated", is taken. VZ-14, VZ-16, FN-12e on Windows and on macOS, SH-42, SH-51, SH-52 and KB-3
+on macOS run on CI's hosted Windows and macOS desktops at the commit being released, and leave the record
+index this ADR made. VZ-18's check on the remote-isolation PC is withdrawn. ED-30, a real IME, and WR-10 stay
+indexed, held by their records as this ADR says.)*
+
 The seventeenth Windows run takes about half a day of a person at a Windows desktop. ADR-0205 asks every
 stable version to pass all of §22, a patch included. Read with the by-hand rows, that is half a day at
 the desktop before every release, an urgent patch's too. A release would wait for someone's free half

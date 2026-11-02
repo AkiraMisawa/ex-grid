@@ -1446,6 +1446,30 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         for (const listedKey of listed) answers[listedKey]?.();
     });
 
+    it('ADR-0100, ADR-0450: while an edit is open, Alt released alone and F10 start nothing and leave the browser\'s menu shut, the editor keeping the keyboard', async () => {
+        const { element } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        key('F2');
+        const editor = document.activeElement;
+        expect(editor?.tagName).toBe('INPUT');
+        key('Alt', { altKey: true });
+        const release = new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true });
+        editor?.dispatchEvent(release);
+        expect(release.defaultPrevented, 'Alt released alone: the browser\'s menu would take the keyboard from the edit').toBe(true);
+        const f10 = new KeyboardEvent('keydown', { key: 'F10', bubbles: true, cancelable: true });
+        editor?.dispatchEvent(f10);
+        expect(f10.defaultPrevented, 'F10: the browser\'s menu would take the keyboard from the edit').toBe(true);
+        expect(document.activeElement).toBe(editor);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+        // An Alt that is a chord's is the editor's, as it is outside an edit.
+        key('Alt', { altKey: true });
+        key('ArrowDown', { altKey: true });
+        const chord = new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true });
+        editor?.dispatchEvent(chord);
+        expect(chord.defaultPrevented).toBe(false);
+    });
+
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
         const { element } = sheetOf({ showToolbar: true });
         await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });

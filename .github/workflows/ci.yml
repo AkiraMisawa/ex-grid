@@ -21,6 +21,10 @@ on:
         description: 'Also run the soak (MEM-5/6) and ST-1 at 10⁶ rows'
         type: boolean
         default: false
+      desktops:
+        description: 'Also run the Windows and macOS desktop rows, as the long run does (ADR-0450)'
+        type: boolean
+        default: false
   # From release.yml, on a v* tag: the version is the tag's (ADR-0042).
   workflow_call:
     inputs:
@@ -58,6 +62,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       layer3: ${{ steps.which.outputs.layer3 }}
+      desktops: ${{ steps.which.outputs.desktops }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,6 +77,11 @@ jobs:
           if [ "${EVENT}" != pull_request ]; then
             echo "layer3=true" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+          # The desktop rows' own machinery (ADR-0450): a pull request that changes it runs them, so a
+          # change to them is proved before a release candidate first needs them.
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-desktop\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
+            echo "desktops=true" >> "$GITHUB_OUTPUT"
           fi
           others=$(git diff --name-only HEAD^1 HEAD | grep -vE '^(docs/.*|[^/]+\.md)$' || true)
           if [ -z "${others}" ]; then
@@ -496,6 +506,136 @@ jobs:
         run: >
           test "${{ needs.browser-server.result }}" = success ||
           { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser-server.result }}" = skipped; }
+
+  # The rows the Definition of Done once checked by hand on a Windows desktop (ADR-0450), on the
+  # hosted runner's own desktop: an interactive session whose display scale is set the way Settings
+  # sets it, and keys sent through Windows' input queue, so the browser meets them before the page
+  # does. At 100%, SH-42, SH-51 and SH-52's browser keys, and FN-12e's painting; at 125% and at 150%,
+  # VZ-14 with the OS doing the scaling; at 150%, VZ-16's real zoom to 2.25. The long run's, and a
+  # dispatch that asks for it: release.yml calls the long run for a release candidate and a version
+  # without a suffix, so these gate both. A pull request that changes their own files runs them too.
+  windows-desktop:
+    name: The Windows desktop rows (VZ-14, VZ-16, FN-12e, SH-42, SH-51, SH-52)
+    needs: [changes, hosts]
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.desktops == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXGRID_HOSTS: ${{ github.workspace }}/hosts
+    steps:
+      - uses: actions/checkout@v7
+
+      # The hosts run published; the demo API server beside them runs under .NET.
+      - uses: ./.github/actions/dotnet
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          (Get-Item "${env:ProgramFiles}/Google/Chrome/Application/chrome.exe").VersionInfo.ProductVersion
+          (Get-Item "${env:ProgramFiles(x86)}/Microsoft/Edge/Application/msedge.exe").VersionInfo.ProductVersion
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
+
+      # The runner's display starts at 1024x768, where Windows offers no scale above 100%.
+      - name: The display at 1920x1080
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: At 100%, the browser's own keys and FN-12e
+        working-directory: tests/browser
+        run: |
+          ./windows/display-scale.ps1 -Set 100
+          $env:EXGRID_DISPLAY_SCALE = '100'
+          $env:EXGRID_HOSTING = 'react'
+          npx playwright test windows-desktop.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "ADR-0450|FN-12e" --project=chrome --project=msedge
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $env:EXGRID_HOSTING = 'wasm'
+          npx playwright test windows-desktop.spec.mjs --grep "SH-52" --project=chrome --project=msedge
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: At 125%, VZ-14
+        working-directory: tests/browser
+        run: |
+          ./windows/display-scale.ps1 -Set 125
+          $env:EXGRID_DISPLAY_SCALE = '125'
+          $env:EXGRID_HOSTING = 'react'
+          npx playwright test scrollbar.spec.mjs --grep "fractional display scaling" --project=chrome --project=msedge
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: At 150%, VZ-14 and VZ-16
+        working-directory: tests/browser
+        run: |
+          ./windows/display-scale.ps1 -Set 150
+          $env:EXGRID_DISPLAY_SCALE = '150'
+          $env:EXGRID_HOSTING = 'react'
+          npx playwright test scrollbar.spec.mjs windows-desktop.spec.mjs --grep "fractional display scaling|VZ-16" --project=chrome --project=msedge
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-windows-desktop
+          path: |
+            verification/
+            tests/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # The rows the Definition of Done once checked by hand on a Mac (ADR-0450): KB-3, where
+  # ControlOrMeta presses Command, on every key path that fills with it, the editor's included, and
+  # the two Apple-only caret keys; and FN-12e's painting in macOS's own faces. Headed, on the runner's
+  # desktop. The long run's, as the Windows rows are.
+  macos-desktop:
+    name: The macOS desktop rows (KB-3, FN-12e)
+    needs: [changes, hosts]
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.desktops == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      EXGRID_HOSTS: ${{ github.workspace }}/hosts
+      KB3: 'ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version
+          "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" --version
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
+
+      - name: The React host, KB-3 and FN-12e
+        working-directory: tests/browser
+        env:
+          EXGRID_HOSTING: react
+        run: npx playwright test features.spec.mjs sheet-vs-excel.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "$KB3|FN-12e" --project=chrome --project=msedge
+
+      - name: The Server host, KB-3's Blazor parts
+        working-directory: tests/browser
+        env:
+          EXGRID_HOSTING: server
+        run: npx playwright test features.spec.mjs write-lands.spec.mjs --grep "$KB3" --project=chrome --project=msedge
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-macos-desktop
+          path: |
+            verification/
+            tests/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
 
   # The spec files a push to a pull request changes, each run three times over on each host and
   # browser (tests/browser/README.md, "Before a new or changed spec goes in"). A test that
