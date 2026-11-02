@@ -36,7 +36,10 @@
         <CodeBlock Path="Examples/Setup/install-react.sh" />
         <p>
             A prerelease and a release candidate are published under npm's <code>next</code> tag, so <code>npm install</code>
-            without a version takes the latest version without a suffix. Name the version to take a prerelease.
+            without a version takes the latest version without a suffix. Name the version to take a prerelease. Until
+            the first version without a suffix is published, npm's <code>latest</code> names the first prerelease, as npm
+            does for any package's first version, and later prereleases do not move it: until then, take one by its
+            version or by <code>@@next</code>.
         </p>
     </DocsSection>
 
