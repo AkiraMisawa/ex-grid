@@ -66,11 +66,21 @@ A key the browser took for itself left F24 to the tab it switched to, or to the 
 wait fails naming the chords. This is the reading ADR-0220 asks for: the result does not depend on when
 the test looks, because F24 reaches the page only after every key before it has been handled.
 
+**A key the page leaves to the browser can be acted on late.** The browser opens its menu for Alt
+released alone once the page has answered the key, and keys sent in the same call can land on the page
+before that: on this ADR's branch, 2026-11-02, a page that prevented nothing saw Alt, F23 and Escape in
+Chrome, and Alt and F23 in Edge, whose menu then took the Escape. So `osKeys` sends a second F24 in a call
+of its own once the first has landed, waits for it too, and then reads that the page still holds the
+keyboard (`document.hasFocus()`); a menu opened late takes that F24, or the keyboard. This narrows what a
+single call could miss, and is not a proof: a menu opened later than that round trip would still go
+unseen. The rows' later steps send more keys, which such a menu would take.
+
 **The method is held by a negative control.** `windows-desktop.spec.mjs`'s first test sends keys the
-browser is known to take, on plain pages that prevent nothing: Ctrl+2 switches to the second tab, which sees
-only the sentinel, and Alt released alone opens the browser's menu, so the next key is the menu's and the
-page sees Alt and the closing sentinel only. Were the keys reaching the page first, as Playwright's do, that
-test would fail, so a pass of the rows above is not a pass that would have come anyway.
+browser is known to take, on plain pages that prevent nothing: Ctrl+2 switches to the second tab, which
+sees only the F24 after it; and Alt released alone takes the keyboard from the page, read by waiting for
+`document.hasFocus()` to turn false, until Escape gives it back. Were the keys reaching the page first, as
+Playwright's do, that test would fail, so a pass of the rows above is not a pass that would have come
+anyway.
 
 **A row CI runs leaves the record index.** Its row goes from the Definition of Done's Step 4 table and from
 `verification/by-hand.json`, so the release check no longer asks for a record of it. What held it, a
