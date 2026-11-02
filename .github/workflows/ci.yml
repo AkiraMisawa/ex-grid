@@ -549,6 +549,7 @@ jobs:
         working-directory: tests/browser
         run: |
           ./windows/display-scale.ps1 -Set 100
+          $env:EXGRID_DISPLAY_SCALE = '100'
           $env:EXGRID_HOSTING = 'react'
           npx playwright test windows-desktop.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "ADR-0450|FN-12e" --project=chrome --project=msedge
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -560,6 +561,7 @@ jobs:
         working-directory: tests/browser
         run: |
           ./windows/display-scale.ps1 -Set 125
+          $env:EXGRID_DISPLAY_SCALE = '125'
           $env:EXGRID_HOSTING = 'react'
           npx playwright test scrollbar.spec.mjs --grep "fractional display scaling" --project=chrome --project=msedge
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -568,6 +570,7 @@ jobs:
         working-directory: tests/browser
         run: |
           ./windows/display-scale.ps1 -Set 150
+          $env:EXGRID_DISPLAY_SCALE = '150'
           $env:EXGRID_HOSTING = 'react'
           npx playwright test scrollbar.spec.mjs windows-desktop.spec.mjs --grep "fractional display scaling|VZ-16" --project=chrome --project=msedge
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

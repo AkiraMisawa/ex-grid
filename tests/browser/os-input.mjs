@@ -19,16 +19,35 @@ function start() {
         { stdio: ['pipe', 'pipe', 'inherit'] });
     const lines = readline.createInterface({ input: child.stdout });
     const waiting = [];
+    // What went wrong outside an answer: a line nobody asked for, the helper failing to start or its pipe
+    // breaking. Thrown from a stream's callback it would end the worker, and every test left with it; held
+    // here, the next key sent fails with it, by name.
+    let broken = null;
+    const end = (why) => {
+        broken ??= why;
+        for (const answer of waiting.splice(0)) answer(`err ${why}`);
+    };
     lines.on('line', (line) => {
         const answer = waiting.shift();
-        if (answer === undefined) throw new Error(`os-keys.ps1 said what nobody asked: ${line}`);
+        if (answer === undefined) {
+            end(`os-keys.ps1 said what nobody asked: ${line}`);
+            child.kill();
+            return;
+        }
         answer(line);
     });
-    child.on('exit', (code) => {
-        for (const answer of waiting.splice(0)) answer(`err os-keys.ps1 ended with ${code}`);
-        helper = null;
-    });
+    child.on('error', (error) => end(`os-keys.ps1 could not run: ${error.message}`));
+    child.stdin.on('error', (error) => end(`os-keys.ps1's input broke: ${error.message}`));
+    child.on('exit', (code) => end(`os-keys.ps1 ended with ${code}`));
+    // The helper reads until its input closes, which the worker's exit does; it never holds the worker open.
+    child.unref();
+    child.stdin.unref();
+    child.stdout.unref();
     const send = (command) => new Promise((resolve) => {
+        if (broken !== null) {
+            resolve(`err ${broken}`);
+            return;
+        }
         waiting.push(resolve);
         child.stdin.write(`${command}\n`);
     });
@@ -80,6 +99,9 @@ export async function osKeysLandOn(from, to, ...chords) {
     const seenTo = to === from ? seenFrom : await recordKeys(to);
     await from.bringToFront();
     const title = await from.title();
+    if (title === '') {
+        throw new Error('The page has no title, so the window in front cannot be told to be its own: give it one.');
+    }
     const front = await ask('foreground');
     if (!front.startsWith(title)) {
         throw new Error(`The window in front is "${front}", not the page's "${title}": keys sent now would go there.`);
