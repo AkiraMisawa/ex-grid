@@ -25,6 +25,8 @@ jobs:
           Test-Path 'C:\Program Files\Google\Chrome\Application\chrome.exe'
           Test-Path 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
           ./scale.ps1
+      - name: 1920x1080
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
       - name: dpr at the start
         continue-on-error: true
         run: node dpr.mjs
@@ -51,6 +53,7 @@ jobs:
       - run: node dpr.mjs
         continue-on-error: true
   ime:
+    if: contains(github.event.head_commit.message, '[ime]')
     runs-on: windows-latest
     timeout-minutes: 40
     defaults: { run: { shell: pwsh, working-directory: tools/probe-byhand } }

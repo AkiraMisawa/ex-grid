@@ -23,8 +23,8 @@ foreach ($chord in $Chords) {
     elseif ($part.Length -eq 1) { $vks += [byte][char]$part.ToUpper() }
     else { throw "unknown key $part" }
   }
-  foreach ($vk in $vks) { [Kb]::Down($vk, $vk -in 0x26,0x28,0x22); Start-Sleep -Milliseconds 30 }
+  foreach ($vk in $vks) { $ext = @(0x26, 0x28, 0x22) -contains $vk; [Kb]::Down($vk, $ext); Start-Sleep -Milliseconds 30 }
   [array]::Reverse($vks)
-  foreach ($vk in $vks) { [Kb]::Up($vk, $vk -in 0x26,0x28,0x22); Start-Sleep -Milliseconds 30 }
+  foreach ($vk in $vks) { $ext = @(0x26, 0x28, 0x22) -contains $vk; [Kb]::Up($vk, $ext); Start-Sleep -Milliseconds 30 }
   Start-Sleep -Milliseconds 300
 }
