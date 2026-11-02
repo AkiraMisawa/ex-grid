@@ -2,11 +2,11 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 88.2% | 78.6% |
+| ExGrid | 88.1% | 78.6% |
 | ExSheet | 86.2% | 85.8% |
 | ExPivot | 86.2% | 82.1% |
 | ExChart | 91.1% | 85% |
-| ExBoard | 67% | 59.4% |
+| ExBoard | 67.4% | 59.6% |
 | Data | 94.5% | 89.9% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 14:01:33 |
+| Generated on: | 11/02/2026 - 16:05:26 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1108 |
 | Files: | 494 |
-| **Line coverage:** | 86.9% (60348 of 69380) |
-| Covered lines: | 60348 |
-| Uncovered lines: | 9032 |
-| Coverable lines: | 69380 |
-| Total lines: | 105717 |
-| **Branch coverage:** | 82.9% (36405 of 43911) |
-| Covered branches: | 36405 |
-| Total branches: | 43911 |
+| **Line coverage:** | 86.9% (60386 of 69414) |
+| Covered lines: | 60386 |
+| Uncovered lines: | 9028 |
+| Coverable lines: | 69414 |
+| Total lines: | 105743 |
+| **Branch coverage:** | 82.9% (36416 of 43919) |
+| Covered branches: | 36416 |
+| Total branches: | 43919 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 67%</summary>
+<details><summary>ExBoard - 67.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**67%**|**59.4%**|
+|**ExBoard**|**67.4%**|**59.6%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -67,10 +67,10 @@
 |ExBoard.BoundGridView|98.7%|92.1%|
 |ExBoard.BoundPivotView|100%|75%|
 |ExBoard.BoundView|100%||
-|ExBoard.Components.ExBoard|78.9%|71.5%|
+|ExBoard.Components.ExBoard|80.3%|72.6%|
 |ExBoard.Components.ExBoard.BoardSlots|100%||
 |ExBoard.Components.ExBoard.HeldPivot|100%||
-|ExBoard.Components.ExBoard<T>|78.9%|71.5%|
+|ExBoard.Components.ExBoard<T>|80.3%|72.6%|
 |ExBoard.Components.ScriptBridge|67.2%|33.3%|
 |ExBoard.Components.SourceCrossing|96.2%|77.2%|
 |ExBoard.Components.SourceCrossing.Held|100%||
@@ -345,8 +345,8 @@
 |ExGrid.Components.ExGrid.Heard<TRow>|100%||
 |ExGrid.Components.ExGrid.Turn<TRow>|100%||
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow, T>|71.4%|69.6%|
-|ExGrid.Components.ExGrid<TRow>|71.4%|69.6%|
+|ExGrid.Components.ExGrid<TRow, T>|71.2%|69.6%|
+|ExGrid.Components.ExGrid<TRow>|71.2%|69.6%|
 |ExGrid.Components.ExGrid<TRow>|84.4%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
