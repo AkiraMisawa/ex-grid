@@ -159,6 +159,12 @@ form of its own that says the sign-off is being made against this candidate, and
   entry names covers such a version, by
   [ADR-0208](./0208-a-question-to-excel-is-asked-when-its-feature-is-built-and-a-check-by-hand-is-repeated-only-when-its-code-changes.md)'s
   check of WR-10's records.)*
+  *(2026-11-02, decided with the user,
+  [ADR-0450](./0450-the-rows-once-checked-by-hand-run-on-ci-s-own-windows-and-macos-desktops.md)'s note of that
+  date: the floor run and the layer-2 runs across the range are CI's long run's, at the commit being released,
+  with the versions nuget.org lists that day, so the long run gates a release candidate and a version without a
+  suffix on them. The record, its carrying forward, the later layer-2 records and the release check's reading of
+  them, all in the notes above, went with WR-10's entry in the index.)*
 
 ### After `0.1.0`
 

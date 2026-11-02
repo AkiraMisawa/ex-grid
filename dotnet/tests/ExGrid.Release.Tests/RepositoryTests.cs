@@ -13,18 +13,17 @@ public partial class RepositoryTests
 {
     private static readonly DirectoryTree Tree = new(RepositoryRoot());
 
-    /// <summary>
-    /// The rows ADR-0208 names as checked by hand, and WR-10, the Wrappers' MudBlazor floor run, which a
-    /// person makes once and its record carries forward (ADR-0205's notes of 2026-10-12).
-    /// </summary>
+    /// <summary>The rows ADR-0208 names as checked by hand.</summary>
     // §21.11's screen-reader check left the rows on 2026-10-13: no screen reader is run to verify a
     // release (ADR-0033, ADR-0208's note of that date). VZ-14, VZ-16, FN-12e, SH-42, SH-51, SH-52 and
     // KB-3 on macOS left them on 2026-11-02, run by CI's own desktops at the commit being released, and
-    // VZ-18's check on the remote-isolation PC was withdrawn the same day (ADR-0450).
-    private static readonly string[] IndexedRows = ["ED-30", "WR-10"];
+    // VZ-18's check on the remote-isolation PC was withdrawn the same day (ADR-0450). WR-10, the Wrappers'
+    // MudBlazor floor run, indexed beside them since 2026-10-12, left them on 2026-11-02 too, run by CI's
+    // long run (ADR-0450's note of that date).
+    private static readonly string[] IndexedRows = ["ED-30"];
 
-    /// <summary>The rows CI's Windows and macOS desktop jobs run in place of a record (ADR-0450).</summary>
-    private static readonly string[] RunOnCiDesktops = ["VZ-14", "VZ-16", "FN-12e", "SH-42", "SH-51", "SH-52", "KB-3"];
+    /// <summary>The rows CI's Windows and macOS desktop jobs and its MudBlazor floor jobs run in place of a record (ADR-0450).</summary>
+    private static readonly string[] RunOnCi = ["VZ-14", "VZ-16", "FN-12e", "SH-42", "SH-51", "SH-52", "KB-3", "WR-10"];
 
     [Fact] // ADR-0208: the record index and the Definition of Done's table cannot drift
     public void The_record_index_and_the_table_name_the_same_rows_and_paths()
@@ -41,36 +40,12 @@ public partial class RepositoryTests
         Assert.Equal(index.Count, table.Rows.Count);
     }
 
-    [Fact] // ADR-0208, ADR-0205 (2026-10-12): every row the decision names is indexed, and WR-10's floor run beside them
-    public void Every_row_ADR_0208_names_and_WR_10_are_indexed()
+    [Fact] // ADR-0208, ADR-0450: every row the decision still leaves to a person is indexed
+    public void Every_row_ADR_0208_names_is_indexed()
     {
         var index = ByHand.ReadIndex(Tree, new Report())!;
 
         Assert.Equal(IndexedRows.Order(StringComparer.Ordinal), index.Select(r => r.Row).Distinct().Order(StringComparer.Ordinal));
-    }
-
-    [Fact] // ADR-0208 (2026-10-12): WR-10 reads every file below each Wrapper and the demo pages
-    public void WR_10_names_the_wrappers_and_the_demo_pages()
-    {
-        var index = ByHand.ReadIndex(Tree, new Report())!;
-
-        var wr10 = Assert.Single(index, r => r.Row == "WR-10");
-        Assert.Equal([":(glob)dotnet/src/*.MudBlazor/**", "dotnet/samples/ExGrid.DemoPages/"], wr10.Paths);
-        var wrappers = Tree.Matches(wr10.Paths[0]);
-        foreach (var wrapper in new[] { "dotnet/src/ExGrid.MudBlazor/", "dotnet/src/ExSheet.MudBlazor/", "dotnet/src/ExPivot.MudBlazor/" })
-            Assert.Contains(wrappers, f => f.StartsWith(wrapper, StringComparison.Ordinal) && f.EndsWith(".csproj", StringComparison.Ordinal));
-    }
-
-    [Fact] // ADR-0205, ADR-0208 (2026-10-12): the release check can read the MudBlazor range each Wrapper declares, which WR-10's record is held to
-    public void The_Wrappers_MudBlazor_range_is_readable_by_the_release_check()
-    {
-        var report = new Report();
-        var declared = WrapperRange.Read(Tree, report, WrapperRange.Row);
-
-        Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
-        Assert.Equal(
-            ["dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj", "dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj", "dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj", "dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj"],
-            declared!.Select(d => d.Project).Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0208 (decided with the user, 2026-10-12): every record the index names is tagged verified/ followed by its directory's name
@@ -117,8 +92,6 @@ public partial class RepositoryTests
 
         Assert.Contains("--project tools/release/ExGrid.Release -c Release -- admit", release);
         Assert.Contains("--project tools/release/ExGrid.Release -c Release -- gate", release);
-        // WR-10's records are held to the MudBlazor versions nuget.org's registration index dates (ADR-0205, ADR-0208, 2026-10-12).
-        Assert.Contains($"--mudblazor-index {WrapperRange.Registration}", release);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", release);
         Assert.Contains("if: needs.admit.outputs.site == 'true'", release);
         // A candidate's release opens with the candidate's note, any other prerelease's with the prerelease note (ADR-0190, 2026-10-12).
@@ -198,22 +171,22 @@ public partial class RepositoryTests
         Assert.All(Skips.Allowed, a => Assert.Contains(a.Project, projects));
     }
 
-    [Fact] // ADR-0450 (decided with the user 2026-11-02): the rows CI's desktops run, and VZ-18 withdrawn, are neither indexed nor Known limitations
-    public void The_rows_CI_s_desktops_run_are_out_of_the_index_and_none_is_a_known_limitation()
+    [Fact] // ADR-0450 (decided with the user 2026-11-02): the rows CI runs, on its desktops and at the MudBlazor floor, and VZ-18 withdrawn, are neither indexed nor Known limitations
+    public void The_rows_CI_runs_are_out_of_the_index_and_none_is_a_known_limitation()
     {
         var report = new Report();
         var index = ByHand.ReadIndex(Tree, report)!;
         var table = ByHandTable.Read(Tree, report)!;
 
         Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
-        Assert.DoesNotContain(index, r => RunOnCiDesktops.Contains(r.Row) || r.Row == "VZ-18");
-        Assert.DoesNotContain(table.Rows, r => RunOnCiDesktops.Contains(r.Row) || r.Row == "VZ-18");
+        Assert.DoesNotContain(index, r => RunOnCi.Contains(r.Row) || r.Row == "VZ-18");
+        Assert.DoesNotContain(table.Rows, r => RunOnCi.Contains(r.Row) || r.Row == "VZ-18");
         Assert.All(index, r => Assert.Null(r.Limitation));
         Assert.All(table.Rows, r => Assert.Null(r.KnownLimitation));
-        // What runs them instead: both jobs, in the long run release.yml calls for a release candidate and a stable version.
+        // What runs them instead: the jobs, in the long run release.yml calls for a release candidate and a stable version.
         var ci = Tree.ReadText(".github/workflows/ci.yml")!;
-        Assert.Contains("  windows-desktop:\n", ci);
-        Assert.Contains("  macos-desktop:\n", ci);
+        foreach (var job in new[] { "windows-desktop", "macos-desktop", "mudblazor-floor-hosts", "mudblazor-floor", "mudblazor-range" })
+            Assert.Contains($"\n  {job}:\n", ci);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", Tree.ReadText(".github/workflows/release.yml")!);
     }
 

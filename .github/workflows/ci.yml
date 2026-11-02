@@ -22,7 +22,7 @@ on:
         type: boolean
         default: false
       desktops:
-        description: 'Also run the Windows and macOS desktop rows, as the long run does (ADR-0450)'
+        description: 'Also run the rows once checked by hand, on the Windows and macOS desktops and at the MudBlazor floor (WR-10), as the long run does (ADR-0450)'
         type: boolean
         default: false
   # From release.yml, on a v* tag: the version is the tag's (ADR-0042).
@@ -63,6 +63,7 @@ jobs:
     outputs:
       layer3: ${{ steps.which.outputs.layer3 }}
       desktops: ${{ steps.which.outputs.desktops }}
+      floor: ${{ steps.which.outputs.floor }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -82,6 +83,11 @@ jobs:
           # change to them is proved before a release candidate first needs them.
           if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-desktop\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
             echo "desktops=true" >> "$GITHUB_OUTPUT"
+          fi
+          # WR-10's runs (ADR-0450's note of 2026-11-02): a pull request that changes the range a Wrapper
+          # declares, or how the runs read it, runs them.
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(dotnet/src/[^/]+\.MudBlazor/[^/]+\.csproj|tools/scripts/mudblazor-range\.mjs|\.github/workflows/ci\.yml)$'; then
+            echo "floor=true" >> "$GITHUB_OUTPUT"
           fi
           others=$(git diff --name-only HEAD^1 HEAD | grep -vE '^(docs/.*|[^/]+\.md)$' || true)
           if [ -z "${others}" ]; then
@@ -636,6 +642,169 @@ jobs:
             tests/browser/test-results/
           if-no-files-found: ignore
           retention-days: 30
+
+  # WR-10, the Wrappers' MudBlazor floor (ADR-0205, ADR-0450's note of 2026-11-02): the layer-3 tests that
+  # run under a Wrapper, against hosts built with the MudBlazor every Wrapper declares as its floor, and
+  # beside them each Wrapper's layer-2 suite at every stable version nuget.org lists within that range.
+  # Every other run stays on the version the demo pages pin. Once a person's run before a sign-off, held by
+  # its record while its paths were unchanged; now the long run's, which release.yml calls for a release
+  # candidate and a version without a suffix, so it gates both at the commit being released, with the
+  # versions listed that day. A pull request that changes a Wrapper's declared range, or this file, runs
+  # it too.
+  mudblazor-floor-hosts:
+    name: Layer 3's Blazor hosts at the Wrappers' MudBlazor floor
+    needs: changes
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.floor == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      floor: ${{ steps.floor.outputs.floor }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      # The floor is the range's lower bound, read from the Wrappers themselves, and every Wrapper
+      # declares the same range.
+      - name: The floor every Wrapper declares
+        id: floor
+        run: |
+          ranges=$(grep -hoE 'Include="MudBlazor" Version="[^"]*"' dotnet/src/*.MudBlazor/*.csproj | sort -u)
+          echo "${ranges}"
+          test "$(echo "${ranges}" | wc -l)" -eq 1 || { echo "::error::The Wrappers declare different MudBlazor ranges"; exit 1; }
+          floor=$(echo "${ranges}" | sed -nE 's/.*Version="\[([0-9]+\.[0-9]+\.[0-9]+),[0-9.]+\)"/\1/p')
+          test -n "${floor}" || { echo "::error::The range is not written [floor,ceiling)"; exit 1; }
+          echo "floor=${floor}" >> "$GITHUB_OUTPUT"
+
+      # Every sample the hosts reference that pins MudBlazor is pinned to the floor, or the pin is a
+      # downgrade and nothing builds (the record of 2026-10-25: ExChart.Showcases pins its own).
+      - name: The demo pages pinned to the floor
+        env:
+          FLOOR: ${{ steps.floor.outputs.floor }}
+        run: |
+          sed -i -E "s|(Include=\"MudBlazor\" Version=\")[^\"]*\"|\1${FLOOR}\"|" dotnet/samples/*/*.csproj
+          git diff --stat
+
+      - name: Publish the WebAssembly DemoHost, the Server host and the demo API server
+        working-directory: dotnet
+        run: |
+          dotnet publish samples/ExGrid.DemoHost -c Release -o ../hosts/wasm
+          dotnet publish samples/ExGrid.DemoHost.Server -c Release -o ../hosts/server
+          dotnet publish samples/ExGrid.DemoApi -c Release -o ../hosts/api
+
+      # The version each host will load, read back from the files it serves, never assumed.
+      - name: Each host loads the floor
+        env:
+          FLOOR: ${{ steps.floor.outputs.floor }}
+        run: |
+          wasm=$(find hosts/wasm -name 'MudBlazor.*.wasm' | head -1)
+          for f in "${wasm}" hosts/server/MudBlazor.dll; do
+            test -f "${f}" || { echo "::error::No ${f}"; exit 1; }
+            v=$(strings -el "${f}" | grep -A1 '^FileVersion$' | tail -1)
+            echo "${f}: ${v}"
+            test "${v}" = "${FLOOR}.0" || { echo "::error::${f} is MudBlazor ${v}, not ${FLOOR}"; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mudblazor-floor-hosts
+          path: hosts/
+          if-no-files-found: error
+          retention-days: 7
+
+  mudblazor-floor:
+    name: WR-10, layer 3 at the MudBlazor floor against ${{ matrix.hosting }} on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }} (Linux, headed)
+    needs: mudblazor-floor-hosts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        hosting: [wasm, server]
+        project: [chrome, msedge, chrome-150]
+        shard: [1, 2]
+        exclude:
+          - { project: chrome-150, shard: 2 }
+    env:
+      # The tests that run under a Wrapper: those whose file, describe or title names MudBlazor or mud
+      # (the ?chrome=mud variants among them), and, by name, those that open a page under a Wrapper
+      # without saying so. A test of the second kind joins it when it is written.
+      WRAPPED: "[Mm]ud|is not the grid's \\(KB-35|apply the condition \\(KB-31, SRV-5\\)|Escape, Escape straight after an Inner Popup|a menu taking the keyboard a round trip late|with and without a Wrapper|SH-46/DC-59: the Selection's outline|the palette reaches the pane|RI-3: every page opens|inspectors\\.spec\\.mjs|WR-7a|DC-58: a bold number that fits"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          google-chrome --version
+          microsoft-edge --version
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: mudblazor-floor-hosts
+          path: hosts
+
+      - name: The tests under a Wrapper, headed under xvfb
+        working-directory: tests/browser
+        env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
+          EXGRID_HOSTING: ${{ matrix.hosting }}
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
+          npx playwright test --grep "$WRAPPED" --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 1 || 2 }}
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-mudblazor-floor-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
+          path: |
+            verification/
+            tests/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # Beside the floor run, each Wrapper's layer-2 suite with MudBlazor pinned in its test project to every
+  # stable version nuget.org lists within the declared range on the day of the run. The pin is the nearest
+  # reference, so NuGet takes it over the Wrapper's range, and the version each run loaded is read back.
+  # Layer 2 sees markup and a component's state, not focus or timing: it adds to the floor run and replaces
+  # nothing.
+  mudblazor-range:
+    name: WR-10, the Wrappers' layer 2 at every MudBlazor of their range
+    needs: mudblazor-floor-hosts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      - name: Every listed stable version within the range
+        id: versions
+        run: |
+          range=$(grep -hoE 'Include="MudBlazor" Version="[^"]*"' dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj | sed -E 's/.*Version="([^"]*)"/\1/')
+          versions=$(node tools/scripts/mudblazor-range.mjs "${range}")
+          echo "${versions}" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "versions=$(echo ${versions})" >> "$GITHUB_OUTPUT"
+
+      - name: Each Wrapper's layer 2 at each version
+        working-directory: dotnet
+        env:
+          VERSIONS: ${{ steps.versions.outputs.versions }}
+        run: |
+          for v in ${VERSIONS}; do
+            for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests; do
+              echo "::group::${t}, MudBlazor ${v}"
+              sed -i "s|</Project>|  <ItemGroup><PackageReference Include=\"MudBlazor\" Version=\"${v}\" /></ItemGroup>\n</Project>|" tests/${t}/${t}.csproj
+              dotnet test tests/${t}
+              loaded=$(strings -el tests/${t}/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion$' | tail -1)
+              git checkout -- tests/${t}/${t}.csproj
+              test "${loaded}" = "${v}.0" || { echo "::error::${t} loaded MudBlazor ${loaded}, not ${v}"; exit 1; }
+              echo "${t} at MudBlazor ${v}: passed, ${loaded} loaded" >> "$GITHUB_STEP_SUMMARY"
+              echo "::endgroup::"
+            done
+          done
 
   # The spec files a push to a pull request changes, each run three times over on each host and
   # browser (tests/browser/README.md, "Before a new or changed spec goes in"). A test that
