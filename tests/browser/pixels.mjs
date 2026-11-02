@@ -7,7 +7,7 @@ import { alterPage, circuitQuiet, expect, test, twoFrames } from './fixtures.mjs
 // When to read pixels at all, and how, is README.md's "Reading pixels".
 
 /** Decodes the PNG a Chromium screenshot writes: 8-bit RGB or RGBA, not interlaced. */
-function decodePng(buffer) {
+export function decodePng(buffer) {
     let offset = 8;
     let width = 0;
     let height = 0;
