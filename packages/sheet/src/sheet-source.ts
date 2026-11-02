@@ -1,4 +1,4 @@
-// The Grid Source a Sheet is to ExGrid (ADR-0046, ADR-0350 section 16): 1,048,576 rows that are places, of which
+// The Grid Source a Sheet is to ExGrid (ADR-0046, ADR-0350 section 16): 1,048,576 rows, or the Sheet Size's (ADR-0450), that are places, of which
 // it holds a Window of row instances around what the grid shows. It neither sorts nor filters: a Sheet's rows are
 // places, and its columns are not queryable. Its Row Sequence Version moves only when another Sheet is shown,
 // since that is the only time a position comes to mean another row (ADR-0011).
@@ -33,7 +33,7 @@ export class SheetSource implements GridSource<SheetRow> {
         this.#sheet = sheet;
         this.#words = words;
         this.#step = step;
-        this.#state = SheetSource.#stateOf([], 0, 0);
+        this.#state = this.#stateOf([], 0, 0);
     }
 
     /** The Sheet the rows are of. */
@@ -65,16 +65,16 @@ export class SheetSource implements GridSource<SheetRow> {
         if (range.start >= windowStart && range.start + range.count <= windowStart + window.length) return Promise.resolve();
         // A screen above and below what the grid shows, so a short scroll is answered from the rows in hand.
         const start = Math.max(0, range.start - range.count);
-        const end = Math.min(Sheet.rowCount, range.start + 2 * range.count);
+        const end = Math.min(this.#rowCount, range.start + 2 * range.count);
         const rows = Array.from({ length: Math.max(0, end - start) }, (_, i) => this.#rowAt(start + i));
-        this.#state = SheetSource.#stateOf(rows, start, this.#version);
+        this.#state = this.#stateOf(rows, start, this.#version);
         // Heard after the grid's paint that asked, never inside it.
         return Promise.resolve().then(() => { this.#publish(); });
     }
 
     rows(range: RowRange, signal: AbortSignal): Promise<readonly SheetRow[]> {
         signal.throwIfAborted();
-        const end = Math.min(Sheet.rowCount, range.start + range.count);
+        const end = Math.min(this.#rowCount, range.start + range.count);
         return Promise.resolve(Array.from({ length: Math.max(0, end - range.start) }, (_, i) => this.#rowAt(range.start + i)));
     }
 
@@ -130,8 +130,9 @@ export class SheetSource implements GridSource<SheetRow> {
         this.#sheet = sheet;
         this.#version++;
         const { window, windowStart } = this.#state;
-        const rows = window.map((_, i) => new SheetRow(sheet, windowStart + i));
-        this.#state = SheetSource.#stateOf(rows, windowStart, this.#version);
+        // A Sheet Size made smaller leaves no row past it in the Window (ADR-0450).
+        const rows = window.slice(0, Math.max(0, this.#rowCount - windowStart)).map((_, i) => new SheetRow(sheet, windowStart + i));
+        this.#state = this.#stateOf(rows, windowStart, this.#version);
         this.#publish();
     }
 
@@ -150,7 +151,7 @@ export class SheetSource implements GridSource<SheetRow> {
             }
         }
         if (rows === undefined) return false;
-        this.#state = SheetSource.#stateOf(rows, windowStart, this.#version);
+        this.#state = this.#stateOf(rows, windowStart, this.#version);
         this.#publish();
         return true;
     }
@@ -160,7 +161,7 @@ export class SheetSource implements GridSource<SheetRow> {
     renewWindow(): void {
         const { window, windowStart } = this.#state;
         if (window.length === 0) return;
-        this.#state = SheetSource.#stateOf(window.map((_, i) => new SheetRow(this.#sheet, windowStart + i)), windowStart, this.#version);
+        this.#state = this.#stateOf(window.map((_, i) => new SheetRow(this.#sheet, windowStart + i)), windowStart, this.#version);
         this.#publish();
     }
 
@@ -169,11 +170,16 @@ export class SheetSource implements GridSource<SheetRow> {
         for (const listener of Array.from(this.#listeners)) listener();
     }
 
-    static #stateOf(window: readonly SheetRow[], windowStart: number, version: number): GridSourceState<SheetRow> {
+    // The rows the Sheet holds: Excel's, or the Workbook's size (ADR-0450).
+    get #rowCount(): number {
+        return this.#sheet.workbook.size.rows;
+    }
+
+    #stateOf(window: readonly SheetRow[], windowStart: number, version: number): GridSourceState<SheetRow> {
         return Object.freeze({
             window: Object.freeze(window),
             windowStart,
-            totalCount: Sheet.rowCount,
+            totalCount: this.#rowCount,
             loading: false,
             rowSequenceVersion: version,
             sorts: Object.freeze([]),

@@ -9,7 +9,7 @@
 // its arguments in the order the function takes them, so a language that orders them otherwise moves them.
 
 import type { CommitRefusalReason, CopyRefusalReason, EditDiscardReason, PasteRefusalReason, PlacementRefusalReason } from '@ex-grid/core';
-import type { BorderLineStyle, CellAddress, Culture, FormulaSyntaxError, HorizontalAlignment, SheetRefusal } from '@ex-grid/sheet-engine';
+import { SheetSize, type BorderLineStyle, type CellAddress, type Culture, type FormulaSyntaxError, type HorizontalAlignment, type SheetRefusal } from '@ex-grid/sheet-engine';
 import type {
     BorderEdge, BorderPreset, ColourTarget, DisabledNumberFormatCategory, FontStyle, FormatCellsTab, NumberFormatCategory,
     PaletteSwatch, StandardColourName, ThemeColourName,
@@ -60,7 +60,7 @@ export type SheetToolbarBorder = 'bottom' | 'top' | 'left' | 'right' | 'none' | 
  * reason or a name in it takes the reason or the name as the union beside it spells it.
  */
 export type SheetWordId =
-    | 'formulaUnreadable' | 'addressUnreadable' | 'sheetNotNamed' | 'editIsOpen' | 'selectionMoved' | 'focusFormatChanged'
+    | 'formulaUnreadable' | 'addressUnreadable' | 'addressPastEdge' | 'sheetNotNamed' | 'editIsOpen' | 'selectionMoved' | 'focusFormatChanged'
     | 'saveWhileEditing' | 'opening' | 'openWhileEditing' | 'opened'
     | 'openingCancelled' | 'openingRefused' | 'openingAlreadyLanded'
     | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing'
@@ -184,6 +184,11 @@ export class SheetWords {
     /** What was typed into the Name Box is not a place on the Sheet (ADR-0051). */
     addressUnreadable(typed: string): string {
         return this.#say('addressUnreadable', typed);
+    }
+
+    /** What was typed into the Name Box is a place past the Sheet Size, whose last cell is `edge` (ADR-0450). */
+    addressPastEdge(typed: string, edge: CellAddress): string {
+        return this.#say('addressPastEdge', typed, edge.toString());
     }
 
     /** A refusal of the engine's, in its own words: the engine's refusals carry no id yet. */
@@ -459,9 +464,10 @@ export class SheetWords {
         return this.#say('pasteTooNarrowToShow', field, at.toString());
     }
 
-    /** A paste, a fill or an entry the grid refused, in the Sheet's terms. */
-    pasteRefused(reason: PasteRefusalReason): string {
-        return this.word(`pasteRefused.${reason}`);
+    /** A paste, a fill or an entry the grid refused, in the Sheet's terms; `edge` is the Sheet's last cell, which a
+     * block refused for running past it names: `XFD1048576` unless a Sheet Size is smaller (ADR-0450). */
+    pasteRefused(reason: PasteRefusalReason, edge: CellAddress = SheetSize.excel.lastCell): string {
+        return this.#say(`pasteRefused.${reason}`, edge.toString());
     }
 
     /** A commit refused because the row it was opened on can no longer be found (ADR-0142, LV-20): the editor

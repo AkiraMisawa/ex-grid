@@ -94,14 +94,17 @@ export class SheetColumns {
     /** Reads every column's width from `sheet`, or only `changed` where it is the Sheet read last; answers
      * whether any column changed. */
     read(sheet: Sheet, changed?: readonly number[]): boolean {
-        if (sheet !== this.#sheet || changed === undefined || this.#columns.length === 0) {
+        // `A` to `XFD`, or as many as the Sheet Size holds (ADR-0450).
+        const count = sheet.workbook.size.columns;
+        if (sheet !== this.#sheet || changed === undefined || this.#columns.length !== count) {
             this.#sheet = sheet;
-            this.#columns = Array.from({ length: Sheet.columnCount }, (_, index) => this.#column(index, this.#widthPx(sheet, index)));
+            this.#columns = Array.from({ length: count }, (_, index) => this.#column(index, this.#widthPx(sheet, index)));
             return true;
         }
         const columns = [...this.#columns];
         let moved = false;
         for (const index of changed) {
+            if (index >= count) continue;
             const column = this.#column(index, this.#widthPx(sheet, index));
             if (column !== columns[index]) {
                 columns[index] = column;

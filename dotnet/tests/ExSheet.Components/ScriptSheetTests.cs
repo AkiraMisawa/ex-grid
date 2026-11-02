@@ -89,6 +89,8 @@ public class ScriptSheetTests : BunitContext
         Assert.True(options.GetProperty("showSheetTabs").GetBoolean());
         Assert.False(options.GetProperty("showToolbar").GetBoolean());
         Assert.False(options.GetProperty("allowCopyWithHeaders").GetBoolean());
+        // Excel's size, which the Script Core takes when none is sent (ADR-0450).
+        Assert.False(options.TryGetProperty("sheetSize", out _));
         Assert.Equal(["average", "count", "sum"], options.GetProperty("summaryFigures").EnumerateArray().Select(figure => figure.GetString()));
         // Unbound, Ctrl+F1 stays the browser's (ADR-0100): showToolbarChanged is not heard.
         Assert.Equal(["documentChanged"], options.GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
@@ -611,7 +613,7 @@ public class ScriptSheetTests : BunitContext
         Assert.Contains("selectionSummaryChanged", Attach().GetProperty("options").GetProperty("hears").EnumerateArray().Select(kind => kind.GetString()));
 
         // As the bridge writes it (bridge.test.ts): no column names cross.
-        const string request = """{"ranges":[{"topRow":0,"leftColumn":0,"rowCount":3,"columnCount":1}],"rowSequenceVersion":0,"figures":["average","count","sum"],"focus":{"row":0,"column":0}}""";
+        const string request = """{"ranges":[{"topRow":0,"leftColumn":0,"rowCount":3,"columnCount":1}],"columnCount":16384,"rowSequenceVersion":0,"figures":["average","count","sum"],"focus":{"row":0,"column":0}}""";
         await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"pending","request":{{{request}}},"result":null}""")));
         await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""
             {"status":"answered","request":{{{request}}},"result":{
@@ -634,6 +636,25 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal(ExGrid.Data.AggregateResult.Of(ExGrid.Data.AggregateError.DivideByZero), answer[SummaryFigures.Average]);
         Assert.Equal("0.3", answer.TextOf(SummaryFigures.Sum));
         Assert.Equal("too many", summaries[2].Result?.DeclineReason);
+    }
+
+    [Fact] // ADR-0450: a Sheet Size crosses as the Script Core spells it, and a summary over it names as many letters as it holds
+    public async Task ADR0450_a_sheet_size_crosses_and_a_summary_names_its_letters()
+    {
+        var summaries = new List<SelectionSummary>();
+        var cut = Sheet(ps => ps.Add(p => p.SheetSize, new global::ExSheet.SheetSize(10, 4))
+            .Add(p => p.OnSelectionSummaryChanged, (SelectionSummary summary) => summaries.Add(summary)));
+        var size = Attach().GetProperty("options").GetProperty("sheetSize");
+        Assert.Equal(10, size.GetProperty("rows").GetInt32());
+        Assert.Equal(4, size.GetProperty("columns").GetInt32());
+
+        const string request = """{"ranges":[{"topRow":0,"leftColumn":0,"rowCount":2,"columnCount":1}],"columnCount":4,"rowSequenceVersion":0,"figures":["count"],"focus":{"row":0,"column":0}}""";
+        await cut.InvokeAsync(() => Bridge().Value.Heard("selectionSummaryChanged", Parsed($$$"""{"status":"pending","request":{{{request}}},"result":null}""")));
+        var asked = Assert.Single(summaries).Request ?? throw new InvalidOperationException("A pending summary carries its question.");
+        Assert.Equal(["A", "B", "C", "D"], asked.Columns);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new global::ExSheet.SheetSize(0, 4));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new global::ExSheet.SheetSize(10, 16_385));
     }
 
     [Fact] // ADR-0036, ADR-0370 section 10: CommandLabel is asked for each id the module names, and crosses again only when its answers changed

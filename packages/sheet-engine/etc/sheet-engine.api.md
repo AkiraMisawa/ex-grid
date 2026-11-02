@@ -523,6 +523,10 @@ export function serialFromDate(year: number, month: number, day: number): number
 export class Sheet {
     // @internal
     constructor(workbook: Workbook, name: string);
+    // Warning: (ae-forgotten-export) The symbol "SheetCell" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    get anchors(): SheetCell[];
     // Warning: (ae-forgotten-export) The symbol "CellFormatOutcome" needs to be exported by the entry point index.d.ts
     //
     // @internal
@@ -582,8 +586,6 @@ export class Sheet {
     deleteColumns(column: number, count?: number): SheetChange;
     // @internal
     deleteRows(row: number, count?: number): SheetChange;
-    // Warning: (ae-forgotten-export) The symbol "SheetCell" needs to be exported by the entry point index.d.ts
-    //
     // @internal
     dependentsInWorkbook(address: CellAddress): Generator<SheetCell>;
     // @internal
@@ -655,11 +657,13 @@ export class Sheet {
     // @internal
     static names(qualifier: string | undefined, name: string): boolean;
     // @internal
-    static offSheet(origin: CellAddress, rows: number, columns: number): SheetRefusal | undefined;
+    offSheet(origin: CellAddress, rows: number, columns: number): SheetRefusal | undefined;
     // @internal
     openEntries(document: SheetDocument): void;
     // @internal
     openFormats(document: SheetDocument): void;
+    // @internal
+    pastSize(ranges: Iterable<CellRange>): SheetRefusal | undefined;
     // @internal
     static place(block: SheetBlock, origin: CellAddress): Generator<AddressedState>;
     // Warning: (ae-forgotten-export) The symbol "FillPlan" needs to be exported by the entry point index.d.ts
@@ -985,6 +989,19 @@ export class SheetRefusedError extends Error {
 }
 
 // @public
+export class SheetSize {
+    constructor(rows: number, columns: number);
+    readonly columns: number;
+    contains(address: CellAddress): boolean;
+    equals(other: SheetSize): boolean;
+    static readonly excel: SheetSize;
+    fit(range: CellRange): CellRange | undefined;
+    holds(origin: CellAddress, rows: number, columns: number): boolean;
+    get lastCell(): CellAddress;
+    readonly rows: number;
+}
+
+// @public
 export class SheetStep {
     // @internal
     constructor(sheet: Sheet, change: SheetChange, undo: (sheet: Sheet) => SheetChange, redo: (sheet: Sheet) => SheetChange);
@@ -1027,7 +1044,7 @@ export type ValueKind = 'number' | 'text' | 'boolean' | 'error';
 
 // @public
 export class Workbook {
-    constructor(culture: Culture, sheetNames?: Iterable<string>);
+    constructor(culture: Culture, sheetNames?: Iterable<string>, size?: SheetSize);
     // @internal
     asOneChange<T>(operation: () => T): T;
     get changes(): number;
@@ -1085,7 +1102,7 @@ export class Workbook {
     // @internal
     nextSheetNumber(): number;
     nowSource: (() => SheetMoment | undefined) | undefined;
-    static open(document: WorkbookDocument | SheetDocument): Workbook;
+    static open(document: WorkbookDocument | SheetDocument, size?: SheetSize): Workbook;
     // @internal
     opened(): void;
     pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): WorkbookChange;
@@ -1098,6 +1115,7 @@ export class Workbook {
     reinsert(sheet: Sheet, index: number): SheetChange;
     // @internal
     renameSheet(sheet: Sheet, name: string): SheetRename;
+    resize(size: SheetSize): WorkbookChange;
     get seed(): bigint | undefined;
     setSeed(seed: bigint | undefined, changes?: number): WorkbookChange;
     setToday(today: SheetDay | undefined): WorkbookChange;
@@ -1106,6 +1124,7 @@ export class Workbook {
     get sheets(): readonly Sheet[];
     get shown(): Sheet;
     set shown(sheet: Sheet);
+    get size(): SheetSize;
     // @internal
     span(first: string, last: string): Sheet[] | undefined;
     // @internal

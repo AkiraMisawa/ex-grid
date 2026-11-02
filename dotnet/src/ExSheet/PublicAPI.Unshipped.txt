@@ -11,6 +11,10 @@ const ExSheet.SheetScriptSlotAttributes.FormatTab = "data-ex-format-tab" -> stri
 const ExSheet.SheetScriptSlotAttributes.FormatValue = "data-ex-format-value" -> string!
 const ExSheet.SheetScriptSlotAttributes.List = "data-ex-sheet-list" -> string!
 const ExSheet.SheetScriptSlotAttributes.Press = "data-ex-sheet-press" -> string!
+const ExSheet.SheetSize.MaxColumns = 16384 -> int
+const ExSheet.SheetSize.MaxRows = 1048576 -> int
+ExSheet.Components.ExSheet.SheetSize.get -> ExSheet.SheetSize?
+ExSheet.Components.ExSheet.SheetSize.set -> void
 ExSheet.DefaultToolbarRow.Dispose() -> void
 ExSheet.ISheetChrome.FormatCells(ExSheet.SheetFormatCellsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetScriptSlots.get -> ExSheet.SheetScriptSlots
@@ -259,6 +263,12 @@ ExSheet.SheetScriptSlots.None = 0 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.SheetTab = 2 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.SheetTabAdd = 4 -> ExSheet.SheetScriptSlots
 ExSheet.SheetScriptSlots.ToolbarItem = 1 -> ExSheet.SheetScriptSlots
+ExSheet.SheetSize
+ExSheet.SheetSize.<Clone>$() -> ExSheet.SheetSize!
+ExSheet.SheetSize.Columns.get -> int
+ExSheet.SheetSize.Equals(ExSheet.SheetSize? other) -> bool
+ExSheet.SheetSize.Rows.get -> int
+ExSheet.SheetSize.SheetSize(int rows, int columns) -> void
 ExSheet.SheetTabContext
 ExSheet.SheetTabContext.<Clone>$() -> ExSheet.SheetTabContext!
 ExSheet.SheetTabContext.Deconstruct(out string! Name, out bool Selected) -> void
@@ -345,6 +355,9 @@ override ExSheet.SheetFormatCellsSwatch.ToString() -> string!
 override ExSheet.SheetFormatCellsView.Equals(object? obj) -> bool
 override ExSheet.SheetFormatCellsView.GetHashCode() -> int
 override ExSheet.SheetFormatCellsView.ToString() -> string!
+override ExSheet.SheetSize.Equals(object? obj) -> bool
+override ExSheet.SheetSize.GetHashCode() -> int
+override ExSheet.SheetSize.ToString() -> string!
 override ExSheet.SheetTabContext.Equals(object? obj) -> bool
 override ExSheet.SheetTabContext.GetHashCode() -> int
 override ExSheet.SheetTabContext.ToString() -> string!
@@ -377,6 +390,8 @@ static ExSheet.SheetFormatCellsSwatch.operator !=(ExSheet.SheetFormatCellsSwatch
 static ExSheet.SheetFormatCellsSwatch.operator ==(ExSheet.SheetFormatCellsSwatch? left, ExSheet.SheetFormatCellsSwatch? right) -> bool
 static ExSheet.SheetFormatCellsView.operator !=(ExSheet.SheetFormatCellsView? left, ExSheet.SheetFormatCellsView? right) -> bool
 static ExSheet.SheetFormatCellsView.operator ==(ExSheet.SheetFormatCellsView? left, ExSheet.SheetFormatCellsView? right) -> bool
+static ExSheet.SheetSize.operator !=(ExSheet.SheetSize? left, ExSheet.SheetSize? right) -> bool
+static ExSheet.SheetSize.operator ==(ExSheet.SheetSize? left, ExSheet.SheetSize? right) -> bool
 static ExSheet.SheetTabContext.operator !=(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
 static ExSheet.SheetTabContext.operator ==(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
 *REMOVED*ExSheet.FormatCellsContext.ReturnKeyboardFrom.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?

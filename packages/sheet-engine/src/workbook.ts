@@ -1,5 +1,6 @@
 // The Sheets ExSheet holds, in order, under one culture, with one dependency graph across them (C#'s Workbook.cs and
 // its partials, WorkbookChange and WorkbookStep; CONTEXT.md, ADR-0331).
+import type { CellAddress } from './cell-address';
 import type { CellRange } from './cell-range';
 import type { Culture } from './culture';
 import { serialFromDate, daysInMonth } from './date-serial';
@@ -13,6 +14,8 @@ import { SheetCell, SheetCellSet } from './sheet-cell';
 import { SheetChange, SheetRefusal, SheetRefusedError } from './sheet-change';
 import { SheetDocument, sheetDocumentOf } from './sheet-document';
 import { SheetEdit, WorkbookEdit, type WorkbookEditDone } from './sheet-edit';
+import { SheetSize } from './sheet-size';
+import { quoteSheetName } from './formulas/reference';
 import type { Value } from './value';
 import { WorkbookDocument } from './workbook-document';
 
@@ -66,6 +69,8 @@ export class Workbook {
     /** The Workbook's declared culture, which every one of its Sheets reads and shows under (ADR-0048, ADR-0331). */
     readonly culture: Culture;
 
+    #size: SheetSize;
+
     /** The Linked Tables' state, which every Sheet of the Workbook reads, by name read without regard to case (ADR-0331). @internal */
     readonly tables = new Map<string, TableState>();
 
@@ -80,10 +85,12 @@ export class Workbook {
     /**
      * A Workbook of empty Sheets named `sheetNames`, in that order — one, `Sheet1`, when none are given — whose constants
      * are read and whose Values are shown under `culture` (ADR-0048). Throws a RangeError when no name is given, a name
-     * is not one a Sheet can have (`Sheet.isValidName`), or two names are the same without regard to case.
+     * is not one a Sheet can have (`Sheet.isValidName`), or two names are the same without regard to case. Every Sheet
+     * holds `size`, Excel's unless given (ADR-0450).
      */
-    constructor(culture: Culture, sheetNames: Iterable<string> = [Sheet.defaultName]) {
+    constructor(culture: Culture, sheetNames: Iterable<string> = [Sheet.defaultName], size: SheetSize = SheetSize.excel) {
         this.culture = culture;
+        this.#size = size;
         for (const name of sheetNames) {
             Sheet.checkName(name);
             if (this.find(name) !== undefined) throw new RangeError(`Two Sheets cannot both be named '${name}'.`);
@@ -99,11 +106,20 @@ export class Workbook {
      * Opens a Workbook Document: a Workbook in the document's culture, with its Sheets in order, the Sheet it shows
      * shown, its Linked Tables declared and waiting for their first snapshot, and each Sheet's Entries, Cell Formats and
      * column widths, with every Value computed again (ADR-0048, ADR-0049, ADR-0331). A Sheet Document opens as a
-     * Workbook of that one Sheet. The culture of the caller plays no part.
+     * Workbook of that one Sheet. The culture of the caller plays no part. Every Sheet holds `size`, Excel's unless given,
+     * and a document with an Entry past it is refused with a `RangeError` naming the first such cell, never opened
+     * without it (ADR-0450).
      */
-    static open(document: WorkbookDocument | SheetDocument): Workbook {
+    static open(document: WorkbookDocument | SheetDocument, size: SheetSize = SheetSize.excel): Workbook {
+        const sheets = document instanceof SheetDocument ? [document] : document.sheets;
+        for (const sheet of sheets) {
+            // The first in address order, whatever order the document lists its cells in, as `resize` names one.
+            const past = sheet.cells.filter(cell => cell.entry !== undefined && !size.contains(cell.address))
+                .map(cell => cell.address).toSorted((a, b) => a.compareTo(b))[0];
+            if (past !== undefined) throw new RangeError(Workbook.#pastSize(sheet.name, past, size));
+        }
         if (document instanceof SheetDocument) {
-            const workbook = new Workbook(SheetDocument.resolveCulture(document.culture), [document.name]);
+            const workbook = new Workbook(SheetDocument.resolveCulture(document.culture), [document.name], size);
             const sheet = workbook.#first;
             // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
             for (const table of document.linkedTables) sheet.declare(table.name, table.columns, table.keyColumns);
@@ -112,7 +128,7 @@ export class Workbook {
             workbook.opened();
             return workbook;
         }
-        const workbook = new Workbook(SheetDocument.resolveCulture(document.culture), document.sheets.map(s => s.name));
+        const workbook = new Workbook(SheetDocument.resolveCulture(document.culture), document.sheets.map(s => s.name), size);
         for (const table of document.linkedTables) workbook.#first.declare(table.name, table.columns, table.keyColumns);
         document.sheets.forEach((sheet, i) => workbook.#sheetAt(i).openFormats(sheet));
         document.sheets.forEach((sheet, i) => workbook.#sheetAt(i).openEntries(sheet));
@@ -121,6 +137,34 @@ export class Workbook {
         workbook.#shown = shown;
         workbook.opened();
         return workbook;
+    }
+
+    /** How many rows and columns every Sheet of the Workbook holds (ADR-0450): Excel's unless one was given. */
+    get size(): SheetSize {
+        return this.#size;
+    }
+
+    /**
+     * Gives every Sheet another size (ADR-0450). A size that would leave an Entry past it is refused with a `RangeError`
+     * naming the first such cell, and the Workbook keeps the size it had. Every spilled array is laid out again against
+     * the new edge: one that no longer fits shows `#SPILL!`, and one that now fits spills. It is not an operation a user
+     * undoes.
+     */
+    resize(size: SheetSize): WorkbookChange {
+        const shown = this.#shown;
+        if (size.equals(this.#size)) return this.collectOn(shown, () => SheetChange.none);
+        for (const sheet of this.#sheets) {
+            // In address order, so the cell named is the first.
+            const past = sheet.entryAddresses.find(address => !size.contains(address));
+            if (past !== undefined) throw new RangeError(Workbook.#pastSize(sheet.name, past, size));
+        }
+        this.#size = size;
+        const anchors = new SheetCellSet(this.#sheets.flatMap(sheet => sheet.anchors));
+        return this.collectOn(shown, () => (anchors.size === 0 ? SheetChange.none : shown.recalculateCells(anchors)));
+    }
+
+    static #pastSize(sheet: string, address: CellAddress, size: SheetSize): string {
+        return `${quoteSheetName(sheet)}!${address.toString()} holds an Entry, and a Sheet of ${String(size.rows)} rows by ${String(size.columns)} columns ends at ${size.lastCell.toString()}.`;
     }
 
     get #first(): Sheet {
