@@ -54,7 +54,7 @@
     {
       // The workspace's own tooling is plain JavaScript run by Node at build time: it has no types to
       // hold, and it talks to the person running it.
-      "files": ["tools/scripts/**", "tools/lint/*.mjs"],
+      "files": ["tools/scripts/**", "tools/lint/*.mjs", "tools/npm-package/**"],
       "rules": {
         "typescript/no-unsafe-argument": "off",
         "typescript/no-unsafe-assignment": "off",

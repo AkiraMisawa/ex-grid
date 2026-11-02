@@ -4,8 +4,8 @@
 # run on a runner of their own. All three gate; coverage is reported, never gated. The
 # weekly run adds the soak and ST-1 at 10⁶ rows, and so does the release of a version
 # without a suffix or a release candidate (ADR-0205). The packages are packed and taken by
-# an application as a Consumer takes them (ADR-0042); the release workflow calls this one
-# and publishes exactly what that job tested.
+# an application as a Consumer takes them (ADR-0042), NuGet's by the package job and npm's by the
+# script-core job; the release workflow calls this one and publishes exactly what those jobs tested.
 name: CI
 
 on:
@@ -195,6 +195,25 @@ jobs:
         env:
           EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: npm test
+
+      # The npm packages packed at the version and taken by an application as a Consumer takes them (ADR-0042,
+      # ADR-0370 section 9), the counterpart of the package job's check of NuGet's: every tarball read back, its
+      # imports declared and its stylesheet the NuGet package's, then installed outside the workspace, type-checked,
+      # bundled and run (tools/npm-package/check.mjs).
+      - name: The npm packages, taken as a Consumer takes them
+        run: node tools/npm-package/check.mjs "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
+
+      # What the release publishes to npm: these files, not a rebuild, in publish-order.txt's order. Kept only for
+      # the release, which alone reads them. The directory is a dot directory, which upload-artifact skips unless
+      # told otherwise.
+      - if: inputs.version
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-packages
+          path: tools/npm-package/.tarballs/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
 
       # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): dotnet/tools/pivot-oracle
       # answers what .NET and ExPivot.Engine give. The seed is fixed, so the gate answers alike on every

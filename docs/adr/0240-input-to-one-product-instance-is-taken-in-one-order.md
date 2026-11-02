@@ -651,6 +651,14 @@ sent. Holding every Mark until its reply had made a Consumer's button outside th
 the first of two rapidly marked rows. A Mark behind a held key or Action still joins that hold;
 target retention, numbering, refusal and discarded-event recovery are unchanged.
 
+*Note of 2026-11-02, over the Script Core:* the same reading came back on Blazor's Script ExGrid (the Hunt's widened
+Server runs, every day from 2026-10-30): the browser sent the second Mark at once, but .NET, which hands the grid's
+events to the Consumer one after another, waited after each for the browser's reply to the state its handler wrote
+before handing on the next, and the Consumer's button, pressed after both, was heard in that wait. .NET now sends the
+state, then the event's answer, which the connection delivers after it, and hands on the next event without waiting
+for the state's reply; a reply that refuses the state still fails the component. D1 holds: the browser takes the
+state in once it hears the write was handled, never before.
+
 Integrating section 11 also removed the browser's wait for the unnumbered registration and
 dispatch-end replies. Those calls are still sent and their errors reported, but a row click waits
 for its numbered Begin and answered stamp. Otherwise a click made while disconnected kept the

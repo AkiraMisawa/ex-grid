@@ -206,6 +206,14 @@ MudBlazor in the Wrappers' range; `ExBoard` — `ExGrid`, `ExPivot` and `ExChart
 `ExChart.MudBlazor` is the fourth Wrapper; PRE-4's grep reads every other package. `check.sh` reads each
 `.nuspec` against these lists.)*
 
+*(2026-11-02, [ADR-0370](adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 5's note and
+[ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)'s of that date: a tag
+publishes npm's packages too, every member of `packages/` not marked private, and PRE-3 is checked for them as for
+NuGet's: `node tools/npm-package/check.mjs`, after `npm ci` and `npm run build` at the root, packs them at a version,
+reads each tarball back, and takes them as a Consumer does, and ends `npm package check: <count> packages at <version>,
+taken as a Consumer takes them`. Each depends on the family at exactly that version, and every module its script and its
+declarations import is a dependency or a peer dependency it declares.)*
+
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PRE-1** | MUST | The whole solution builds with zero warnings | `nix develop -c bash -c 'cd dotnet && dotnet build ExGrid.slnx'` | `0 Warning(s)` and `0 Error(s)` |
@@ -959,6 +967,7 @@ nix develop -c bash -c 'cd dotnet && dotnet build ExGrid.slnx'                 #
 grep -n "<TargetFramework" dotnet/src/*/*.csproj        # PRE-2
 grep -rn --include='*.csproj' --include='*.props' --include='*.targets' "<LangVersion" dotnet/src/ dotnet/Directory.Build.props   # PRE-2
 nix develop -c dotnet/tests/ExGrid.PackageSmoke/check.sh       # PRE-3
+nix develop .#browser -c bash -c 'npm ci && npm run build && node tools/npm-package/check.mjs'   # PRE-3, npm's
 nix develop -c bash -c 'cd dotnet && for p in src/*/*.csproj; do echo "== $p"; dotnet list "$p" reference; done'   # PRE-4
 grep -n "projects" tests/browser/playwright.config.mjs   # PRE-5
 git status --porcelain -- dotnet/src/                   # PRE-6

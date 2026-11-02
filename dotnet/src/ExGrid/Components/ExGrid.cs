@@ -989,6 +989,24 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         });
     }
 
+    // The state sent after an event's handler, its reply heard on its own: a browser that refused it fails the component,
+    // as a handler that throws does.
+    private async Task StateSentAsync()
+    {
+        try
+        {
+            await SendStateAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the browser the state was for with it.
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
     private async Task SendStateAsync()
     {
         var grid = _grid;
@@ -1937,8 +1955,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                         if (_disposed)
                             continue;
                         var answer = await HandledAsEvent(next.Hand);
+                        // What the handler wrote is sent before the event's answer, which the connection delivers after
+                        // it, and its own reply is not waited on: an event the browser raised behind this one is handed
+                        // to the Consumer now, not a round trip later, so a control of the Consumer's outside the grid,
+                        // pressed after both, hears both (ADR-0240's note of 2026-10-19, RI-13).
                         if (next.SendsState && _attached)
-                            await SendStateAsync();
+                            _ = StateSentAsync();
                         next.Done.TrySetResult(answer);
                     }
                     catch (JSDisconnectedException)
