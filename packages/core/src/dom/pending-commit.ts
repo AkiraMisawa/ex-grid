@@ -131,7 +131,8 @@ export type KeyDefault = 'done' | 'none' | 'lost';
 /**
  * What the browser does with a key the page left alone in a text field, done again for a key taken at its turn: a
  * character is typed, Backspace and Delete delete, the caret keys move the caret or, with Shift, the selection, by a
- * character, a word or the line, the primary key with A selects all, and with Z or Y undoes or redoes. A key made again
+ * character, a word or the line (Up and Down to a one-line field's start and end, and lost in a text area, whose lines
+ * are its layout's), the primary key with A selects all, and with Z or Y undoes or redoes. A key made again
  * is the page's own, and the browser does none of these for it. `metaIsPrimary` is the platform's: Command is the
  * primary key and Option moves by a word there, Control elsewhere.
  */
@@ -189,6 +190,18 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
             if (word) return reach(wordEnd(value, moving, metaIsPrimary));
             if (!plain) return 'none';
             return reach(key.shiftKey || start === end ? stepOn(value, moving) : end);
+        case 'ArrowUp':
+        case 'ArrowDown': {
+            // Command with Up or Down reaches the text's start or end in any field. A one-line field has no line, nor
+            // paragraph, above or below, so there Up and Down, and Option with them, reach its start or end too, as
+            // Chromium does. A text area's line above lies where its layout wraps it, which the grid never reads (P4),
+            // and a list's suggestions are the browser's own: there the key cannot be done again, and is said.
+            const to = key.key === 'ArrowUp' ? 0 : value.length;
+            if (line) return reach(to);
+            if (!plain && !(metaIsPrimary && word)) return 'none';
+            if (field instanceof HTMLTextAreaElement || field.list !== null) return 'lost';
+            return reach(to);
+        }
         case 'Home':
             return plain || word ? reach(0) : 'none';
         case 'End':

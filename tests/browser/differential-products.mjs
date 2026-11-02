@@ -74,10 +74,15 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
  * Holds `grid` where it stands for the run: the page is scrolled to put its top near the window's, and
  * every element laid out before it keeps the height it has now. A status the page writes above the grid
  * — a refusal said in a line that wraps — would otherwise move the grid under a press already aimed, and
- * where it moves first in one run than the other the press lands on another cell.
+ * where it moves first in one run than the other the press lands on another cell. The page also keeps a
+ * window's height of room below everything, so a line below the grid that a step empties cannot shorten the
+ * page under the scroll, which the browser would then pull back (seed 201108955: an Enter that commits
+ * emptied one, and the grid moved 20 px down from every press aimed at it).
  */
 async function holdGridInPlace(page, grid) {
     await alterPage(page, (root) => {
+        const room = document.body.style.paddingBottom;
+        document.body.style.paddingBottom = `${innerHeight}px`;
         const held = [];
         for (let node = root; node && node !== document.body; node = node.parentElement) {
             for (let before = node.previousElementSibling; before; before = before.previousElementSibling) {
@@ -93,6 +98,7 @@ async function holdGridInPlace(page, grid) {
                 element.style.height = height;
                 element.style.overflow = overflow;
             }
+            document.body.style.paddingBottom = room;
             window.scrollTo(0, scrolled);
         };
     }, await grid.elementHandle());
