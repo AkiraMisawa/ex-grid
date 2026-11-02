@@ -1,5 +1,0 @@
-Product: ExGrid
-Kind: Behaviour
-ADR: 0350
-
-`ExGrid.Components.ExGrid<TRow>` is drawn by the TypeScript Script Core (ADR-0350 section 7): the keys, the Selection, the clipboard, the editor, Find and the Selection Summary run in the browser on both hosting models, while the rows, their order and what an edit does to them stay in .NET behind the same `GridColumn`s and `IGridSource`. What a row paints is answered in .NET and crosses with the row, and a Template cell's fragment is rendered in .NET and moved into its cell, so on Blazor Server a cell scrolled into view shows its content a round trip later; a verdict, a copy, a summary, Replace All, a declared key, a Find step and the Context Menu's commands are asked of .NET in their turn, the input behind each waiting for its answer. A call the browser hands .NET that is larger than a hub's 32 KB message crosses as a gzip stream, in its turn. The `ReturnKeyboardAsync` overload that collects keys typed on a joined surface is not carried. Building ExGrid from source now needs Node 26.12.1, or a release of 22 or 24 with the same fixes (22.23.4, 24.22.1), which bundles the core.

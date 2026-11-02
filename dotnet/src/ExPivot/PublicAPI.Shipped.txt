@@ -30,444 +30,23 @@ const ExPivot.PivotCommandIds.SortLargestToSmallest = "sort-largest-to-smallest"
 const ExPivot.PivotCommandIds.SortSmallestToLargest = "sort-smallest-to-largest" -> string!
 const ExPivot.PivotCommandIds.ValueFieldSettings = "value-field-settings" -> string!
 ExPivot.Chrome.IPivotChrome
-ExPivot.Chrome.IPivotChrome.DetailsDialog(ExPivot.Chrome.PivotDetailsDialogContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.DetailsTabs(ExPivot.Chrome.PivotDetailsTabsContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.FieldList(ExPivot.Chrome.PivotFieldListContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.FieldSettings(ExPivot.Chrome.PivotFieldSettingsContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.Chrome.IPivotChrome.GridChrome(System.Func<string!, string?>! commandLabel) -> ExGrid.Chrome.IGridChrome?
-ExPivot.Chrome.IPivotChrome.ItemFilter(ExPivot.Chrome.PivotItemFilterContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.Menu(ExPivot.Chrome.PivotMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.ReportFilters(ExPivot.Chrome.PivotReportFiltersContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.StaleReport(ExPivot.Chrome.PivotStaleReportContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExPivot.Chrome.IPivotChrome.Stylesheets.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Chrome.ChromeStylesheet!>!
-ExPivot.Chrome.IPivotChrome.Toolbar(ExPivot.Chrome.PivotToolbarContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.IPivotChrome.ValueFieldSettings(ExPivot.Chrome.PivotValueFieldSettingsContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.PivotAreaEntryView
-ExPivot.Chrome.PivotAreaEntryView.<Clone>$() -> ExPivot.Chrome.PivotAreaEntryView!
-ExPivot.Chrome.PivotAreaEntryView.Caption.get -> string!
-ExPivot.Chrome.PivotAreaEntryView.Caption.init -> void
-ExPivot.Chrome.PivotAreaEntryView.Deconstruct(out ExPivot.Engine.PivotEntry Entry, out string! Caption, out bool IsFiltered, out bool IsMenuOpen, out System.Action! OpenMenu, out Microsoft.AspNetCore.Components.RenderFragment? Popup, out int FocusRequest) -> void
-ExPivot.Chrome.PivotAreaEntryView.Entry.get -> ExPivot.Engine.PivotEntry
-ExPivot.Chrome.PivotAreaEntryView.Entry.init -> void
-ExPivot.Chrome.PivotAreaEntryView.Equals(ExPivot.Chrome.PivotAreaEntryView? other) -> bool
-ExPivot.Chrome.PivotAreaEntryView.FocusRequest.get -> int
-ExPivot.Chrome.PivotAreaEntryView.FocusRequest.init -> void
-ExPivot.Chrome.PivotAreaEntryView.IsFiltered.get -> bool
-ExPivot.Chrome.PivotAreaEntryView.IsFiltered.init -> void
-ExPivot.Chrome.PivotAreaEntryView.IsMenuOpen.get -> bool
-ExPivot.Chrome.PivotAreaEntryView.IsMenuOpen.init -> void
-ExPivot.Chrome.PivotAreaEntryView.IsValuesPseudoField.get -> bool
-ExPivot.Chrome.PivotAreaEntryView.OpenMenu.get -> System.Action!
-ExPivot.Chrome.PivotAreaEntryView.OpenMenu.init -> void
-ExPivot.Chrome.PivotAreaEntryView.PivotAreaEntryView(ExPivot.Engine.PivotEntry Entry, string! Caption, bool IsFiltered, bool IsMenuOpen, System.Action! OpenMenu, Microsoft.AspNetCore.Components.RenderFragment? Popup, int FocusRequest) -> void
-ExPivot.Chrome.PivotAreaEntryView.Popup.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.PivotAreaEntryView.Popup.init -> void
-ExPivot.Chrome.PivotAreaView
-ExPivot.Chrome.PivotAreaView.<Clone>$() -> ExPivot.Chrome.PivotAreaView!
-ExPivot.Chrome.PivotAreaView.AcceptsDrop.get -> bool
-ExPivot.Chrome.PivotAreaView.AcceptsDrop.init -> void
-ExPivot.Chrome.PivotAreaView.Area.get -> ExPivot.Engine.PivotArea
-ExPivot.Chrome.PivotAreaView.Area.init -> void
-ExPivot.Chrome.PivotAreaView.Deconstruct(out ExPivot.Engine.PivotArea Area, out string! Title, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaEntryView!>! Entries, out bool AcceptsDrop, out int? DropIndex) -> void
-ExPivot.Chrome.PivotAreaView.DropIndex.get -> int?
-ExPivot.Chrome.PivotAreaView.DropIndex.init -> void
-ExPivot.Chrome.PivotAreaView.Entries.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaEntryView!>!
-ExPivot.Chrome.PivotAreaView.Entries.init -> void
-ExPivot.Chrome.PivotAreaView.Equals(ExPivot.Chrome.PivotAreaView? other) -> bool
-ExPivot.Chrome.PivotAreaView.PivotAreaView(ExPivot.Engine.PivotArea Area, string! Title, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaEntryView!>! Entries, bool AcceptsDrop, int? DropIndex) -> void
-ExPivot.Chrome.PivotAreaView.Title.get -> string!
-ExPivot.Chrome.PivotAreaView.Title.init -> void
-ExPivot.Chrome.PivotChoice<T>
-ExPivot.Chrome.PivotChoice<T>.<Clone>$() -> ExPivot.Chrome.PivotChoice<T>!
-ExPivot.Chrome.PivotChoice<T>.Deconstruct(out T Value, out string! Label) -> void
-ExPivot.Chrome.PivotChoice<T>.Enabled.get -> bool
-ExPivot.Chrome.PivotChoice<T>.Enabled.init -> void
-ExPivot.Chrome.PivotChoice<T>.Equals(ExPivot.Chrome.PivotChoice<T>? other) -> bool
-ExPivot.Chrome.PivotChoice<T>.Label.get -> string!
-ExPivot.Chrome.PivotChoice<T>.Label.init -> void
-ExPivot.Chrome.PivotChoice<T>.PivotChoice(T Value, string! Label) -> void
-ExPivot.Chrome.PivotChoice<T>.Reason.get -> string?
-ExPivot.Chrome.PivotChoice<T>.Reason.init -> void
-ExPivot.Chrome.PivotChoice<T>.Value.get -> T
-ExPivot.Chrome.PivotChoice<T>.Value.init -> void
-ExPivot.Chrome.PivotCommand
-ExPivot.Chrome.PivotCommand.<Clone>$() -> ExPivot.Chrome.PivotCommand!
-ExPivot.Chrome.PivotCommand.Checked.get -> bool?
-ExPivot.Chrome.PivotCommand.Checked.init -> void
-ExPivot.Chrome.PivotCommand.Deconstruct(out string! Id, out string! Label, out bool Enabled, out System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
-ExPivot.Chrome.PivotCommand.Enabled.get -> bool
-ExPivot.Chrome.PivotCommand.Enabled.init -> void
-ExPivot.Chrome.PivotCommand.Equals(ExPivot.Chrome.PivotCommand? other) -> bool
-ExPivot.Chrome.PivotCommand.GroupHeading.get -> string?
-ExPivot.Chrome.PivotCommand.GroupHeading.init -> void
-ExPivot.Chrome.PivotCommand.Id.get -> string!
-ExPivot.Chrome.PivotCommand.Id.init -> void
-ExPivot.Chrome.PivotCommand.Invoke.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotCommand.Invoke.init -> void
-ExPivot.Chrome.PivotCommand.Label.get -> string!
-ExPivot.Chrome.PivotCommand.Label.init -> void
-ExPivot.Chrome.PivotCommand.PivotCommand(string! Id, string! Label, bool Enabled, System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
-ExPivot.Chrome.PivotDetailsDialogContext
-ExPivot.Chrome.PivotDetailsDialogContext.<Clone>$() -> ExPivot.Chrome.PivotDetailsDialogContext!
-ExPivot.Chrome.PivotDetailsDialogContext.Close.get -> System.Action!
-ExPivot.Chrome.PivotDetailsDialogContext.Close.init -> void
-ExPivot.Chrome.PivotDetailsDialogContext.Deconstruct(out string! Title, out Microsoft.AspNetCore.Components.RenderFragment! Records, out System.Action! Close, out int FocusRequest, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotDetailsDialogContext.Equals(ExPivot.Chrome.PivotDetailsDialogContext? other) -> bool
-ExPivot.Chrome.PivotDetailsDialogContext.FocusRequest.get -> int
-ExPivot.Chrome.PivotDetailsDialogContext.FocusRequest.init -> void
-ExPivot.Chrome.PivotDetailsDialogContext.PivotDetailsDialogContext(string! Title, Microsoft.AspNetCore.Components.RenderFragment! Records, System.Action! Close, int FocusRequest, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotDetailsDialogContext.Records.get -> Microsoft.AspNetCore.Components.RenderFragment!
-ExPivot.Chrome.PivotDetailsDialogContext.Records.init -> void
-ExPivot.Chrome.PivotDetailsDialogContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotDetailsDialogContext.TakeKeyboard.init -> void
-ExPivot.Chrome.PivotDetailsDialogContext.Title.get -> string!
-ExPivot.Chrome.PivotDetailsDialogContext.Title.init -> void
-ExPivot.Chrome.PivotDetailsDialogContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotDetailsDialogContext.Word.init -> void
-ExPivot.Chrome.PivotDetailsTab
-ExPivot.Chrome.PivotDetailsTab.<Clone>$() -> ExPivot.Chrome.PivotDetailsTab!
-ExPivot.Chrome.PivotDetailsTab.Close.get -> System.Action?
-ExPivot.Chrome.PivotDetailsTab.Close.init -> void
-ExPivot.Chrome.PivotDetailsTab.CloseLabel.get -> string?
-ExPivot.Chrome.PivotDetailsTab.CloseLabel.init -> void
-ExPivot.Chrome.PivotDetailsTab.Deconstruct(out string! Id, out string! Title, out bool IsSelected, out System.Action! Select, out System.Action? Close, out string? CloseLabel) -> void
-ExPivot.Chrome.PivotDetailsTab.Equals(ExPivot.Chrome.PivotDetailsTab? other) -> bool
-ExPivot.Chrome.PivotDetailsTab.FocusRequest.get -> int
-ExPivot.Chrome.PivotDetailsTab.FocusRequest.init -> void
-ExPivot.Chrome.PivotDetailsTab.Id.get -> string!
-ExPivot.Chrome.PivotDetailsTab.Id.init -> void
-ExPivot.Chrome.PivotDetailsTab.IsSelected.get -> bool
-ExPivot.Chrome.PivotDetailsTab.IsSelected.init -> void
-ExPivot.Chrome.PivotDetailsTab.PivotDetailsTab(string! Id, string! Title, bool IsSelected, System.Action! Select, System.Action? Close, string? CloseLabel) -> void
-ExPivot.Chrome.PivotDetailsTab.Select.get -> System.Action!
-ExPivot.Chrome.PivotDetailsTab.Select.init -> void
-ExPivot.Chrome.PivotDetailsTab.Title.get -> string!
-ExPivot.Chrome.PivotDetailsTab.Title.init -> void
-ExPivot.Chrome.PivotDetailsTabsContext
-ExPivot.Chrome.PivotDetailsTabsContext.<Clone>$() -> ExPivot.Chrome.PivotDetailsTabsContext!
-ExPivot.Chrome.PivotDetailsTabsContext.Deconstruct(out string! Title, out ExPivot.Chrome.PivotDetailsTab! Report, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTab!>! Tabs, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotDetailsTabsContext.Equals(ExPivot.Chrome.PivotDetailsTabsContext? other) -> bool
-ExPivot.Chrome.PivotDetailsTabsContext.PivotDetailsTabsContext(string! Title, ExPivot.Chrome.PivotDetailsTab! Report, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTab!>! Tabs, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotDetailsTabsContext.Report.get -> ExPivot.Chrome.PivotDetailsTab!
-ExPivot.Chrome.PivotDetailsTabsContext.Report.init -> void
-ExPivot.Chrome.PivotDetailsTabsContext.Tabs.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTab!>!
-ExPivot.Chrome.PivotDetailsTabsContext.Tabs.init -> void
-ExPivot.Chrome.PivotDetailsTabsContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotDetailsTabsContext.TakeKeyboard.init -> void
-ExPivot.Chrome.PivotDetailsTabsContext.Title.get -> string!
-ExPivot.Chrome.PivotDetailsTabsContext.Title.init -> void
-ExPivot.Chrome.PivotDetailsTabsContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotDetailsTabsContext.Word.init -> void
-ExPivot.Chrome.PivotDragSubject
-ExPivot.Chrome.PivotDragSubject.<Clone>$() -> ExPivot.Chrome.PivotDragSubject!
-ExPivot.Chrome.PivotDragSubject.Entry.get -> ExPivot.Engine.PivotEntry?
-ExPivot.Chrome.PivotDragSubject.Equals(ExPivot.Chrome.PivotDragSubject? other) -> bool
-ExPivot.Chrome.PivotDragSubject.Field.get -> string?
-ExPivot.Chrome.PivotFieldEntry
-ExPivot.Chrome.PivotFieldEntry.<Clone>$() -> ExPivot.Chrome.PivotFieldEntry!
-ExPivot.Chrome.PivotFieldEntry.Caption.get -> string!
-ExPivot.Chrome.PivotFieldEntry.Caption.init -> void
-ExPivot.Chrome.PivotFieldEntry.Deconstruct(out string! Name, out string! Caption, out ExPivot.Engine.PivotFieldType Type, out bool IsPlaced, out bool IsFiltered, out System.Func<System.Threading.Tasks.Task!>! Toggle) -> void
-ExPivot.Chrome.PivotFieldEntry.Equals(ExPivot.Chrome.PivotFieldEntry? other) -> bool
-ExPivot.Chrome.PivotFieldEntry.IsFiltered.get -> bool
-ExPivot.Chrome.PivotFieldEntry.IsFiltered.init -> void
-ExPivot.Chrome.PivotFieldEntry.IsPlaced.get -> bool
-ExPivot.Chrome.PivotFieldEntry.IsPlaced.init -> void
-ExPivot.Chrome.PivotFieldEntry.Name.get -> string!
-ExPivot.Chrome.PivotFieldEntry.Name.init -> void
-ExPivot.Chrome.PivotFieldEntry.PivotFieldEntry(string! Name, string! Caption, ExPivot.Engine.PivotFieldType Type, bool IsPlaced, bool IsFiltered, System.Func<System.Threading.Tasks.Task!>! Toggle) -> void
-ExPivot.Chrome.PivotFieldEntry.Toggle.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldEntry.Toggle.init -> void
-ExPivot.Chrome.PivotFieldEntry.Type.get -> ExPivot.Engine.PivotFieldType
-ExPivot.Chrome.PivotFieldEntry.Type.init -> void
-ExPivot.Chrome.PivotFieldListContext
-ExPivot.Chrome.PivotFieldListContext.<Clone>$() -> ExPivot.Chrome.PivotFieldListContext!
-ExPivot.Chrome.PivotFieldListContext.Areas.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaView!>!
-ExPivot.Chrome.PivotFieldListContext.Areas.init -> void
-ExPivot.Chrome.PivotFieldListContext.CanUpdate.get -> bool
-ExPivot.Chrome.PivotFieldListContext.CanUpdate.init -> void
-ExPivot.Chrome.PivotFieldListContext.Close.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldListContext.Close.init -> void
-ExPivot.Chrome.PivotFieldListContext.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldEntry!>! Fields, out string! Search, out System.Action<string?>! SearchChanged, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaView!>! Areas, out ExPivot.Chrome.PivotDragSubject? Dragging, out System.Action<ExPivot.Chrome.PivotDragSubject!>! StartDrag, out System.Action<ExPivot.Engine.PivotArea, int>! DragOver, out System.Func<ExPivot.Engine.PivotArea, int, System.Threading.Tasks.Task!>! Drop, out bool ListAcceptsDrop, out System.Func<System.Threading.Tasks.Task!>! DropOnList, out System.Action! EndDrag, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotFieldListContext.DeferLayoutUpdate.get -> bool
-ExPivot.Chrome.PivotFieldListContext.DeferLayoutUpdate.init -> void
-ExPivot.Chrome.PivotFieldListContext.DeferLayoutUpdateChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldListContext.DeferLayoutUpdateChanged.init -> void
-ExPivot.Chrome.PivotFieldListContext.Dragging.get -> ExPivot.Chrome.PivotDragSubject?
-ExPivot.Chrome.PivotFieldListContext.Dragging.init -> void
-ExPivot.Chrome.PivotFieldListContext.DragOver.get -> System.Action<ExPivot.Engine.PivotArea, int>!
-ExPivot.Chrome.PivotFieldListContext.DragOver.init -> void
-ExPivot.Chrome.PivotFieldListContext.Drop.get -> System.Func<ExPivot.Engine.PivotArea, int, System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldListContext.Drop.init -> void
-ExPivot.Chrome.PivotFieldListContext.DropOnList.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldListContext.DropOnList.init -> void
-ExPivot.Chrome.PivotFieldListContext.EndDrag.get -> System.Action!
-ExPivot.Chrome.PivotFieldListContext.EndDrag.init -> void
-ExPivot.Chrome.PivotFieldListContext.Equals(ExPivot.Chrome.PivotFieldListContext? other) -> bool
-ExPivot.Chrome.PivotFieldListContext.Fields.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldEntry!>!
-ExPivot.Chrome.PivotFieldListContext.Fields.init -> void
-ExPivot.Chrome.PivotFieldListContext.ListAcceptsDrop.get -> bool
-ExPivot.Chrome.PivotFieldListContext.ListAcceptsDrop.init -> void
-ExPivot.Chrome.PivotFieldListContext.PivotFieldListContext(string! Title, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldEntry!>! Fields, string! Search, System.Action<string?>! SearchChanged, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotAreaView!>! Areas, ExPivot.Chrome.PivotDragSubject? Dragging, System.Action<ExPivot.Chrome.PivotDragSubject!>! StartDrag, System.Action<ExPivot.Engine.PivotArea, int>! DragOver, System.Func<ExPivot.Engine.PivotArea, int, System.Threading.Tasks.Task!>! Drop, bool ListAcceptsDrop, System.Func<System.Threading.Tasks.Task!>! DropOnList, System.Action! EndDrag, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotFieldListContext.Search.get -> string!
-ExPivot.Chrome.PivotFieldListContext.Search.init -> void
-ExPivot.Chrome.PivotFieldListContext.SearchChanged.get -> System.Action<string?>!
-ExPivot.Chrome.PivotFieldListContext.SearchChanged.init -> void
-ExPivot.Chrome.PivotFieldListContext.StartDrag.get -> System.Action<ExPivot.Chrome.PivotDragSubject!>!
-ExPivot.Chrome.PivotFieldListContext.StartDrag.init -> void
-ExPivot.Chrome.PivotFieldListContext.Title.get -> string!
-ExPivot.Chrome.PivotFieldListContext.Title.init -> void
-ExPivot.Chrome.PivotFieldListContext.Update.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldListContext.Update.init -> void
-ExPivot.Chrome.PivotFieldListContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotFieldListContext.Word.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext
-ExPivot.Chrome.PivotFieldSettingsContext.<Clone>$() -> ExPivot.Chrome.PivotFieldSettingsContext!
-ExPivot.Chrome.PivotFieldSettingsContext.Apply.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotFieldSettingsContext.Apply.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Cancel.get -> System.Action!
-ExPivot.Chrome.PivotFieldSettingsContext.Cancel.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Deconstruct(out string! FieldCaption, out bool Subtotals, out System.Action<bool>! SubtotalsChanged, out int Sort, out System.Action<int>! SortChanged, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotSort!>!>! Sorts, out System.Func<System.Threading.Tasks.Task!>! Apply, out System.Action! Cancel, out int FocusRequest, out System.Action<bool>! InnerPopupChanged, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Equals(ExPivot.Chrome.PivotFieldSettingsContext? other) -> bool
-ExPivot.Chrome.PivotFieldSettingsContext.FieldCaption.get -> string!
-ExPivot.Chrome.PivotFieldSettingsContext.FieldCaption.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.FocusRequest.get -> int
-ExPivot.Chrome.PivotFieldSettingsContext.FocusRequest.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.InnerPopupChanged.get -> System.Action<bool>!
-ExPivot.Chrome.PivotFieldSettingsContext.InnerPopupChanged.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.PivotFieldSettingsContext(string! FieldCaption, bool Subtotals, System.Action<bool>! SubtotalsChanged, int Sort, System.Action<int>! SortChanged, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotSort!>!>! Sorts, System.Func<System.Threading.Tasks.Task!>! Apply, System.Action! Cancel, int FocusRequest, System.Action<bool>! InnerPopupChanged, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Sort.get -> int
-ExPivot.Chrome.PivotFieldSettingsContext.Sort.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.SortChanged.get -> System.Action<int>!
-ExPivot.Chrome.PivotFieldSettingsContext.SortChanged.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Sorts.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotSort!>!>!
-ExPivot.Chrome.PivotFieldSettingsContext.Sorts.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Subtotals.get -> bool
-ExPivot.Chrome.PivotFieldSettingsContext.Subtotals.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.SubtotalsChanged.get -> System.Action<bool>!
-ExPivot.Chrome.PivotFieldSettingsContext.SubtotalsChanged.init -> void
-ExPivot.Chrome.PivotFieldSettingsContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotFieldSettingsContext.Word.init -> void
-ExPivot.Chrome.PivotItemChoice
-ExPivot.Chrome.PivotItemChoice.<Clone>$() -> ExPivot.Chrome.PivotItemChoice!
-ExPivot.Chrome.PivotItemChoice.Deconstruct(out ExPivot.Engine.PivotItemKey! Key, out string! Label, out bool Ticked) -> void
-ExPivot.Chrome.PivotItemChoice.Equals(ExPivot.Chrome.PivotItemChoice? other) -> bool
-ExPivot.Chrome.PivotItemChoice.Key.get -> ExPivot.Engine.PivotItemKey!
-ExPivot.Chrome.PivotItemChoice.Key.init -> void
-ExPivot.Chrome.PivotItemChoice.Label.get -> string!
-ExPivot.Chrome.PivotItemChoice.Label.init -> void
-ExPivot.Chrome.PivotItemChoice.PivotItemChoice(ExPivot.Engine.PivotItemKey! Key, string! Label, bool Ticked) -> void
-ExPivot.Chrome.PivotItemChoice.Ticked.get -> bool
-ExPivot.Chrome.PivotItemChoice.Ticked.init -> void
-ExPivot.Chrome.PivotItemFilterContext
-ExPivot.Chrome.PivotItemFilterContext.<Clone>$() -> ExPivot.Chrome.PivotItemFilterContext!
-ExPivot.Chrome.PivotItemFilterContext.AllTicked.get -> bool?
-ExPivot.Chrome.PivotItemFilterContext.AllTicked.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Apply.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotItemFilterContext.Apply.init -> void
-ExPivot.Chrome.PivotItemFilterContext.CanApply.get -> bool
-ExPivot.Chrome.PivotItemFilterContext.CanApply.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Cancel.get -> System.Action!
-ExPivot.Chrome.PivotItemFilterContext.Cancel.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Deconstruct(out string! FieldCaption, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoice!>! Items, out int ItemCount, out int MatchCount, out int ListCap, out string! Search, out System.Action<string?>! SearchChanged, out bool? AllTicked, out System.Action<bool>! SetAll, out System.Action<ExPivot.Engine.PivotItemKey!, bool>! SetTicked, out bool CanApply, out string? Refusal, out System.Func<System.Threading.Tasks.Task!>! Apply, out System.Action! Cancel, out int FocusRequest, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotItemFilterContext.Equals(ExPivot.Chrome.PivotItemFilterContext? other) -> bool
-ExPivot.Chrome.PivotItemFilterContext.FieldCaption.get -> string!
-ExPivot.Chrome.PivotItemFilterContext.FieldCaption.init -> void
-ExPivot.Chrome.PivotItemFilterContext.FocusRequest.get -> int
-ExPivot.Chrome.PivotItemFilterContext.FocusRequest.init -> void
-ExPivot.Chrome.PivotItemFilterContext.IsLoading.get -> bool
-ExPivot.Chrome.PivotItemFilterContext.IsLoading.init -> void
-ExPivot.Chrome.PivotItemFilterContext.IsUpdating.get -> bool
-ExPivot.Chrome.PivotItemFilterContext.IsUpdating.init -> void
-ExPivot.Chrome.PivotItemFilterContext.ItemCount.get -> int
-ExPivot.Chrome.PivotItemFilterContext.ItemCount.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Items.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoice!>!
-ExPivot.Chrome.PivotItemFilterContext.Items.init -> void
-ExPivot.Chrome.PivotItemFilterContext.ListCap.get -> int
-ExPivot.Chrome.PivotItemFilterContext.ListCap.init -> void
-ExPivot.Chrome.PivotItemFilterContext.MatchCount.get -> int
-ExPivot.Chrome.PivotItemFilterContext.MatchCount.init -> void
-ExPivot.Chrome.PivotItemFilterContext.PivotItemFilterContext(string! FieldCaption, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoice!>! Items, int ItemCount, int MatchCount, int ListCap, string! Search, System.Action<string?>! SearchChanged, bool? AllTicked, System.Action<bool>! SetAll, System.Action<ExPivot.Engine.PivotItemKey!, bool>! SetTicked, bool CanApply, string? Refusal, System.Func<System.Threading.Tasks.Task!>! Apply, System.Action! Cancel, int FocusRequest, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotItemFilterContext.Refusal.get -> string?
-ExPivot.Chrome.PivotItemFilterContext.Refusal.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Search.get -> string!
-ExPivot.Chrome.PivotItemFilterContext.Search.init -> void
-ExPivot.Chrome.PivotItemFilterContext.SearchChanged.get -> System.Action<string?>!
-ExPivot.Chrome.PivotItemFilterContext.SearchChanged.init -> void
-ExPivot.Chrome.PivotItemFilterContext.SetAll.get -> System.Action<bool>!
-ExPivot.Chrome.PivotItemFilterContext.SetAll.init -> void
-ExPivot.Chrome.PivotItemFilterContext.SetTicked.get -> System.Action<ExPivot.Engine.PivotItemKey!, bool>!
-ExPivot.Chrome.PivotItemFilterContext.SetTicked.init -> void
-ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotItemFilterContext.TakeKeyboard.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Unavailable.get -> string?
-ExPivot.Chrome.PivotItemFilterContext.Unavailable.init -> void
-ExPivot.Chrome.PivotItemFilterContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotItemFilterContext.Word.init -> void
-ExPivot.Chrome.PivotMenuContext
-ExPivot.Chrome.PivotMenuContext.<Clone>$() -> ExPivot.Chrome.PivotMenuContext!
-ExPivot.Chrome.PivotMenuContext.Close.get -> System.Action!
-ExPivot.Chrome.PivotMenuContext.Close.init -> void
-ExPivot.Chrome.PivotMenuContext.Commands.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotCommand!>!
-ExPivot.Chrome.PivotMenuContext.Commands.init -> void
-ExPivot.Chrome.PivotMenuContext.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotCommand!>! Commands, out System.Action! Close, out int FocusRequest) -> void
-ExPivot.Chrome.PivotMenuContext.Equals(ExPivot.Chrome.PivotMenuContext? other) -> bool
-ExPivot.Chrome.PivotMenuContext.FocusRequest.get -> int
-ExPivot.Chrome.PivotMenuContext.FocusRequest.init -> void
-ExPivot.Chrome.PivotMenuContext.PivotMenuContext(string! Title, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotCommand!>! Commands, System.Action! Close, int FocusRequest) -> void
-ExPivot.Chrome.PivotMenuContext.Title.get -> string!
-ExPivot.Chrome.PivotMenuContext.Title.init -> void
-ExPivot.Chrome.PivotReportFiltersContext
-ExPivot.Chrome.PivotReportFiltersContext.<Clone>$() -> ExPivot.Chrome.PivotReportFiltersContext!
-ExPivot.Chrome.PivotReportFiltersContext.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFilterView!>! Filters, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotReportFiltersContext.Equals(ExPivot.Chrome.PivotReportFiltersContext? other) -> bool
-ExPivot.Chrome.PivotReportFiltersContext.Filters.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFilterView!>!
-ExPivot.Chrome.PivotReportFiltersContext.Filters.init -> void
-ExPivot.Chrome.PivotReportFiltersContext.PivotReportFiltersContext(string! Title, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFilterView!>! Filters, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotReportFiltersContext.Title.get -> string!
-ExPivot.Chrome.PivotReportFiltersContext.Title.init -> void
-ExPivot.Chrome.PivotReportFiltersContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotReportFiltersContext.Word.init -> void
-ExPivot.Chrome.PivotReportFilterView
-ExPivot.Chrome.PivotReportFilterView.<Clone>$() -> ExPivot.Chrome.PivotReportFilterView!
-ExPivot.Chrome.PivotReportFilterView.Caption.get -> string!
-ExPivot.Chrome.PivotReportFilterView.Caption.init -> void
-ExPivot.Chrome.PivotReportFilterView.Deconstruct(out string! Field, out string! Caption, out string! Summary, out bool IsFiltered, out bool IsOpen, out System.Action! Open, out Microsoft.AspNetCore.Components.RenderFragment? Popup, out int FocusRequest) -> void
-ExPivot.Chrome.PivotReportFilterView.Equals(ExPivot.Chrome.PivotReportFilterView? other) -> bool
-ExPivot.Chrome.PivotReportFilterView.Field.get -> string!
-ExPivot.Chrome.PivotReportFilterView.Field.init -> void
-ExPivot.Chrome.PivotReportFilterView.FocusRequest.get -> int
-ExPivot.Chrome.PivotReportFilterView.FocusRequest.init -> void
-ExPivot.Chrome.PivotReportFilterView.IsFiltered.get -> bool
-ExPivot.Chrome.PivotReportFilterView.IsFiltered.init -> void
-ExPivot.Chrome.PivotReportFilterView.IsOpen.get -> bool
-ExPivot.Chrome.PivotReportFilterView.IsOpen.init -> void
-ExPivot.Chrome.PivotReportFilterView.Open.get -> System.Action!
-ExPivot.Chrome.PivotReportFilterView.Open.init -> void
-ExPivot.Chrome.PivotReportFilterView.PivotReportFilterView(string! Field, string! Caption, string! Summary, bool IsFiltered, bool IsOpen, System.Action! Open, Microsoft.AspNetCore.Components.RenderFragment? Popup, int FocusRequest) -> void
-ExPivot.Chrome.PivotReportFilterView.Popup.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.PivotReportFilterView.Popup.init -> void
-ExPivot.Chrome.PivotReportFilterView.Summary.get -> string!
-ExPivot.Chrome.PivotReportFilterView.Summary.init -> void
-ExPivot.Chrome.PivotStaleReportContext
-ExPivot.Chrome.PivotStaleReportContext.<Clone>$() -> ExPivot.Chrome.PivotStaleReportContext!
-ExPivot.Chrome.PivotStaleReportContext.AsOf.get -> System.DateTimeOffset
-ExPivot.Chrome.PivotStaleReportContext.AsOf.init -> void
-ExPivot.Chrome.PivotStaleReportContext.AsOfText.get -> string!
-ExPivot.Chrome.PivotStaleReportContext.AsOfText.init -> void
-ExPivot.Chrome.PivotStaleReportContext.Deconstruct(out string! Message, out string! Reason, out System.DateTimeOffset AsOf, out string! AsOfText, out ExPivot.Chrome.PivotCommand! Retry, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotStaleReportContext.Equals(ExPivot.Chrome.PivotStaleReportContext? other) -> bool
-ExPivot.Chrome.PivotStaleReportContext.Message.get -> string!
-ExPivot.Chrome.PivotStaleReportContext.Message.init -> void
-ExPivot.Chrome.PivotStaleReportContext.PivotStaleReportContext(string! Message, string! Reason, System.DateTimeOffset AsOf, string! AsOfText, ExPivot.Chrome.PivotCommand! Retry, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotStaleReportContext.Reason.get -> string!
-ExPivot.Chrome.PivotStaleReportContext.Reason.init -> void
-ExPivot.Chrome.PivotStaleReportContext.Retry.get -> ExPivot.Chrome.PivotCommand!
-ExPivot.Chrome.PivotStaleReportContext.Retry.init -> void
-ExPivot.Chrome.PivotStaleReportContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotStaleReportContext.Word.init -> void
-ExPivot.Chrome.PivotToolbarContext
-ExPivot.Chrome.PivotToolbarContext.<Clone>$() -> ExPivot.Chrome.PivotToolbarContext!
-ExPivot.Chrome.PivotToolbarContext.Deconstruct(out Microsoft.AspNetCore.Components.RenderFragment? ReportFilters, out ExPivot.Chrome.PivotToolbarMenuView! LayoutMenu, out ExPivot.Chrome.PivotCommand? Refresh, out ExPivot.Chrome.PivotCommand! FieldList, out string? Refusal, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotToolbarContext.Equals(ExPivot.Chrome.PivotToolbarContext? other) -> bool
-ExPivot.Chrome.PivotToolbarContext.FieldList.get -> ExPivot.Chrome.PivotCommand!
-ExPivot.Chrome.PivotToolbarContext.FieldList.init -> void
-ExPivot.Chrome.PivotToolbarContext.LayoutMenu.get -> ExPivot.Chrome.PivotToolbarMenuView!
-ExPivot.Chrome.PivotToolbarContext.LayoutMenu.init -> void
-ExPivot.Chrome.PivotToolbarContext.PivotToolbarContext(Microsoft.AspNetCore.Components.RenderFragment? ReportFilters, ExPivot.Chrome.PivotToolbarMenuView! LayoutMenu, ExPivot.Chrome.PivotCommand? Refresh, ExPivot.Chrome.PivotCommand! FieldList, string? Refusal, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotToolbarContext.Refresh.get -> ExPivot.Chrome.PivotCommand?
-ExPivot.Chrome.PivotToolbarContext.Refresh.init -> void
-ExPivot.Chrome.PivotToolbarContext.Refusal.get -> string?
-ExPivot.Chrome.PivotToolbarContext.Refusal.init -> void
-ExPivot.Chrome.PivotToolbarContext.ReportFilters.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.PivotToolbarContext.ReportFilters.init -> void
-ExPivot.Chrome.PivotToolbarContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotToolbarContext.Word.init -> void
-ExPivot.Chrome.PivotToolbarMenuView
-ExPivot.Chrome.PivotToolbarMenuView.<Clone>$() -> ExPivot.Chrome.PivotToolbarMenuView!
-ExPivot.Chrome.PivotToolbarMenuView.Deconstruct(out string! Id, out string! Label, out bool IsOpen, out System.Action! Open, out Microsoft.AspNetCore.Components.RenderFragment? Popup, out int FocusRequest) -> void
-ExPivot.Chrome.PivotToolbarMenuView.Equals(ExPivot.Chrome.PivotToolbarMenuView? other) -> bool
-ExPivot.Chrome.PivotToolbarMenuView.FocusRequest.get -> int
-ExPivot.Chrome.PivotToolbarMenuView.FocusRequest.init -> void
-ExPivot.Chrome.PivotToolbarMenuView.Id.get -> string!
-ExPivot.Chrome.PivotToolbarMenuView.Id.init -> void
-ExPivot.Chrome.PivotToolbarMenuView.IsOpen.get -> bool
-ExPivot.Chrome.PivotToolbarMenuView.IsOpen.init -> void
-ExPivot.Chrome.PivotToolbarMenuView.Label.get -> string!
-ExPivot.Chrome.PivotToolbarMenuView.Label.init -> void
-ExPivot.Chrome.PivotToolbarMenuView.Open.get -> System.Action!
-ExPivot.Chrome.PivotToolbarMenuView.Open.init -> void
-ExPivot.Chrome.PivotToolbarMenuView.PivotToolbarMenuView(string! Id, string! Label, bool IsOpen, System.Action! Open, Microsoft.AspNetCore.Components.RenderFragment? Popup, int FocusRequest) -> void
-ExPivot.Chrome.PivotToolbarMenuView.Popup.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Chrome.PivotToolbarMenuView.Popup.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext
-ExPivot.Chrome.PivotValueFieldSettingsContext.<Clone>$() -> ExPivot.Chrome.PivotValueFieldSettingsContext!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Aggregation.get -> ExPivot.Engine.PivotAggregation
-ExPivot.Chrome.PivotValueFieldSettingsContext.Aggregation.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.AggregationChanged.get -> System.Action<ExPivot.Engine.PivotAggregation>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.AggregationChanged.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Aggregations.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotAggregation>!>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Aggregations.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Apply.get -> System.Func<System.Threading.Tasks.Task!>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Apply.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Cancel.get -> System.Action!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Cancel.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Caption.get -> string!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Caption.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.CaptionChanged.get -> System.Action<string?>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.CaptionChanged.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Deconstruct(out string! FieldCaption, out string! Caption, out System.Action<string?>! CaptionChanged, out ExPivot.Engine.PivotAggregation Aggregation, out System.Action<ExPivot.Engine.PivotAggregation>! AggregationChanged, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotAggregation>!>! Aggregations, out ExPivot.Engine.PivotShowValuesAs ShowValuesAs, out System.Action<ExPivot.Engine.PivotShowValuesAs>! ShowValuesAsChanged, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotShowValuesAs>!>! ShowValuesAsChoices, out string! NumberFormat, out System.Action<string?>! NumberFormatChanged, out string! Sample, out string? Refusal, out System.Func<System.Threading.Tasks.Task!>! Apply, out System.Action! Cancel, out int FocusRequest, out System.Action<bool>! InnerPopupChanged, out System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Equals(ExPivot.Chrome.PivotValueFieldSettingsContext? other) -> bool
-ExPivot.Chrome.PivotValueFieldSettingsContext.FieldCaption.get -> string!
-ExPivot.Chrome.PivotValueFieldSettingsContext.FieldCaption.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.FocusRequest.get -> int
-ExPivot.Chrome.PivotValueFieldSettingsContext.FocusRequest.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.InnerPopupChanged.get -> System.Action<bool>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.InnerPopupChanged.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.NumberFormat.get -> string!
-ExPivot.Chrome.PivotValueFieldSettingsContext.NumberFormat.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.NumberFormatChanged.get -> System.Action<string?>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.NumberFormatChanged.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.PivotValueFieldSettingsContext(string! FieldCaption, string! Caption, System.Action<string?>! CaptionChanged, ExPivot.Engine.PivotAggregation Aggregation, System.Action<ExPivot.Engine.PivotAggregation>! AggregationChanged, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotAggregation>!>! Aggregations, ExPivot.Engine.PivotShowValuesAs ShowValuesAs, System.Action<ExPivot.Engine.PivotShowValuesAs>! ShowValuesAsChanged, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotShowValuesAs>!>! ShowValuesAsChoices, string! NumberFormat, System.Action<string?>! NumberFormatChanged, string! Sample, string? Refusal, System.Func<System.Threading.Tasks.Task!>! Apply, System.Action! Cancel, int FocusRequest, System.Action<bool>! InnerPopupChanged, System.Func<string!, string!>! Word) -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Refusal.get -> string?
-ExPivot.Chrome.PivotValueFieldSettingsContext.Refusal.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Sample.get -> string!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Sample.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAs.get -> ExPivot.Engine.PivotShowValuesAs
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAs.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAsChanged.get -> System.Action<ExPivot.Engine.PivotShowValuesAs>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAsChanged.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAsChoices.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoice<ExPivot.Engine.PivotShowValuesAs>!>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.ShowValuesAsChoices.init -> void
-ExPivot.Chrome.PivotValueFieldSettingsContext.Word.get -> System.Func<string!, string!>!
-ExPivot.Chrome.PivotValueFieldSettingsContext.Word.init -> void
 ExPivot.Components.ExPivot
-ExPivot.Components.ExPivot.Caps.get -> ExPivot.PivotCaps!
 ExPivot.Components.ExPivot.Caps.set -> void
 ExPivot.Components.ExPivot.CellMetrics.get -> ExGrid.Columns.CellTextMetrics?
 ExPivot.Components.ExPivot.CellMetrics.set -> void
-ExPivot.Components.ExPivot.ChangeHighlightDuration.get -> System.TimeSpan
 ExPivot.Components.ExPivot.ChangeHighlightDuration.set -> void
-ExPivot.Components.ExPivot.Chrome.get -> ExGrid.Chrome.IGridChrome?
 ExPivot.Components.ExPivot.Chrome.set -> void
-ExPivot.Components.ExPivot.Clock.get -> System.TimeProvider?
-ExPivot.Components.ExPivot.Clock.set -> void
 ExPivot.Components.ExPivot.Culture.get -> System.Globalization.CultureInfo?
 ExPivot.Components.ExPivot.Culture.set -> void
-ExPivot.Components.ExPivot.CurrentLayout.get -> ExPivot.Engine.PivotLayout!
 ExPivot.Components.ExPivot.Density.get -> ExGrid.GridDensity?
 ExPivot.Components.ExPivot.Density.set -> void
-ExPivot.Components.ExPivot.DetailsView.get -> ExPivot.PivotDetailsView
 ExPivot.Components.ExPivot.DetailsView.set -> void
-ExPivot.Components.ExPivot.Dispose() -> void
 ExPivot.Components.ExPivot.ExPivot() -> void
-ExPivot.Components.ExPivot.FieldListWidth.get -> double
 ExPivot.Components.ExPivot.FieldListWidth.set -> void
-ExPivot.Components.ExPivot.IsLoading.get -> bool
-ExPivot.Components.ExPivot.IsStale.get -> bool
 ExPivot.Components.ExPivot.Label.get -> System.Func<string!, string?>?
 ExPivot.Components.ExPivot.Label.set -> void
-ExPivot.Components.ExPivot.LastError.get -> System.Exception?
 ExPivot.Components.ExPivot.Layout.get -> ExPivot.Engine.PivotLayout?
 ExPivot.Components.ExPivot.Layout.set -> void
 ExPivot.Components.ExPivot.LayoutChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExPivot.Engine.PivotLayout!>
@@ -476,18 +55,9 @@ ExPivot.Components.ExPivot.OnSelectionSummaryChanged.get -> Microsoft.AspNetCore
 ExPivot.Components.ExPivot.OnSelectionSummaryChanged.set -> void
 ExPivot.Components.ExPivot.OnShowDetails.get -> Microsoft.AspNetCore.Components.EventCallback<ExPivot.PivotDetails!>
 ExPivot.Components.ExPivot.OnShowDetails.set -> void
-ExPivot.Components.ExPivot.OrderKeyPolicies.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>?
-ExPivot.Components.ExPivot.OrderKeyPolicies.set -> void
-ExPivot.Components.ExPivot.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
-ExPivot.Components.ExPivot.PivotChrome.set -> void
 ExPivot.Components.ExPivot.Presentation.get -> ExGrid.GridPresentationDefaults?
 ExPivot.Components.ExPivot.Presentation.set -> void
-ExPivot.Components.ExPivot.RedrawInterval.get -> System.TimeSpan
 ExPivot.Components.ExPivot.RedrawInterval.set -> void
-ExPivot.Components.ExPivot.RefreshAsync() -> System.Threading.Tasks.Task!
-ExPivot.Components.ExPivot.Report.get -> ExPivot.Engine.PivotReportState?
-ExPivot.Components.ExPivot.ReportSource.get -> ExPivot.Engine.PivotReportSource?
-ExPivot.Components.ExPivot.ReportSource.set -> void
 ExPivot.Components.ExPivot.RowHeight.get -> double?
 ExPivot.Components.ExPivot.RowHeight.set -> void
 ExPivot.Components.ExPivot.SelectionChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Selection.GridSelection!>
@@ -500,114 +70,14 @@ ExPivot.Components.ExPivot.ShowSelectionSummary.get -> bool
 ExPivot.Components.ExPivot.ShowSelectionSummary.set -> void
 ExPivot.Components.ExPivot.Slicing.get -> ExPivot.Engine.PivotSlicing?
 ExPivot.Components.ExPivot.Slicing.set -> void
-ExPivot.Components.ExPivot.Source.get -> ExPivot.Engine.PivotSource?
 ExPivot.Components.ExPivot.Source.set -> void
-ExPivot.Components.ExPivot.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures
 ExPivot.Components.ExPivot.SummaryFigures.set -> void
 ExPivot.Components.ExPivot.SummaryFiguresChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExGrid.Summarizing.SummaryFigures>
 ExPivot.Components.ExPivot.SummaryFiguresChanged.set -> void
-ExPivot.Components.ExPivot.ViewportHeight.get -> ExGrid.ViewportSize
 ExPivot.Components.ExPivot.ViewportHeight.set -> void
-ExPivot.Components.ExPivot.ViewportWidth.get -> ExGrid.ViewportSize
 ExPivot.Components.ExPivot.ViewportWidth.set -> void
 ExPivot.Components.ExPivotStylesheet
 ExPivot.Components.ExPivotStylesheet.ExPivotStylesheet() -> void
-ExPivot.Components.PivotDetailsDialogView
-ExPivot.Components.PivotDetailsDialogView.Context.get -> ExPivot.Chrome.PivotDetailsDialogContext!
-ExPivot.Components.PivotDetailsDialogView.Context.set -> void
-ExPivot.Components.PivotDetailsDialogView.PivotDetailsDialogView() -> void
-ExPivot.Components.PivotDetailsTabsView
-ExPivot.Components.PivotDetailsTabsView.Context.get -> ExPivot.Chrome.PivotDetailsTabsContext!
-ExPivot.Components.PivotDetailsTabsView.Context.set -> void
-ExPivot.Components.PivotDetailsTabsView.PivotDetailsTabsView() -> void
-ExPivot.Components.PivotDialogFrame
-ExPivot.Components.PivotDialogFrame.ChildContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Components.PivotDialogFrame.ChildContent.set -> void
-ExPivot.Components.PivotDialogFrame.Label.get -> string!
-ExPivot.Components.PivotDialogFrame.Label.set -> void
-ExPivot.Components.PivotDialogFrame.OnEscape.get -> Microsoft.AspNetCore.Components.EventCallback
-ExPivot.Components.PivotDialogFrame.OnEscape.set -> void
-ExPivot.Components.PivotDialogFrame.OnKey.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>
-ExPivot.Components.PivotDialogFrame.OnKey.set -> void
-ExPivot.Components.PivotDialogFrame.PivotDialogFrame() -> void
-ExPivot.Components.PivotFieldListView
-ExPivot.Components.PivotFieldListView.Context.get -> ExPivot.Chrome.PivotFieldListContext!
-ExPivot.Components.PivotFieldListView.Context.set -> void
-ExPivot.Components.PivotFieldListView.PivotFieldListView() -> void
-ExPivot.Components.PivotFieldSettingsView
-ExPivot.Components.PivotFieldSettingsView.Context.get -> ExPivot.Chrome.PivotFieldSettingsContext!
-ExPivot.Components.PivotFieldSettingsView.Context.set -> void
-ExPivot.Components.PivotFieldSettingsView.PivotFieldSettingsView() -> void
-ExPivot.Components.PivotFocusButton
-ExPivot.Components.PivotFocusButton.Attributes.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object!>?
-ExPivot.Components.PivotFocusButton.Attributes.set -> void
-ExPivot.Components.PivotFocusButton.ChildContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Components.PivotFocusButton.ChildContent.set -> void
-ExPivot.Components.PivotFocusButton.Class.get -> string?
-ExPivot.Components.PivotFocusButton.Class.set -> void
-ExPivot.Components.PivotFocusButton.Disabled.get -> bool
-ExPivot.Components.PivotFocusButton.Disabled.set -> void
-ExPivot.Components.PivotFocusButton.FocusRequest.get -> int
-ExPivot.Components.PivotFocusButton.FocusRequest.set -> void
-ExPivot.Components.PivotFocusButton.OnClick.get -> Microsoft.AspNetCore.Components.EventCallback
-ExPivot.Components.PivotFocusButton.OnClick.set -> void
-ExPivot.Components.PivotFocusButton.PivotFocusButton() -> void
-ExPivot.Components.PivotFocusButton.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>?
-ExPivot.Components.PivotFocusButton.TakeKeyboard.set -> void
-ExPivot.Components.PivotItemFilterView
-ExPivot.Components.PivotItemFilterView.Context.get -> ExPivot.Chrome.PivotItemFilterContext!
-ExPivot.Components.PivotItemFilterView.Context.set -> void
-ExPivot.Components.PivotItemFilterView.PivotItemFilterView() -> void
-ExPivot.Components.PivotMenuView
-ExPivot.Components.PivotMenuView.Context.get -> ExPivot.Chrome.PivotMenuContext!
-ExPivot.Components.PivotMenuView.Context.set -> void
-ExPivot.Components.PivotMenuView.PivotMenuView() -> void
-ExPivot.Components.PivotPopupFrame
-ExPivot.Components.PivotPopupFrame.AlignEnd.get -> bool
-ExPivot.Components.PivotPopupFrame.AlignEnd.set -> void
-ExPivot.Components.PivotPopupFrame.ChildContent.get -> Microsoft.AspNetCore.Components.RenderFragment?
-ExPivot.Components.PivotPopupFrame.ChildContent.set -> void
-ExPivot.Components.PivotPopupFrame.Label.get -> string!
-ExPivot.Components.PivotPopupFrame.Label.set -> void
-ExPivot.Components.PivotPopupFrame.OnEscape.get -> Microsoft.AspNetCore.Components.EventCallback
-ExPivot.Components.PivotPopupFrame.OnEscape.set -> void
-ExPivot.Components.PivotPopupFrame.OnFocusIn.get -> Microsoft.AspNetCore.Components.EventCallback
-ExPivot.Components.PivotPopupFrame.OnFocusIn.set -> void
-ExPivot.Components.PivotPopupFrame.OnFocusOut.get -> Microsoft.AspNetCore.Components.EventCallback
-ExPivot.Components.PivotPopupFrame.OnFocusOut.set -> void
-ExPivot.Components.PivotPopupFrame.OnKey.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>
-ExPivot.Components.PivotPopupFrame.OnKey.set -> void
-ExPivot.Components.PivotPopupFrame.Overlay.get -> bool
-ExPivot.Components.PivotPopupFrame.Overlay.set -> void
-ExPivot.Components.PivotPopupFrame.PivotPopupFrame() -> void
-ExPivot.Components.PivotPopupFrame.Role.get -> string!
-ExPivot.Components.PivotPopupFrame.Role.set -> void
-ExPivot.Components.PivotReportFiltersView
-ExPivot.Components.PivotReportFiltersView.Context.get -> ExPivot.Chrome.PivotReportFiltersContext!
-ExPivot.Components.PivotReportFiltersView.Context.set -> void
-ExPivot.Components.PivotReportFiltersView.PivotReportFiltersView() -> void
-ExPivot.Components.PivotStaleReportView
-ExPivot.Components.PivotStaleReportView.Context.get -> ExPivot.Chrome.PivotStaleReportContext!
-ExPivot.Components.PivotStaleReportView.Context.set -> void
-ExPivot.Components.PivotStaleReportView.PivotStaleReportView() -> void
-ExPivot.Components.PivotToggleButton
-ExPivot.Components.PivotToggleButton.Collapsed.get -> bool
-ExPivot.Components.PivotToggleButton.Collapsed.set -> void
-ExPivot.Components.PivotToggleButton.FocusRequest.get -> int
-ExPivot.Components.PivotToggleButton.FocusRequest.set -> void
-ExPivot.Components.PivotToggleButton.Name.get -> string!
-ExPivot.Components.PivotToggleButton.Name.set -> void
-ExPivot.Components.PivotToggleButton.OnToggle.get -> Microsoft.AspNetCore.Components.EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs!>
-ExPivot.Components.PivotToggleButton.OnToggle.set -> void
-ExPivot.Components.PivotToggleButton.PivotToggleButton() -> void
-ExPivot.Components.PivotToolbarView
-ExPivot.Components.PivotToolbarView.Context.get -> ExPivot.Chrome.PivotToolbarContext!
-ExPivot.Components.PivotToolbarView.Context.set -> void
-ExPivot.Components.PivotToolbarView.PivotToolbarView() -> void
-ExPivot.Components.PivotValueFieldSettingsView
-ExPivot.Components.PivotValueFieldSettingsView.Context.get -> ExPivot.Chrome.PivotValueFieldSettingsContext!
-ExPivot.Components.PivotValueFieldSettingsView.Context.set -> void
-ExPivot.Components.PivotValueFieldSettingsView.PivotValueFieldSettingsView() -> void
 ExPivot.PivotCaps
 ExPivot.PivotCaps.<Clone>$() -> ExPivot.PivotCaps!
 ExPivot.PivotCaps.Equals(ExPivot.PivotCaps? other) -> bool
@@ -640,122 +110,12 @@ ExPivot.PivotDetails.ValueField.get -> string?
 ExPivot.PivotDetailsView
 ExPivot.PivotDetailsView.Dialog = 1 -> ExPivot.PivotDetailsView
 ExPivot.PivotDetailsView.Tab = 0 -> ExPivot.PivotDetailsView
-override ExPivot.Chrome.PivotAreaEntryView.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotAreaEntryView.GetHashCode() -> int
-override ExPivot.Chrome.PivotAreaEntryView.ToString() -> string!
-override ExPivot.Chrome.PivotAreaView.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotAreaView.GetHashCode() -> int
-override ExPivot.Chrome.PivotAreaView.ToString() -> string!
-override ExPivot.Chrome.PivotChoice<T>.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotChoice<T>.GetHashCode() -> int
-override ExPivot.Chrome.PivotChoice<T>.ToString() -> string!
-override ExPivot.Chrome.PivotCommand.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotCommand.GetHashCode() -> int
-override ExPivot.Chrome.PivotCommand.ToString() -> string!
-override ExPivot.Chrome.PivotDetailsDialogContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotDetailsDialogContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotDetailsDialogContext.ToString() -> string!
-override ExPivot.Chrome.PivotDetailsTab.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotDetailsTab.GetHashCode() -> int
-override ExPivot.Chrome.PivotDetailsTab.ToString() -> string!
-override ExPivot.Chrome.PivotDetailsTabsContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotDetailsTabsContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotDetailsTabsContext.ToString() -> string!
-override ExPivot.Chrome.PivotDragSubject.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotDragSubject.GetHashCode() -> int
-override ExPivot.Chrome.PivotDragSubject.ToString() -> string!
-override ExPivot.Chrome.PivotFieldEntry.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotFieldEntry.GetHashCode() -> int
-override ExPivot.Chrome.PivotFieldEntry.ToString() -> string!
-override ExPivot.Chrome.PivotFieldListContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotFieldListContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotFieldListContext.ToString() -> string!
-override ExPivot.Chrome.PivotFieldSettingsContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotFieldSettingsContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotFieldSettingsContext.ToString() -> string!
-override ExPivot.Chrome.PivotItemChoice.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotItemChoice.GetHashCode() -> int
-override ExPivot.Chrome.PivotItemChoice.ToString() -> string!
-override ExPivot.Chrome.PivotItemFilterContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotItemFilterContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotItemFilterContext.ToString() -> string!
-override ExPivot.Chrome.PivotMenuContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotMenuContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotMenuContext.ToString() -> string!
-override ExPivot.Chrome.PivotReportFiltersContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotReportFiltersContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotReportFiltersContext.ToString() -> string!
-override ExPivot.Chrome.PivotReportFilterView.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotReportFilterView.GetHashCode() -> int
-override ExPivot.Chrome.PivotReportFilterView.ToString() -> string!
-override ExPivot.Chrome.PivotStaleReportContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotStaleReportContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotStaleReportContext.ToString() -> string!
-override ExPivot.Chrome.PivotToolbarContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotToolbarContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotToolbarContext.ToString() -> string!
-override ExPivot.Chrome.PivotToolbarMenuView.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotToolbarMenuView.GetHashCode() -> int
-override ExPivot.Chrome.PivotToolbarMenuView.ToString() -> string!
-override ExPivot.Chrome.PivotValueFieldSettingsContext.Equals(object? obj) -> bool
-override ExPivot.Chrome.PivotValueFieldSettingsContext.GetHashCode() -> int
-override ExPivot.Chrome.PivotValueFieldSettingsContext.ToString() -> string!
-override ExPivot.Components.ExPivot.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExPivot.Components.ExPivot.OnParametersSetAsync() -> System.Threading.Tasks.Task!
-override ExPivot.Components.PivotFieldSettingsView.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExPivot.Components.PivotFocusButton.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExPivot.Components.PivotItemFilterView.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExPivot.Components.PivotToggleButton.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
-override ExPivot.Components.PivotValueFieldSettingsView.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
 override ExPivot.PivotCaps.Equals(object? obj) -> bool
 override ExPivot.PivotCaps.GetHashCode() -> int
 override ExPivot.PivotCaps.ToString() -> string!
 override ExPivot.PivotDetailItem.Equals(object? obj) -> bool
 override ExPivot.PivotDetailItem.GetHashCode() -> int
 override ExPivot.PivotDetailItem.ToString() -> string!
-static ExPivot.Chrome.PivotAreaEntryView.operator !=(ExPivot.Chrome.PivotAreaEntryView? left, ExPivot.Chrome.PivotAreaEntryView? right) -> bool
-static ExPivot.Chrome.PivotAreaEntryView.operator ==(ExPivot.Chrome.PivotAreaEntryView? left, ExPivot.Chrome.PivotAreaEntryView? right) -> bool
-static ExPivot.Chrome.PivotAreaView.operator !=(ExPivot.Chrome.PivotAreaView? left, ExPivot.Chrome.PivotAreaView? right) -> bool
-static ExPivot.Chrome.PivotAreaView.operator ==(ExPivot.Chrome.PivotAreaView? left, ExPivot.Chrome.PivotAreaView? right) -> bool
-static ExPivot.Chrome.PivotChoice<T>.operator !=(ExPivot.Chrome.PivotChoice<T>? left, ExPivot.Chrome.PivotChoice<T>? right) -> bool
-static ExPivot.Chrome.PivotChoice<T>.operator ==(ExPivot.Chrome.PivotChoice<T>? left, ExPivot.Chrome.PivotChoice<T>? right) -> bool
-static ExPivot.Chrome.PivotCommand.operator !=(ExPivot.Chrome.PivotCommand? left, ExPivot.Chrome.PivotCommand? right) -> bool
-static ExPivot.Chrome.PivotCommand.operator ==(ExPivot.Chrome.PivotCommand? left, ExPivot.Chrome.PivotCommand? right) -> bool
-static ExPivot.Chrome.PivotDetailsDialogContext.operator !=(ExPivot.Chrome.PivotDetailsDialogContext? left, ExPivot.Chrome.PivotDetailsDialogContext? right) -> bool
-static ExPivot.Chrome.PivotDetailsDialogContext.operator ==(ExPivot.Chrome.PivotDetailsDialogContext? left, ExPivot.Chrome.PivotDetailsDialogContext? right) -> bool
-static ExPivot.Chrome.PivotDetailsTab.operator !=(ExPivot.Chrome.PivotDetailsTab? left, ExPivot.Chrome.PivotDetailsTab? right) -> bool
-static ExPivot.Chrome.PivotDetailsTab.operator ==(ExPivot.Chrome.PivotDetailsTab? left, ExPivot.Chrome.PivotDetailsTab? right) -> bool
-static ExPivot.Chrome.PivotDetailsTabsContext.operator !=(ExPivot.Chrome.PivotDetailsTabsContext? left, ExPivot.Chrome.PivotDetailsTabsContext? right) -> bool
-static ExPivot.Chrome.PivotDetailsTabsContext.operator ==(ExPivot.Chrome.PivotDetailsTabsContext? left, ExPivot.Chrome.PivotDetailsTabsContext? right) -> bool
-static ExPivot.Chrome.PivotDragSubject.FromArea(ExPivot.Engine.PivotEntry entry) -> ExPivot.Chrome.PivotDragSubject!
-static ExPivot.Chrome.PivotDragSubject.FromList(string! field) -> ExPivot.Chrome.PivotDragSubject!
-static ExPivot.Chrome.PivotDragSubject.operator !=(ExPivot.Chrome.PivotDragSubject? left, ExPivot.Chrome.PivotDragSubject? right) -> bool
-static ExPivot.Chrome.PivotDragSubject.operator ==(ExPivot.Chrome.PivotDragSubject? left, ExPivot.Chrome.PivotDragSubject? right) -> bool
-static ExPivot.Chrome.PivotFieldEntry.operator !=(ExPivot.Chrome.PivotFieldEntry? left, ExPivot.Chrome.PivotFieldEntry? right) -> bool
-static ExPivot.Chrome.PivotFieldEntry.operator ==(ExPivot.Chrome.PivotFieldEntry? left, ExPivot.Chrome.PivotFieldEntry? right) -> bool
-static ExPivot.Chrome.PivotFieldListContext.operator !=(ExPivot.Chrome.PivotFieldListContext? left, ExPivot.Chrome.PivotFieldListContext? right) -> bool
-static ExPivot.Chrome.PivotFieldListContext.operator ==(ExPivot.Chrome.PivotFieldListContext? left, ExPivot.Chrome.PivotFieldListContext? right) -> bool
-static ExPivot.Chrome.PivotFieldSettingsContext.operator !=(ExPivot.Chrome.PivotFieldSettingsContext? left, ExPivot.Chrome.PivotFieldSettingsContext? right) -> bool
-static ExPivot.Chrome.PivotFieldSettingsContext.operator ==(ExPivot.Chrome.PivotFieldSettingsContext? left, ExPivot.Chrome.PivotFieldSettingsContext? right) -> bool
-static ExPivot.Chrome.PivotItemChoice.operator !=(ExPivot.Chrome.PivotItemChoice? left, ExPivot.Chrome.PivotItemChoice? right) -> bool
-static ExPivot.Chrome.PivotItemChoice.operator ==(ExPivot.Chrome.PivotItemChoice? left, ExPivot.Chrome.PivotItemChoice? right) -> bool
-static ExPivot.Chrome.PivotItemFilterContext.operator !=(ExPivot.Chrome.PivotItemFilterContext? left, ExPivot.Chrome.PivotItemFilterContext? right) -> bool
-static ExPivot.Chrome.PivotItemFilterContext.operator ==(ExPivot.Chrome.PivotItemFilterContext? left, ExPivot.Chrome.PivotItemFilterContext? right) -> bool
-static ExPivot.Chrome.PivotMenuContext.operator !=(ExPivot.Chrome.PivotMenuContext? left, ExPivot.Chrome.PivotMenuContext? right) -> bool
-static ExPivot.Chrome.PivotMenuContext.operator ==(ExPivot.Chrome.PivotMenuContext? left, ExPivot.Chrome.PivotMenuContext? right) -> bool
-static ExPivot.Chrome.PivotReportFiltersContext.operator !=(ExPivot.Chrome.PivotReportFiltersContext? left, ExPivot.Chrome.PivotReportFiltersContext? right) -> bool
-static ExPivot.Chrome.PivotReportFiltersContext.operator ==(ExPivot.Chrome.PivotReportFiltersContext? left, ExPivot.Chrome.PivotReportFiltersContext? right) -> bool
-static ExPivot.Chrome.PivotReportFilterView.operator !=(ExPivot.Chrome.PivotReportFilterView? left, ExPivot.Chrome.PivotReportFilterView? right) -> bool
-static ExPivot.Chrome.PivotReportFilterView.operator ==(ExPivot.Chrome.PivotReportFilterView? left, ExPivot.Chrome.PivotReportFilterView? right) -> bool
-static ExPivot.Chrome.PivotStaleReportContext.operator !=(ExPivot.Chrome.PivotStaleReportContext? left, ExPivot.Chrome.PivotStaleReportContext? right) -> bool
-static ExPivot.Chrome.PivotStaleReportContext.operator ==(ExPivot.Chrome.PivotStaleReportContext? left, ExPivot.Chrome.PivotStaleReportContext? right) -> bool
-static ExPivot.Chrome.PivotToolbarContext.operator !=(ExPivot.Chrome.PivotToolbarContext? left, ExPivot.Chrome.PivotToolbarContext? right) -> bool
-static ExPivot.Chrome.PivotToolbarContext.operator ==(ExPivot.Chrome.PivotToolbarContext? left, ExPivot.Chrome.PivotToolbarContext? right) -> bool
-static ExPivot.Chrome.PivotToolbarMenuView.operator !=(ExPivot.Chrome.PivotToolbarMenuView? left, ExPivot.Chrome.PivotToolbarMenuView? right) -> bool
-static ExPivot.Chrome.PivotToolbarMenuView.operator ==(ExPivot.Chrome.PivotToolbarMenuView? left, ExPivot.Chrome.PivotToolbarMenuView? right) -> bool
-static ExPivot.Chrome.PivotValueFieldSettingsContext.operator !=(ExPivot.Chrome.PivotValueFieldSettingsContext? left, ExPivot.Chrome.PivotValueFieldSettingsContext? right) -> bool
-static ExPivot.Chrome.PivotValueFieldSettingsContext.operator ==(ExPivot.Chrome.PivotValueFieldSettingsContext? left, ExPivot.Chrome.PivotValueFieldSettingsContext? right) -> bool
-static ExPivot.Components.ExPivot.DefaultRedrawInterval.get -> System.TimeSpan
 static ExPivot.PivotCaps.Default.get -> ExPivot.PivotCaps!
 static ExPivot.PivotCaps.operator !=(ExPivot.PivotCaps? left, ExPivot.PivotCaps? right) -> bool
 static ExPivot.PivotCaps.operator ==(ExPivot.PivotCaps? left, ExPivot.PivotCaps? right) -> bool
@@ -763,18 +123,475 @@ static ExPivot.PivotCommandIds.CaptionOfRemove(string! id) -> string?
 static ExPivot.PivotCommandIds.LayoutChoice(ExPivot.Engine.PivotLayoutChoice choice) -> string!
 static ExPivot.PivotDetailItem.operator !=(ExPivot.PivotDetailItem? left, ExPivot.PivotDetailItem? right) -> bool
 static ExPivot.PivotDetailItem.operator ==(ExPivot.PivotDetailItem? left, ExPivot.PivotDetailItem? right) -> bool
-~override ExPivot.Components.ExPivot.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotDetailsDialogView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotDetailsTabsView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotDialogFrame.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotFieldListView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotFieldSettingsView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotFocusButton.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotItemFilterView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotMenuView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotPopupFrame.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotReportFiltersView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotStaleReportView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotToggleButton.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotToolbarView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-~override ExPivot.Components.PivotValueFieldSettingsView.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+const ExPivot.Chrome.PivotScriptSlotAttributes.All = "data-ex-pivot-all" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Anchor = "data-ex-pivot-anchor" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Area = "data-ex-pivot-area" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Choice = "data-ex-pivot-choice" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.CloseTab = "data-ex-pivot-close-tab" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Control = "data-ex-pivot-control" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Defer = "data-ex-pivot-defer" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Entry = "data-ex-pivot-entry" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Field = "data-ex-pivot-field" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Fields = "data-ex-pivot-fields" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.First = "data-ex-pivot-first" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Item = "data-ex-pivot-item" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.MenuItem = "data-ex-pivot-menu-item" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Press = "data-ex-pivot-press" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Tab = "data-ex-pivot-tab" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Text = "data-ex-pivot-text" -> string!
+const ExPivot.Chrome.PivotScriptSlotAttributes.Value = "data-ex-pivot-value" -> string!
+ExPivot.Chrome.IPivotChrome.DetailsDialog(ExPivot.Chrome.PivotDetailsDialogView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.DetailsTabs(ExPivot.Chrome.PivotDetailsTabsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.FieldList(ExPivot.Chrome.PivotFieldListView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.FieldSettings(ExPivot.Chrome.PivotFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.ItemFilter(ExPivot.Chrome.PivotItemFilterView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.Menu(ExPivot.Chrome.PivotMenuView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.ReportFilters(ExPivot.Chrome.PivotReportFiltersView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.ScriptSlots.get -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.IPivotChrome.StaleReport(ExPivot.Chrome.PivotStaleReportView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.Toolbar(ExPivot.Chrome.PivotToolbarView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.IPivotChrome.ValueFieldSettings(ExPivot.Chrome.PivotValueFieldSettingsView! view) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExPivot.Chrome.PivotChoiceView
+ExPivot.Chrome.PivotChoiceView.<Clone>$() -> ExPivot.Chrome.PivotChoiceView!
+ExPivot.Chrome.PivotChoiceView.Deconstruct(out string! Value, out string! Label, out bool Enabled, out string? Reason) -> void
+ExPivot.Chrome.PivotChoiceView.Enabled.get -> bool
+ExPivot.Chrome.PivotChoiceView.Enabled.init -> void
+ExPivot.Chrome.PivotChoiceView.Equals(ExPivot.Chrome.PivotChoiceView? other) -> bool
+ExPivot.Chrome.PivotChoiceView.Label.get -> string!
+ExPivot.Chrome.PivotChoiceView.Label.init -> void
+ExPivot.Chrome.PivotChoiceView.PivotChoiceView(string! Value, string! Label, bool Enabled, string? Reason) -> void
+ExPivot.Chrome.PivotChoiceView.Reason.get -> string?
+ExPivot.Chrome.PivotChoiceView.Reason.init -> void
+ExPivot.Chrome.PivotChoiceView.Value.get -> string!
+ExPivot.Chrome.PivotChoiceView.Value.init -> void
+ExPivot.Chrome.PivotDetailsDialogView
+ExPivot.Chrome.PivotDetailsDialogView.<Clone>$() -> ExPivot.Chrome.PivotDetailsDialogView!
+ExPivot.Chrome.PivotDetailsDialogView.CloseLabel.get -> string!
+ExPivot.Chrome.PivotDetailsDialogView.CloseLabel.init -> void
+ExPivot.Chrome.PivotDetailsDialogView.Deconstruct(out string! Title, out string! CloseLabel) -> void
+ExPivot.Chrome.PivotDetailsDialogView.Equals(ExPivot.Chrome.PivotDetailsDialogView? other) -> bool
+ExPivot.Chrome.PivotDetailsDialogView.PivotDetailsDialogView(string! Title, string! CloseLabel) -> void
+ExPivot.Chrome.PivotDetailsDialogView.Title.get -> string!
+ExPivot.Chrome.PivotDetailsDialogView.Title.init -> void
+ExPivot.Chrome.PivotDetailsTabsView
+ExPivot.Chrome.PivotDetailsTabsView.<Clone>$() -> ExPivot.Chrome.PivotDetailsTabsView!
+ExPivot.Chrome.PivotDetailsTabsView.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTabView!>! Tabs) -> void
+ExPivot.Chrome.PivotDetailsTabsView.Equals(ExPivot.Chrome.PivotDetailsTabsView? other) -> bool
+ExPivot.Chrome.PivotDetailsTabsView.Name.get -> string!
+ExPivot.Chrome.PivotDetailsTabsView.Name.init -> void
+ExPivot.Chrome.PivotDetailsTabsView.PivotDetailsTabsView(string! Name, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTabView!>! Tabs) -> void
+ExPivot.Chrome.PivotDetailsTabsView.Tabs.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotDetailsTabView!>!
+ExPivot.Chrome.PivotDetailsTabsView.Tabs.init -> void
+ExPivot.Chrome.PivotDetailsTabView
+ExPivot.Chrome.PivotDetailsTabView.<Clone>$() -> ExPivot.Chrome.PivotDetailsTabView!
+ExPivot.Chrome.PivotDetailsTabView.CloseLabel.get -> string?
+ExPivot.Chrome.PivotDetailsTabView.CloseLabel.init -> void
+ExPivot.Chrome.PivotDetailsTabView.Deconstruct(out string! Key, out string! Title, out bool Selected, out string? PanelId, out string? CloseLabel) -> void
+ExPivot.Chrome.PivotDetailsTabView.Equals(ExPivot.Chrome.PivotDetailsTabView? other) -> bool
+ExPivot.Chrome.PivotDetailsTabView.Key.get -> string!
+ExPivot.Chrome.PivotDetailsTabView.Key.init -> void
+ExPivot.Chrome.PivotDetailsTabView.PanelId.get -> string?
+ExPivot.Chrome.PivotDetailsTabView.PanelId.init -> void
+ExPivot.Chrome.PivotDetailsTabView.PivotDetailsTabView(string! Key, string! Title, bool Selected, string? PanelId, string? CloseLabel) -> void
+ExPivot.Chrome.PivotDetailsTabView.Selected.get -> bool
+ExPivot.Chrome.PivotDetailsTabView.Selected.init -> void
+ExPivot.Chrome.PivotDetailsTabView.Title.get -> string!
+ExPivot.Chrome.PivotDetailsTabView.Title.init -> void
+ExPivot.Chrome.PivotFieldListAreaView
+ExPivot.Chrome.PivotFieldListAreaView.<Clone>$() -> ExPivot.Chrome.PivotFieldListAreaView!
+ExPivot.Chrome.PivotFieldListAreaView.Area.get -> ExPivot.Engine.PivotArea
+ExPivot.Chrome.PivotFieldListAreaView.Area.init -> void
+ExPivot.Chrome.PivotFieldListAreaView.Deconstruct(out ExPivot.Engine.PivotArea Area, out string! Name, out string! Title, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListEntryView!>! Entries, out bool DropTarget, out string? OverCap) -> void
+ExPivot.Chrome.PivotFieldListAreaView.DropTarget.get -> bool
+ExPivot.Chrome.PivotFieldListAreaView.DropTarget.init -> void
+ExPivot.Chrome.PivotFieldListAreaView.Entries.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListEntryView!>!
+ExPivot.Chrome.PivotFieldListAreaView.Entries.init -> void
+ExPivot.Chrome.PivotFieldListAreaView.Equals(ExPivot.Chrome.PivotFieldListAreaView? other) -> bool
+ExPivot.Chrome.PivotFieldListAreaView.Name.get -> string!
+ExPivot.Chrome.PivotFieldListAreaView.Name.init -> void
+ExPivot.Chrome.PivotFieldListAreaView.OverCap.get -> string?
+ExPivot.Chrome.PivotFieldListAreaView.OverCap.init -> void
+ExPivot.Chrome.PivotFieldListAreaView.PivotFieldListAreaView(ExPivot.Engine.PivotArea Area, string! Name, string! Title, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListEntryView!>! Entries, bool DropTarget, string? OverCap) -> void
+ExPivot.Chrome.PivotFieldListAreaView.Title.get -> string!
+ExPivot.Chrome.PivotFieldListAreaView.Title.init -> void
+ExPivot.Chrome.PivotFieldListEntryView
+ExPivot.Chrome.PivotFieldListEntryView.<Clone>$() -> ExPivot.Chrome.PivotFieldListEntryView!
+ExPivot.Chrome.PivotFieldListEntryView.Caption.get -> string!
+ExPivot.Chrome.PivotFieldListEntryView.Caption.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.Deconstruct(out string! Key, out string! Caption, out string! MenuLabel, out bool Filtered, out bool Values, out bool MenuOpen, out bool Dragging, out bool DropBefore) -> void
+ExPivot.Chrome.PivotFieldListEntryView.Dragging.get -> bool
+ExPivot.Chrome.PivotFieldListEntryView.Dragging.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.DropBefore.get -> bool
+ExPivot.Chrome.PivotFieldListEntryView.DropBefore.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.Equals(ExPivot.Chrome.PivotFieldListEntryView? other) -> bool
+ExPivot.Chrome.PivotFieldListEntryView.Filtered.get -> bool
+ExPivot.Chrome.PivotFieldListEntryView.Filtered.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.Key.get -> string!
+ExPivot.Chrome.PivotFieldListEntryView.Key.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.MenuLabel.get -> string!
+ExPivot.Chrome.PivotFieldListEntryView.MenuLabel.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.MenuOpen.get -> bool
+ExPivot.Chrome.PivotFieldListEntryView.MenuOpen.init -> void
+ExPivot.Chrome.PivotFieldListEntryView.PivotFieldListEntryView(string! Key, string! Caption, string! MenuLabel, bool Filtered, bool Values, bool MenuOpen, bool Dragging, bool DropBefore) -> void
+ExPivot.Chrome.PivotFieldListEntryView.Values.get -> bool
+ExPivot.Chrome.PivotFieldListEntryView.Values.init -> void
+ExPivot.Chrome.PivotFieldListFieldView
+ExPivot.Chrome.PivotFieldListFieldView.<Clone>$() -> ExPivot.Chrome.PivotFieldListFieldView!
+ExPivot.Chrome.PivotFieldListFieldView.Caption.get -> string!
+ExPivot.Chrome.PivotFieldListFieldView.Caption.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.Count.get -> string?
+ExPivot.Chrome.PivotFieldListFieldView.Count.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.CountLabel.get -> string?
+ExPivot.Chrome.PivotFieldListFieldView.CountLabel.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.Deconstruct(out string! Name, out string! Key, out string! Caption, out bool Placed, out bool Filtered, out string? Count, out string? CountLabel, out bool Dragging) -> void
+ExPivot.Chrome.PivotFieldListFieldView.Dragging.get -> bool
+ExPivot.Chrome.PivotFieldListFieldView.Dragging.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.Equals(ExPivot.Chrome.PivotFieldListFieldView? other) -> bool
+ExPivot.Chrome.PivotFieldListFieldView.Filtered.get -> bool
+ExPivot.Chrome.PivotFieldListFieldView.Filtered.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.Key.get -> string!
+ExPivot.Chrome.PivotFieldListFieldView.Key.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.Name.get -> string!
+ExPivot.Chrome.PivotFieldListFieldView.Name.init -> void
+ExPivot.Chrome.PivotFieldListFieldView.PivotFieldListFieldView(string! Name, string! Key, string! Caption, bool Placed, bool Filtered, string? Count, string? CountLabel, bool Dragging) -> void
+ExPivot.Chrome.PivotFieldListFieldView.Placed.get -> bool
+ExPivot.Chrome.PivotFieldListFieldView.Placed.init -> void
+ExPivot.Chrome.PivotFieldListView
+ExPivot.Chrome.PivotFieldListView.<Clone>$() -> ExPivot.Chrome.PivotFieldListView!
+ExPivot.Chrome.PivotFieldListView.Areas.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListAreaView!>!
+ExPivot.Chrome.PivotFieldListView.Areas.init -> void
+ExPivot.Chrome.PivotFieldListView.CanUpdate.get -> bool
+ExPivot.Chrome.PivotFieldListView.CanUpdate.init -> void
+ExPivot.Chrome.PivotFieldListView.ChooseCaption.get -> string!
+ExPivot.Chrome.PivotFieldListView.ChooseCaption.init -> void
+ExPivot.Chrome.PivotFieldListView.Deconstruct(out string! Title, out string! HideLabel, out string! ChooseCaption, out string! SearchLabel, out string! Search, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListFieldView!>! Fields, out string! DragCaption, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListAreaView!>! Areas, out bool DropRemoves, out string! DeferLabel, out bool Deferred, out string! UpdateLabel, out bool CanUpdate) -> void
+ExPivot.Chrome.PivotFieldListView.DeferLabel.get -> string!
+ExPivot.Chrome.PivotFieldListView.DeferLabel.init -> void
+ExPivot.Chrome.PivotFieldListView.Deferred.get -> bool
+ExPivot.Chrome.PivotFieldListView.Deferred.init -> void
+ExPivot.Chrome.PivotFieldListView.DragCaption.get -> string!
+ExPivot.Chrome.PivotFieldListView.DragCaption.init -> void
+ExPivot.Chrome.PivotFieldListView.DropRemoves.get -> bool
+ExPivot.Chrome.PivotFieldListView.DropRemoves.init -> void
+ExPivot.Chrome.PivotFieldListView.Equals(ExPivot.Chrome.PivotFieldListView? other) -> bool
+ExPivot.Chrome.PivotFieldListView.Fields.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListFieldView!>!
+ExPivot.Chrome.PivotFieldListView.Fields.init -> void
+ExPivot.Chrome.PivotFieldListView.HideLabel.get -> string!
+ExPivot.Chrome.PivotFieldListView.HideLabel.init -> void
+ExPivot.Chrome.PivotFieldListView.PivotFieldListView(string! Title, string! HideLabel, string! ChooseCaption, string! SearchLabel, string! Search, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListFieldView!>! Fields, string! DragCaption, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotFieldListAreaView!>! Areas, bool DropRemoves, string! DeferLabel, bool Deferred, string! UpdateLabel, bool CanUpdate) -> void
+ExPivot.Chrome.PivotFieldListView.Search.get -> string!
+ExPivot.Chrome.PivotFieldListView.Search.init -> void
+ExPivot.Chrome.PivotFieldListView.SearchLabel.get -> string!
+ExPivot.Chrome.PivotFieldListView.SearchLabel.init -> void
+ExPivot.Chrome.PivotFieldListView.Title.get -> string!
+ExPivot.Chrome.PivotFieldListView.Title.init -> void
+ExPivot.Chrome.PivotFieldListView.UpdateLabel.get -> string!
+ExPivot.Chrome.PivotFieldListView.UpdateLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView
+ExPivot.Chrome.PivotFieldSettingsView.<Clone>$() -> ExPivot.Chrome.PivotFieldSettingsView!
+ExPivot.Chrome.PivotFieldSettingsView.AutomaticLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.AutomaticLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.CancelLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.CancelLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.Caption.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.Caption.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.Deconstruct(out string! Caption, out bool Subtotals, out System.Collections.Generic.IReadOnlyList<string!>! Sorts, out int Sort, out string! SubtotalsLabel, out string! AutomaticLabel, out string! NoneLabel, out string! SortOrderLabel, out string! OkLabel, out string! CancelLabel) -> void
+ExPivot.Chrome.PivotFieldSettingsView.Equals(ExPivot.Chrome.PivotFieldSettingsView? other) -> bool
+ExPivot.Chrome.PivotFieldSettingsView.NoneLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.NoneLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.OkLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.OkLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.PivotFieldSettingsView(string! Caption, bool Subtotals, System.Collections.Generic.IReadOnlyList<string!>! Sorts, int Sort, string! SubtotalsLabel, string! AutomaticLabel, string! NoneLabel, string! SortOrderLabel, string! OkLabel, string! CancelLabel) -> void
+ExPivot.Chrome.PivotFieldSettingsView.Sort.get -> int
+ExPivot.Chrome.PivotFieldSettingsView.Sort.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.SortOrderLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.SortOrderLabel.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.Sorts.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExPivot.Chrome.PivotFieldSettingsView.Sorts.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.Subtotals.get -> bool
+ExPivot.Chrome.PivotFieldSettingsView.Subtotals.init -> void
+ExPivot.Chrome.PivotFieldSettingsView.SubtotalsLabel.get -> string!
+ExPivot.Chrome.PivotFieldSettingsView.SubtotalsLabel.init -> void
+ExPivot.Chrome.PivotItemChoiceView
+ExPivot.Chrome.PivotItemChoiceView.Deconstruct(out string! Key, out string! Label, out bool Ticked) -> void
+ExPivot.Chrome.PivotItemChoiceView.Key.get -> string!
+ExPivot.Chrome.PivotItemChoiceView.Key.init -> void
+ExPivot.Chrome.PivotItemChoiceView.Label.get -> string!
+ExPivot.Chrome.PivotItemChoiceView.Label.init -> void
+ExPivot.Chrome.PivotItemChoiceView.PivotItemChoiceView(string! Key, string! Label, bool Ticked) -> void
+ExPivot.Chrome.PivotItemChoiceView.Ticked.get -> bool
+ExPivot.Chrome.PivotItemChoiceView.Ticked.init -> void
+ExPivot.Chrome.PivotItemFilterView
+ExPivot.Chrome.PivotItemFilterView.<Clone>$() -> ExPivot.Chrome.PivotItemFilterView!
+ExPivot.Chrome.PivotItemFilterView.AllTicked.get -> bool?
+ExPivot.Chrome.PivotItemFilterView.AllTicked.init -> void
+ExPivot.Chrome.PivotItemFilterView.CanApply.get -> bool
+ExPivot.Chrome.PivotItemFilterView.CanApply.init -> void
+ExPivot.Chrome.PivotItemFilterView.CancelLabel.get -> string!
+ExPivot.Chrome.PivotItemFilterView.CancelLabel.init -> void
+ExPivot.Chrome.PivotItemFilterView.Caption.get -> string!
+ExPivot.Chrome.PivotItemFilterView.Caption.init -> void
+ExPivot.Chrome.PivotItemFilterView.Deconstruct(out string! Caption, out string! Search, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoiceView!>! Items, out bool? AllTicked, out bool Loading, out bool Updating, out string? Unavailable, out string? Note, out bool CanApply, out string? Refusal, out string! SearchLabel, out string! SelectAllLabel, out string! LoadingLabel, out string! OkLabel, out string! CancelLabel) -> void
+ExPivot.Chrome.PivotItemFilterView.Equals(ExPivot.Chrome.PivotItemFilterView? other) -> bool
+ExPivot.Chrome.PivotItemFilterView.Items.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoiceView!>!
+ExPivot.Chrome.PivotItemFilterView.Items.init -> void
+ExPivot.Chrome.PivotItemFilterView.Loading.get -> bool
+ExPivot.Chrome.PivotItemFilterView.Loading.init -> void
+ExPivot.Chrome.PivotItemFilterView.LoadingLabel.get -> string!
+ExPivot.Chrome.PivotItemFilterView.LoadingLabel.init -> void
+ExPivot.Chrome.PivotItemFilterView.Note.get -> string?
+ExPivot.Chrome.PivotItemFilterView.Note.init -> void
+ExPivot.Chrome.PivotItemFilterView.OkLabel.get -> string!
+ExPivot.Chrome.PivotItemFilterView.OkLabel.init -> void
+ExPivot.Chrome.PivotItemFilterView.PivotItemFilterView(string! Caption, string! Search, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotItemChoiceView!>! Items, bool? AllTicked, bool Loading, bool Updating, string? Unavailable, string? Note, bool CanApply, string? Refusal, string! SearchLabel, string! SelectAllLabel, string! LoadingLabel, string! OkLabel, string! CancelLabel) -> void
+ExPivot.Chrome.PivotItemFilterView.Refusal.get -> string?
+ExPivot.Chrome.PivotItemFilterView.Refusal.init -> void
+ExPivot.Chrome.PivotItemFilterView.Search.get -> string!
+ExPivot.Chrome.PivotItemFilterView.Search.init -> void
+ExPivot.Chrome.PivotItemFilterView.SearchLabel.get -> string!
+ExPivot.Chrome.PivotItemFilterView.SearchLabel.init -> void
+ExPivot.Chrome.PivotItemFilterView.SelectAllLabel.get -> string!
+ExPivot.Chrome.PivotItemFilterView.SelectAllLabel.init -> void
+ExPivot.Chrome.PivotItemFilterView.Unavailable.get -> string?
+ExPivot.Chrome.PivotItemFilterView.Unavailable.init -> void
+ExPivot.Chrome.PivotItemFilterView.Updating.get -> bool
+ExPivot.Chrome.PivotItemFilterView.Updating.init -> void
+ExPivot.Chrome.PivotMenuItemView
+ExPivot.Chrome.PivotMenuItemView.<Clone>$() -> ExPivot.Chrome.PivotMenuItemView!
+ExPivot.Chrome.PivotMenuItemView.Checked.get -> bool?
+ExPivot.Chrome.PivotMenuItemView.Checked.init -> void
+ExPivot.Chrome.PivotMenuItemView.Deconstruct(out string! Id, out string! Label, out bool Enabled, out bool? Checked, out string? Heading) -> void
+ExPivot.Chrome.PivotMenuItemView.Enabled.get -> bool
+ExPivot.Chrome.PivotMenuItemView.Enabled.init -> void
+ExPivot.Chrome.PivotMenuItemView.Equals(ExPivot.Chrome.PivotMenuItemView? other) -> bool
+ExPivot.Chrome.PivotMenuItemView.Heading.get -> string?
+ExPivot.Chrome.PivotMenuItemView.Heading.init -> void
+ExPivot.Chrome.PivotMenuItemView.Id.get -> string!
+ExPivot.Chrome.PivotMenuItemView.Id.init -> void
+ExPivot.Chrome.PivotMenuItemView.Label.get -> string!
+ExPivot.Chrome.PivotMenuItemView.Label.init -> void
+ExPivot.Chrome.PivotMenuItemView.PivotMenuItemView(string! Id, string! Label, bool Enabled, bool? Checked, string? Heading) -> void
+ExPivot.Chrome.PivotMenuView
+ExPivot.Chrome.PivotMenuView.<Clone>$() -> ExPivot.Chrome.PivotMenuView!
+ExPivot.Chrome.PivotMenuView.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotMenuItemView!>! Items) -> void
+ExPivot.Chrome.PivotMenuView.Equals(ExPivot.Chrome.PivotMenuView? other) -> bool
+ExPivot.Chrome.PivotMenuView.Items.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotMenuItemView!>!
+ExPivot.Chrome.PivotMenuView.Items.init -> void
+ExPivot.Chrome.PivotMenuView.Name.get -> string!
+ExPivot.Chrome.PivotMenuView.Name.init -> void
+ExPivot.Chrome.PivotMenuView.PivotMenuView(string! Name, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotMenuItemView!>! Items) -> void
+ExPivot.Chrome.PivotReportFiltersEntryView
+ExPivot.Chrome.PivotReportFiltersEntryView.<Clone>$() -> ExPivot.Chrome.PivotReportFiltersEntryView!
+ExPivot.Chrome.PivotReportFiltersEntryView.ButtonLabel.get -> string!
+ExPivot.Chrome.PivotReportFiltersEntryView.ButtonLabel.init -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Caption.get -> string!
+ExPivot.Chrome.PivotReportFiltersEntryView.Caption.init -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Deconstruct(out string! Field, out string! Caption, out string! Summary, out bool Filtered, out bool Open, out string! ButtonLabel) -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Equals(ExPivot.Chrome.PivotReportFiltersEntryView? other) -> bool
+ExPivot.Chrome.PivotReportFiltersEntryView.Field.get -> string!
+ExPivot.Chrome.PivotReportFiltersEntryView.Field.init -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Filtered.get -> bool
+ExPivot.Chrome.PivotReportFiltersEntryView.Filtered.init -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Open.get -> bool
+ExPivot.Chrome.PivotReportFiltersEntryView.Open.init -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.PivotReportFiltersEntryView(string! Field, string! Caption, string! Summary, bool Filtered, bool Open, string! ButtonLabel) -> void
+ExPivot.Chrome.PivotReportFiltersEntryView.Summary.get -> string!
+ExPivot.Chrome.PivotReportFiltersEntryView.Summary.init -> void
+ExPivot.Chrome.PivotReportFiltersView
+ExPivot.Chrome.PivotReportFiltersView.<Clone>$() -> ExPivot.Chrome.PivotReportFiltersView!
+ExPivot.Chrome.PivotReportFiltersView.Deconstruct(out string! Name, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFiltersEntryView!>! Filters) -> void
+ExPivot.Chrome.PivotReportFiltersView.Equals(ExPivot.Chrome.PivotReportFiltersView? other) -> bool
+ExPivot.Chrome.PivotReportFiltersView.Filters.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFiltersEntryView!>!
+ExPivot.Chrome.PivotReportFiltersView.Filters.init -> void
+ExPivot.Chrome.PivotReportFiltersView.Name.get -> string!
+ExPivot.Chrome.PivotReportFiltersView.Name.init -> void
+ExPivot.Chrome.PivotReportFiltersView.PivotReportFiltersView(string! Name, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotReportFiltersEntryView!>! Filters) -> void
+ExPivot.Chrome.PivotScriptSlotAttributes
+ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.DetailsDialog = 512 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.DetailsTabs = 256 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.FieldList = 128 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.FieldSettings = 32 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.ItemFilter = 16 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.Menu = 1 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.None = 0 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.ReportFilters = 8 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.StaleReport = 4 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.Toolbar = 2 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotScriptSlots.ValueFieldSettings = 64 -> ExPivot.Chrome.PivotScriptSlots
+ExPivot.Chrome.PivotStaleReportView
+ExPivot.Chrome.PivotStaleReportView.<Clone>$() -> ExPivot.Chrome.PivotStaleReportView!
+ExPivot.Chrome.PivotStaleReportView.AsOfText.get -> string!
+ExPivot.Chrome.PivotStaleReportView.AsOfText.init -> void
+ExPivot.Chrome.PivotStaleReportView.Deconstruct(out string! Message, out string! AsOfText, out string! Reason, out string! RetryLabel, out bool RetryEnabled) -> void
+ExPivot.Chrome.PivotStaleReportView.Equals(ExPivot.Chrome.PivotStaleReportView? other) -> bool
+ExPivot.Chrome.PivotStaleReportView.Message.get -> string!
+ExPivot.Chrome.PivotStaleReportView.Message.init -> void
+ExPivot.Chrome.PivotStaleReportView.PivotStaleReportView(string! Message, string! AsOfText, string! Reason, string! RetryLabel, bool RetryEnabled) -> void
+ExPivot.Chrome.PivotStaleReportView.Reason.get -> string!
+ExPivot.Chrome.PivotStaleReportView.Reason.init -> void
+ExPivot.Chrome.PivotStaleReportView.RetryEnabled.get -> bool
+ExPivot.Chrome.PivotStaleReportView.RetryEnabled.init -> void
+ExPivot.Chrome.PivotStaleReportView.RetryLabel.get -> string!
+ExPivot.Chrome.PivotStaleReportView.RetryLabel.init -> void
+ExPivot.Chrome.PivotToolbarView
+ExPivot.Chrome.PivotToolbarView.<Clone>$() -> ExPivot.Chrome.PivotToolbarView!
+ExPivot.Chrome.PivotToolbarView.Deconstruct(out string! LayoutLabel, out bool LayoutMenuOpen, out string? RefreshLabel, out string! FieldListLabel, out bool FieldListShown, out bool ReportFilters, out string? Refusal) -> void
+ExPivot.Chrome.PivotToolbarView.Equals(ExPivot.Chrome.PivotToolbarView? other) -> bool
+ExPivot.Chrome.PivotToolbarView.FieldListLabel.get -> string!
+ExPivot.Chrome.PivotToolbarView.FieldListLabel.init -> void
+ExPivot.Chrome.PivotToolbarView.FieldListShown.get -> bool
+ExPivot.Chrome.PivotToolbarView.FieldListShown.init -> void
+ExPivot.Chrome.PivotToolbarView.LayoutLabel.get -> string!
+ExPivot.Chrome.PivotToolbarView.LayoutLabel.init -> void
+ExPivot.Chrome.PivotToolbarView.LayoutMenuOpen.get -> bool
+ExPivot.Chrome.PivotToolbarView.LayoutMenuOpen.init -> void
+ExPivot.Chrome.PivotToolbarView.PivotToolbarView(string! LayoutLabel, bool LayoutMenuOpen, string? RefreshLabel, string! FieldListLabel, bool FieldListShown, bool ReportFilters, string? Refusal) -> void
+ExPivot.Chrome.PivotToolbarView.RefreshLabel.get -> string?
+ExPivot.Chrome.PivotToolbarView.RefreshLabel.init -> void
+ExPivot.Chrome.PivotToolbarView.Refusal.get -> string?
+ExPivot.Chrome.PivotToolbarView.Refusal.init -> void
+ExPivot.Chrome.PivotToolbarView.ReportFilters.get -> bool
+ExPivot.Chrome.PivotToolbarView.ReportFilters.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView
+ExPivot.Chrome.PivotValueFieldSettingsView.<Clone>$() -> ExPivot.Chrome.PivotValueFieldSettingsView!
+ExPivot.Chrome.PivotValueFieldSettingsView.Aggregation.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.Aggregation.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Aggregations.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>!
+ExPivot.Chrome.PivotValueFieldSettingsView.Aggregations.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.CancelLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.CancelLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Caption.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.Caption.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.CustomNameLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.CustomNameLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Deconstruct(out string! Title, out string! SourceCaption, out string! Caption, out string! Aggregation, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>! Aggregations, out string! ShowValuesAs, out System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>! ShowValuesAsChoices, out string! NumberFormat, out string! NumberFormatPlaceholder, out string! Sample, out string? Refusal, out string! CustomNameLabel, out string! SummarizeByLabel, out string! ShowValuesAsLabel, out string! NumberFormatLabel, out string! OkLabel, out string! CancelLabel) -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Equals(ExPivot.Chrome.PivotValueFieldSettingsView? other) -> bool
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormat.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormat.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormatLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormatLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormatPlaceholder.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.NumberFormatPlaceholder.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.OkLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.OkLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.PivotValueFieldSettingsView(string! Title, string! SourceCaption, string! Caption, string! Aggregation, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>! Aggregations, string! ShowValuesAs, System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>! ShowValuesAsChoices, string! NumberFormat, string! NumberFormatPlaceholder, string! Sample, string? Refusal, string! CustomNameLabel, string! SummarizeByLabel, string! ShowValuesAsLabel, string! NumberFormatLabel, string! OkLabel, string! CancelLabel) -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Refusal.get -> string?
+ExPivot.Chrome.PivotValueFieldSettingsView.Refusal.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Sample.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.Sample.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAs.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAs.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAsChoices.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Chrome.PivotChoiceView!>!
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAsChoices.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAsLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.ShowValuesAsLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.SourceCaption.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.SourceCaption.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.SummarizeByLabel.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.SummarizeByLabel.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsView.Title.get -> string!
+ExPivot.Chrome.PivotValueFieldSettingsView.Title.init -> void
+ExPivot.Components.ExPivot.Caps.get -> ExPivot.PivotCaps?
+ExPivot.Components.ExPivot.ChangeHighlightDuration.get -> System.TimeSpan?
+ExPivot.Components.ExPivot.Chrome.get -> ExPivot.Chrome.IPivotChrome?
+ExPivot.Components.ExPivot.DetailsView.get -> ExPivot.PivotDetailsView?
+ExPivot.Components.ExPivot.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExPivot.Components.ExPivot.FieldListWidth.get -> double?
+ExPivot.Components.ExPivot.RedrawInterval.get -> System.TimeSpan?
+ExPivot.Components.ExPivot.Source.get -> ExPivot.Engine.PivotSource!
+ExPivot.Components.ExPivot.SummaryFigures.get -> ExGrid.Summarizing.SummaryFigures?
+ExPivot.Components.ExPivot.ViewportHeight.get -> ExGrid.ViewportSize?
+ExPivot.Components.ExPivot.ViewportWidth.get -> ExGrid.ViewportSize?
+override ExPivot.Chrome.PivotChoiceView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotChoiceView.GetHashCode() -> int
+override ExPivot.Chrome.PivotChoiceView.ToString() -> string!
+override ExPivot.Chrome.PivotDetailsDialogView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotDetailsDialogView.GetHashCode() -> int
+override ExPivot.Chrome.PivotDetailsDialogView.ToString() -> string!
+override ExPivot.Chrome.PivotDetailsTabsView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotDetailsTabsView.GetHashCode() -> int
+override ExPivot.Chrome.PivotDetailsTabsView.ToString() -> string!
+override ExPivot.Chrome.PivotDetailsTabView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotDetailsTabView.GetHashCode() -> int
+override ExPivot.Chrome.PivotDetailsTabView.ToString() -> string!
+override ExPivot.Chrome.PivotFieldListAreaView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotFieldListAreaView.GetHashCode() -> int
+override ExPivot.Chrome.PivotFieldListAreaView.ToString() -> string!
+override ExPivot.Chrome.PivotFieldListEntryView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotFieldListEntryView.GetHashCode() -> int
+override ExPivot.Chrome.PivotFieldListEntryView.ToString() -> string!
+override ExPivot.Chrome.PivotFieldListFieldView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotFieldListFieldView.GetHashCode() -> int
+override ExPivot.Chrome.PivotFieldListFieldView.ToString() -> string!
+override ExPivot.Chrome.PivotFieldListView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotFieldListView.GetHashCode() -> int
+override ExPivot.Chrome.PivotFieldListView.ToString() -> string!
+override ExPivot.Chrome.PivotFieldSettingsView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotFieldSettingsView.GetHashCode() -> int
+override ExPivot.Chrome.PivotFieldSettingsView.ToString() -> string!
+override ExPivot.Chrome.PivotItemFilterView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotItemFilterView.GetHashCode() -> int
+override ExPivot.Chrome.PivotItemFilterView.ToString() -> string!
+override ExPivot.Chrome.PivotMenuItemView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotMenuItemView.GetHashCode() -> int
+override ExPivot.Chrome.PivotMenuItemView.ToString() -> string!
+override ExPivot.Chrome.PivotMenuView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotMenuView.GetHashCode() -> int
+override ExPivot.Chrome.PivotMenuView.ToString() -> string!
+override ExPivot.Chrome.PivotReportFiltersEntryView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotReportFiltersEntryView.GetHashCode() -> int
+override ExPivot.Chrome.PivotReportFiltersEntryView.ToString() -> string!
+override ExPivot.Chrome.PivotReportFiltersView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotReportFiltersView.GetHashCode() -> int
+override ExPivot.Chrome.PivotReportFiltersView.ToString() -> string!
+override ExPivot.Chrome.PivotStaleReportView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotStaleReportView.GetHashCode() -> int
+override ExPivot.Chrome.PivotStaleReportView.ToString() -> string!
+override ExPivot.Chrome.PivotToolbarView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotToolbarView.GetHashCode() -> int
+override ExPivot.Chrome.PivotToolbarView.ToString() -> string!
+override ExPivot.Chrome.PivotValueFieldSettingsView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotValueFieldSettingsView.GetHashCode() -> int
+override ExPivot.Chrome.PivotValueFieldSettingsView.ToString() -> string!
+static ExPivot.Chrome.PivotChoiceView.operator !=(ExPivot.Chrome.PivotChoiceView? left, ExPivot.Chrome.PivotChoiceView? right) -> bool
+static ExPivot.Chrome.PivotChoiceView.operator ==(ExPivot.Chrome.PivotChoiceView? left, ExPivot.Chrome.PivotChoiceView? right) -> bool
+static ExPivot.Chrome.PivotDetailsDialogView.operator !=(ExPivot.Chrome.PivotDetailsDialogView? left, ExPivot.Chrome.PivotDetailsDialogView? right) -> bool
+static ExPivot.Chrome.PivotDetailsDialogView.operator ==(ExPivot.Chrome.PivotDetailsDialogView? left, ExPivot.Chrome.PivotDetailsDialogView? right) -> bool
+static ExPivot.Chrome.PivotDetailsTabsView.operator !=(ExPivot.Chrome.PivotDetailsTabsView? left, ExPivot.Chrome.PivotDetailsTabsView? right) -> bool
+static ExPivot.Chrome.PivotDetailsTabsView.operator ==(ExPivot.Chrome.PivotDetailsTabsView? left, ExPivot.Chrome.PivotDetailsTabsView? right) -> bool
+static ExPivot.Chrome.PivotDetailsTabView.operator !=(ExPivot.Chrome.PivotDetailsTabView? left, ExPivot.Chrome.PivotDetailsTabView? right) -> bool
+static ExPivot.Chrome.PivotDetailsTabView.operator ==(ExPivot.Chrome.PivotDetailsTabView? left, ExPivot.Chrome.PivotDetailsTabView? right) -> bool
+static ExPivot.Chrome.PivotFieldListAreaView.operator !=(ExPivot.Chrome.PivotFieldListAreaView? left, ExPivot.Chrome.PivotFieldListAreaView? right) -> bool
+static ExPivot.Chrome.PivotFieldListAreaView.operator ==(ExPivot.Chrome.PivotFieldListAreaView? left, ExPivot.Chrome.PivotFieldListAreaView? right) -> bool
+static ExPivot.Chrome.PivotFieldListEntryView.operator !=(ExPivot.Chrome.PivotFieldListEntryView? left, ExPivot.Chrome.PivotFieldListEntryView? right) -> bool
+static ExPivot.Chrome.PivotFieldListEntryView.operator ==(ExPivot.Chrome.PivotFieldListEntryView? left, ExPivot.Chrome.PivotFieldListEntryView? right) -> bool
+static ExPivot.Chrome.PivotFieldListFieldView.operator !=(ExPivot.Chrome.PivotFieldListFieldView? left, ExPivot.Chrome.PivotFieldListFieldView? right) -> bool
+static ExPivot.Chrome.PivotFieldListFieldView.operator ==(ExPivot.Chrome.PivotFieldListFieldView? left, ExPivot.Chrome.PivotFieldListFieldView? right) -> bool
+static ExPivot.Chrome.PivotFieldListView.operator !=(ExPivot.Chrome.PivotFieldListView? left, ExPivot.Chrome.PivotFieldListView? right) -> bool
+static ExPivot.Chrome.PivotFieldListView.operator ==(ExPivot.Chrome.PivotFieldListView? left, ExPivot.Chrome.PivotFieldListView? right) -> bool
+static ExPivot.Chrome.PivotFieldSettingsView.operator !=(ExPivot.Chrome.PivotFieldSettingsView? left, ExPivot.Chrome.PivotFieldSettingsView? right) -> bool
+static ExPivot.Chrome.PivotFieldSettingsView.operator ==(ExPivot.Chrome.PivotFieldSettingsView? left, ExPivot.Chrome.PivotFieldSettingsView? right) -> bool
+static ExPivot.Chrome.PivotItemFilterView.operator !=(ExPivot.Chrome.PivotItemFilterView? left, ExPivot.Chrome.PivotItemFilterView? right) -> bool
+static ExPivot.Chrome.PivotItemFilterView.operator ==(ExPivot.Chrome.PivotItemFilterView? left, ExPivot.Chrome.PivotItemFilterView? right) -> bool
+static ExPivot.Chrome.PivotMenuItemView.operator !=(ExPivot.Chrome.PivotMenuItemView? left, ExPivot.Chrome.PivotMenuItemView? right) -> bool
+static ExPivot.Chrome.PivotMenuItemView.operator ==(ExPivot.Chrome.PivotMenuItemView? left, ExPivot.Chrome.PivotMenuItemView? right) -> bool
+static ExPivot.Chrome.PivotMenuView.operator !=(ExPivot.Chrome.PivotMenuView? left, ExPivot.Chrome.PivotMenuView? right) -> bool
+static ExPivot.Chrome.PivotMenuView.operator ==(ExPivot.Chrome.PivotMenuView? left, ExPivot.Chrome.PivotMenuView? right) -> bool
+static ExPivot.Chrome.PivotReportFiltersEntryView.operator !=(ExPivot.Chrome.PivotReportFiltersEntryView? left, ExPivot.Chrome.PivotReportFiltersEntryView? right) -> bool
+static ExPivot.Chrome.PivotReportFiltersEntryView.operator ==(ExPivot.Chrome.PivotReportFiltersEntryView? left, ExPivot.Chrome.PivotReportFiltersEntryView? right) -> bool
+static ExPivot.Chrome.PivotReportFiltersView.operator !=(ExPivot.Chrome.PivotReportFiltersView? left, ExPivot.Chrome.PivotReportFiltersView? right) -> bool
+static ExPivot.Chrome.PivotReportFiltersView.operator ==(ExPivot.Chrome.PivotReportFiltersView? left, ExPivot.Chrome.PivotReportFiltersView? right) -> bool
+static ExPivot.Chrome.PivotStaleReportView.operator !=(ExPivot.Chrome.PivotStaleReportView? left, ExPivot.Chrome.PivotStaleReportView? right) -> bool
+static ExPivot.Chrome.PivotStaleReportView.operator ==(ExPivot.Chrome.PivotStaleReportView? left, ExPivot.Chrome.PivotStaleReportView? right) -> bool
+static ExPivot.Chrome.PivotToolbarView.operator !=(ExPivot.Chrome.PivotToolbarView? left, ExPivot.Chrome.PivotToolbarView? right) -> bool
+static ExPivot.Chrome.PivotToolbarView.operator ==(ExPivot.Chrome.PivotToolbarView? left, ExPivot.Chrome.PivotToolbarView? right) -> bool
+static ExPivot.Chrome.PivotValueFieldSettingsView.operator !=(ExPivot.Chrome.PivotValueFieldSettingsView? left, ExPivot.Chrome.PivotValueFieldSettingsView? right) -> bool
+static ExPivot.Chrome.PivotValueFieldSettingsView.operator ==(ExPivot.Chrome.PivotValueFieldSettingsView? left, ExPivot.Chrome.PivotValueFieldSettingsView? right) -> bool
+ExPivot.Chrome.PivotItemChoiceView.<Clone>$() -> ExPivot.Chrome.PivotItemChoiceView!
+ExPivot.Chrome.PivotItemChoiceView.Equals(ExPivot.Chrome.PivotItemChoiceView? other) -> bool
+override ExPivot.Chrome.PivotItemChoiceView.Equals(object? obj) -> bool
+override ExPivot.Chrome.PivotItemChoiceView.GetHashCode() -> int
+override ExPivot.Chrome.PivotItemChoiceView.ToString() -> string!
+static ExPivot.Chrome.PivotItemChoiceView.operator !=(ExPivot.Chrome.PivotItemChoiceView? left, ExPivot.Chrome.PivotItemChoiceView? right) -> bool
+static ExPivot.Chrome.PivotItemChoiceView.operator ==(ExPivot.Chrome.PivotItemChoiceView? left, ExPivot.Chrome.PivotItemChoiceView? right) -> bool

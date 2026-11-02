@@ -1,5 +1,0 @@
-Product: ExGrid
-Kind: Added
-ADR: 0332
-
-Ctrl+H opens the find panel with Replace where the Consumer passes the new `OnReplace` and a visible column is Editable (in both Chromes, `ExGrid.MudBlazor` included); elsewhere the key is taken from the browser, opens nothing and raises `OnFindRefused` with the new `ReplaceUnavailable`, so ExSheet and ExPivot, which do not offer Replace yet, now keep Ctrl+H from the browser's history. Replace writes the current match as one ordinary `OnEdit` Edit Intent and finds the next; Replace All raises one `GridReplaceRequest`, which the Consumer performs all or nothing and answers with `GridReplaceResult.Replaced` (the count) or `Refused` (the cells and why), under the Row Sequence Version it read its rows in. `InMemoryGridSource.Replace` answers it for `GridSource.From`, and `GridReplace.Plan` is the reference implementation. `FindOutcome` gains `Replaced` and `ReplaceRefused`, `FindRefusalReason` gains `ReplaceUnavailable` and `ReplaceRefused`, and `FindContext` gains the Replace part a substituted find panel draws.

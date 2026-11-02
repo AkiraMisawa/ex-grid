@@ -458,7 +458,7 @@ _Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and 
 A product's core written in TypeScript, running in the browser: it holds the instance's state, decides
 what each input means, and creates the elements inside the instance root itself, under the same DOM
 contract and stylesheet as the C# code it replaces. It depends on no UI framework. ExSheet's and
-ExPivot's draw through ExGrid's, as that grid's Consumer. From 0.3.0 each product's is
+ExPivot's draw through ExGrid's, as that grid's Consumer. From 0.2.0 each product's is
 its only core, under React and Blazor alike
 ([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
 [ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
@@ -474,7 +474,7 @@ _Avoid_: JS callback, formatter string, eval
 
 **Framework Adapter**:
 A package that puts a Script Core into one UI framework's component model: `@ex-grid/react` and each
-product's React package, and from 0.3.0 Blazor's ExGrid, ExSheet, ExPivot, ExChart and ExBoard
+product's React package, and from 0.2.0 Blazor's ExGrid, ExSheet, ExPivot, ExChart and ExBoard
 themselves. It mounts
 the core, hands it props, hands its events to the framework's callbacks, and fills the core's Chrome and
 Template slots with the framework's components. It holds no state of the grid's, draws nothing inside
