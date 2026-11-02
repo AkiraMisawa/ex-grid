@@ -999,9 +999,12 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
             if (module is not null)
                 await module.DisposeAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException or OperationCanceledException)
         {
-            // The circuit is gone, and the browser's Board with it: nothing is left there to stop.
+            // The circuit is gone, or is closing and has called off what it had sent the browser, and the browser's
+            // Board goes with it: nothing is left there to stop. ExPivot, ExSheet and ExChart let go the same way; a
+            // Board that raised the cancellation put it in the host's log as an unhandled exception (the Hunt's
+            // widened Server runs, 2026-10-30 to 2026-11-02, where it failed the test that came after the Board's).
         }
     }
 }

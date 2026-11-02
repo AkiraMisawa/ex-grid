@@ -249,7 +249,7 @@ test('KB-23/ADR-0204: with nothing pressed meanwhile, Space still gives a Templa
     const cells = page.locator('.ex-grid').first();
     await expectTabStopTaken(cells);
     await journalPress(cells);
-    await pressFirstCell(cells, cells.locator("[id$='-r0c0']"), 'KB-23');
+    await pressFirstCell(cells, 'KB-23');
     for (let i = 0; i < 4; i++) {
         await page.keyboard.press('ArrowRight');
     }

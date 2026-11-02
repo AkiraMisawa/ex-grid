@@ -156,6 +156,17 @@ public sealed class ScriptBoardTests : BunitContext
         Assert.Equal((BoardDiff.Empty.ToJson(), 2), (update.GetProperty("diff").GetString(), update.GetProperty("diffsSent").GetInt32()));
     }
 
+    [Fact] // ADR-0370 section 1: a circuit that is closing calls off the dispose it was sent, and the Board lets go quietly
+    public async Task ADR0370_a_dispose_the_closing_circuit_calls_off_is_not_raised()
+    {
+        _view.SetupVoid("dispose", _ => true).SetCanceled();
+        Draw(new Dictionary<string, Snapshot> { ["trades"] = Trades("""[{"desk": "Rates", "day": "2026-10-19"}]""") });
+        Assert.Single(_module.Invocations["attach"]);
+        await DisposeComponentsAsync();
+        Assert.Single(_view.Invocations["dispose"]);
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
     [Fact] // ADR-0123, ADR-0370 section 1, ADR-0411: the bundled module ExBoard.Components.ExBoard imports answers the stamp the component is built with, over the Shared Script ExGrid ships
     public void ADR0370_the_script_core_module_is_the_one_the_component_was_built_with()
     {

@@ -11,6 +11,14 @@ import { expectActiveDescendant } from './keyboard.mjs';
 // listener on its Input Root, which stops a press it holds behind a pending input before the root's journal hears it:
 // a press heard there alone was held, or landed outside the grid (RT-1 on PR #505's run, 2026-10-30, heard no press
 // at the root).
+//
+// The Hunt of 2026-11-02 caught RT-1 with the document's journal: the one press made landed on the body at (0, 0).
+// The press was Playwright's forced click on the cell, which reads the cell's box and its border in two calls and
+// presses at their sum. A pass that paints the row anew between the two, as a horizontal scroll does, leaves the cell
+// it read out of the document: its border then reads NaN, which Playwright's rounding makes 0, and the press lands at
+// the page's corner (reproduced with a node taken out of the document during forced clicks: 60 of 84 presses at
+// (0, 0)). So the press here is made at the point read from the cell standing in the grid at one moment, the way RT-1
+// presses its last column; a cell a later pass paints anew stands at the same point.
 export async function journalPress(grid) {
     await alterPage(grid.page(), root => {
         const name = element => (element instanceof Element
@@ -44,7 +52,7 @@ export async function journalPress(grid) {
     });
 }
 
-export async function pressFirstCell(grid, cell, round) {
+export async function pressFirstCell(grid, round) {
     const before = await grid.evaluate(root => {
         const name = element => (element === null ? null : `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}`);
         root.exPressJournal.length = 0;
@@ -55,7 +63,8 @@ export async function pressFirstCell(grid, cell, round) {
             at: box === undefined ? null : name(document.elementFromPoint(box.left + 8, box.top + 8)),
         };
     });
-    await cell.click({ position: { x: 8, y: 8 }, force: true });
+    if (before.cell === null) throw new Error(`In round ${round}, the grid paints no first cell to press.`);
+    await grid.page().mouse.click(before.cell.left + 8, before.cell.top + 8);
     try {
         await expectActiveDescendant(grid, /-r0c0$/);
     } catch (error) {
