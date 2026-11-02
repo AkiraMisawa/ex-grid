@@ -547,6 +547,29 @@ nothing from npm. Each MUI Wrapper is held to ADR-0030 as `@ex-grid/mui` is.
 decided with the user: each product with a `-mui` Wrapper also has a `-mantine` one, `@ex-grid/sheet-mantine`,
 `@ex-grid/pivot-mantine` and `@ex-grid/chart-mantine`, built before its `-mui`, and both ship in 0.3.0.)*
 
+*(2026-11-02, found while 0.3.0's release was prepared: what the packages carry to npm besides their script.)*
+Nothing had been packed for npm until then, and three things were missing that a React Consumer would meet at
+once:
+
+- **The products' stylesheets.** `ex-grid.css`, `ex-sheet.css`, `ex-pivot.css` and `ex-chart.css` were shipped by
+  the NuGet packages alone, and the React hosts imported them from `dotnet/src/`, so an application that installed
+  `@ex-grid/react` had a grid with no stylesheet. Each Script Core package now carries its product's: `@ex-grid/core`,
+  `@ex-grid/sheet`, `@ex-grid/pivot` and `@ex-grid/chart` export `./styles.css`, which is the very minified file,
+  with its source map, that the product's NuGet package serves (ADR-0123). It is the same file, not a second build of
+  the source, because the stamp in it is the one the Script Core writes on its stylesheet notice: a stylesheet of
+  another build shows the notice, as a stale one does under Blazor. The source stays in `dotnet/src/<Package>/Assets/`
+  and the workspace's build copies the file into the package (`tools/scripts/stylesheets.mjs`). The Wrappers'
+  `styles.css` are read after these, as the MudBlazor Wrappers' stylesheets are after the core's. Carrying it in the
+  React adapters instead was the alternative, and would leave the stylesheet out of reach of an application that
+  mounts a Script Core without React.
+- **A README and the licence.** Each package carries a `README.md` of its own (what it is, how to install it with
+  its peers, which stylesheets to import, the `0.x` caveat NuGet's READMEs give) and the repository's `LICENSE`.
+- **The check before publishing.** `tools/npm-package/check.mjs` packs every package at the version, the family's
+  dependencies pinned to exactly that version as NuGet's are (ADR-0042), reads each tarball back and installs them
+  into an application outside the workspace that type-checks, bundles and runs them: the counterpart of
+  `dotnet/tests/ExGrid.PackageSmoke/check.sh`. CI's `script-core` job runs it, and the release publishes the
+  tarballs it tested (ADR-0042's note of 2026-11-02).
+
 ### 6. The order inside 0.3.0
 
 ADR-0350 section 7's three steps hold for ExGrid as written, and each product takes the same three,

@@ -2,6 +2,9 @@
 # ExGrid, ExGrid.MudBlazor, ExSheet.Engine, ExSheet, ExSheet.MudBlazor, ExSheet.Xlsx, ExGrid.Data,
 # ExGrid.Data.Arrow, ExGrid.Data.Xlsx (ADR-0330), ExPivot.Engine, ExPivot, ExPivot.MudBlazor,
 # ExChart.Engine, ExChart and ExChart.MudBlazor (ADR-0283), and ExBoard (ADR-0340).
+# From the same tag, at the same version, it publishes to npm every member of packages/ not marked private,
+# twenty-three of them (ADR-0370 sections 5 and 9): the tarballs ci.yml's script-core job packed and took as a
+# Consumer takes them (tools/npm-package/check.mjs).
 #
 #   git tag v0.1.0-rc.1 <a commit on main or a release/* branch> && git push origin v0.1.0-rc.1
 #
@@ -40,7 +43,15 @@
 #   before its text.
 #
 # The key is a one-hour one from Trusted Publishing: nuget.org holds a policy naming this
-# repository and this file, and the secret NUGET_USER holds the nuget.org profile name. The GitHub
+# repository and this file, and the secret NUGET_USER holds the nuget.org profile name.
+# npm takes the same route: each package's Trusted Publisher on npmjs.com names this repository, this file
+# and the environment npm, and the job exchanges GitHub's OIDC token for the publish, which also gives each
+# version its provenance. npm sets a Trusted Publisher only on a package that exists, so until each has been
+# published once the secret NPM_TOKEN, a granular token that may publish @ex-grid, takes its place; it is
+# deleted once every package has its Trusted Publisher. A prerelease and a release candidate go out under
+# npm's dist-tag next, so that npm install without a version keeps the latest stable one; a version
+# without a suffix takes latest when it publishes the Docs Site too, the latest stable line, and
+# release-<major>.<minor> when it is a patch to an older line. The GitHub
 # release's text is the version's Release Notes. Last, once nuget.org has the packages, the Docs
 # Site is published for the version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190).
 # The site describes the latest stable version once one is tagged (ADR-0205), so a version without a
@@ -319,15 +330,96 @@ jobs:
               --verify-tag "$prerelease" --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
 
-  # The Docs Site for this version, once nuget.org has it (ADR-0110, ADR-0042): the site states a
+  # The Docs Site for this version, once nuget.org and npm have it (ADR-0110, ADR-0042): the site states a
   # version only after its packages can be installed, and the day they could be (ADR-0190).
   # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
   # The site describes the latest stable version once one is tagged (ADR-0205): a prerelease then
   # publishes none, its notes being on its GitHub release, and neither does a stable version some
   # stable tag is above, a patch to an older line. The admit job decides it, and says so.
+  publish-npm:
+    name: Publish to npm
+    needs: [admit, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # A required reviewer can be added to this environment in the repository's settings. Each package's
+    # Trusted Publisher on npmjs.com names it.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write   # Trusted Publishing, and each version's provenance
+    env:
+      VERSION: ${{ needs.admit.outputs.version }}
+      KIND: ${{ needs.admit.outputs.kind }}
+      SITE: ${{ needs.admit.outputs.site }}
+    steps:
+      # The tag's manifests name the packages to expect, and .node-version the Node they were packed with.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          registry-url: https://registry.npmjs.org
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: npm-packages
+          path: npm-tarballs
+
+      # Every published member of packages/ at the tag, as one tarball at the version, in the order the packages
+      # depend on one another, which publish-order.txt gives and the publish follows: a Consumer who installs in
+      # the minutes between two of them never meets a package whose own dependency is not there yet.
+      - name: Exactly the packages the script-core job tested
+        run: |
+          set -euo pipefail
+          ls -l npm-tarballs
+          node --input-type=module -e "
+            import { packOrder, tarballName } from './tools/npm-package/pack.mjs';
+            for (const { manifest } of packOrder()) console.log(tarballName(manifest.name, process.env.VERSION));
+          " > "$RUNNER_TEMP/expected.txt"
+          if ! diff -u "$RUNNER_TEMP/expected.txt" npm-tarballs/publish-order.txt; then
+            echo "::error::The npm tarballs are not exactly the packages of packages/ at $VERSION, in the order they depend on one another."
+            exit 1
+          fi
+          while IFS= read -r tarball; do
+            [ -f "npm-tarballs/$tarball" ] || { echo "::error::npm-tarballs/$tarball is missing"; exit 1; }
+          done < npm-tarballs/publish-order.txt
+          [ "$(ls npm-tarballs | wc -l)" -eq "$(( $(wc -l < npm-tarballs/publish-order.txt) + 1 ))" ] \
+            || { echo "::error::the artifact holds a file publish-order.txt does not name"; exit 1; }
+
+      # Trusted Publishing asks npm 11.5.1 or later; the Node .node-version names brings it.
+      - name: npm takes Trusted Publishing
+        run: |
+          set -euo pipefail
+          npm_version=$(npm --version)
+          if [ "$(printf '%s\n' 11.5.1 "$npm_version" | sort -V | head -n 1)" != 11.5.1 ]; then
+            echo "::error::npm $npm_version cannot publish through Trusted Publishing, which asks 11.5.1 or later."
+            exit 1
+          fi
+
+      # A version already on npm is left as it is, so a re-run finishes a publish that stopped halfway: npm never
+      # replaces a version, and refuses one published before.
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          case "$KIND" in
+            stable)
+              if [[ "$SITE" == true ]]; then tag=latest; else tag="release-$(cut -d. -f1,2 <<<"$VERSION")"; fi ;;
+            *) tag=next ;;
+          esac
+          while IFS= read -r tarball; do
+            name=$(tar -xzOf "npm-tarballs/$tarball" package/package.json | node -e "process.stdin.on('data', d => process.stdout.write(JSON.parse(d).name))")
+            if [[ "$(npm view "$name@$VERSION" version 2> /dev/null || true)" == "$VERSION" ]]; then
+              echo "$name@$VERSION is on npm already"
+              continue
+            fi
+            npm publish "npm-tarballs/$tarball" --access public --tag "$tag" --provenance
+          done < npm-tarballs/publish-order.txt
+
   docs:
     name: The Docs Site
-    needs: [admit, publish]
+    needs: [admit, publish, publish-npm]
     if: needs.admit.outputs.site == 'true'
     uses: ./.github/workflows/docs.yml
     with:

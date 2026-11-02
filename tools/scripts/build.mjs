@@ -3,7 +3,9 @@
 //   1. tsc writes the declarations of src/ into temp/types;
 //   2. esbuild bundles src/index.ts into dist/index.js, an ES module with its source map;
 //   3. API Extractor rolls the declarations up into dist/index.d.ts and compares the package's public
-//      surface with its report, etc/<name>.api.md.
+//      surface with its report, etc/<name>.api.md;
+//   4. a package that carries its product's stylesheet (stylesheets.mjs) takes a copy of it, and of its source
+//      map, beside package.json, where its exports name it ./styles.css.
 //
 // The report is the counterpart of a NuGet package's PublicAPI.Unshipped.txt (ADR-0201): an export
 // that is not in it, or that is in it and gone, fails the build, and so does an exported member
@@ -14,8 +16,10 @@ import { build } from 'esbuild';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { Extractor, ExtractorConfig } from '@microsoft/api-extractor';
+import { stylesheets } from './stylesheets.mjs';
 
 const local = process.argv.includes('--local');
 const packageDir = process.cwd();
@@ -24,6 +28,14 @@ const require = createRequire(import.meta.url);
 
 fs.rmSync(path.join(packageDir, 'temp'), { recursive: true, force: true });
 fs.rmSync(path.join(packageDir, 'dist'), { recursive: true, force: true });
+
+const stylesheet = stylesheets[path.basename(packageDir)];
+if (stylesheet !== undefined) {
+    const workspace = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+    for (const file of [stylesheet, `${stylesheet}.map`]) {
+        fs.copyFileSync(path.join(workspace, file), path.join(packageDir, path.basename(file)));
+    }
+}
 
 const tsc = path.join(path.dirname(require.resolve('typescript/package.json')), 'bin/tsc');
 execFileSync(process.execPath, [tsc, '-p', 'tsconfig.build.json'], {

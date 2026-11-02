@@ -50,3 +50,11 @@ nix develop .#browser -c bash -c 'npm test'            # Vitest: layers 1 and 2
   the Script Core alone, read by a kind no C# runner reads (ADR-0350 section 5's note of 2026-10-27).
 - **`dist/` and `temp/` are written by the build and not committed.** A package is built when it is
   published.
+- **What npm publishes is checked as a Consumer takes it**: `node tools/npm-package/check.mjs [version]`, after a
+  build, packs every package not marked private with its `README.md` and the repository's `LICENSE`, the family's
+  dependencies pinned to exactly the version, reads each tarball back and installs them into an application outside
+  the workspace that type-checks, bundles and runs them (ADR-0042, ADR-0370 section 5's note of 2026-11-02). A new
+  package needs a `README.md`, and imports nothing it does not declare.
+- **`@ex-grid/core`, `sheet`, `pivot` and `chart` carry their product's stylesheet**, exported as `./styles.css`: the
+  minified file the product's NuGet package serves, copied by the build from `dotnet/src/<Package>/wwwroot/`
+  (`tools/scripts/stylesheets.mjs`). It is edited in `dotnet/src/<Package>/Assets/`, never in the package.
