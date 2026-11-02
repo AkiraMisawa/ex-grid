@@ -8,6 +8,7 @@ import { elementAt, defined } from './must';
 import { NumberFormat } from './number-format';
 import { Sheet, type AddressedState, type EntryOfCell, type FillDirection, type RewrittenEntry, type SheetBlock, SheetStep, type TypedCell } from './sheet';
 import { SheetChange, SheetColumnWidth, SheetRefusal, SheetRefusedError } from './sheet-change';
+import { SheetSize } from './sheet-size';
 import type { Workbook } from './workbook';
 
 const alignments: readonly HorizontalAlignment[] = ['general', 'left', 'center', 'right'];
@@ -132,18 +133,19 @@ export abstract class SheetEdit {
      */
     static paste(block: SheetBlock, at: CellAddress | CellRange | Iterable<CellRange>): SheetEdit {
         if (at instanceof CellAddress) {
-            const refusal = Sheet.offSheet(at, block.rowCount, block.columnCount);
-            return new PlacedEdit(refusal, () => Sheet.place(block, at),
-                refusal === undefined ? [new CellRange(at, new CellAddress(at.row + block.rowCount - 1, at.column + block.columnCount - 1))] : []);
+            // The edge is the Sheet's own, Excel's or the Workbook's size (ADR-0460), so it is asked of the Sheet the paste is done on.
+            const fits = SheetSize.excel.holds(at, block.rowCount, block.columnCount);
+            return new PlacedEdit(sheet => sheet.offSheet(at, block.rowCount, block.columnCount), () => Sheet.place(block, at),
+                fits ? [new CellRange(at, new CellAddress(at.row + block.rowCount - 1, at.column + block.columnCount - 1))] : []);
         }
         if (at instanceof CellRange) {
             checkWholeMultiple(block, at);
-            return new PlacedEdit(undefined, () => [...tiles(block, at)].flatMap(origin => [...Sheet.place(block, origin)]), [at]);
+            return new PlacedEdit(() => undefined, () => [...tiles(block, at)].flatMap(origin => [...Sheet.place(block, origin)]), [at]);
         }
         const ranges = [...at];
         if (ranges.length === 0) throw new RangeError('There is no range to paste over.');
         for (const target of ranges) checkWholeMultiple(block, target);
-        return new PlacedEdit(undefined, () => {
+        return new PlacedEdit(() => undefined, () => {
             const states = new Map<number, AddressedState>();
             for (const target of ranges) {
                 for (const origin of tiles(block, target)) {
@@ -169,8 +171,11 @@ export abstract class SheetEdit {
         if (first === undefined || first.length === 0) throw new RangeError('Nothing to paste.');
         const width = first.length;
         if (fields.some(row => row.length !== width)) throw new RangeError('The pasted fields are not rectangular.');
-        const refusal = Sheet.offSheet(origin, fields.length, width);
-        if (refusal !== undefined) return new RefusedEdit(refusal);
+        // Past Excel's edge, no address can be made; past the Workbook's size, the Sheet it is done on refuses it (ADR-0460).
+        if (!SheetSize.excel.holds(origin, fields.length, width)) {
+            return new RefusedEdit(new SheetRefusal('blockWouldLeaveSheet',
+                `A block of ${String(fields.length)} × ${String(width)} at ${origin.toString()} would run past the Sheet's edge (${SheetSize.excel.lastCell.toString()}).`));
+        }
         const typed: TypedCell[] = [];
         fields.forEach((row, r) => {
             row.forEach((field, c) => typed.push([new CellAddress(origin.row + r, origin.column + c), field]));
@@ -363,19 +368,19 @@ class CellsEdit extends SheetEdit {
 
 /** Cells written whole — Entry and Cell Format — such as a paste of Entries: the states are computed when the edit is done, and a refusal known in advance stops it. */
 class PlacedEdit extends SheetEdit {
-    readonly #refusal: SheetRefusal | undefined;
+    readonly #refusal: (sheet: Sheet) => SheetRefusal | undefined;
     readonly #states: () => Iterable<AddressedState>;
     readonly #ranges: readonly CellRange[];
 
-    constructor(refusal: SheetRefusal | undefined, states: () => Iterable<AddressedState>, ranges: readonly CellRange[]) {
+    constructor(refusal: (sheet: Sheet) => SheetRefusal | undefined, states: () => Iterable<AddressedState>, ranges: readonly CellRange[]) {
         super();
         this.#refusal = refusal;
         this.#states = states;
         this.#ranges = ranges;
     }
 
-    override check(): SheetRefusal | undefined {
-        return this.#refusal;
+    override check(sheet: Sheet): SheetRefusal | undefined {
+        return this.#refusal(sheet);
     }
 
     override get ranges(): readonly CellRange[] {

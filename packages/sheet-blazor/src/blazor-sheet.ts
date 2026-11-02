@@ -51,12 +51,12 @@ export function labelIds(): readonly string[] {
 type PassedOption =
     | 'showFormulaBar' | 'pinnedColumnCount' | 'showRowHeadings' | 'showColumnHeadings' | 'showSheetTabs' | 'showToolbar'
     | 'showSelectionSummary' | 'summaryFigures' | 'allowCopyWithHeaders' | 'rowHeight' | 'viewportWidth' | 'viewportHeight'
-    | 'today' | 'timeZone';
+    | 'today' | 'timeZone' | 'sheetSize';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'showFormulaBar', 'pinnedColumnCount', 'showRowHeadings', 'showColumnHeadings', 'showSheetTabs', 'showToolbar',
     'showSelectionSummary', 'summaryFigures', 'allowCopyWithHeaders', 'rowHeight', 'viewportWidth', 'viewportHeight',
-    'today', 'timeZone',
+    'today', 'timeZone', 'sheetSize',
 ]);
 
 /** The component's parameters, as the Script Core's options are spelt. .NET sends what the Razor component defaults,
@@ -73,6 +73,8 @@ export interface WireOptions {
     readonly summaryFigures?: readonly SummaryFigure[];
     readonly allowCopyWithHeaders?: boolean;
     readonly rowHeight?: number;
+    /** The Sheet Size (ADR-0460); Excel's when not sent. */
+    readonly sheetSize?: { readonly rows: number; readonly columns: number };
     readonly viewportWidth?: ViewportSize;
     readonly viewportHeight?: ViewportSize;
     /** The Wrapper's widths and Density its paper cascades (ADR-0030), which the cells are painted and measured in. */
@@ -683,7 +685,8 @@ export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' 
 
 /** A Selection Summary as .NET reads it back: its status, the question and the answer, an exact figure as its
  * decimal's digits, which no JSON number holds. Written as Blazor's ExPivot writes its own, but for the columns: a
- * Sheet's are its letters, A to XFD, which .NET makes again rather than read 16,384 names on every selection. */
+ * Sheet's are its letters, A onwards, as many as the Sheet Size holds (ADR-0460), which .NET makes again from their
+ * count rather than read up to 16,384 names on every selection. */
 export function wireSummary(summary: SelectionSummary): unknown {
     return { status: summary.status, request: summary.request === undefined ? null : wireRequest(summary.request), result: summary.result === undefined ? null : wireResult(summary.result) };
 }
@@ -692,6 +695,7 @@ function wireRequest(request: GridSummaryRequest): unknown {
     lettersChecked(request.columns);
     return {
         ranges: request.ranges,
+        columnCount: request.columns.length,
         rowSequenceVersion: request.rowSequenceVersion,
         figures: request.figures,
         focus: request.focus === undefined ? null : request.focus,
@@ -706,8 +710,8 @@ function lettersChecked(columns: readonly string[]): void {
     if (lettered.has(columns)) return;
     letters ??= Object.freeze(Array.from({ length: columnCount }, (_, at) => CellAddress.columnName(at)));
     const all = letters;
-    if (columns.length !== all.length || columns.some((name, at) => name !== all[at]))
-        throw new Error('Internal: a Sheet\'s columns are not its letters, A to XFD.');
+    if (columns.length > all.length || columns.some((name, at) => name !== all[at]))
+        throw new Error('Internal: a Sheet\'s columns are not its letters from A.');
     lettered.add(columns);
 }
 

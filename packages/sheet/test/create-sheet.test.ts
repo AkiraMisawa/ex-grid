@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellAddress, CellFormatChange, Culture, type CellFormat, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook } from '@ex-grid/sheet-engine';
 import { createGrid, GridPresentationDefaults, type GridHandle } from '@ex-grid/core';
-import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange } from '../src/create-sheet';
+import { createSheet, type SheetChrome, type SheetHandle, type SheetOptions, type SheetsChange, type SheetSizeOptions } from '../src/create-sheet';
 import type { SheetToolbarContent, SheetToolbarItemSlotContext } from '../src/sheet-toolbar-slot';
 import type { SheetFormatCellsSlotContext, SheetTabSlotContext } from '../src/sheet-chrome-slots';
 import { PointingScope } from '../src/pointing-scope';
@@ -2344,5 +2344,78 @@ describe('ExSheet\'s stylesheet notices (ADR-0123, ERR-11)', () => {
         expect(grid).not.toBeNull();
         expect(notices(grid ?? element).map(([name, stamp]) => [name, stamp])).toEqual([['ex-grid.css', expect.any(String)], ['mud-ex-sheet.css', mud.stamp]]);
         expect(notices(element).map(([name]) => name)).toEqual(['ex-sheet.css']);
+    });
+});
+
+/** The rows and columns the grid tells a screen reader it has: the Sheet's, and the header row. */
+const counts = (element: HTMLElement): readonly [string | null, string | null] => {
+    const root = element.querySelector('[aria-rowcount]');
+    return [root?.getAttribute('aria-rowcount') ?? null, root?.getAttribute('aria-colcount') ?? null]; // oxlint-disable-line ex-grid/no-stand-in-default -- a missing root reads as missing, which the expectation names
+};
+
+describe('A Sheet Size (ADR-0460)', () => {
+    it('ADR-0460: a Sheet of 10 by 10 draws A1:J10, and Ctrl+arrow stops at its edge', async () => {
+        const { element } = sheetOf({ sheetSize: { rows: 10, columns: 10 }, document: documentOf({ A1: '1' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        // Ten rows and the header row, ten columns.
+        expect(counts(element)).toEqual(['11', '10']);
+        press(element, 0, 0);
+        key('ArrowDown', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A10'); });
+        key('ArrowRight', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('J10'); });
+    });
+
+    it('ADR-0460: a size given only its rows or only its columns keeps Excel\'s count of the other', async () => {
+        const rowsOnly: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 10 } };
+        const { element, sheet } = sheetOf(rowsOnly);
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['11', '16384']); });
+        expect(sheet.workbook.size.lastCell.toString()).toBe('XFD10');
+        sheet.update({ ...rowsOnly, sheetSize: { columns: 10 } });
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['1048577', '10']); });
+        expect(sheet.workbook.size.lastCell.toString()).toBe('J1048576');
+        expect(() => sheetOf({ sheetSize: { rows: '10' } as unknown as SheetSizeOptions })).toThrow("A Sheet's sheetSize.rows is a number (ADR-0460).");
+        expect(() => sheetOf({ sheetSize: { row: 10 } as unknown as SheetSizeOptions })).toThrow("A Sheet's sheetSize is { rows, columns }, one of them or both; it was given { row } (ADR-0460).");
+        expect(() => sheetOf({ sheetSize: {} })).toThrow("A Sheet's sheetSize is { rows, columns }, one of them or both; it was given {} (ADR-0460).");
+    });
+
+    it('ADR-0460: the Name Box takes whole columns as long as the size, and refuses a place past it by name', async () => {
+        const { element } = sheetOf({ sheetSize: { rows: 10, columns: 10 } });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        enter(element, 'C:C');
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('C1'); });
+        enter(element, 'K5');
+        await vi.waitFor(() => { expect(element.querySelector('.ex-sheet-notice')?.textContent).toBe("'K5' lies past the Sheet's edge (J10)."); });
+        expect(nameBox(element).value).toBe('C1');
+    });
+
+    it('ADR-0460: a document with an Entry past the size is refused by name, and a size that would leave one outside keeps the one it had', async () => {
+        expect(() => sheetOf({ sheetSize: { rows: 10, columns: 10 }, document: documentOf({ L12: 'x' }) }))
+            .toThrow('Sheet1!L12 holds an Entry, and a Sheet of 10 rows by 10 columns ends at J10.');
+        const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 20, columns: 20 }, document: documentOf({ O15: 'x' }) };
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['21', '20']); });
+        expect(() => { sheet.update({ ...options, sheetSize: { rows: 10, columns: 10 } }); }).toThrow(RangeError);
+        expect(sheet.workbook.size.rows).toBe(20);
+        sheet.update({ ...options, sheetSize: { rows: 30, columns: 16 } });
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['31', '16']); });
+        expect(() => sheetOf({ sheetSize: { rows: 0, columns: 10 } })).toThrow(RangeError);
+    });
+
+    it('ADR-0460: a smaller size waits for an edit open, and empties the undo stack, whose steps could put an Entry back past it', async () => {
+        const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 20, columns: 20 } };
+        const { element, sheet } = sheetOf(options);
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        sheet.do(SheetEdit.enter(CellAddress.parse('O15'), 'x'));
+        sheet.do(SheetEdit.setEntries([[CellAddress.parse('O15'), undefined]]));
+        press(element, 0, 0);
+        key('F2');
+        expect(() => { sheet.update({ ...options, sheetSize: { rows: 10, columns: 10 } }); }).toThrow(SheetRefusedError);
+        key('Escape');
+        sheet.update({ ...options, sheetSize: { rows: 10, columns: 10 } });
+        await vi.waitFor(() => { expect(counts(element)).toEqual(['11', '10']); });
+        // Undone, the clear would put O15 back past the edge: there is nothing to undo.
+        expect(sheet.undo()).toBe(false);
+        expect(sheet.workbook.shown.entryAddresses).toEqual([]);
     });
 });

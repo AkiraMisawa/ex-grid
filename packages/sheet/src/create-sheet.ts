@@ -16,7 +16,7 @@ import {
     type SelectionSummary, type SummaryFigure, builtInCommandLabel, reloadNoticeLabelIds,
 } from '@ex-grid/core';
 import {
-    BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
+    BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, SheetSize, Value, Workbook,
     Sheet, SheetRefusal, WorkbookDocument, referenceText, type LinkedTable, type CellColour, type SheetDay, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type SheetRefusalReason, type WorkbookChange, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { elementAt, unreachable } from './must';
@@ -110,6 +110,16 @@ export interface SheetChrome extends GridChrome<unknown> {
 /** The Sheet's own slots, beside the grid's. */
 const sheetSlotNames: readonly string[] = ['toolbarItem', 'formatCells', 'sheetTab', 'sheetTabAdd'];
 
+/** How many rows and columns every Sheet holds (ADR-0460), each from 1 to Excel's 1,048,576 rows and 16,384 columns. */
+export interface SheetSizeOptions {
+    /** How many rows, from 1 to 1,048,576; Excel's 1,048,576 unless given, so `{ columns: 10 }` narrows only the
+     * columns. */
+    readonly rows?: number;
+    /** How many columns, from 1 to 16,384 (`A` to `XFD`); Excel's 16,384 unless given, so `{ rows: 10 }` shortens only
+     * the rows. */
+    readonly columns?: number;
+}
+
 /** What a Sheet is drawn with. */
 export interface SheetOptions {
     /** The Workbook or Sheet to open; a new Workbook of one empty Sheet unless given. A new document object opens
@@ -197,6 +207,17 @@ export interface SheetOptions {
     readonly presentationDefaults?: GridPresentationDefaults;
     /** The height of a row in pixels (ADR-0013). */
     readonly rowHeight?: number;
+    /**
+     * How many rows and columns every Sheet holds (ADR-0460): `{ rows: 10, columns: 10 }` draws `A1:J10` and nothing
+     * past it, and `{ rows: 10 }` holds ten rows of Excel's 16,384 columns. Excel's 1,048,576 × 16,384 unless given.
+     * Every move stops at the edge, and a paste, a fill or an insertion that would put an Entry past it is refused by
+     * name, never cut; a spilled array that would pass it is `#SPILL!`. A Reference past it still reads the empty cell
+     * it names, so a Formula means what it means in Excel. A document with an Entry past it is refused when it is
+     * opened, and a smaller size handed in later that would leave one outside, or while a cell is being edited, is
+     * refused, the Sheet keeping the size it had; a smaller size taken empties the undo stack, whose steps could put an
+     * Entry back past it. The size is the screen's, not the document's: it is not saved.
+     */
+    readonly sheetSize?: SheetSizeOptions;
     /** The grid's width: pixels, or `stretch` to fill the element's box. */
     readonly viewportWidth?: ViewportSize;
     /** The grid's height: pixels, or `stretch` to fill the element's box. */
@@ -665,7 +686,7 @@ class SheetView {
     #destroyed = false;
     // Each Sheet's view as it was left: its Selection and scroll offsets, given back when its tab is selected
     // again (ADR-0331 §1). A Sheet not yet shown has none, and opens on A1.
-    readonly #views = new WeakMap<Sheet, GridViewRead>();
+    #views = new WeakMap<Sheet, GridViewRead>();
     // The style properties the Sheet set on its element (#frame), each with the value the Consumer had given it.
     readonly #framed = new Map<string, { readonly value: string; readonly priority: string }>();
     // The documents this Sheet handed out: one handed back as `document`, as a controlled component's state comes
@@ -787,6 +808,15 @@ class SheetView {
             && Culture.of(next.locale ?? navigator.language) !== this.#source.sheet.culture) {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
+        // Another Sheet Size gives every Sheet of the Workbook held the new edge, refused before anything changes when it
+        // would leave an Entry outside (ADR-0460). A document opened in this update opens at the size it names.
+        const size = sheetSizeOf(next);
+        const reopening = next.document !== this.#document && !(next.document !== undefined && this.#raised.has(next.document));
+        const before = this.#workbook.size;
+        const shrinks = size.rows < before.rows || size.columns < before.columns;
+        // An edit open may stand on a cell past a smaller edge, so a smaller size waits for it, as a command does.
+        if (!reopening && shrinks) this.#refuseWhileEditing();
+        const resized = reopening || size.equals(before) ? undefined : this.#workbook.resize(size);
         // Measured again only where the widths are others: defaults made again with the same widths change nothing.
         const metrics = SheetView.#metricsOf(next);
         if (!metrics.equals(SheetView.#metricsOf(this.#options))) {
@@ -811,6 +841,18 @@ class SheetView {
             this.#chosenSeed = chooseSeed();
             this.#replaceWorkbook(this.#open(next), false);
             return;
+        }
+        if (resized !== undefined) {
+            // A step undone or redone after a smaller size could put an Entry back past its edge, so the undo stack
+            // goes with the larger size, as it goes with a document opened.
+            if (shrinks) {
+                this.#history.clear();
+                this.#raiseHistory();
+            }
+            // The rows and columns are drawn again to the new edge, from A1: a view kept from before may lie past it.
+            this.#views = new WeakMap();
+            this.#showSheet(this.#workbook.shown);
+            this.#changed([resized], false, false);
         }
         // A new seed, or none, which goes back to the one chosen at opening, draws again at the same count of changes:
         // no change of the Sheet's, so neither the document nor the notice hears it.
@@ -1506,7 +1548,7 @@ class SheetView {
         } else {
             this.#history.record([step], sheet);
             // The whole columns the grid resizes with this one, from the Selection it chose them by (FN-12c).
-            const resized = this.#selection === undefined ? [] : this.#selection.wholeColumns({ rowCount: Sheet.rowCount, columnCount: Sheet.columnCount });
+            const resized = this.#selection === undefined ? [] : this.#selection.wholeColumns(this.#extent);
             this.#resizing = resized.includes(column) && resized.length > 1 ? { first: step, pending: new Set(resized.filter(c => c !== column)) } : undefined;
         }
         this.#changed([step.change]);
@@ -1521,18 +1563,30 @@ class SheetView {
             this.#tell(this.#words.addressUnreadable(typed));
             return;
         }
+        // Whole columns and whole rows are the Sheet Size's; a place past it is refused by name (ADR-0460).
+        const range = this.#workbook.size.fit(place.range);
+        if (range === undefined) {
+            this.#tell(this.#words.addressPastEdge(typed.trim(), this.#workbook.size.lastCell));
+            return;
+        }
         this.#clearNotice();
         if (sheet !== this.#source.sheet) {
             this.#showSheet(sheet);
             this.#raiseDocument();
         }
-        this.#select(place.range);
+        this.#select(range);
     };
+
+    // The grid's extent: the Sheet Size's rows and columns (ADR-0460).
+    get #extent(): { readonly rowCount: number; readonly columnCount: number } {
+        const { rows, columns } = this.#workbook.size;
+        return { rowCount: rows, columnCount: columns };
+    }
 
     readonly #dataEdge = (from: CellPosition, direction: GridDirection): CellPosition => {
         const sheet = this.#source.sheet;
         this.#edges ??= SheetEdges.of(sheet);
-        const at = this.#edges.find(new CellAddress(from.row, from.column), direction);
+        const at = this.#edges.find(new CellAddress(from.row, from.column), direction, this.#workbook.size);
         return { row: at.row, column: at.column };
     };
 
@@ -1580,7 +1634,7 @@ class SheetView {
 
     readonly #onRefused = (refusal: GridRefusal): void => {
         switch (refusal.kind) {
-            case 'paste': this.#tell(this.#words.pasteRefused(refusal.reason), { saidByGrid: true }); return;
+            case 'paste': this.#tell(this.#words.pasteRefused(refusal.reason, this.#workbook.size.lastCell), { saidByGrid: true }); return;
             // A refusal of the Sheet's own is in the engine's words, which the grid relayed from the copy answer.
             case 'copy': {
                 const own = this.#copyRefusal;
@@ -2542,7 +2596,7 @@ class SheetView {
         }
         const selection = this.#grid?.readView().selection;
         if (selection === undefined || selection.isEmpty) return;
-        const edit = sheetStructureEditFor(kind, selection, { rowCount: Sheet.rowCount, columnCount: Sheet.columnCount });
+        const edit = sheetStructureEditFor(kind, selection, this.#extent);
         if (edit === undefined) {
             this.#tell(this.#words.structureKeyNeedsWholeRowsOrColumns(insert));
             return;
@@ -3101,7 +3155,8 @@ class SheetView {
     // A document opened, with its seed: the Consumer's, or the one just chosen, at a count of 0 changes (ADR-0180). Its
     // Sheets' names are the ones the Consumer has heard.
     #open(options: SheetOptions, document = options.document, chosenSeed = this.#chosenSeed): Workbook {
-        const workbook = document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language)) : Workbook.open(document);
+        const size = sheetSizeOf(options);
+        const workbook = document === undefined ? new Workbook(Culture.of(options.locale ?? navigator.language), undefined, size) : Workbook.open(document, size);
         workbook.setSeed(options.seed ?? chosenSeed, 0);
         // The day and the clock, before any row is read: every Sheet reads them, one added later too. NOW reads the zone
         // the options name when the engine asks, once per recalculation.
@@ -3209,6 +3264,8 @@ class SheetView {
         // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
         const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         checkToolbar(options.toolbar);
+        // Refused here by name, as the engine's size refuses one (ADR-0460).
+        sheetSizeOf(options);
         const figures: unknown = options.summaryFigures;
         if (figures !== undefined && (!Array.isArray(figures) || figures.some((figure: unknown) => !summaryFigureOrder.some(known => known === figure)))) {
             throw new TypeError(`summaryFigures is a list of the figures ${summaryFigureOrder.join(', ')} (ADR-0130).`);
@@ -3392,6 +3449,25 @@ function refuseCollidingKeyTips(rows: readonly (SheetToolbarRowOptions | 'defaul
 }
 
 // The Name Box names the Focus as A1 does (ADR-0051).
+// The Sheet Size the options give, Excel's unless one is given (ADR-0460).
+function sheetSizeOf(options: SheetOptions): SheetSize {
+    const given: unknown = options.sheetSize;
+    if (given === undefined) return SheetSize.excel;
+    if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's sheetSize is { rows, columns } (ADR-0460).");
+    const keys = Object.keys(given);
+    if (keys.length === 0 || keys.some(key => key !== 'rows' && key !== 'columns'))
+        throw new TypeError(`A Sheet's sheetSize is { rows, columns }, one of them or both; it was given ${keys.length === 0 ? '{}' : `{ ${keys.join(', ')} }`} (ADR-0460).`);
+    const { rows, columns }: { readonly rows?: unknown; readonly columns?: unknown } = given;
+    return new SheetSize(countOf(rows, 'rows', SheetSize.excel.rows), countOf(columns, 'columns', SheetSize.excel.columns));
+}
+
+/** A count of a `sheetSize`, Excel's when it is not given; one given as anything but a number is refused by name. */
+function countOf(given: unknown, name: 'rows' | 'columns', excel: number): number {
+    if (given === undefined) return excel;
+    if (typeof given !== 'number') throw new TypeError(`A Sheet's sheetSize.${name} is a number (ADR-0460).`);
+    return given;
+}
+
 const nameBoxLabel = (focus: CellPosition): string => new CellAddress(focus.row, focus.column).toString();
 // The size of a range a drag selects, in the Name Box, as Excel's shows it while the button is down (ADR-0052).
 const nameBoxSizeLabel = (range: SelectionRange): string =>

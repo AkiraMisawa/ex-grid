@@ -282,6 +282,23 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
     });
 });
 
+describe('the Sheet Size across the bridge (ADR-0460)', () => {
+    it('opens the Sheet at the size .NET sends, and a summary names as many letters as it holds', async () => {
+        const { element, dotnet } = mount({
+            document: workbookJson(['Sheet1', { A1: '1', A2: '2' }]),
+            documentsSent: 1,
+            options: options({ hears: ['selectionSummaryChanged'], sheetSize: { rows: 10, columns: 4 } }),
+        });
+        await vi.waitFor(() => { expect(cellText(element, 1, 0)).toBe('2'); });
+        expect(element.querySelector('[aria-colcount]')?.getAttribute('aria-colcount')).toBe('4');
+        select(element, 'A1:A2');
+        await vi.waitFor(() => {
+            const raised = dotnet.of('selectionSummaryChanged') as readonly { readonly request: { readonly columnCount: number } }[];
+            expect(raised.map(summary => summary.request.columnCount)).toEqual([4, 4]);
+        });
+    });
+});
+
 describe('the Selection Summary across the bridge (ADR-0130)', () => {
     it('hands .NET the summary the Sheet answered, an exact figure as its digits and no column names, and none unheard', async () => {
         const { element, dotnet } = mount({
@@ -295,6 +312,8 @@ describe('the Selection Summary across the bridge (ADR-0130)', () => {
 
         const request = {
             ranges: [{ topRow: 0, leftColumn: 0, rowCount: 3, columnCount: 1 }],
+            // How many of the Sheet's letters .NET makes again: A to XFD on a Sheet of Excel's size (ADR-0460).
+            columnCount: 16_384,
             rowSequenceVersion: 0,
             figures: ['average', 'count', 'sum'],
             focus: { row: 0, column: 0 },
