@@ -110,7 +110,7 @@ export interface SheetChrome extends GridChrome<unknown> {
 /** The Sheet's own slots, beside the grid's. */
 const sheetSlotNames: readonly string[] = ['toolbarItem', 'formatCells', 'sheetTab', 'sheetTabAdd'];
 
-/** How many rows and columns every Sheet holds (ADR-0450), each from 1 to Excel's 1,048,576 rows and 16,384 columns. */
+/** How many rows and columns every Sheet holds (ADR-0460), each from 1 to Excel's 1,048,576 rows and 16,384 columns. */
 export interface SheetSizeOptions {
     /** How many rows, from 1 to 1,048,576. */
     readonly rows: number;
@@ -206,7 +206,7 @@ export interface SheetOptions {
     /** The height of a row in pixels (ADR-0013). */
     readonly rowHeight?: number;
     /**
-     * How many rows and columns every Sheet holds (ADR-0450): `{ rows: 10, columns: 10 }` draws `A1:J10` and nothing
+     * How many rows and columns every Sheet holds (ADR-0460): `{ rows: 10, columns: 10 }` draws `A1:J10` and nothing
      * past it. Excel's 1,048,576 × 16,384 unless given. Every move stops at the edge, and a paste, a fill or an insertion
      * that would put an Entry past it is refused by name, never cut; a spilled array that would pass it is `#SPILL!`. A
      * Reference past it still reads the empty cell it names, so a Formula means what it means in Excel. A document with
@@ -806,7 +806,7 @@ class SheetView {
             throw new Error("A Sheet's culture is recorded in its document, so it is not changed on a live Sheet: Entries typed would not be read again (ADR-0048).");
         }
         // Another Sheet Size gives every Sheet of the Workbook held the new edge, refused before anything changes when it
-        // would leave an Entry outside (ADR-0450). A document opened in this update opens at the size it names.
+        // would leave an Entry outside (ADR-0460). A document opened in this update opens at the size it names.
         const size = sheetSizeOf(next);
         const reopening = next.document !== this.#document && !(next.document !== undefined && this.#raised.has(next.document));
         const before = this.#workbook.size;
@@ -1560,7 +1560,7 @@ class SheetView {
             this.#tell(this.#words.addressUnreadable(typed));
             return;
         }
-        // Whole columns and whole rows are the Sheet Size's; a place past it is refused by name (ADR-0450).
+        // Whole columns and whole rows are the Sheet Size's; a place past it is refused by name (ADR-0460).
         const range = this.#workbook.size.fit(place.range);
         if (range === undefined) {
             this.#tell(this.#words.addressPastEdge(typed.trim(), this.#workbook.size.lastCell));
@@ -1574,7 +1574,7 @@ class SheetView {
         this.#select(range);
     };
 
-    // The grid's extent: the Sheet Size's rows and columns (ADR-0450).
+    // The grid's extent: the Sheet Size's rows and columns (ADR-0460).
     get #extent(): { readonly rowCount: number; readonly columnCount: number } {
         const { rows, columns } = this.#workbook.size;
         return { rowCount: rows, columnCount: columns };
@@ -3261,7 +3261,7 @@ class SheetView {
         // The day is taken as it is now: one the Consumer changes in place afterwards is a new day only when handed over again.
         const taken = today === undefined ? options : { ...options, today: { year: today.year, month: today.month, day: today.day } };
         checkToolbar(options.toolbar);
-        // Refused here by name, as the engine's size refuses one (ADR-0450).
+        // Refused here by name, as the engine's size refuses one (ADR-0460).
         sheetSizeOf(options);
         const figures: unknown = options.summaryFigures;
         if (figures !== undefined && (!Array.isArray(figures) || figures.some((figure: unknown) => !summaryFigureOrder.some(known => known === figure)))) {
@@ -3446,13 +3446,13 @@ function refuseCollidingKeyTips(rows: readonly (SheetToolbarRowOptions | 'defaul
 }
 
 // The Name Box names the Focus as A1 does (ADR-0051).
-// The Sheet Size the options give, Excel's unless one is given (ADR-0450).
+// The Sheet Size the options give, Excel's unless one is given (ADR-0460).
 function sheetSizeOf(options: SheetOptions): SheetSize {
     const given: unknown = options.sheetSize;
     if (given === undefined) return SheetSize.excel;
-    if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's sheetSize is { rows, columns } (ADR-0450).");
+    if (typeof given !== 'object' || given === null) throw new TypeError("A Sheet's sheetSize is { rows, columns } (ADR-0460).");
     const { rows, columns }: { readonly rows?: unknown; readonly columns?: unknown } = given;
-    if (typeof rows !== 'number' || typeof columns !== 'number') throw new TypeError("A Sheet's sheetSize is { rows, columns }, two numbers (ADR-0450).");
+    if (typeof rows !== 'number' || typeof columns !== 'number') throw new TypeError("A Sheet's sheetSize is { rows, columns }, two numbers (ADR-0460).");
     return new SheetSize(rows, columns);
 }
 

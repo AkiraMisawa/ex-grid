@@ -73,7 +73,7 @@ export interface WireOptions {
     readonly summaryFigures?: readonly SummaryFigure[];
     readonly allowCopyWithHeaders?: boolean;
     readonly rowHeight?: number;
-    /** The Sheet Size (ADR-0450); Excel's when not sent. */
+    /** The Sheet Size (ADR-0460); Excel's when not sent. */
     readonly sheetSize?: { readonly rows: number; readonly columns: number };
     readonly viewportWidth?: ViewportSize;
     readonly viewportHeight?: ViewportSize;
@@ -685,7 +685,7 @@ export function wireSelection(selection: Pick<GridSelection, 'ranges' | 'focus' 
 
 /** A Selection Summary as .NET reads it back: its status, the question and the answer, an exact figure as its
  * decimal's digits, which no JSON number holds. Written as Blazor's ExPivot writes its own, but for the columns: a
- * Sheet's are its letters, A onwards, as many as the Sheet Size holds (ADR-0450), which .NET makes again from their
+ * Sheet's are its letters, A onwards, as many as the Sheet Size holds (ADR-0460), which .NET makes again from their
  * count rather than read up to 16,384 names on every selection. */
 export function wireSummary(summary: SelectionSummary): unknown {
     return { status: summary.status, request: summary.request === undefined ? null : wireRequest(summary.request), result: summary.result === undefined ? null : wireResult(summary.result) };

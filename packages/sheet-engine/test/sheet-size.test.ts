@@ -1,4 +1,4 @@
-// ADR-0450: a Workbook given a smaller Sheet Size holds nothing past it. Every way content could land past the edge is
+// ADR-0460: a Workbook given a smaller Sheet Size holds nothing past it. Every way content could land past the edge is
 // refused by name, a spill past it is #SPILL!, a document holding an Entry past it is refused when opened, and a
 // Reference past it reads the empty cell it names.
 import { describe, expect, it } from 'vitest';
@@ -29,7 +29,7 @@ function refusalOf(action: () => unknown): string {
     throw new Error('The edit was not refused.');
 }
 
-describe('a Sheet Size (ADR-0450)', () => {
+describe('a Sheet Size (ADR-0460)', () => {
     it('is Excel\'s unless given', () => {
         const workbook = new Workbook(Culture.of('en-US'));
         expect(workbook.size.equals(SheetSize.excel)).toBe(true);

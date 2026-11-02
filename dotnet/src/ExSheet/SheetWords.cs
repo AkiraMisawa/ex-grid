@@ -186,7 +186,7 @@ internal static class SheetWords
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.Unreadable => "Nothing was pasted: the clipboard could not be read. Paste again.",
         PasteRefusalReason.Cancelled => "Nothing was pasted: the paste was cancelled.",
-        // ADR-0450: {0} is the Sheet's last cell, XFD1048576 or the Sheet Size's, which the Sheet fills in.
+        // ADR-0460: {0} is the Sheet's last cell, XFD1048576 or the Sheet Size's, which the Sheet fills in.
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge ({0}).",
         PasteRefusalReason.NothingToFillFrom =>
             "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",

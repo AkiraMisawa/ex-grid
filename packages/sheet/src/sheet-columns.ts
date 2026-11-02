@@ -94,7 +94,7 @@ export class SheetColumns {
     /** Reads every column's width from `sheet`, or only `changed` where it is the Sheet read last; answers
      * whether any column changed. */
     read(sheet: Sheet, changed?: readonly number[]): boolean {
-        // `A` to `XFD`, or as many as the Sheet Size holds (ADR-0450).
+        // `A` to `XFD`, or as many as the Sheet Size holds (ADR-0460).
         const count = sheet.workbook.size.columns;
         if (sheet !== this.#sheet || changed === undefined || this.#columns.length !== count) {
             this.#sheet = sheet;

@@ -2,7 +2,7 @@ import { CellAddress, columnCount, rowCount } from './cell-address';
 import { CellRange } from './cell-range';
 
 /**
- * How many rows and columns the Sheets of a Workbook hold (ADR-0450): Excel's 1,048,576 × 16,384 unless a Consumer
+ * How many rows and columns the Sheets of a Workbook hold (ADR-0460): Excel's 1,048,576 × 16,384 unless a Consumer
  * gives fewer. It bounds where a cell may hold an Entry and what the user reaches, not the address space: a Reference
  * past it is still a Reference, to a cell that is empty and can hold nothing.
  */

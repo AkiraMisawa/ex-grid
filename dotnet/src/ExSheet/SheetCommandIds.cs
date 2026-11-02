@@ -41,7 +41,7 @@ public static class SheetCommandIds
     /// grid's refusals of a paste or a copy (<c>RefusalLabelIds</c>) in the Sheet's terms, so that the
     /// grid announces a refusal on a Sheet once, in the Sheet's words (ADR-0203). The words of a paste refused for
     /// running past the Sheet's edge hold <c>{0}</c>, which the Sheet fills with its last cell: <c>XFD1048576</c>, or
-    /// the last cell of a smaller <c>SheetSize</c> (ADR-0450).
+    /// the last cell of a smaller <c>SheetSize</c> (ADR-0460).
     /// </summary>
     /// <param name="id">The id of a command, or of a refusal's words.</param>
     public static string? EnglishFor(string id) => id switch

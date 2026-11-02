@@ -619,7 +619,7 @@ export class Sheet {
         return { cells, columns: runs(this.#columnFormats), rows: runs(this.#rowFormats), columnWidths: this.#widthRuns() };
     }
 
-    /** The cells of this Sheet whose Formula gives an array, spilled or `#SPILL!`: what a new size lays out again (ADR-0450). @internal */
+    /** The cells of this Sheet whose Formula gives an array, spilled or `#SPILL!`: what a new size lays out again (ADR-0460). @internal */
     get anchors(): SheetCell[] {
         return [...this.#cells.values()].filter(c => c.array !== undefined).map(c => new SheetCell(this, c.address));
     }
@@ -1721,7 +1721,7 @@ export class Sheet {
             }
             const array = defined(anchor.array, 'the Anchor\'s array');
             const origin = anchor.address;
-            // Past the Sheet's edge, Excel's or the Workbook's size (ADR-0450), it is #SPILL! as Excel's is.
+            // Past the Sheet's edge, Excel's or the Workbook's size (ADR-0460), it is #SPILL! as Excel's is.
             let blocked = !this.workbook.size.holds(origin, array.rows, array.columns);
             for (let r = 0; r < array.rows && !blocked; r++) {
                 for (let c = 0; c < array.columns && !blocked; c++) {
@@ -2339,7 +2339,7 @@ export class Sheet {
             // Only an Entry stops an insertion, as in Excel.
             if (cell.entry === undefined) continue;
             const moved = edit.move(cell.address);
-            // Pushed past Excel's edge, or past the Workbook's size (ADR-0450).
+            // Pushed past Excel's edge, or past the Workbook's size (ADR-0460).
             if (moved === undefined || !this.workbook.size.contains(moved)) {
                 return new SheetRefusal('entriesWouldLeaveSheet', `${capitalise(edit.describe())} would push ${cell.address.toString()}, which holds an Entry, off the Sheet.`);
             }
@@ -2487,7 +2487,7 @@ export class Sheet {
 
     /** Whether `do` would refuse `edit` as the Sheet stands, and why. @internal */
     check(edit: SheetEdit): SheetRefusal | undefined {
-        // What the edit changes lies inside the Workbook's size, whatever it is (ADR-0450).
+        // What the edit changes lies inside the Workbook's size, whatever it is (ADR-0460).
         return edit.check(this) ?? this.pastSize(edit.ranges);
     }
 
@@ -2607,14 +2607,14 @@ export class Sheet {
         }
     }
 
-    /** A block of `rows` × `columns` at `origin` that would run past the Sheet's edge: Excel's, or the Workbook's size (ADR-0450). @internal */
+    /** A block of `rows` × `columns` at `origin` that would run past the Sheet's edge: Excel's, or the Workbook's size (ADR-0460). @internal */
     offSheet(origin: CellAddress, rows: number, columns: number): SheetRefusal | undefined {
         const size = this.workbook.size;
         if (size.holds(origin, rows, columns)) return undefined;
         return new SheetRefusal('blockWouldLeaveSheet', `A block of ${String(rows)} × ${String(columns)} at ${origin.toString()} would run past the Sheet's edge (${size.lastCell.toString()}).`);
     }
 
-    /** The first of `ranges` that runs past the Workbook's size, refused by name (ADR-0450). @internal */
+    /** The first of `ranges` that runs past the Workbook's size, refused by name (ADR-0460). @internal */
     pastSize(ranges: Iterable<CellRange>): SheetRefusal | undefined {
         const size = this.workbook.size;
         for (const range of ranges) {
@@ -2640,7 +2640,7 @@ export class Sheet {
                 ? new CellRange(vertical ? new CellAddress(source.last.row + 1, fillTarget.first.column) : new CellAddress(fillTarget.first.row, source.last.column + 1), fillTarget.last)
                 : new CellRange(fillTarget.first, vertical ? new CellAddress(source.first.row - 1, fillTarget.last.column) : new CellAddress(fillTarget.last.row, source.first.column - 1));
         }
-        // A fill dragged as far as the edge stops there; one asked past it is refused, never cut (ADR-0450).
+        // A fill dragged as far as the edge stops there; one asked past it is refused, never cut (ADR-0460).
         const pastEdge = this.pastSize([fillTarget]);
         if (pastEdge !== undefined) return { refusal: pastEdge, states, levels: undefined };
         const adjacent = vertical

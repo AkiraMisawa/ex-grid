@@ -84,7 +84,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     public const double DefaultRowHeightPx = 28;
 
     /// <summary>
-    /// How many rows and columns every Sheet holds (ADR-0450); null is Excel's 1,048,576 by 16,384. Every move stops at
+    /// How many rows and columns every Sheet holds (ADR-0460); null is Excel's 1,048,576 by 16,384. Every move stops at
     /// its edge, and a paste, a fill or an insertion that would put an Entry past it is refused by name, never cut; a
     /// spilled array that would pass it is <c>#SPILL!</c>. A document with an Entry past it is refused when it is
     /// opened, and a smaller size given later that would leave one outside, or while a cell is edited, is refused, the
@@ -760,7 +760,7 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
     }
 
     // The Sheet's columns by their ids, A to XFD, as the Sheet's grid names them: made the first time a
-    // summary is heard, and only then. A Sheet Size of fewer columns names the first of them (ADR-0450).
+    // summary is heard, and only then. A Sheet Size of fewer columns names the first of them (ADR-0460).
     private static IReadOnlyList<string>? _letters;
 
     private static IReadOnlyList<string> Letters

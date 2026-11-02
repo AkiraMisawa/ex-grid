@@ -186,7 +186,7 @@ export class SheetWords {
         return this.#say('addressUnreadable', typed);
     }
 
-    /** What was typed into the Name Box is a place past the Sheet Size, whose last cell is `edge` (ADR-0450). */
+    /** What was typed into the Name Box is a place past the Sheet Size, whose last cell is `edge` (ADR-0460). */
     addressPastEdge(typed: string, edge: CellAddress): string {
         return this.#say('addressPastEdge', typed, edge.toString());
     }
@@ -465,7 +465,7 @@ export class SheetWords {
     }
 
     /** A paste, a fill or an entry the grid refused, in the Sheet's terms; `edge` is the Sheet's last cell, which a
-     * block refused for running past it names: `XFD1048576` unless a Sheet Size is smaller (ADR-0450). */
+     * block refused for running past it names: `XFD1048576` unless a Sheet Size is smaller (ADR-0460). */
     pasteRefused(reason: PasteRefusalReason, edge: CellAddress = SheetSize.excel.lastCell): string {
         return this.#say(`pasteRefused.${reason}`, edge.toString());
     }

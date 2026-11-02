@@ -51,7 +51,7 @@ export class SheetEdges {
         for (const address of change.valueChanges) this.#set(address, sheet.getEntry(address) !== undefined);
     }
 
-    /** The cell Ctrl+arrow reaches from `from` in the direction, on a Sheet of `size`, whose edge it stops at (ADR-0450). */
+    /** The cell Ctrl+arrow reaches from `from` in the direction, on a Sheet of `size`, whose edge it stops at (ADR-0460). */
     find(from: CellAddress, direction: GridDirection, size: SheetSize = SheetSize.excel): CellAddress {
         switch (direction) {
             case 'up': return new CellAddress(along(this.#rowsByColumn.get(from.column), from.row, -1, size.rows - 1), from.column);

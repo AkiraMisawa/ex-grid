@@ -86,7 +86,7 @@ export class Workbook {
      * A Workbook of empty Sheets named `sheetNames`, in that order — one, `Sheet1`, when none are given — whose constants
      * are read and whose Values are shown under `culture` (ADR-0048). Throws a RangeError when no name is given, a name
      * is not one a Sheet can have (`Sheet.isValidName`), or two names are the same without regard to case. Every Sheet
-     * holds `size`, Excel's unless given (ADR-0450).
+     * holds `size`, Excel's unless given (ADR-0460).
      */
     constructor(culture: Culture, sheetNames: Iterable<string> = [Sheet.defaultName], size: SheetSize = SheetSize.excel) {
         this.culture = culture;
@@ -108,7 +108,7 @@ export class Workbook {
      * column widths, with every Value computed again (ADR-0048, ADR-0049, ADR-0331). A Sheet Document opens as a
      * Workbook of that one Sheet. The culture of the caller plays no part. Every Sheet holds `size`, Excel's unless given,
      * and a document with an Entry past it is refused with a `RangeError` naming the first such cell, never opened
-     * without it (ADR-0450).
+     * without it (ADR-0460).
      */
     static open(document: WorkbookDocument | SheetDocument, size: SheetSize = SheetSize.excel): Workbook {
         const sheets = document instanceof SheetDocument ? [document] : document.sheets;
@@ -139,13 +139,13 @@ export class Workbook {
         return workbook;
     }
 
-    /** How many rows and columns every Sheet of the Workbook holds (ADR-0450): Excel's unless one was given. */
+    /** How many rows and columns every Sheet of the Workbook holds (ADR-0460): Excel's unless one was given. */
     get size(): SheetSize {
         return this.#size;
     }
 
     /**
-     * Gives every Sheet another size (ADR-0450). A size that would leave an Entry past it is refused with a `RangeError`
+     * Gives every Sheet another size (ADR-0460). A size that would leave an Entry past it is refused with a `RangeError`
      * naming the first such cell, and the Workbook keeps the size it had. Every spilled array is laid out again against
      * the new edge: one that no longer fits shows `#SPILL!`, and one that now fits spills. It is not an operation a user
      * undoes.

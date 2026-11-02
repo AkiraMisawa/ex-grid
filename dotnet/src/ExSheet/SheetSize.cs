@@ -1,7 +1,7 @@
 namespace ExSheet;
 
 /// <summary>
-/// How many rows and columns every Sheet of an ExSheet holds (ADR-0450): ten by ten draws <c>A1:J10</c> and nothing
+/// How many rows and columns every Sheet of an ExSheet holds (ADR-0460): ten by ten draws <c>A1:J10</c> and nothing
 /// past it. Without one, a Sheet holds Excel's 1,048,576 rows by 16,384 columns. It bounds where a cell may hold an
 /// Entry and what the user reaches, not the address space: a Reference past it still reads the empty cell it names.
 /// </summary>

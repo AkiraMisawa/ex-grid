@@ -92,7 +92,7 @@ can scroll 2^25 px, and ExGrid refuses a result taller than that by name rather 
 which the full extent does not fit is refused by name.** The Sheet is not quietly made shorter.
 
 *(2026-11-02, decided with the user for issue #511: a Consumer may now give a Sheet fewer rows and columns, the Sheet
-Size, by [ADR-0450](./0450-a-sheet-may-be-given-a-smaller-size-and-nothing-is-held-past-it.md). Without one, a Sheet
+Size, by [ADR-0460](./0460-a-sheet-may-be-given-a-smaller-size-and-nothing-is-held-past-it.md). Without one, a Sheet
 is Excel's full extent as this section says, and nothing above changes. With one, nothing is held past it, the address
 space stays Excel's, and the row-height ceiling counts the Sheet's own rows. The section is kept as it was written.)*
 

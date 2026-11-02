@@ -282,7 +282,7 @@ describe('documents across the bridge (ADR-0370 section 1, ADR-0048, ADR-0331)',
     });
 });
 
-describe('the Sheet Size across the bridge (ADR-0450)', () => {
+describe('the Sheet Size across the bridge (ADR-0460)', () => {
     it('opens the Sheet at the size .NET sends, and a summary names as many letters as it holds', async () => {
         const { element, dotnet } = mount({
             document: workbookJson(['Sheet1', { A1: '1', A2: '2' }]),
@@ -312,7 +312,7 @@ describe('the Selection Summary across the bridge (ADR-0130)', () => {
 
         const request = {
             ranges: [{ topRow: 0, leftColumn: 0, rowCount: 3, columnCount: 1 }],
-            // How many of the Sheet's letters .NET makes again: A to XFD on a Sheet of Excel's size (ADR-0450).
+            // How many of the Sheet's letters .NET makes again: A to XFD on a Sheet of Excel's size (ADR-0460).
             columnCount: 16_384,
             rowSequenceVersion: 0,
             figures: ['average', 'count', 'sum'],

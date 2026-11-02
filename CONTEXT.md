@@ -1002,7 +1002,7 @@ _Avoid_: worksheet, tab, spreadsheet
 How many rows and columns the Sheets of an ExSheet hold: Excel's 1,048,576 × 16,384 unless the
 Consumer gives fewer. It bounds where a cell may hold an Entry and what the user reaches, not the
 address space: a Reference past it reads the empty cell it names. Nothing is held past it, and what
-would put something there is refused by name ([ADR-0450](./docs/adr/0450-a-sheet-may-be-given-a-smaller-size-and-nothing-is-held-past-it.md)).
+would put something there is refused by name ([ADR-0460](./docs/adr/0460-a-sheet-may-be-given-a-smaller-size-and-nothing-is-held-past-it.md)).
 _Avoid_: extent (that is the Selection's moving end), dimensions, used range, scroll area
 
 **Workbook**:

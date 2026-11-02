@@ -1,4 +1,4 @@
-// The Grid Source a Sheet is to ExGrid (ADR-0046, ADR-0350 section 16): 1,048,576 rows, or the Sheet Size's (ADR-0450), that are places, of which
+// The Grid Source a Sheet is to ExGrid (ADR-0046, ADR-0350 section 16): 1,048,576 rows, or the Sheet Size's (ADR-0460), that are places, of which
 // it holds a Window of row instances around what the grid shows. It neither sorts nor filters: a Sheet's rows are
 // places, and its columns are not queryable. Its Row Sequence Version moves only when another Sheet is shown,
 // since that is the only time a position comes to mean another row (ADR-0011).
@@ -130,7 +130,7 @@ export class SheetSource implements GridSource<SheetRow> {
         this.#sheet = sheet;
         this.#version++;
         const { window, windowStart } = this.#state;
-        // A Sheet Size made smaller leaves no row past it in the Window (ADR-0450).
+        // A Sheet Size made smaller leaves no row past it in the Window (ADR-0460).
         const rows = window.slice(0, Math.max(0, this.#rowCount - windowStart)).map((_, i) => new SheetRow(sheet, windowStart + i));
         this.#state = this.#stateOf(rows, windowStart, this.#version);
         this.#publish();
@@ -170,7 +170,7 @@ export class SheetSource implements GridSource<SheetRow> {
         for (const listener of Array.from(this.#listeners)) listener();
     }
 
-    // The rows the Sheet holds: Excel's, or the Workbook's size (ADR-0450).
+    // The rows the Sheet holds: Excel's, or the Workbook's size (ADR-0460).
     get #rowCount(): number {
         return this.#sheet.workbook.size.rows;
     }

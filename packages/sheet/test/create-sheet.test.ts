@@ -2353,8 +2353,8 @@ const counts = (element: HTMLElement): readonly [string | null, string | null] =
     return [root?.getAttribute('aria-rowcount') ?? null, root?.getAttribute('aria-colcount') ?? null]; // oxlint-disable-line ex-grid/no-stand-in-default -- a missing root reads as missing, which the expectation names
 };
 
-describe('A Sheet Size (ADR-0450)', () => {
-    it('ADR-0450: a Sheet of 10 by 10 draws A1:J10, and Ctrl+arrow stops at its edge', async () => {
+describe('A Sheet Size (ADR-0460)', () => {
+    it('ADR-0460: a Sheet of 10 by 10 draws A1:J10, and Ctrl+arrow stops at its edge', async () => {
         const { element } = sheetOf({ sheetSize: { rows: 10, columns: 10 }, document: documentOf({ A1: '1' }) });
         await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
         // Ten rows and the header row, ten columns.
@@ -2366,7 +2366,7 @@ describe('A Sheet Size (ADR-0450)', () => {
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('J10'); });
     });
 
-    it('ADR-0450: the Name Box takes whole columns as long as the size, and refuses a place past it by name', async () => {
+    it('ADR-0460: the Name Box takes whole columns as long as the size, and refuses a place past it by name', async () => {
         const { element } = sheetOf({ sheetSize: { rows: 10, columns: 10 } });
         await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
         enter(element, 'C:C');
@@ -2376,7 +2376,7 @@ describe('A Sheet Size (ADR-0450)', () => {
         expect(nameBox(element).value).toBe('C1');
     });
 
-    it('ADR-0450: a document with an Entry past the size is refused by name, and a size that would leave one outside keeps the one it had', async () => {
+    it('ADR-0460: a document with an Entry past the size is refused by name, and a size that would leave one outside keeps the one it had', async () => {
         expect(() => sheetOf({ sheetSize: { rows: 10, columns: 10 }, document: documentOf({ L12: 'x' }) }))
             .toThrow('Sheet1!L12 holds an Entry, and a Sheet of 10 rows by 10 columns ends at J10.');
         const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 20, columns: 20 }, document: documentOf({ O15: 'x' }) };
@@ -2389,7 +2389,7 @@ describe('A Sheet Size (ADR-0450)', () => {
         expect(() => sheetOf({ sheetSize: { rows: 0, columns: 10 } })).toThrow(RangeError);
     });
 
-    it('ADR-0450: a smaller size waits for an edit open, and empties the undo stack, whose steps could put an Entry back past it', async () => {
+    it('ADR-0460: a smaller size waits for an edit open, and empties the undo stack, whose steps could put an Entry back past it', async () => {
         const options: SheetOptions = { locale: 'en-US', viewportWidth: 600, viewportHeight: 300, sheetSize: { rows: 20, columns: 20 } };
         const { element, sheet } = sheetOf(options);
         await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });

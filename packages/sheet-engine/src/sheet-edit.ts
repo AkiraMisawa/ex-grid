@@ -133,7 +133,7 @@ export abstract class SheetEdit {
      */
     static paste(block: SheetBlock, at: CellAddress | CellRange | Iterable<CellRange>): SheetEdit {
         if (at instanceof CellAddress) {
-            // The edge is the Sheet's own, Excel's or the Workbook's size (ADR-0450), so it is asked of the Sheet the paste is done on.
+            // The edge is the Sheet's own, Excel's or the Workbook's size (ADR-0460), so it is asked of the Sheet the paste is done on.
             const fits = SheetSize.excel.holds(at, block.rowCount, block.columnCount);
             return new PlacedEdit(sheet => sheet.offSheet(at, block.rowCount, block.columnCount), () => Sheet.place(block, at),
                 fits ? [new CellRange(at, new CellAddress(at.row + block.rowCount - 1, at.column + block.columnCount - 1))] : []);
@@ -171,7 +171,7 @@ export abstract class SheetEdit {
         if (first === undefined || first.length === 0) throw new RangeError('Nothing to paste.');
         const width = first.length;
         if (fields.some(row => row.length !== width)) throw new RangeError('The pasted fields are not rectangular.');
-        // Past Excel's edge, no address can be made; past the Workbook's size, the Sheet it is done on refuses it (ADR-0450).
+        // Past Excel's edge, no address can be made; past the Workbook's size, the Sheet it is done on refuses it (ADR-0460).
         if (!SheetSize.excel.holds(origin, fields.length, width)) {
             return new RefusedEdit(new SheetRefusal('blockWouldLeaveSheet',
                 `A block of ${String(fields.length)} × ${String(width)} at ${origin.toString()} would run past the Sheet's edge (${SheetSize.excel.lastCell.toString()}).`));

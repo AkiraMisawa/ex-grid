@@ -89,7 +89,7 @@ public class ScriptSheetTests : BunitContext
         Assert.True(options.GetProperty("showSheetTabs").GetBoolean());
         Assert.False(options.GetProperty("showToolbar").GetBoolean());
         Assert.False(options.GetProperty("allowCopyWithHeaders").GetBoolean());
-        // Excel's size, which the Script Core takes when none is sent (ADR-0450).
+        // Excel's size, which the Script Core takes when none is sent (ADR-0460).
         Assert.False(options.TryGetProperty("sheetSize", out _));
         Assert.Equal(["average", "count", "sum"], options.GetProperty("summaryFigures").EnumerateArray().Select(figure => figure.GetString()));
         // Unbound, Ctrl+F1 stays the browser's (ADR-0100): showToolbarChanged is not heard.
@@ -638,8 +638,8 @@ public class ScriptSheetTests : BunitContext
         Assert.Equal("too many", summaries[2].Result?.DeclineReason);
     }
 
-    [Fact] // ADR-0450: a Sheet Size crosses as the Script Core spells it, and a summary over it names as many letters as it holds
-    public async Task ADR0450_a_sheet_size_crosses_and_a_summary_names_its_letters()
+    [Fact] // ADR-0460: a Sheet Size crosses as the Script Core spells it, and a summary over it names as many letters as it holds
+    public async Task ADR0460_a_sheet_size_crosses_and_a_summary_names_its_letters()
     {
         var summaries = new List<SelectionSummary>();
         var cut = Sheet(ps => ps.Add(p => p.SheetSize, new global::ExSheet.SheetSize(10, 4))

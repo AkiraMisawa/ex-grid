@@ -1,6 +1,6 @@
 Product: ExSheet
 Kind: Added
-ADR: 0450
+ADR: 0460
 
 A Sheet may be given fewer rows and columns than Excel's 1,048,576 by 16,384: `SheetSize="new(10, 10)"` on Blazor,
 `sheetSize={{ rows: 10, columns: 10 }}` under React, draws `A1:J10` and nothing past it. Every move stops at its edge,
