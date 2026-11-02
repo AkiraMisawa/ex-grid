@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 16:59:34 |
+| Generated on: | 11/02/2026 - 19:26:24 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1108 |
