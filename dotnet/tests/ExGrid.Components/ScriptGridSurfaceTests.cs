@@ -108,6 +108,33 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.Equal(1, state.GetProperty("markCounts").GetProperty("markedInResult").GetInt32());
     }
 
+    [Fact] // ADR-0240's note of 2026-10-19 (RI-13): a mark heard behind another reaches the source before the browser answers the first one's state, so a control outside the grid pressed after both reads both
+    public async Task ADR0240_a_mark_behind_another_reaches_the_source_without_waiting_on_the_first_ones_state()
+    {
+        var source = GridSource.From(_rows);
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source).Add(g => g.Columns, [GridColumn<TestRow>.MarkColumn(), .. TestRows.Columns()]));
+        var alpha = Window()[0].GetProperty("i").GetInt64();
+        var beta = Window()[1].GetProperty("i").GetInt64();
+        // The browser's reply to a state is a round trip away on a circuit: held here until both marks are heard.
+        var reply = _grid.SetupVoid("state", _ => true);
+        Task<string?>? first = null;
+        Task<string?>? second = null;
+
+        await cut.InvokeAsync(() =>
+        {
+            first = Bridge().Heard("mark", Payload($$"""{"kind":"oneRow","row":{{alpha}},"marked":true}"""));
+            second = Bridge().Heard("mark", Payload($$"""{"kind":"oneRow","row":{{beta}},"marked":true}"""));
+        });
+
+        Assert.True(source.Marks.IsMarked(_rows[0]));
+        Assert.True(source.Marks.IsMarked(_rows[1]));
+        reply.SetVoidResult();
+        await Assert.IsType<Task<string?>>(first);
+        await Assert.IsType<Task<string?>>(second);
+        Assert.True(Parsed(_grid.Invocations["state"][^1].Arguments[0]).GetProperty("window")[1].GetProperty("m").GetBoolean());
+    }
+
     [Fact] // ADR-0036 / ADR-0440 section 4: the grid's own words cross as a table, asked once per function, placeholders never asked
     public void ADR0440_command_label_crosses_as_a_table_of_the_ids_it_answers()
     {

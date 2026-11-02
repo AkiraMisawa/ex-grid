@@ -838,7 +838,8 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
                 {
                     await view.InvokeVoidAsync("pivotChanged", pivot, text);
                 }
-                catch (Exception ex) when (ex is not JSDisconnectedException)
+                // Called off by a circuit that closed meanwhile, the notice has nobody left to reach, as at disposal.
+                catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
                 {
                     await DispatchExceptionAsync(ex);
                 }

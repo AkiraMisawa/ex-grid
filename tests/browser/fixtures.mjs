@@ -100,10 +100,13 @@ function widened(context) {
 // A press Playwright made on a node that left the document during its click lands at the page's corner, (0, 0): it
 // reads the node's border in a call of its own, a node out of the document reads NaN there, and its rounding makes
 // that 0 (press-journal.mjs, RT-1 of the Hunt of 2026-11-02). The test then fails far from the press, or passes
-// having pressed nothing it meant to. So every document the harness opens says such a press as a console error, which
-// fails the test that made it by name (CON-1). No test presses at the corner on purpose.
-async function cornerPressesSaid(context) {
+// having pressed nothing it meant to. So every document of a context the fixtures make says such a press as a console
+// error, which fails the test that made it by name (CON-1). No test presses at the page's corner on purpose; a frame's
+// own corner is not the page's, and is left alone.
+async function harnessContext(browser, options) {
+    const context = widened(await browser.newContext({ ...options, baseURL: BASE_URL }));
     await context.addInitScript(() => {
+        if (window !== window.top) return;
         window.addEventListener('pointerdown', (event) => {
             if (event.isTrusted && event.clientX === 0 && event.clientY === 0) {
                 console.error('layer 3: a press landed at the page\'s corner, (0, 0), where Playwright presses a node that '
@@ -512,7 +515,7 @@ class FileApp {
         }
         this.file = testInfo.file;
         this.options = asked;
-        this.context = await cornerPressesSaid(widened(await browser.newContext({ ...contextOptions, baseURL: BASE_URL, viewport })));
+        this.context = await harnessContext(browser, { ...contextOptions, viewport });
         this.page = await this.context.newPage();
         await watchForHang(this.page);
         listen(this.page, () => this.sink);
@@ -1050,7 +1053,7 @@ export const test = base.extend({
     // fixture makes them.
     context: async ({ app, browser, viewport, freshDocument, _combinedContextOptions }, use, testInfo) => {
         if (viewport === null || freshDocument) {
-            const context = await cornerPressesSaid(widened(await browser.newContext({ ..._combinedContextOptions, baseURL: BASE_URL, viewport })));
+            const context = await harnessContext(browser, { ..._combinedContextOptions, viewport });
             await use(context);
             await context.close();
             return;

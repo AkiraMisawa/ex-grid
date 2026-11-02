@@ -61,9 +61,13 @@ export async function pressFirstCell(grid, round) {
             active: name(document.activeElement),
             cell: box === undefined ? null : { left: box.left, top: box.top },
             at: box === undefined ? null : name(document.elementFromPoint(box.left + 8, box.top + 8)),
+            inView: box !== undefined && box.left + 8 < innerWidth && box.top + 8 < innerHeight && box.left + 8 >= 0 && box.top + 8 >= 0,
         };
     });
-    if (before.cell === null) throw new Error(`In round ${round}, the grid paints no first cell to press.`);
+    // A mouse press scrolls nothing into view, as a locator's click would: a point outside the window presses nothing.
+    if (before.cell === null || !before.inView) {
+        throw new Error(`In round ${round}, the first cell stands at no point of the window to press: ${JSON.stringify(before)}`);
+    }
     await grid.page().mouse.click(before.cell.left + 8, before.cell.top + 8);
     try {
         await expectActiveDescendant(grid, /-r0c0$/);
