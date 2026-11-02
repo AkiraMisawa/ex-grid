@@ -206,6 +206,10 @@ for (const chrome of ['builtin', 'mud']) {
             await open(page, chrome);
             // The drag here has failed to start on CI's Server host after #506 and #508, never locally (Hunt of
             // 2026-11-02, mud on Chrome, once in ten): a failure says what stood at the press and what the page heard.
+            // On #517 it heard nothing at all, not the press's pointerdown: Playwright's Chromium mouse sends no press
+            // while it holds a drag it believes is still on, and turns each move into a dragover. So the moves are
+            // journalled too, a run of one kind as its first: a mousemove says the moves reached the page as moves, a
+            // dragover that a drag stood before the press.
             await alterPage(page, () => {
                 const name = (element) => (element instanceof Element
                     ? `${element.tagName.toLowerCase()}.${[...element.classList].join('.')}[${element.getAttribute('aria-label') ?? ''}]`
@@ -213,10 +217,13 @@ for (const chrome of ['builtin', 'mud']) {
                 const journal = [];
                 window.exDragJournal = journal;
                 const heard = (event) => {
+                    if (['mousemove', 'dragover'].includes(event.type) && journal.at(-1)?.split(' ')[1] === event.type) {
+                        return;
+                    }
                     journal.push(`${Math.round(performance.now())} ${event.type} ${name(event.target)} at (${event.clientX}, ${event.clientY})`
                         + `${event.defaultPrevented ? ' prevented' : ''}`);
                 };
-                const types = ['pointerdown', 'mousedown', 'dragstart', 'dragend', 'pointercancel', 'drop'];
+                const types = ['mousemove', 'pointerdown', 'mousedown', 'dragstart', 'dragenter', 'dragover', 'dragend', 'pointercancel', 'drop'];
                 for (const type of types) document.addEventListener(type, heard, true);
                 return () => {
                     for (const type of types) document.removeEventListener(type, heard, true);
