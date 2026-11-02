@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 16:05:26 |
+| Generated on: | 11/02/2026 - 16:59:34 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1108 |
 | Files: | 494 |
-| **Line coverage:** | 86.9% (60386 of 69414) |
-| Covered lines: | 60386 |
-| Uncovered lines: | 9028 |
+| **Line coverage:** | 86.9% (60387 of 69414) |
+| Covered lines: | 60387 |
+| Uncovered lines: | 9027 |
 | Coverable lines: | 69414 |
 | Total lines: | 105743 |
-| **Branch coverage:** | 82.9% (36416 of 43919) |
-| Covered branches: | 36416 |
+| **Branch coverage:** | 82.9% (36417 of 43919) |
+| Covered branches: | 36417 |
 | Total branches: | 43919 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -589,7 +589,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
