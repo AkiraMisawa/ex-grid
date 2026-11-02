@@ -1,5 +1,5 @@
 import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
+import { BASE_URL, SERVER } from './hosting.mjs';
 import { blend, offDevicePixels, onDeviceGrid, paints, pixelsApart, stillPictures, wholePixelCentres } from './pixels.mjs';
 
 // The harness's tools for reading what the page shows (ADR-0056; README.md, "Waiting on the
@@ -51,13 +51,23 @@ test('circuitQuiet refuses a window the keep-alive pings could keep from ever be
 test('circuitQuiet says what kept the wire busy rather than waiting for ever @blazor', async ({ page }) => {
     test.skip(!SERVER, 'there is no circuit on WebAssembly');
     await openSheet(page);
-    // Something on the page that never stops asking the host: here, a stylesheet every 50 ms.
-    await alterPage(page, () => {
-        const timer = setInterval(() => fetch('/_content/ExGrid/ex-grid.min.css', { cache: 'no-store' }).catch(() => { }), 50);
-        return () => clearInterval(timer);
-    });
-    await expect(circuitQuiet({ timeout: 1_500 }))
-        .rejects.toThrow(/did not go quiet: not quiet for \d+ ms within 1500 ms: [1-9]\d* chunks from the browser/);
+    // Something that never stops asking the host through the proxy: a stylesheet asked again as each answer comes. It is
+    // asked from here, not by a timer on the page: Chrome may slow a page's timers, to once a second for a window it
+    // takes to be out of sight, and the widened run on #514 (2026-11-02) found the wire quiet for 400 ms under one.
+    let asking = true;
+    const asked = (async () => {
+        while (asking) {
+            const response = await fetch(new URL('/_content/ExGrid/ex-grid.min.css', BASE_URL), { cache: 'no-store' });
+            await response.arrayBuffer();
+        }
+    })();
+    try {
+        await expect(circuitQuiet({ timeout: 1_500 }))
+            .rejects.toThrow(/did not go quiet: not quiet for \d+ ms within 1500 ms: [1-9]\d* chunks from the browser/);
+    } finally {
+        asking = false;
+        await asked;
+    }
 });
 
 // The index, which has no grid, with a box and a field of the test's own on it: nothing on the

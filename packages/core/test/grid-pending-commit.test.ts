@@ -284,6 +284,40 @@ describe('a verdict answered later', () => {
         // Refused, the editor keeps 150; F2 puts it in Caret, Shift+Home selects it all, and 2000 replaces it.
         expect(defined(editor(root), 'the editor held').value).toBe('2000');
     });
+
+    it('ED-33 / spine rule 6: Up and Down typed while pending put the caret at the field\'s start and end, as they would after the answer', async () => {
+        const asked: Asked<EditVerdict>[] = [];
+        const { root } = grid({}, asked);
+        await painted();
+        press(root, notional, rowY(0));
+        keys('150');
+        key('Enter');
+        key('F2');
+        key('ArrowUp');
+        keys('2');
+        key('ArrowDown');
+        keys('0');
+        await answerAll(asked, domain);
+        // Refused, the editor keeps 150; in Caret, Up puts 2 before it and Down puts 0 after it (Hunt seed 201108955,
+        // where a held Up was dropped and the Backspace after it took the wrong character).
+        expect(defined(editor(root), 'the editor held').value).toBe('21500');
+    });
+
+    it('ED-33 / ADR-0380: Shift+Up typed while pending selects back to the field\'s start, and the text typed next replaces it', async () => {
+        const asked: Asked<EditVerdict>[] = [];
+        const { root } = grid({}, asked);
+        await painted();
+        press(root, notional, rowY(0));
+        keys('150');
+        key('Enter');
+        key('F2');
+        key('ArrowLeft');
+        key('ArrowUp', { shiftKey: true });
+        keys('9');
+        await answerAll(asked, domain);
+        // Refused, the editor keeps 150; in Caret, Left puts the caret before 0, Shift+Up selects 15, and 9 replaces it.
+        expect(defined(editor(root), 'the editor held').value).toBe('90');
+    });
 });
 
 describe('a fill whose verdict answers later', () => {

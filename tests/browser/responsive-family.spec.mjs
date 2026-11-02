@@ -55,7 +55,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
             await expect(cell(0)).toBeVisible();
             await settled(grid);
             await journalPress(grid);
-            await cell(0).click({ force: true });
+            await pressFirstCell(grid, 'the first');
             await settled(grid);
             const windowWidth = await page.evaluate(() => window.innerWidth);
             const rowCount = await grid.getAttribute('aria-rowcount');
@@ -100,7 +100,7 @@ for (const product of ['grid', 'sheet', 'pivot']) {
                         await expect(cell(0)).toBeVisible();
                         await circuitQuiet();
                         await settled(grid);
-                        await pressFirstCell(grid, cell(0), `${pin ? 'pinned' : 'unpinned'} ${layout} ${name}`);
+                        await pressFirstCell(grid, `${pin ? 'pinned' : 'unpinned'} ${layout} ${name}`);
                         await settled(grid);
                         await page.locator(`#family-${name}`).click();
                         const available = width - (layout === 'split' ? 0 : 40);
