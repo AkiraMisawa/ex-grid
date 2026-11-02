@@ -1,0 +1,58 @@
+# Temporary: measures whether GitHub's hosted Windows runner can stand in for the by-hand rows
+# (ADR-0208's open option). Removed before the branch's pull request.
+name: Probe by-hand rows
+on:
+  push:
+    branches: [claude/project-thread-r6u9gd]
+    paths: ['tools/probe-byhand/**', '.github/workflows/probe-byhand.yml']
+jobs:
+  keys-and-scale:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults: { run: { shell: pwsh, working-directory: tools/probe-byhand } }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .node-version }
+      - run: npm init -y > $null; npm i playwright-core@1.62.1 --no-audit --no-fund
+      - name: Session, displays, fonts, browsers
+        run: |
+          [Environment]::UserInteractive
+          query user 2>&1
+          Get-CimInstance Win32_VideoController | Format-List Name, CurrentHorizontalResolution, CurrentVerticalResolution | Out-String
+          Get-Command Set-DisplayResolution -ErrorAction SilentlyContinue | Out-String
+          Test-Path 'C:\Windows\Fonts\segoeui.ttf'; Test-Path 'C:\Windows\Fonts\YuGothM.ttc'; Test-Path 'C:\Windows\Fonts\msgothic.ttc'
+          Test-Path 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+          Test-Path 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+          ./scale.ps1
+      - name: dpr at the start
+        run: node dpr.mjs
+      - name: Keys on Chrome
+        run: node keys.mjs chrome
+      - name: Keys on Edge
+        run: node keys.mjs msedge
+      - name: Larger resolution, if the runner takes one
+        continue-on-error: true
+        run: |
+          Set-DisplayResolution -Width 1920 -Height 1080 -Force
+          Get-CimInstance Win32_VideoController | Format-List CurrentHorizontalResolution, CurrentVerticalResolution | Out-String
+          ./scale.ps1
+      - name: Scale 125%
+        run: ./scale.ps1 -Set 125; Start-Sleep 3; ./scale.ps1
+      - run: node dpr.mjs
+      - name: Scale 150%
+        run: ./scale.ps1 -Set 150; Start-Sleep 3; ./scale.ps1
+      - run: node dpr.mjs
+  ime:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults: { run: { shell: pwsh, working-directory: tools/probe-byhand } }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .node-version }
+      - run: npm init -y > $null; npm i playwright-core@1.62.1 --no-audit --no-fund
+      - name: Japanese input
+        run: ./ime.ps1
+      - name: Compose on Chrome
+        run: node keys.mjs chrome --ime
