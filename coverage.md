@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 11/02/2026 - 23:11:00 |
+| Generated on: | 11/03/2026 - 10:42:40 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1109 |
 | Files: | 495 |
-| **Line coverage:** | 86.9% (60414 of 69442) |
-| Covered lines: | 60414 |
-| Uncovered lines: | 9028 |
-| Coverable lines: | 69442 |
-| Total lines: | 105815 |
-| **Branch coverage:** | 82.9% (36440 of 43943) |
+| **Line coverage:** | 86.9% (60425 of 69456) |
+| Covered lines: | 60425 |
+| Uncovered lines: | 9031 |
+| Coverable lines: | 69456 |
+| Total lines: | 105827 |
+| **Branch coverage:** | 82.9% (36440 of 43947) |
 | Covered branches: | 36440 |
-| Total branches: | 43943 |
+| Total branches: | 43947 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -345,8 +345,8 @@
 |ExGrid.Components.ExGrid.Heard<TRow>|100%||
 |ExGrid.Components.ExGrid.Turn<TRow>|100%||
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow, T>|71.2%|69.6%|
-|ExGrid.Components.ExGrid<TRow>|71.2%|69.6%|
+|ExGrid.Components.ExGrid<TRow, T>|71.4%|69.6%|
+|ExGrid.Components.ExGrid<TRow>|71.4%|69.6%|
 |ExGrid.Components.ExGrid<TRow>|84.4%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
@@ -735,11 +735,11 @@
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
 
 </details>
-<details><summary>ExPivot - 50.4%</summary>
+<details><summary>ExPivot - 50.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**50.4%**|**46.5%**|
+|**ExPivot**|**50.3%**|**46.3%**|
 |ExGrid.Components.CrossedText|52%|38.8%|
 |ExGrid.Components.HeldCalls|74.2%|62.5%|
 |ExGrid.Components.HeldCalls<T>|74.2%|62.5%|
@@ -771,7 +771,7 @@
 |ExPivot.Chrome.PivotStaleReportView|0%||
 |ExPivot.Chrome.PivotToolbarView|0%||
 |ExPivot.Chrome.PivotValueFieldSettingsView|0%||
-|ExPivot.Components.ExPivot|62.4%|51.2%|
+|ExPivot.Components.ExPivot|62.1%|50.5%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotRazorSlot|0%|0%|
 |ExPivot.Components.ScriptBridge|42.4%|19.4%|
