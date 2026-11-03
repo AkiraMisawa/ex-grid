@@ -428,9 +428,13 @@ public class ScriptGridAnswerTests : BunitContext
         Assert.Equal((expected[0].at, "Book", expected[0].row.Book),
             (match.GetProperty("row").GetInt32(), match.GetProperty("column").GetString(), match.GetProperty("text").GetString()));
 
+        // Numbered among the inputs, as the browser sends it when an input is out (ADR-0240), it is made the same way.
+        var numbered = await cut.InvokeAsync(() => Bridge().Call(1, "FindAll", Payload($$"""[2,1,{{FindAllAsk("gam", source.RowSequenceVersion, 0, 1).GetRawText()}}]""")));
+        Assert.Equal(expected.Length, Parsed(numbered).GetProperty("total").GetInt32());
+
         // Under an order the source has left, no page is read, and the browser is answered that the rows moved.
         var version = source.RowSequenceVersion;
         await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
-        Assert.Equal("""{"moved":true}""", await cut.InvokeAsync(() => Bridge().FindAll(2, 1, FindAllAsk("gam", version, 0, 1))));
+        Assert.Equal("""{"moved":true}""", await cut.InvokeAsync(() => Bridge().FindAll(3, 1, FindAllAsk("gam", version, 0, 1))));
     }
 }

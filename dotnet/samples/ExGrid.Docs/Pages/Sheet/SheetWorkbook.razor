@@ -301,6 +301,16 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 raised once.
             </li>
             <li>
+                <b>Find All lists every match</b> under the panel, with how many there are, as Excel's does. Within the
+                Sheet each line names its row and column, "Row 12, B", and the Selection is the scope when more than one
+                cell is selected. Within the Workbook ExSheet lists every Sheet in tab order, each line named by its
+                Sheet and address, <code>Summary!B4</code>. A click on a line, or <kbd>Enter</kbd>, <kbd>↑</kbd>,
+                <kbd>↓</kbd>, <kbd>Home</kbd> or <kbd>End</kbd> in the list, selects that cell, showing its Sheet first,
+                and the list stays. Any change to the Workbook, a Replace All, or another choice of Within takes the list
+                away, since it would no longer say what the cells hold; press Find All again. While a cell is being
+                edited, no line moves anything, and the notice says why.
+            </li>
+            <li>
                 <b>The marks are the Sheet's.</b> While the panel holds a text, every painted cell that a step would find is
                 marked, the current match apart: the same rule, displayed text and only cells that hold an Entry, so a
                 mark never shows a match a step does not reach.
@@ -325,7 +335,8 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             is shown with <code>Approved limit</code> selected, and the next <kbd>Enter</kbd> moves to
             <code>Over the limit</code>. Now press <kbd>Ctrl</kbd> + <kbd>H</kbd>, replace <code>limit</code> with
             <code>cap</code> and press Replace All: the panel says it replaced 2 cells, and Undo takes both back in one
-            step.
+            step. Last, with Workbook chosen, type <code>a</code> and press Find All: the list names each cell by its Sheet,
+            and a line on Claim shows Claim with that cell selected.
         </DocsExample>
     </DocsSection>
 

@@ -800,6 +800,13 @@ as it answers for sort and filter; the grid only moves the Focus
 _Avoid_: search (that is the filter panel's box over the value list), filter (that hides rows;
 Find hides nothing), lookup
 
+**Find All**:
+The list of every cell a Find would stop on, with the exact count, under the find panel; a line chosen
+moves the Focus there. The Consumer answers it a page at a time, never capped, and the core draws the
+list; the list goes when the order moves or the search changes
+([ADR-0470](./docs/adr/0470-find-all-lists-every-match-in-pages-the-consumer-answers.md)).
+_Avoid_: search results (the filter panel's), find list, select all matches (Excel's Ctrl+A in the list, which is not offered)
+
 **Replace**:
 Writing a replacement over cells whose entry matches what the user typed: the current match alone, or
 every match at once, all or nothing, as one undo step. In ExGrid the grid raises a request and the

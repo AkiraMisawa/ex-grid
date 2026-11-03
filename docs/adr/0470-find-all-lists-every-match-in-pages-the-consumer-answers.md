@@ -52,9 +52,12 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 - **The grid asks for the range the list shows**, as the grid asks for the Window (ADR-0001): the first page when
   Find All is pressed, then each range the list is scrolled to, with a read-ahead. A page asked while another is out
   waits its turn; a new Find All cancels every page out, as a new step cancels the last (ADR-0025).
-- **An answer is held to the request.** A `total` that moves between pages of one list, a match outside the scope
-  or outside the request's columns, or more matches than the range asked, is the Consumer's defect and is raised
-  by name, as ADR-0055's review section raises an answer outside the request.
+- **An answer is held to the request.** A match outside the scope or outside the request's columns, a row outside
+  the result, matches out of the walk's order, or more or fewer matches than the range owes, is the Consumer's defect
+  and is raised by name, as ADR-0055's review section raises an answer outside the request.
+- **A `total` that moves between pages of one list** is not a defect: rows may change their values without moving
+  the version, and a match may come or go with them (§5). The lines already shown would then no longer agree with
+  the pages still to read, so the list goes and says the order changed, as for a version that moved.
 - **Where it comes from**, as Find's: a Grid Source answers it beside `find`. `GridSource.from` answers it by the
   reference rule (`findAll` over the rows, the counterpart of `findStep`), keeping the matches it found while the
   rows and the question stand, so a list scrolled through is walked once; `GridSource.fetch` takes an optional
@@ -70,7 +73,14 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
   height taken from the Grid Metrics (the grid never measures, rule 2), a fixed number of visible lines, and only
   the lines in view in the DOM, so a list of millions holds a few dozen elements.
 - **Its look is Visual Tokens** (ADR-0027, listed in ADR-0029), so a Wrapper styles it without drawing it. A Chrome
-  slot's contents gain only the count line's words and the Find All button, through `GridFindPanelSlotContext`.
+  slot's contents gain only the Find All button, through `GridFindPanelSlotContext.findAll` and the view's
+  `findAllShown`; the count line is the core's, in the list's part.
+- **Contents that list their own matches hand them to the core to draw** (§7): `GridFindPanelSlotContext.listFindAll`
+  takes a function, asked in the call's turn among the inputs, that answers a `GridFindAllList` (the count, each
+  line's place and text, and what choosing a line does). The core draws it as it draws its own list and takes its
+  keys and clicks in the Input Order; it goes when the text or an option changes or the panel closes, and when the
+  contents call `dropFindAll`, for an option of their own (ExSheet's Within) or a change to what they hold. It does not
+  go when the order moves, because what it names is not the grid's rows.
 - **The count line** says "*n* cells found" in the panel's words (`findPanelLabelIds`), in the live region the
   outcome already uses (ADR-0033). "No cells found" for none.
 - **Each line shows where the match is and its displayed text.** Where it is: in ExGrid, the column's header text
@@ -115,7 +125,8 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 
 - **ExSheet within the Sheet** answers Find All over the Sheet shown, as its source answers a step. **Within the
   Workbook** the Sheet lists every Sheet's matches itself, in tab order from the first Sheet, each line named by its
-  Sheet and address (`Sheet2!B12`), and hands the list to the grid's list part to draw; choosing a line on another
+  Sheet and address (`Sheet2!B12`), and hands the list to the grid's list part to draw through `listFindAll` (§3);
+  choosing a line on another
   Sheet shows that Sheet with the cell selected, as a Workbook step does (ADR-0332 §5). It holds the cells, so it
   drops that list at any change to the Workbook, where a grid's list is dropped when the version moves.
 - **ExPivot** answers it over its report as shown, reading the report source in blocks by the Report Version on
@@ -142,9 +153,13 @@ These are the user's. Each is stated with the option the text above takes until 
 ## Consequences
 
 - New public types in `@ex-grid/core`: `GridFindAllRequest`, `GridFindAllPage`, `GridFindAllMatch`; `findAll` (the
-  reference) beside `findStep`; a Grid Source gains `findAll` beside `find`; `GridSource.fetch` takes `findAll`; `GridFindPanelSlotContext` and `FindPanelView` gain Find All and the count. React and
+  reference) beside `findStep`; a Grid Source gains `findAll` beside `find`; `GridSource.from` takes
+  `findAllRowLabel`, and `GridSource.fetch` takes `findAll`; `FindPanelView` gains `findAllShown`, and
+  `GridFindPanelSlotContext` gains `findAll`, `listFindAll` and `dropFindAll`, with `GridFindAllList` and
+  `GridFindAllLine` for a list the contents hold. React and
   Blazor adapters carry them; .NET's `IGridSource` gains `CanFindAll` and `FindAllAsync`, which `InMemoryGridSource`
-  and `GridSource.Fetch` answer.
+  and `GridSource.Fetch` answer; `InMemoryGridSource.FindAllRowLabel` names its rows, and `GridSource.Fetch` takes a
+  `findAll` delegate as its last parameter, a signature change a compiled caller rebuilds against.
 - ExSheet answers Find All over the Sheet or the Workbook, in its own panel (ADR-0332 §5); ExPivot over its report as
   shown, reading the report source in blocks as its step does.
 - `CONTEXT.md` gains **Find All**; ADR-0055's "Not decided here" and §21.11 of the Definition of Done lose Find All,

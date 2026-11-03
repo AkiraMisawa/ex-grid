@@ -1077,8 +1077,9 @@
 .ex-find-all-list {
     position: relative;
     overflow-y: auto;
-    flex-shrink: 1;
-    min-height: var(--ex-row-height);
+    /* Never shrunk below its lines: the core reveals the active line by the count it shows, so in a short grid
+       the panel scrolls rather than the list hiding lines the core counts as shown. */
+    flex-shrink: 0;
     outline-offset: -1px;
     border: 1px solid var(--ex-header-rule-color, rgba(0, 0, 0, 0.12));
 }

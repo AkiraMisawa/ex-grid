@@ -5,4 +5,4 @@
 export const stylesheetName = 'ex-grid.css';
 
 /** The SHA-256 of that stylesheet's source: the stamp its own notice rule hides the notice for. */
-export const stylesheetStamp = '66b0afe233e7f6b033dd8e680ba2e8d4e1db037426668bfa2c952a2bd638d6ab';
+export const stylesheetStamp = '5b0d0a1bdd5842d4712d035439ea6b5154caed9043025145a198bbb639d7b179';
