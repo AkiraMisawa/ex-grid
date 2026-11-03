@@ -1266,7 +1266,7 @@ interface PendingCommit<Row> {
     /** The verdict's answer, before any intent was raised, or the Consumer's to one. The rows or columns handed over
      * under the latter are the commit's own doing, as they are while a handler runs (ADR-0142), so they do not take
      * its editor away. */
-    readonly phase: 'verdict' | 'intent' | 'work';
+    readonly phase: 'verdict' | 'intent' | 'work' | 'step';
     /** The input whose handler made the commit, taken again once it lands: its gesture keeps its meaning. */
     readonly trigger: HeldInput | undefined;
     /** The inputs made meanwhile, in the order they were made. */
@@ -4878,7 +4878,7 @@ export class GridView<Row> {
         // One commit at a time (ADR-0142): nothing is committed, nor placed after it, while another is pending. Work of
         // the Consumer's out is no commit: with no edit open there is nothing to commit, and a command it calls as it
         // lands is taken (ADR-0240 section 6).
-        if (this.#pending !== undefined && (this.#pending.phase !== 'work' || this.#edit !== undefined)) return false;
+        if (this.#pending !== undefined && (this.#pending.phase === 'verdict' || this.#pending.phase === 'intent' || this.#edit !== undefined)) return false;
         const edit = this.#edit;
         if (edit === undefined) return true;
         // Made on the newest rows the source holds: one that gathers live changes puts them out now
@@ -8162,7 +8162,10 @@ export class GridView<Row> {
         const slot = this.#chrome?.findPanel;
         if (slot === undefined) return new FindPanel(doc, this.#findHeld, label, answers);
         return new SlottedFindPanel(doc, slot, this.#findHeld, label,
-            { ...answers, answered: this.#answerInput, close: () => { this.#closePopover(true); } },
+            {
+                ...answers, answered: this.#answerInput, close: () => { this.#closePopover(true); },
+                inTurn: input => { if (!this.#stepInTurn(input)) input(); },
+            },
             (control, preventScroll, owed) => { this.#takeChromeFocus(control, preventScroll, owed); });
     }
 
@@ -8193,9 +8196,11 @@ export class GridView<Row> {
      * in. The headers come first in the walk where they are searched (ADR-0333 §3), and the grid holds them, so
      * a header the step reaches before any row is landed on without asking. An answer under another version, or
      * from a source since replaced, moves nothing (ADR-0011, ADR-0142); a found cell becomes the Focus and is
-     * revealed. A new step, or the panel closing, makes the answer of the one still out nobody's.
+     * revealed. The inputs made while its answer is out wait for it (ADR-0451 section 3); the panel closing makes it
+     * nobody's, and an Escape cancels it.
      */
     #findStep(backward: boolean): void {
+        if (this.#stepInTurn(() => { this.#findStep(backward); })) return;
         const source = this.#source;
         if (this.#popover?.kind !== 'find' || this.#findHeld.text === '' || source.find === undefined) return;
         this.#findStepping?.abort();
@@ -8230,7 +8235,7 @@ export class GridView<Row> {
         this.#findStepping = stepping;
         this.#invalidate();
         // oxlint-disable-next-line ex-grid/no-catch -- a step given up by whoever answers moves nothing and says so; any other failure is rethrown
-        source.find(request, stepping.signal).then(answer => {
+        const landed = source.find(request, stepping.signal).then(answer => {
             if (this.#destroyed || this.#findStepping !== stepping) return;
             this.#findStepping = undefined;
             // The grid stands settled again whatever the answer comes to, a defect named included.
@@ -8251,15 +8256,63 @@ export class GridView<Row> {
             if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
         });
+        // Cancelled by an Escape: nothing moves, and no "No match" is claimed, as for a step given up.
+        this.#pendStep(landed, stepping, () => {
+            if (this.#findStepping !== stepping) return;
+            this.#findStepping = undefined;
+            this.#setFindOutcome({ kind: 'none' });
+        });
+    }
+
+    // An input that reaches the grid as a call while an answer is out — a step a Chrome slot's contents asked for, or
+    // one of their changes, which no held event carried: taken in its place, behind the inputs held so far (ADR-0240
+    // section 3). True when it was placed there; false when nothing is out, and the caller takes it now.
+    #stepInTurn(step: () => void): boolean {
+        const pending = this.#pending;
+        if (pending === undefined) return false;
+        pending.held.push({ kind: 'turn', take: step });
+        return true;
+    }
+
+    // A Find or error step's answer is out (ADR-0240 section 3, ADR-0451): every input made meanwhile is held, in its
+    // order, and taken once the answer has landed, so a step taken straight after another starts from where the first
+    // landed, and a tick or a typed letter after a step leaves the step as it was asked, however long the answer takes
+    // (spine rule 6). It is no commit: the root carries no Pending Commit stamp, only no Settled Mark. An Escape whose
+    // keydown sees it cancels the step, which moves nothing and closes nothing (ADR-0240 section 12). A step given up
+    // otherwise, by the panel closing or the grid going, holds nothing from that moment on.
+    #pendStep(landed: PromiseLike<void>, stepping: AbortController, cancelled: () => void): void {
+        if (stepping.signal.aborted || this.#destroyed) return;
+        this.#pendingStamps += 1;
+        const out: PendingCommit<Row> = {
+            stamp: this.#pendingStamps, controller: stepping, edit: undefined, phase: 'step', trigger: undefined, held: [], cancelled,
+            stilled: typedField(this.#keyboardHolder()),
+        };
+        this.#pending = out;
+        this.#markPending(out, true);
+        this.#showSettled(false);
+        this.#invalidate();
+        const release = (): void => {
+            if (this.#unpend(out)) this.#afterAnswer(out, false);
+        };
+        // Given up where the panel closes or another answer lands: the inputs held behind it are taken once what gave
+        // it up has run, not inside it.
+        stepping.signal.addEventListener('abort', () => { queueMicrotask(release); }, { once: true });
+        // oxlint-disable-next-line ex-grid/no-catch -- a failed step holds nothing: the inputs are taken, and the failure rethrown
+        void Promise.resolve(landed).then(release, (error: unknown) => {
+            release();
+            throw error;
+        });
     }
 
     /**
      * The error step (ADR-0381 section 3): asked of the Consumer from the Focus, in the columns' current order and
      * the source's version, as a Find step is. A found cell becomes the Focus and is revealed, wherever it stands in
      * the result. An answer under another version or source, or naming a column that has left, moves nothing and is
-     * said, and so is none found. A new step makes the answer of the one still out nobody's.
+     * said, and so is none found. The inputs made while its answer is out wait for it, and an Escape cancels it
+     * (ADR-0451 section 3).
      */
     #stepToError(backward: boolean): void {
+        if (this.#stepInTurn(() => { this.#stepToError(backward); })) return;
         const ask = defined(this.#findError, 'the error step\'s findError');
         this.#errorStepping?.abort();
         this.#errorStepping = undefined;
@@ -8274,7 +8327,7 @@ export class GridView<Row> {
         this.#errorStepping = stepping;
         this.#invalidate();
         // oxlint-disable-next-line ex-grid/no-catch -- a step given up by whoever answers moves nothing; any other failure is rethrown
-        Promise.resolve().then(() => ask(request, stepping.signal)).then(answer => {
+        const landed = Promise.resolve().then(() => ask(request, stepping.signal)).then(answer => {
             if (this.#destroyed || this.#errorStepping !== stepping) return;
             this.#errorStepping = undefined;
             this.#invalidate();
@@ -8287,6 +8340,11 @@ export class GridView<Row> {
             // nobody read (ADR-0055's rule for a Find step).
             if (error instanceof DOMException && error.name === 'AbortError') return;
             throw error;
+        });
+        this.#pendStep(landed, stepping, () => {
+            if (this.#errorStepping !== stepping) return;
+            this.#errorStepping = undefined;
+            this.#invalidate();
         });
     }
 

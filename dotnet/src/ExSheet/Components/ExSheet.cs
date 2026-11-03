@@ -583,7 +583,14 @@ public sealed partial class ExSheet : ComponentBase, IAsyncDisposable
             json.WriteEndObject();
         });
         _documentOwed = false;
-        await sheet.InvokeVoidAsync("update", update);
+        try
+        {
+            await sheet.InvokeVoidAsync("update", update);
+        }
+        // A parameter changed as the circuit closed: the page the update was for is gone (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
+        {
+        }
     }
 
     private string AttachJson(string options, string? document, string words) => Json(json =>

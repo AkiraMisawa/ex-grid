@@ -495,6 +495,7 @@ class FileApp {
     file = null;
     options = null;
     booted = null;
+    drags = null;
     natives = null;
     // What the app says between two tests is the next test's, so this outlives a close: what a
     // file's last page says as it goes is heard by the next file's first test.
@@ -524,7 +525,7 @@ class FileApp {
     async close() {
         await this.natives?.dispose().catch(() => { });
         await this.context?.close().catch(() => { });
-        this.context = this.page = this.file = this.options = this.booted = this.natives = null;
+        this.context = this.page = this.file = this.options = this.booted = this.natives = this.drags = null;
     }
 
     // The file's first navigation: a real one, to the index, where what every later test is
@@ -539,6 +540,19 @@ class FileApp {
         await circuitQuiet();
         this.booted = await documentAtIndex(this.page);
         this.natives = await nativesOf(this.page);
+        // Every drag the browser begins in this document, counted where no test reaches: a test's drag goes through
+        // drag.mjs, which says each one it drives (ADR-0451).
+        this.drags = await this.page.evaluateHandle(() => {
+            // Read once the event has been through the page: a dragstart whose default the page prevented began no drag.
+            const count = { heard: [], get began() { return this.heard.filter((event) => !event.defaultPrevented).length; } };
+            window.addEventListener('dragstart', (event) => { count.heard.push(event); }, true);
+            return count;
+        });
+    }
+
+    /** How many drags the browser has begun in the booted document, or null once that document is gone. */
+    async dragsBegun() {
+        return this.drags === null ? null : this.drags.evaluate((count) => count.began).catch(() => null);
     }
 
     // What a test left behind outside its page, as sentences that name it.
@@ -618,7 +632,7 @@ async function pointerFree(page) {
     await twoFrames(page);
     const heard = await page.evaluate(() => window.exPointerHeard());
     if (heard.length === 0) {
-        return 'Playwright\'s mouse still holds a drag the test began: the page hears no move, and a press is not sent';
+        return 'the browser still holds a drag the test began: the page hears no move, and a press is not sent';
     }
     if (heard.some((buttons) => buttons !== 0)) {
         return `the test left a mouse button down: the page hears moves with buttons ${heard.join(', ')}`;
@@ -751,6 +765,29 @@ export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => 
  * failure, or a node that is not laid out, is the test's failure.
  */
 const HELD_FORCED_PRESSES = ['click', 'dblclick', 'hover'];
+
+// The browser's own drag and drop goes through drag.mjs (ADR-0451). Playwright's Chromium mouse carries such a drag
+// itself, judges whether one began a task after the first move its page script hears, and when it judges wrong leaves the
+// browser holding a drag that no event reaches the page through: the test passes without its drop (v0.2.0-beta.2).
+const EMULATED_DRAG = 'drag with startDrag or dragAndDrop from drag.mjs, which waits for what the browser says it did, '
+    + 'not with dragTo or the mouse, which Playwright emulates and can lose (ADR-0451)';
+const drivenDrags = new WeakMap();
+
+/** Says that drag.mjs drove a drag on `page`, so the harness does not take it for one Playwright's mouse made. */
+export function noteDrivenDrag(page) {
+    drivenDrags.set(page, (drivenDrags.get(page) ?? 0) + 1);
+}
+
+function refuseEmulatedDrags(page) {
+    const prototype = Object.getPrototypeOf(page.locator('html'));
+    if (prototype.__exEmulatedDragsRefused) {
+        return;
+    }
+    prototype.__exEmulatedDragsRefused = true;
+    prototype.dragTo = async function () {
+        throw new Error(EMULATED_DRAG);
+    };
+}
 
 function holdForcedPresses(page) {
     const prototype = Object.getPrototypeOf(page.locator('html'));
@@ -931,6 +968,10 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         return thenReady(page, reload)(...args);
     });
     holdForcedPresses(page);
+    refuseEmulatedDrags(page);
+    wrap(page, 'dragAndDrop', () => () => { throw new Error(EMULATED_DRAG); });
+    const dragsBefore = app.booted === null ? null : await app.dragsBegun();
+    const drivenBefore = drivenDrags.get(page) ?? 0;
     const listenersBefore = new Map(page.eventNames().map((name) => [name, page.listeners(name)]));
 
     await use(page);
@@ -969,6 +1010,13 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
             const pointer = await pointerFree(page);
             if (pointer !== null) {
                 leaks.push(pointer);
+            }
+            const dragsAfter = await app.dragsBegun();
+            if (dragsBefore !== null && dragsAfter !== null) {
+                const undriven = (dragsAfter - dragsBefore) - ((drivenDrags.get(page) ?? 0) - drivenBefore);
+                if (undriven > 0) {
+                    leaks.push(`the browser began ${undriven} drag(s) that drag.mjs did not drive: ${EMULATED_DRAG}`);
+                }
             }
         } catch (error) {
             leaks.push(`the page could not be left for the index: ${error.message}`);

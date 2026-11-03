@@ -943,23 +943,31 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         var state = replaced || columnsChanged ? StateJson() : null;
         if (state is not null)
             _stateOwed = false;
-        await grid.InvokeVoidAsync("update", Json(json =>
+        try
         {
-            json.WriteStartObject();
-            json.WritePropertyName("options");
-            json.WriteRawValue(options);
-            if (replaced)
+            await grid.InvokeVoidAsync("update", Json(json =>
             {
-                json.WritePropertyName("source");
-                WriteTraits(json);
-            }
-            if (state is not null)
-            {
-                json.WritePropertyName("state");
-                json.WriteRawValue(state);
-            }
-            json.WriteEndObject();
-        }));
+                json.WriteStartObject();
+                json.WritePropertyName("options");
+                json.WriteRawValue(options);
+                if (replaced)
+                {
+                    json.WritePropertyName("source");
+                    WriteTraits(json);
+                }
+                if (state is not null)
+                {
+                    json.WritePropertyName("state");
+                    json.WriteRawValue(state);
+                }
+                json.WriteEndObject();
+            }));
+        }
+        // A parameter changed as the circuit closed: the page the update was for is gone (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
+        {
+            return;
+        }
         if (_stateOwed)
             await SendStateAsync();
     }
@@ -982,7 +990,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 if (_attached)
                     await SendStateAsync();
             }
-            catch (Exception ex) when (ex is not JSDisconnectedException)
+            catch (Exception ex) when (!ClosingCircuit.Ended(ex, _disposed))
             {
                 await DispatchExceptionAsync(ex);
             }
@@ -997,7 +1005,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             await SendStateAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
         {
             // The circuit is gone, and the browser the state was for with it.
         }
@@ -1019,7 +1027,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
         // Called off by a circuit that closed after the component was disposed, the state has nobody left to reach, as
         // at disposal; every path that sends one (a source's change, a range asked, an event's handler) lets it go here.
-        catch (OperationCanceledException) when (_disposed)
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
         {
         }
     }
@@ -1971,9 +1979,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                             _ = StateSentAsync();
                         next.Done.TrySetResult(answer);
                     }
-                    catch (JSDisconnectedException)
+                    catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
                     {
-                        // The circuit is gone, and the browser that raised the event with it: nobody is left to tell.
+                        // The circuit is gone, and the browser that raised the event with it: nobody is left to tell
+                        // (ADR-0451).
                     }
                     catch (Exception ex)
                     {
@@ -2004,9 +2013,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             heard.Done.TrySetResult(await heard.Hand());
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
         {
-            // The circuit is gone, and the browser that asked with it: nobody is left to answer.
+            // The circuit is gone, and the browser that asked with it: nobody is left to answer (ADR-0451).
         }
         catch (Exception ex)
         {

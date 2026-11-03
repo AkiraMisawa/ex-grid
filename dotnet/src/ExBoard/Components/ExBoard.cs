@@ -471,7 +471,14 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
         _dataOwed = false;
         _sourcesOwed = false;
         DotNetStreamReference[] streams = naming is null ? [] : await naming.StreamsAsync();
-        await view.InvokeVoidAsync("update", update, streams);
+        try
+        {
+            await view.InvokeVoidAsync("update", update, streams);
+        }
+        // A parameter changed as the circuit closed: the page the update was for is gone (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
+        {
+        }
     }
 
     // The Consumer's Diff, or null for none, and how many of theirs have been sent with it.
@@ -839,7 +846,7 @@ public sealed class ExBoard : ComponentBase, IAsyncDisposable
                     await view.InvokeVoidAsync("pivotChanged", pivot, text);
                 }
                 // Called off by a circuit that closed meanwhile, the notice has nobody left to reach, as at disposal.
-                catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
+                catch (Exception ex) when (!ClosingCircuit.Ended(ex, _disposed))
                 {
                     await DispatchExceptionAsync(ex);
                 }

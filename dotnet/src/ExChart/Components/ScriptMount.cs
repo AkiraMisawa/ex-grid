@@ -131,9 +131,9 @@ internal sealed class ScriptMount(
         {
             await handle.InvokeVoidAsync("update", Compose(state, moved));
         }
-        catch (JSDisconnectedException)
+        // The circuit is gone, and the drawing with it (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, Disposed))
         {
-            // The circuit is gone, and the drawing with it.
         }
     }
 
@@ -279,7 +279,8 @@ internal sealed class ScriptMount(
         {
             return await handle.InvokeAsync<T>(method, args);
         }
-        catch (JSDisconnectedException)
+        // Gone with the circuit, or called off as the drawing was let go (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, Disposed))
         {
             return none;
         }
@@ -295,9 +296,9 @@ internal sealed class ScriptMount(
         {
             await handle.InvokeVoidAsync(method, args);
         }
-        catch (JSDisconnectedException)
+        // The circuit is gone, and the drawing with it (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, Disposed))
         {
-            // The circuit is gone, and the drawing with it.
         }
     }
 
@@ -314,7 +315,7 @@ internal sealed class ScriptMount(
                 crossed = await HeldCalls.TakeAsync(handle, crossed);
             return crossed.ValueKind == JsonValueKind.Null ? null : crossed.GetString();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, Disposed))
         {
             return null;
         }

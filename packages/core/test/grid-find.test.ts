@@ -218,26 +218,84 @@ describe('a Find step', () => {
         expect(refusals).toEqual([{ kind: 'find', reason: 'notFound' }]);
     });
 
-    it('ADR-0011 / ADR-0055: an answer the order moved under is set aside and said; a new step makes the last one\'s answer nobody\'s', async () => {
-        const answers: ((result: GridFindResult) => void)[] = [];
+    it('ADR-0011 / ADR-0055: an answer the order moved under is set aside and said', async () => {
+        let answer: ((result: GridFindResult) => void) | undefined;
         const inMemory = GridSource.from(deals);
-        const { source } = asking(inMemory, () => new Promise(resolve => { answers.push(resolve); }));
-        const { root, refusals, selection } = grid({ source, findsHeaders: false });
+        const { source } = asking(inMemory, () => new Promise(resolve => { answer = resolve; }));
+        const { root, refusals } = grid({ source, findsHeaders: false });
         await painted();
         click(root, 10, rowY(0));
         await find(root, 'novak');
         enter(root, field(root));
-        enter(root, field(root));
-        // The first answer arrives after the second step was asked: it is nobody's, and moves nothing.
-        defined(answers[0], 'the first step')({ found: true, row: 100, column: 'Trader' });
-        await settle();
-        expect(selection().focus).toEqual({ row: 0, column: 0 });
-        expect(root.getAttribute('data-ex-settled')).toBeNull();
         inMemory.setSorts([{ column: 'Notional', direction: 'descending' }]);
-        defined(answers[1], 'the second step')({ found: true, row: 3, column: 'Trader' });
+        defined(answer, 'the step')({ found: true, row: 3, column: 'Trader' });
         await settle();
         expect(outcome(root)).toBe('The rows moved; find again');
         expect(refusals).toEqual([{ kind: 'find', reason: 'orderChanged' }]);
+    });
+
+    it('ADR-0240 §3 / ADR-0451: a step and a tick made while a step is out wait for its answer, so the next step starts where it landed, with the option ticked', async () => {
+        const answers: ((result: GridFindResult) => void)[] = [];
+        const { source, requests } = asking(GridSource.from(deals), () => new Promise(resolve => { answers.push(resolve); }));
+        const { root, selection } = grid({ source, findsHeaders: false });
+        await painted();
+        click(root, 10, rowY(0));
+        await find(root, 'NOVAK');
+        press(root, 'button.ex-find-next');
+        press(root, 'input.ex-find-match-case');
+        press(root, 'button.ex-find-next');
+        await settle();
+        // Both wait: the first step was asked without Match case, and nothing else is asked while it is out.
+        expect(requests.map(request => request.matchCase)).toEqual([false]);
+        expect(root.getAttribute('data-ex-settled')).toBeNull();
+        defined(answers[0], 'the first step')({ found: true, row: 3, column: 'Trader' });
+        await settle();
+        expect(selection().focus).toEqual({ row: 3, column: 1 });
+        expect(requests.map(request => [request.matchCase, request.from])).toEqual([[false, { row: 0, column: 0 }], [true, { row: 3, column: 1 }]]);
+        defined(answers[1], 'the second step')(notFound);
+        await settle();
+        expect([selection().focus, outcome(root)]).toEqual([{ row: 3, column: 1 }, 'No match']);
+    });
+
+    it('ADR-0240 §12 / ADR-0451: an Escape typed while a step is out cancels the step, which moves nothing and claims no "No match", and closes nothing', async () => {
+        let signal: AbortSignal | undefined;
+        const { source } = asking(GridSource.from(deals), (_request, given) => {
+            signal = given;
+            return new Promise(() => undefined);
+        });
+        const { root, selection, refusals } = grid({ source, findsHeaders: false });
+        await painted();
+        click(root, 10, rowY(0));
+        await find(root, 'novak');
+        enter(root, field(root));
+        key(field(root), 'Escape');
+        await settle();
+        expect([defined(signal, 'the step\'s signal').aborted, selection().focus, outcome(root), panel(root) !== null, refusals])
+            .toEqual([true, { row: 0, column: 0 }, '', true, []]);
+        expect(root.hasAttribute('data-ex-settled')).toBe(true);
+        key(field(root), 'Escape');
+        expect(panel(root)).toBeNull();
+    });
+
+    it('ADR-0332 §5 / ADR-0451: a step the Consumer answers by placing the match itself is given up, and holds nothing after it', async () => {
+        let signal: AbortSignal | undefined;
+        const inMemory = GridSource.from(deals);
+        const { source } = asking(inMemory, (_request, given) => {
+            signal = given;
+            return new Promise(() => undefined);
+        });
+        const { root, view, selection } = grid({ source, findsHeaders: false });
+        await painted();
+        click(root, 10, rowY(0));
+        await find(root, 'novak');
+        enter(root, field(root));
+        expect(view.placeMatch({ row: 3, column: 1 }, inMemory.snapshot().rowSequenceVersion)).toBe(true);
+        await settle();
+        expect([defined(signal, 'the step\'s signal').aborted, selection().focus]).toEqual([true, { row: 3, column: 1 }]);
+        // Asked at once: nothing is held behind the step given up.
+        enter(root, field(root));
+        await settle();
+        expect(defined(signal, 'the next step\'s signal').aborted).toBe(false);
     });
 
     it('ADR-0142 / ADR-0055: an answer from a source since replaced moves nothing, whatever its version says', async () => {
