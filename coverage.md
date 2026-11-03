@@ -17,7 +17,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Package | Product | Line | Branch | Lines |
 |---|---|---|---|---|
-| `packages/core` | ExGrid | 94.9% | 86.8% | 13984 |
+| `packages/core` | ExGrid | 94.9% | 86.8% | 13991 |
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.5% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.9% | 104 |
@@ -53,16 +53,16 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/03/2026 - 23:05:07 |
+| Generated on: | 11/03/2026 - 23:33:45 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1114 |
 | Files: | 496 |
-| **Line coverage:** | 86.9% (60442 of 69498) |
-| Covered lines: | 60442 |
-| Uncovered lines: | 9056 |
-| Coverable lines: | 69498 |
-| Total lines: | 105879 |
+| **Line coverage:** | 86.9% (60445 of 69500) |
+| Covered lines: | 60445 |
+| Uncovered lines: | 9055 |
+| Coverable lines: | 69500 |
+| Total lines: | 105884 |
 | **Branch coverage:** | 82.8% (36445 of 43975) |
 | Covered branches: | 36445 |
 | Total branches: | 43975 |
@@ -389,7 +389,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow, T>|71.3%|69.6%|
 |ExGrid.Components.ExGrid<TRow>|71.3%|69.6%|
-|ExGrid.Components.ExGrid<TRow>|84.4%|76.8%|
+|ExGrid.Components.ExGrid<TRow>|84.5%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
 |ExGrid.Components.GridRefusal.Action<TRow>|0%||
@@ -631,7 +631,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
