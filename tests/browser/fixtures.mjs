@@ -543,8 +543,9 @@ class FileApp {
         // Every drag the browser begins in this document, counted where no test reaches: a test's drag goes through
         // drag.mjs, which says each one it drives (ADR-0451).
         this.drags = await this.page.evaluateHandle(() => {
-            const count = { began: 0 };
-            window.addEventListener('dragstart', () => { count.began++; }, true);
+            // Read once the event has been through the page: a dragstart whose default the page prevented began no drag.
+            const count = { heard: [], get began() { return this.heard.filter((event) => !event.defaultPrevented).length; } };
+            window.addEventListener('dragstart', (event) => { count.heard.push(event); }, true);
             return count;
         });
     }

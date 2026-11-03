@@ -981,21 +981,23 @@ export class SlottedFindPanel implements FindPlace {
         // Each change and step is an input the user made in the panel, answered once (ADR-0220), and made in its place
         // in the Input Order: the contents call back, and a call no held event carried waits behind a step still out as
         // the events made before it do (ADR-0240 section 3, ADR-0451).
-        const act = <Args extends unknown[]>(change: (...args: Args) => void): ((...args: Args) => void) => contents.input(answers.answered, (...args: Args) => {
-            answers.inTurn(() => { if (contents.live) change(...args); });
-        });
+        // What the contents hand over is checked as they call, so a defect of theirs is thrown to them, never later
+        // among the inputs held.
+        const act = <Args extends unknown[]>(change: (...args: Args) => void, check: (...args: Args) => void = () => undefined): ((...args: Args) => void) =>
+            contents.input(answers.answered, (...args: Args) => {
+                check(...args);
+                answers.inTurn(() => { if (contents.live) change(...args); });
+            });
         const holding = (change: () => void): void => {
             change();
             answers.heldChanged();
             this.#changed();
         };
-        const text = (name: string, set: (text: string) => void) => act((value: string) => {
+        const text = (name: string, set: (text: string) => void) => act((value: string) => { holding(() => { set(value); }); }, (value: string) => {
             if (typeof value !== 'string') throw new TypeError(`${name} is handed the text typed.`);
-            holding(() => { set(value); });
         });
-        const option = (name: string, set: (on: boolean) => void) => act((on: boolean) => {
+        const option = (name: string, set: (on: boolean) => void) => act((on: boolean) => { holding(() => { set(on); }); }, (on: boolean) => {
             if (typeof on !== 'boolean') throw new TypeError(`${name} is handed whether the option is ticked.`);
-            holding(() => { set(on); });
         });
         this.#context = {
             view: () => this.#made(),

@@ -1979,9 +1979,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                             _ = StateSentAsync();
                         next.Done.TrySetResult(answer);
                     }
-                    catch (JSDisconnectedException)
+                    catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
                     {
-                        // The circuit is gone, and the browser that raised the event with it: nobody is left to tell.
+                        // The circuit is gone, and the browser that raised the event with it: nobody is left to tell
+                        // (ADR-0451).
                     }
                     catch (Exception ex)
                     {
@@ -2012,9 +2013,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             heard.Done.TrySetResult(await heard.Hand());
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
         {
-            // The circuit is gone, and the browser that asked with it: nobody is left to answer.
+            // The circuit is gone, and the browser that asked with it: nobody is left to answer (ADR-0451).
         }
         catch (Exception ex)
         {
