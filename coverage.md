@@ -1,31 +1,70 @@
 ## Coverage per product
 
-| Product | Line | Branch |
-|---|---|---|
-| ExGrid | 88.1% | 78.6% |
-| ExSheet | 86.2% | 85.8% |
-| ExPivot | 86.2% | 82.1% |
-| ExChart | 91.1% | 85% |
-| ExBoard | 67.4% | 59.6% |
-| Data | 94.5% | 89.9% |
+Line and branch coverage of what ships: the npm packages' sources under `packages/*/src` (TypeScript), and
+the sixteen NuGet packages' assemblies (.NET). Each is counted against every test of its platform.
+
+| Product | TS line | TS branch | .NET line | .NET branch |
+|---|---|---|---|---|
+| ExGrid | 93.7% | 85.1% | 88.1% | 78.6% |
+| ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
+| ExPivot | 93.1% | 82% | 86.2% | 82.1% |
+| ExChart | 92.3% | 83% | 91.1% | 85% |
+| ExBoard | 93.2% | 75.8% | 67.4% | 59.6% |
+| Data | 94.3% | 83.6% | 94.5% | 89.9% |
+| **Total** | **93.5%** | **84.1%** | **86.9%** | **82.9%** |
+
+<details><summary>TypeScript coverage per package</summary>
+
+| Package | Product | Line | Branch | Lines |
+|---|---|---|---|---|
+| `packages/core` | ExGrid | 94.7% | 86.8% | 13955 |
+| `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
+| `packages/mantine` | ExGrid | 83.1% | 71.5% | 95 |
+| `packages/mui` | ExGrid | 85.5% | 73.9% | 104 |
+| `packages/blazor` | ExGrid | 85.3% | 68.5% | 1451 |
+| `packages/sheet` | ExSheet | 88.8% | 77.9% | 4013 |
+| `packages/sheet-engine` | ExSheet | 96.6% | 89.6% | 9248 |
+| `packages/sheet-xlsx` | ExSheet | 95.4% | 86.8% | 1348 |
+| `packages/sheet-react` | ExSheet | 94.8% | 84.7% | 213 |
+| `packages/sheet-mantine` | ExSheet | 81.5% | 75.6% | 168 |
+| `packages/sheet-mui` | ExSheet | 83.8% | 74% | 180 |
+| `packages/sheet-blazor` | ExSheet | 86.1% | 65.4% | 664 |
+| `packages/pivot` | ExPivot | 94.3% | 80.8% | 3154 |
+| `packages/pivot-engine` | ExPivot | 93.8% | 84.2% | 6944 |
+| `packages/pivot-react` | ExPivot | 94.1% | 76.6% | 86 |
+| `packages/pivot-mantine` | ExPivot | 87.2% | 74.6% | 94 |
+| `packages/pivot-mui` | ExPivot | 89.5% | 75.5% | 105 |
+| `packages/pivot-blazor` | ExPivot | 79.3% | 61.8% | 553 |
+| `packages/chart` | ExChart | 92.7% | 84.3% | 5906 |
+| `packages/chart-react` | ExChart | 93.2% | 75% | 149 |
+| `packages/chart-mantine` | ExChart | 94.5% | 80% | 37 |
+| `packages/chart-mui` | ExChart | 93.1% | 78.7% | 44 |
+| `packages/chart-blazor` | ExChart | 85.2% | 66.4% | 345 |
+| `packages/board` | ExBoard | 93.3% | 77.4% | 1651 |
+| `packages/board-react` | ExBoard | 92.5% | 74.2% | 40 |
+| `packages/board-blazor` | ExBoard | 92.3% | 66.1% | 299 |
+| `packages/data` | Data | 96.4% | 87% | 3376 |
+| `packages/data-xlsx` | Data | 91.6% | 78.7% | 2524 |
+
+</details>
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 11/03/2026 - 13:00:57 |
+| Generated on: | 11/03/2026 - 19:04:27 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1109 |
 | Files: | 495 |
-| **Line coverage:** | 86.9% (60424 of 69456) |
-| Covered lines: | 60424 |
-| Uncovered lines: | 9032 |
+| **Line coverage:** | 86.9% (60425 of 69456) |
+| Covered lines: | 60425 |
+| Uncovered lines: | 9031 |
 | Coverable lines: | 69456 |
 | Total lines: | 105827 |
-| **Branch coverage:** | 82.9% (36439 of 43947) |
-| Covered branches: | 36439 |
+| **Branch coverage:** | 82.9% (36440 of 43947) |
+| Covered branches: | 36440 |
 | Total branches: | 43947 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -589,7 +628,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
