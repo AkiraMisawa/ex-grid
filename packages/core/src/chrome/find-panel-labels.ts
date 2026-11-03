@@ -48,6 +48,22 @@ export const findPanelLabelIds = Object.freeze({
     replaceRefusedMore: 'find-replace-refused-more',
     /** Why a match in a column that is not Editable cannot be written. */
     notEditable: 'find-not-editable',
+    /** The Find All button (ADR-0470 §1). */
+    findAll: 'find-all',
+    /** The list of a Find All's matches: its accessible name. */
+    findAllList: 'find-all-list',
+    /** What a Find All that matched several cells says, their count at `{count}`. */
+    findAllFound: 'find-all-found',
+    /** What a Find All that matched one cell says. */
+    findAllFoundOne: 'find-all-found-one',
+    /** What a Find All that matched nothing says. */
+    findAllNone: 'find-all-none',
+    /** Where a match in a row is, its row's number from 1 at `{row}` and its column's header at `{column}`. */
+    findAllInRow: 'find-all-in-row',
+    /** Where a match in a row is, by the Consumer's label for the row at `{row}` and its column's header at `{column}`. */
+    findAllInLabelledRow: 'find-all-in-labelled-row',
+    /** Where a match in a header is, the header's text at `{column}`. */
+    findAllInHeader: 'find-all-in-header',
 } as const);
 
 /** The built-in English for the find panel's ids, as the C# core's BuiltInCommandLabels says them. */
@@ -72,6 +88,14 @@ export const findPanelWords: readonly (readonly [string, string])[] = Object.fre
     [findPanelLabelIds.replaceRefusedCell, 'Row {row}, {column}: {reason}.'],
     [findPanelLabelIds.replaceRefusedMore, 'And {count} more.'],
     [findPanelLabelIds.notEditable, 'this column cannot be edited'],
+    [findPanelLabelIds.findAll, 'Find All'],
+    [findPanelLabelIds.findAllList, 'Matches'],
+    [findPanelLabelIds.findAllFound, '{count} cells found'],
+    [findPanelLabelIds.findAllFoundOne, '1 cell found'],
+    [findPanelLabelIds.findAllNone, 'No cells found'],
+    [findPanelLabelIds.findAllInRow, 'Row {row}, {column}'],
+    [findPanelLabelIds.findAllInLabelledRow, '{row}, {column}'],
+    [findPanelLabelIds.findAllInHeader, 'Header {column}'],
 ] as const);
 
 /** How many refused cells the panel names before it counts the rest. */

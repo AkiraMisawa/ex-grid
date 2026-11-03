@@ -4,10 +4,11 @@
 // dotnet/tests/ExGrid.Tests/Cases/FindCaseTests.cs.
 import { describe, expect, it } from 'vitest';
 import { findMatches, findStep } from '../src/finding/find';
+import { findAll } from '../src/finding/find-all';
 import { planReplace, type GridReplaceWrite } from '../src/finding/replace';
 import { elementAt } from '../src/must';
 import { caseFiles, expectRefusal, type CellText, type Refusal } from './cases';
-import { findRequestOf, numberText, replaceRequestOf, type WrittenFind, type WrittenReplace } from './find-requests';
+import { findAllRequestOf, findRequestOf, numberText, replaceRequestOf, type WrittenFind, type WrittenFindAll, type WrittenReplace } from './find-requests';
 
 type Row = readonly string[];
 
@@ -54,6 +55,34 @@ for (const file of caseFiles<FindCase>('finding', 'find')) {
                     const found = findStep(rows, findRequestOf(step.find, columns), textsOf(columns));
                     expect(found.found ? [found.row, found.column] : null, JSON.stringify(step.find)).toEqual(step.is);
                 }
+            });
+        }
+    });
+}
+
+interface FindAllCase {
+    readonly findAll: WrittenFindAll;
+    readonly total?: number;
+    readonly matches?: readonly (readonly [number, string, string])[];
+    readonly throws?: Refusal;
+}
+
+for (const file of caseFiles<FindAllCase>('finding', 'findAll')) {
+    const { columns, rows } = file as unknown as FindFile;
+    describe(`finding/${file.file}`, () => {
+        for (const c of file.cases) {
+            it(c.name, () => {
+                const list = () => findAll(rows, 3, findAllRequestOf(c.findAll, columns), textsOf(columns));
+                if (c.throws !== undefined) {
+                    expectRefusal(list, c.throws);
+                    return;
+                }
+                if (c.total === undefined || c.matches === undefined) throw new Error(`"${c.name}" says neither what it lists nor what it throws.`);
+                expect.hasAssertions();
+                const page = list();
+                expect(page.total, 'total').toBe(c.total);
+                expect(page.matches.map(({ row, column, text }) => [row, column, text]), 'matches').toEqual(c.matches);
+                expect(page.rowSequenceVersion, 'the version the rows were read in').toBe(3);
             });
         }
     });

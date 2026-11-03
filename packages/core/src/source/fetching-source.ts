@@ -24,6 +24,7 @@ import { checkedSorts, sortsEqual, type SortSpec } from '../query/sort';
 import { defined } from '../must';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
+import type { GridFindAllPage, GridFindAllRequest } from '../finding/find-all';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import { checkedAdapter, FetchingRowMarks, type FetchingMarksHost, type RowMarkAdapter } from './fetching-row-marks';
 import { filtersEqual, filterWithout, snapshotFilter } from './filters';
@@ -90,6 +91,9 @@ export interface FetchingSourceOptions<Row> {
     /** A Find step (ADR-0055), answered under the Sort and the Filter in force; `findStep` is the reference
      * for what a match is. Without it the source does not find. */
     readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
+    /** A page of a Find All (ADR-0470), answered under the Sort and the Filter in force with the exact count; `findAll`
+     * is the reference for the list and its order. Offered only beside `find`: without both the source lists nothing. */
+    readonly findAll?: (request: GridFindAllRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindAllPage>;
     /** A Selection Summary (ADR-0130), answered under the Sort and the Filter in force as `summaryOf` would
      * over that result, or declined. Without it the source does not summarise. */
     readonly summarize?: (request: GridSummaryRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridSummaryResult>;
@@ -188,13 +192,15 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     // Grid Source says what it cannot do (ADR-0350 §16).
     /** A Find step through the Consumer's server (ADR-0055); absent when it was given no `find`. */
     declare readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    /** A page of a Find All through the Consumer's server (ADR-0470); absent when it was given no `findAll`. */
+    declare readonly findAll?: (request: GridFindAllRequest, signal: AbortSignal) => Promise<GridFindAllPage>;
     /** A Selection Summary through the Consumer's server (ADR-0130); absent when it was given no
      * `summarize`. */
     declare readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
 
     private constructor(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options: FetchingSourceOptions<Row>) {
         if (typeof fetch !== 'function') throw new TypeError('GridSource.fetch takes a function that answers a Query with a page.');
-        const { readAheadRows = defaultReadAheadRows, distinctValues, find, summarize, rowKey, marks, onFetchFailed, clock = systemClock } = options;
+        const { readAheadRows = defaultReadAheadRows, distinctValues, find, findAll, summarize, rowKey, marks, onFetchFailed, clock = systemClock } = options;
         if (!Number.isSafeInteger(readAheadRows) || readAheadRows < 0) {
             throw new RangeError(`readAheadRows is a whole number of at least 0, not ${readAheadRows}.`);
         }
@@ -219,6 +225,13 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
             this.find = async (request, signal) => {
                 this.#requireUndisposed();
                 return find(request, this.#inForce(), signal);
+            };
+        }
+        if (findAll !== undefined) {
+            if (find === undefined) throw new TypeError('A Find All is offered beside a Find: give `find` with `findAll` (ADR-0470 §1).');
+            this.findAll = async (request, signal) => {
+                this.#requireUndisposed();
+                return findAll(request, this.#inForce(), signal);
             };
         }
         if (summarize !== undefined) {

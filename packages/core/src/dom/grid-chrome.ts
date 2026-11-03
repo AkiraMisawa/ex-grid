@@ -203,6 +203,10 @@ export interface FindPanelView {
     /** What the last step or Replace came to, in the grid's words, for a live region; empty when it says nothing
      * (ADR-0033). */
     readonly outcome: string;
+    /** Whether the panel offers Find All (ADR-0470 §1): the source lists every match. While it does, the contents draw
+     * a Find All button that calls {@link GridFindPanelSlotContext.findAll}; the list and its count are the core's, drawn
+     * under the contents (ADR-0470 §3). */
+    readonly findAllShown: boolean;
 }
 
 /**
@@ -240,6 +244,9 @@ export interface GridFindPanelSlotContext {
     readonly replace: () => void;
     /** Replace All, asked of the Consumer. Nothing while Replace is not shown or a Replace All is out. */
     readonly replaceAll: () => void;
+    /** Find All, its list asked of the Consumer and drawn by the core under the contents (ADR-0470). Nothing while Find
+     * All is not offered. */
+    readonly findAll: () => void;
     /** Closes the panel as a Cancel, for a dismissal of the contents' own; the keyboard returns to the grid. */
     readonly close: () => void;
     /** The count of the core's requests for the find field to take the keyboard: the opening, Ctrl+F or Ctrl+H again,
@@ -949,6 +956,9 @@ export class SlottedFindPanel implements FindPlace {
     #replaceShown = false;
     #waiting = false;
     #outcome = '';
+    #findAllShown = false;
+    #findAllPart: HTMLElement | undefined;
+    readonly #body: HTMLElement;
     #view: FindPanelView | undefined;
 
     constructor(doc: Document, mount: GridChromeSlot<GridFindPanelSlotContext>, held: FindHeld, label: (id: string) => string,
@@ -964,6 +974,7 @@ export class SlottedFindPanel implements FindPlace {
         slot.className = 'ex-find-slot';
         form.append(slot);
         body.append(form);
+        this.#body = body;
         // Tab off either end comes back to the field as it was, as under the built-in panel.
         const toField = (): void => { this.#request(false); };
         this.element.append(findSentinel(doc, answers.answered, toField), body, findSentinel(doc, answers.answered, toField));
@@ -1011,6 +1022,7 @@ export class SlottedFindPanel implements FindPlace {
             previous: act(() => { answers.step(true); }),
             replace: act(() => { answers.replaceOne(); }),
             replaceAll: act(() => { answers.replaceAll(); }),
+            findAll: act(() => { answers.findAll(); }),
             close: act(() => { answers.close(); }),
             innerPopupChanged: contents.innerPopupChanged,
             takeFocus: contents.takeFocus,
@@ -1046,6 +1058,20 @@ export class SlottedFindPanel implements FindPlace {
         this.#changed();
     }
 
+    offerFindAll(offered: boolean): void {
+        if (offered === this.#findAllShown) return;
+        this.#findAllShown = offered;
+        this.#changed();
+    }
+
+    /** The list stands under the contents, in the core's own place, whichever Chrome draws them (ADR-0470 §3). */
+    showFindAll(part: HTMLElement | undefined): void {
+        if (part === this.#findAllPart) return;
+        this.#findAllPart?.remove();
+        this.#findAllPart = part;
+        if (part !== undefined) this.#body.append(part);
+    }
+
     /** Mounts the contents with the next request for the field, whose text is selected. */
     focusField(): void {
         this.#request(true);
@@ -1066,7 +1092,7 @@ export class SlottedFindPanel implements FindPlace {
     #made(): FindPanelView {
         this.#view ??= Object.freeze({
             text: this.#held.text, matchCase: this.#held.matchCase, wholeCell: this.#held.wholeCell, replaceShown: this.#replaceShown,
-            replaceText: this.#held.replaceText, replaceWaiting: this.#waiting, outcome: this.#outcome,
+            replaceText: this.#held.replaceText, replaceWaiting: this.#waiting, outcome: this.#outcome, findAllShown: this.#findAllShown,
         });
         return this.#view;
     }

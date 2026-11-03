@@ -29,6 +29,7 @@ import type { DistinctValues, GridSource, GridSourceState } from './grid-source'
 import { CellChangeTimes, defaultChangeTimesKeptFor, type CellChangedAt, type ChangedPair } from './cell-change-times';
 import { InMemoryRowMarks } from './in-memory-row-marks';
 import { findStep, type GridFindRequest, type GridFindResult } from '../finding/find';
+import { FindAllMatches, type GridFindAllPage, type GridFindAllRequest } from '../finding/find-all';
 import { planReplace, replacedCells, type GridReplaceAnswer, type GridReplacedRow, type GridReplaceRequest, type GridReplaceWrite } from '../finding/replace';
 import { KeyedRows } from './keyed-rows';
 import { summaryOf, type GridSummaryRequest, type GridSummaryResult } from '../summary/grid-summary';
@@ -47,6 +48,8 @@ export interface InMemorySourceOptions<Row> {
     readonly rowKey?: RowKeyOf<Row>;
     /** The clock live changes are gathered by; the browser's unless given. Read only under a Row Key. */
     readonly clock?: GridClock;
+    /** What a Find All's list calls a row, in place of its position (ADR-0470 §3): a trade's id, say. */
+    readonly findAllRowLabel?: (row: Row) => string;
 }
 
 /** The version of a row the result was last computed from, if one was held then. */
@@ -100,9 +103,14 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     readonly #marks: InMemoryRowMarks<Row>;
     #columns: readonly QueryColumn<Row>[] | undefined;
     #state: GridSourceState<Row>;
+    // The last Find All's matches, kept while the result, the columns and the question stand, so a list scrolled
+    // through is walked once (ADR-0470 §2).
+    readonly #findAllRowLabel: ((row: Row) => string) | undefined;
+    #findAll: { readonly key: string; readonly window: readonly Row[]; readonly columns: readonly QueryColumn<Row>[]; readonly matches: FindAllMatches<Row> } | undefined;
 
-    private constructor(rows: readonly Row[], { rowKey, clock = systemClock }: InMemorySourceOptions<Row>) {
+    private constructor(rows: readonly Row[], { rowKey, clock = systemClock, findAllRowLabel }: InMemorySourceOptions<Row>) {
         this.#rowKey = rowKey;
+        this.#findAllRowLabel = findAllRowLabel;
         let window: readonly Row[];
         if (rowKey === undefined) {
             // A copy: the Consumer changing the list it passed cannot move the Window under the grid, nor the
@@ -374,6 +382,25 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         signal.throwIfAborted();
         const columns = this.#queryColumns();
         return findStep(this.#state.window, request, name => textsOf(columns, name, textFor));
+    }
+
+    /**
+     * The reference Find All (ADR-0470): `findAll` over the current result, matching each column's displayed text as
+     * `find` does. The matches are found once for a question and read a page at a time while the result stands. A
+     * request read under another version is answered anyway, under this source's: the grid discards it by the
+     * version.
+     */
+    async findAll(request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage> {
+        signal.throwIfAborted();
+        const columns = this.#queryColumns();
+        const { window, rowSequenceVersion } = this.#state;
+        const key = JSON.stringify([request.text, request.matchCase, request.wholeCell, request.scope, request.columns]);
+        let held = this.#findAll;
+        if (held?.key !== key || held.window !== window || held.columns !== columns) {
+            held = { key, window, columns, matches: FindAllMatches.of(window, request, name => textsOf(columns, name, textFor), this.#findAllRowLabel) };
+            this.#findAll = held;
+        }
+        return held.matches.page(request.start, request.count, rowSequenceVersion);
     }
 
     /**

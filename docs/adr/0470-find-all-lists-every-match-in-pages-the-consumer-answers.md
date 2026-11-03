@@ -44,7 +44,7 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 | Field | Meaning |
 |---|---|
 | `total` | How many cells match, exactly. Never an estimate and never capped |
-| `matches` | The entries of the range asked: each a row in the order read, a column name and the cell's displayed text |
+| `matches` | The entries of the range asked: each a row in the order read, a column name, the cell's displayed text, and optionally the row's label (choice 2) |
 | `rowSequenceVersion` | The order the rows were read in |
 
 - **The count is exact and uncapped** (the spine's fifth rule: listing is cheap per page, so nothing is capped).
@@ -55,10 +55,11 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 - **An answer is held to the request.** A `total` that moves between pages of one list, a match outside the scope
   or outside the request's columns, or more matches than the range asked, is the Consumer's defect and is raised
   by name, as ADR-0055's review section raises an answer outside the request.
-- **Where it comes from**, as Find's: `GridSource.from` answers it by the reference rule (`findAll` over the rows,
-  the counterpart of `findStep`); `GridSource.fetch` takes an optional `findAll` delegate; a push-mode Consumer passes
-  `onFindAll`; a Blazor Consumer's `IGridSource` gains `FindAllAsync` with a default of "cannot", and the push mode
-  `OnFindAll`. `OnFindAll` beside a bound Source is refused by name, as `OnFind` is.
+- **Where it comes from**, as Find's: a Grid Source answers it beside `find`. `GridSource.from` answers it by the
+  reference rule (`findAll` over the rows, the counterpart of `findStep`), keeping the matches it found while the
+  rows and the question stand, so a list scrolled through is walked once; `GridSource.fetch` takes an optional
+  `findAll` delegate, refused by name without `find`; a Blazor Consumer's `IGridSource` gains `CanFindAll` and
+  `FindAllAsync`, with a default of "cannot", which `InMemoryGridSource` and `GridSource.Fetch` answer.
 
 ### 3. The list is drawn by the core, under the panel's contents, in every Chrome
 
@@ -110,6 +111,16 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 - **Find All over a Replace**: Replace and Replace All keep ADR-0332's rules, and a Replace All drops the list, as
   its writes may move what matches.
 
+### 7. ExSheet and ExPivot
+
+- **ExSheet within the Sheet** answers Find All over the Sheet shown, as its source answers a step. **Within the
+  Workbook** the Sheet lists every Sheet's matches itself, in tab order from the first Sheet, each line named by its
+  Sheet and address (`Sheet2!B12`), and hands the list to the grid's list part to draw; choosing a line on another
+  Sheet shows that Sheet with the cell selected, as a Workbook step does (ADR-0332 §5). It holds the cells, so it
+  drops that list at any change to the Workbook, where a grid's list is dropped when the version moves.
+- **ExPivot** answers it over its report as shown, reading the report source in blocks by the Report Version on
+  screen, as its step does; a new Report Version moves the version, and the list goes.
+
 ## The choices
 
 These are the user's. Each is stated with the option the text above takes until the user answers.
@@ -119,8 +130,9 @@ These are the user's. Each is stated with the option the text above takes until 
    *Against it:* each Wrapper (MudBlazor, Mantine, MUI) draws the list with its kit's own components, which looks
    more native but writes the virtualised, paged list four times and lets them drift.
 2. **How a line names the row in ExGrid and ExPivot** (§3). *Recommended:* by its position in the current order,
-   "Row 1,234", with an optional `findAllRowLabel` a Consumer passes to name it by its own text instead (a trade's
-   id, say). *Against:* the position alone (meaningless where the grid shows no row numbers), or a label always
+   "Row 1,234", with an optional label the Consumer answers with each match (`rowLabel`) to name it by its own text
+   instead (a trade's id, say); `GridSource.from` takes it as `findAllRowLabel`, a function of the row. The grid
+   cannot label a row itself: most matches are in rows outside the Window, which it does not hold. *Against:* the position alone (meaningless where the grid shows no row numbers), or a label always
    required (Find All would not work for a Consumer that does not write one).
 3. **Selecting every match** (§6). *Recommended:* left out of 0.2.0 and reserved, because the Selection would need
    every match at once, not a page, and the gestures that act on a Selection of scattered single cells (copy refuses
@@ -130,10 +142,9 @@ These are the user's. Each is stated with the option the text above takes until 
 ## Consequences
 
 - New public types in `@ex-grid/core`: `GridFindAllRequest`, `GridFindAllPage`, `GridFindAllMatch`; `findAll` (the
-  reference) beside `findStep`; `GridSource.find` gains a sibling `findAll`; `GridSource.fetch` and `createGrid` take
-  `findAll` and `onFindAll`; `GridFindPanelSlotContext` and `FindPanelView` gain Find All and the count. React and
-  Blazor adapters carry them; .NET's `IGridSource` gains `FindAllAsync`, `InMemoryGridSource` and `GridSource.Fetch`
-  answer it, and the component gains `OnFindAll`.
+  reference) beside `findStep`; a Grid Source gains `findAll` beside `find`; `GridSource.fetch` takes `findAll`; `GridFindPanelSlotContext` and `FindPanelView` gain Find All and the count. React and
+  Blazor adapters carry them; .NET's `IGridSource` gains `CanFindAll` and `FindAllAsync`, which `InMemoryGridSource`
+  and `GridSource.Fetch` answer.
 - ExSheet answers Find All over the Sheet or the Workbook, in its own panel (ADR-0332 §5); ExPivot over its report as
   shown, reading the report source in blocks as its step does.
 - `CONTEXT.md` gains **Find All**; ADR-0055's "Not decided here" and §21.11 of the Definition of Done lose Find All,
