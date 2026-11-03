@@ -93,6 +93,19 @@ before, so nothing reaches `main` or a tag without layer 3 having run on it.)*
   width, decided with the user the same day); they are shields.io endpoint files on the `badges` branch, because a generated
   badge cannot carry the product's name. The history gained a column pair per product, so
   the total's line steps where the eight were first counted.)*
+  *(Since 2026-11-03, decided with the user: the Script Core is counted too. Its code had
+  been reported nowhere since the family moved to TypeScript (ADR-0350, ADR-0370), and the
+  .NET figure fell from about 95% to 87% as the Razor components and their bUnit suites went:
+  what stayed in .NET is mostly the Blazor adapters, which only layer 3 runs, and layer 3
+  counts no coverage. `npm run coverage` runs every package's Vitest tests in one run, as
+  ReportGenerator merges the .NET suites, with V8's coverage of each package's `src/`;
+  `tools/coverage/summary.mjs` reports it per product by an explicit list of each product's
+  packages, and stops on a package the list does not name. CI runs it in a job of its own,
+  beside the `npm test` that stays the gate, and puts the table into the run's summary;
+  coverage slows the CPU-bound property tests, so that run gives each test 30 seconds. The
+  README now shows two badges, the Script Core's total and the .NET packages' total, and the table they link to gives every product
+  one column pair per platform; the per-product endpoint files stay on the `badges` branch for
+  links that point at them. The history gained the Script Core's pairs at its end.)*
 
 ## What CI does not replace
 

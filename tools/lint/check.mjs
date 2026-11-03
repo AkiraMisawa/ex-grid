@@ -59,7 +59,7 @@ if (failed) {
 }
 
 // The fixtures break every rule on purpose; they were held to their markers above. The workspace's TypeScript is the
-// packages and their tooling: the hosts, layer 3 and the other tools at the root are not linted here.
-const result = spawnSync(oxlint, [...flags, '--ignore-pattern', 'tools/lint/fixtures/**', 'packages', 'tools/lint', 'tools/scripts'], { cwd: workspace, stdio: 'inherit', shell: process.platform === 'win32' });
+// packages and their tooling (coverage's among it): the hosts, layer 3 and the other tools at the root are not linted here.
+const result = spawnSync(oxlint, [...flags, '--ignore-pattern', 'tools/lint/fixtures/**', 'packages', 'tools/lint', 'tools/scripts', 'tools/coverage'], { cwd: workspace, stdio: 'inherit', shell: process.platform === 'win32' });
 // A run that ended on a signal has no status, and has not passed.
 process.exit(result.status === 0 ? 0 : 1);
