@@ -6,8 +6,8 @@ using Xunit;
 namespace ExGrid.Tests.Cases;
 
 /// <summary>
-/// The reference Find step and Replace All's shared cases (<c>tests/cases/finding</c>, kinds <c>find</c> and
-/// <c>replace</c>; ADR-0350 section 5), run against the C# core. A row is the texts of its cells, in the
+/// The reference Find step, Find All and Replace All's shared cases (<c>tests/cases/finding</c>, kinds <c>find</c>,
+/// <c>findAll</c> and <c>replace</c>; ADR-0350 section 5), run against the C# core. A row is the texts of its cells, in the
 /// file's columns: what a Find matches, the displayed text, or what a Replace matches, the entry. The Script
 /// Core's runner is <c>packages/core/test/find.test.ts</c>.
 /// </summary>
@@ -18,6 +18,8 @@ public partial class FindCaseTests
     public static TheoryData<string, string> FindCases() => SharedCases.Of(Area, "find");
 
     public static TheoryData<string, string> ReplaceCases() => SharedCases.Of(Area, "replace");
+
+    public static TheoryData<string, string> FindAllCases() => SharedCases.Of(Area, "findAll");
 
     [Theory, MemberData(nameof(FindCases))] // ADR-0350: a Find case holds on the C# core
     public void Find(string file, string name)
@@ -38,6 +40,39 @@ public partial class FindCaseTests
             Assert.True(found.IsFound, $"{label}: expected {expected}, got nothing");
             Assert.Equal((expected[0].GetInt32(), expected[1].GetString()), (found.Row, found.Column));
         }
+    }
+
+    [Theory, MemberData(nameof(FindAllCases))] // ADR-0470: a Find All case holds on the C# core
+    public void FindAll(string file, string name)
+    {
+        var (document, entry) = SharedCases.Find(Area, file, name);
+        var columns = Strings(document.GetProperty("columns"));
+        var rows = Rows(document.GetProperty("rows"));
+        var written = entry.GetProperty("findAll");
+        var request = new GridFindAllRequest
+        {
+            Text = written.GetProperty("text").GetString()!,
+            MatchCase = Flag(written, "matchCase"),
+            WholeCell = Flag(written, "wholeCell"),
+            Scope = written.TryGetProperty("scope", out var scope) ? SharedCases.Ranges(scope) : null,
+            Columns = written.TryGetProperty("columns", out var own) ? Strings(own) : columns,
+            RowSequenceVersion = 3,
+            Start = written.GetProperty("start").GetInt32(),
+            Count = written.GetProperty("count").GetInt32(),
+        };
+        GridFindAllPage List() => GridFindAll.Page(rows, 3, request, TextsOf(columns));
+
+        if (entry.TryGetProperty("throws", out var refusal))
+        {
+            SharedCases.Refused(() => List(), refusal.GetString()!);
+            return;
+        }
+        var page = List();
+        Assert.Equal(entry.GetProperty("total").GetInt32(), page.Total);
+        Assert.Equal(
+            [.. entry.GetProperty("matches").EnumerateArray().Select(match => $"{match[0].GetInt32()} {match[1].GetString()} {match[2].GetString()}")],
+            page.Matches.Select(match => $"{match.Row} {match.Column} {match.Text}").ToArray());
+        Assert.Equal(3, page.RowSequenceVersion);
     }
 
     [Theory, MemberData(nameof(ReplaceCases))] // ADR-0350: a Replace All case holds on the C# core

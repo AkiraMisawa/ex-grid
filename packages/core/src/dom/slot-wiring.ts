@@ -328,7 +328,8 @@ export function wireFindPanel(contents: HTMLElement, context: GridFindPanelSlotC
             case 'previous': context.previous(); break;
             case 'replace': context.replace(); break;
             case 'replaceAll': context.replaceAll(); break;
-            default: throw new RangeError(`A find panel's button is marked ${findPanelAttributes.step}="${marked.value}": it is next, previous, replace or replaceAll.`);
+            case 'findAll': context.findAll(); break;
+            default: throw new RangeError(`A find panel's button is marked ${findPanelAttributes.step}="${marked.value}": it is next, previous, replace, replaceAll or findAll.`);
         }
     };
     contents.addEventListener('input', input);

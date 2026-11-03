@@ -37,6 +37,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task<string?> Find(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindAsync(number, generation, request));
 
     [JSInvokable]
+    public Task<string?> FindAll(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindAllAsync(number, generation, request));
+
+    [JSInvokable]
     public Task<string?> ContextCommands(long number, int generation, int columnsVersion, long row, string column, JsonElement selection, int rowSequenceVersion)
         => Calls.InOrder(() => grid.ContextCommandsAsync(number, generation, columnsVersion, row, column, selection, rowSequenceVersion));
 

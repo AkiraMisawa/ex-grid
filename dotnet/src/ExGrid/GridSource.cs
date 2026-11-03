@@ -78,6 +78,10 @@ public static class GridSource
     /// A source cannot see the host's services, so null is <see cref="TimeProvider.System"/>: a host
     /// that registers a <see cref="TimeProvider"/> for the grid passes the same one here, and a test
     /// passes its own.</param>
+    /// <param name="findAll">Answers a page of a Find All (ADR-0470) against the result the handed Filter and Sorts
+    /// produce, with the exact count, as <see cref="Finding.GridFindAll.Matches{TRow}"/> would over that result. Given
+    /// only beside <paramref name="find"/>; null reports that this source lists nothing, and the find panel offers no
+    /// Find All.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows = 60,
@@ -86,6 +90,7 @@ public static class GridSource
         Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
         Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? summarize = null,
         Func<TRow, object>? rowKey = null,
-        TimeProvider? clock = null)
-        => new(fetch, readAheadRows, distinctValues, marks, find, summarize, rowKey, clock);
+        TimeProvider? clock = null,
+        Func<Finding.GridFindAllRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindAllPage>>? findAll = null)
+        => new(fetch, readAheadRows, distinctValues, marks, find, summarize, rowKey, clock, findAll);
 }

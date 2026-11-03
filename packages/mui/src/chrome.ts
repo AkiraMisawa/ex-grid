@@ -156,6 +156,7 @@ function MuiFindPanel({ context }: { readonly context: GridFindPanelSlotContext 
             size, checked: view.wholeCell, onChange: event => { context.setWholeCell(event.target.checked); },
         }), size),
         createElement('div', { key: 'steps', className: 'mui-ex-grid-find-actions' },
+            ...(view.findAllShown ? [button(findPanelLabelIds.findAll, context.findAll, 'outlined')] : []),
             button(findPanelLabelIds.previous, context.previous, 'outlined'),
             button(findPanelLabelIds.next, context.next, 'contained')),
         ...(view.replaceShown ? [

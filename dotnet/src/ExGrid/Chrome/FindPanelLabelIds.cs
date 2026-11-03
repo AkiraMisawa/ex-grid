@@ -84,4 +84,30 @@ public static class FindPanelLabelIds
 
     /// <summary>Why a match in a column that is not Editable cannot be written.</summary>
     public const string NotEditable = "find-not-editable";
+
+    /// <summary>The Find All button (ADR-0470 §1).</summary>
+    public const string FindAll = "find-all";
+
+    /// <summary>The accessible name of a Find All's list.</summary>
+    public const string FindAllList = "find-all-list";
+
+    /// <summary>What a Find All that matched several cells says, their count at <see cref="CountPlaceholder"/>.</summary>
+    public const string FindAllFound = "find-all-found";
+
+    /// <summary>What a Find All that matched one cell says.</summary>
+    public const string FindAllFoundOne = "find-all-found-one";
+
+    /// <summary>What a Find All that matched nothing says.</summary>
+    public const string FindAllNone = "find-all-none";
+
+    /// <summary>Where a match in a row is: its row's number from 1 at <see cref="RowPlaceholder"/> and its column's
+    /// header at <see cref="ColumnPlaceholder"/>.</summary>
+    public const string FindAllInRow = "find-all-in-row";
+
+    /// <summary>Where a match in a row is, by the Consumer's label for the row at <see cref="RowPlaceholder"/> and its
+    /// column's header at <see cref="ColumnPlaceholder"/>.</summary>
+    public const string FindAllInLabelledRow = "find-all-in-labelled-row";
+
+    /// <summary>Where a match in a header is: the header's text at <see cref="ColumnPlaceholder"/>.</summary>
+    public const string FindAllInHeader = "find-all-in-header";
 }

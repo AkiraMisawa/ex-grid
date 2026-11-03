@@ -144,6 +144,22 @@ public interface IGridSource<TRow>
             $"{GetType().Name} does not search: CanFind is false, and the grid does not ask (ADR-0055).");
 
     /// <summary>
+    /// Whether this source answers <see cref="FindAllAsync"/> (ADR-0470): lists every match, a page at a time, with
+    /// the exact count. The default is no, so a source written before Find All keeps compiling and the find panel
+    /// offers no Find All. Read only beside <see cref="CanFind"/>.
+    /// </summary>
+    bool CanFindAll => false;
+
+    /// <summary>
+    /// The range of a Find All's list the request asks for, and the exact count of the whole list, in the order the
+    /// request was read in (ADR-0470 §2). <see cref="Finding.GridFindAll.Matches{TRow}"/> is the reference for the
+    /// list and its order. Called only when <see cref="CanFindAll"/>; the default refuses by name.
+    /// </summary>
+    Task<Finding.GridFindAllPage> FindAllAsync(Finding.GridFindAllRequest request, CancellationToken cancellationToken)
+        => throw new NotSupportedException(
+            $"{GetType().Name} does not list every match: CanFindAll is false, and the grid does not ask (ADR-0470).");
+
+    /// <summary>
     /// Whether this source answers <see cref="SummarizeAsync"/> (ADR-0130). The default is no, so a
     /// source written before the Selection Summary keeps compiling and no figure is shown.
     /// </summary>

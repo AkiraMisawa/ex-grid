@@ -147,6 +147,7 @@ function MantineFindPanel({ context }: { readonly context: GridFindPanelSlotCont
             onChange: event => { context.setWholeCell(event.currentTarget.checked); },
         }),
         createElement('div', { className: 'mantine-ex-grid-find-actions' },
+            ...(view.findAllShown ? [button(findPanelLabelIds.findAll, context.findAll, 'default')] : []),
             button(findPanelLabelIds.previous, context.previous, 'default'),
             button(findPanelLabelIds.next, context.next, 'filled')),
         ...(view.replaceShown ? [

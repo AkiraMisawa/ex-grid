@@ -112,7 +112,7 @@ public static class ScriptSlotAttributes
     /// <summary>On the find panel's options, <c>matchCase</c> or <c>wholeCell</c>: a checkbox.</summary>
     public const string FindOption = "data-ex-find-option";
 
-    /// <summary>On the find panel's buttons, <c>next</c>, <c>previous</c>, <c>replace</c> or <c>replaceAll</c>: a
+    /// <summary>On the find panel's buttons, <c>next</c>, <c>previous</c>, <c>replace</c>, <c>replaceAll</c> or <c>findAll</c>: a
     /// press steps or writes. Enter in a field submits the core's form, which steps, backward with Shift, so no
     /// button need be a submit button.</summary>
     public const string FindStep = "data-ex-find-step";
@@ -331,7 +331,13 @@ public sealed record GridFindView(
     string ReplaceText,
     bool ReplaceWaiting,
     string Outcome,
-    GridFindWords Words);
+    GridFindWords Words)
+{
+    /// <summary>Whether the panel offers Find All (ADR-0470 §1): the source lists every match. While it does, draw a
+    /// Find All button marked with <see cref="ScriptSlotAttributes.FindStep"/> <c>findAll</c>; the list and its count
+    /// are the core's, drawn under the contents (ADR-0470 §3).</summary>
+    public bool FindAllShown { get; init; }
+}
 
 /// <summary>The find panel's words, the Consumer's <c>commandLabel</c> else the built-in English.</summary>
 /// <param name="Field">The find field's name.</param>
@@ -350,4 +356,8 @@ public sealed record GridFindWords(
     string Previous,
     string ReplaceField,
     string Replace,
-    string ReplaceAll);
+    string ReplaceAll)
+{
+    /// <summary>Find All (ADR-0470 §1).</summary>
+    public required string FindAll { get; init; }
+}

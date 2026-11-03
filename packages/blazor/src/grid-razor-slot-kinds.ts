@@ -199,9 +199,10 @@ function findJson(panel: GridFindPanelSlotContext, opens: FindOpens): string {
         wholeCell: panel.label(findPanelLabelIds.wholeCell), next: panel.label(findPanelLabelIds.next),
         previous: panel.label(findPanelLabelIds.previous), replaceField: panel.label(findPanelLabelIds.replaceField),
         replace: panel.label(findPanelLabelIds.replace), replaceAll: panel.label(findPanelLabelIds.replaceAll),
+        findAll: panel.label(findPanelLabelIds.findAll),
     };
     return JSON.stringify({
         text: opens.text, matchCase: view.matchCase, wholeCell: view.wholeCell, replaceShown: view.replaceShown,
-        replaceText: opens.replaceText, replaceWaiting: view.replaceWaiting, outcome: view.outcome, words,
+        replaceText: opens.replaceText, replaceWaiting: view.replaceWaiting, outcome: view.outcome, findAllShown: view.findAllShown, words,
     });
 }

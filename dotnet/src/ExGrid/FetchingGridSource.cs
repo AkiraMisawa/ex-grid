@@ -44,6 +44,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private readonly int _readAheadRows;
     private readonly Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? _distinctValues;
     private readonly Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? _find;
+    private readonly Func<Finding.GridFindAllRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindAllPage>>? _findAll;
     private readonly Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? _summarize;
 
     // Captured where the source is constructed — the Consumer's component, so Blazor's
@@ -101,9 +102,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
         Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? summarize = null,
         Func<TRow, object>? rowKey = null,
-        TimeProvider? clock = null)
+        TimeProvider? clock = null,
+        Func<Finding.GridFindAllRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindAllPage>>? findAll = null)
     {
         ArgumentNullException.ThrowIfNull(fetch);
+        if (findAll is not null && find is null)
+            throw new ArgumentException("A Find All is offered beside a Find: give find with findAll (ADR-0470 §1).", nameof(findAll));
         ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
         // The Row Mark adapter's key is a Row Key (ADR-0140): one value names a row for its marks,
         // for a source and for the grid. Two different ones would let the marks follow one key and
@@ -118,6 +122,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         _readAheadRows = readAheadRows;
         _distinctValues = distinctValues;
         _find = find;
+        _findAll = findAll;
         _summarize = summarize;
         Marks = marks is null ? null : new Rows.FetchingRowMarks<TRow>(this, marks);
         _key = rowKey ?? marks?.Key;
@@ -985,6 +990,23 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         if (_find is null)
             throw new NotSupportedException("This source was given no find delegate: CanFind is false (ADR-0055).");
         return _find(request, Filter, Sorts, cancellationToken);
+    }
+
+    /// <summary>Whether a <c>findAll</c> delegate was given (ADR-0470).</summary>
+    public bool CanFindAll => _findAll is not null;
+
+    /// <summary>
+    /// A page of a Find All, answered by the <c>findAll</c> delegate against the Filter and Sorts in force (ADR-0470),
+    /// with the exact count. The positions it answers are in that order; the grid drops the list if the order has moved
+    /// since the request was read.
+    /// </summary>
+    public Task<Finding.GridFindAllPage> FindAllAsync(Finding.GridFindAllRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_findAll is null)
+            throw new NotSupportedException("This source was given no findAll delegate: CanFindAll is false (ADR-0470).");
+        return _findAll(request, Filter, Sorts, cancellationToken);
     }
 
     /// <summary>Whether a <c>summarize</c> delegate was given (ADR-0130).</summary>

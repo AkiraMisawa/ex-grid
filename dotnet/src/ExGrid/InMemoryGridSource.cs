@@ -441,6 +441,49 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         }));
     }
 
+    /// <summary>Always: every row is in hand (ADR-0470).</summary>
+    public bool CanFindAll => true;
+
+    /// <summary>What a Find All's list calls a row, in place of its position (ADR-0470 §3): a trade's id, say. Null
+    /// names each row by its position in the order shown.</summary>
+    public Func<TRow, string>? FindAllRowLabel { get; set; }
+
+    // The last Find All's matches, kept while the result, the columns and the question stand, so a list scrolled
+    // through is walked once (ADR-0470 §2).
+    private (string Key, IReadOnlyList<TRow> Window, object Columns, Func<TRow, string>? Label, Finding.GridFindAllMatches<TRow> Matches)? _findAll;
+
+    /// <summary>
+    /// The reference Find All (ADR-0470): <see cref="Finding.GridFindAll.Matches{TRow}"/> over the current result,
+    /// matching each column's displayed text as <see cref="FindAsync"/> does. The matches are found once for a question
+    /// and read a page at a time while the result stands. A request read under another version is answered anyway,
+    /// under this source's: the grid discards it by the version.
+    /// </summary>
+    public Task<Finding.GridFindAllPage> FindAllAsync(Finding.GridFindAllRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        var columns = _columns ?? [];
+        var window = Window;
+        var key = string.Join("\u0001", [request.Text, request.MatchCase ? "1" : "0", request.WholeCell ? "1" : "0",
+            string.Join(",", request.Scope?.Select(range => $"{range.TopRow}:{range.LeftColumn}:{range.RowCount}:{range.ColumnCount}") ?? ["all"]),
+            .. request.Columns]);
+        if (_findAll is not { } held || held.Key != key || !ReferenceEquals(held.Window, window) || !ReferenceEquals(held.Columns, columns)
+            || held.Label != FindAllRowLabel)
+        {
+            held = (key, window, columns, FindAllRowLabel, Finding.GridFindAll.Matches(window, request, name =>
+            {
+                foreach (var column in columns)
+                {
+                    if (column.Name == name)
+                        return column.IsQueryable ? column.TextOf : null;
+                }
+                return null;
+            }, FindAllRowLabel));
+            _findAll = held;
+        }
+        return Task.FromResult(held.Matches.Page(request.Start, request.Count, RowSequenceVersion));
+    }
+
     /// <summary>
     /// The reference Replace All (ADR-0332 §3), for the grid's <c>OnReplace</c>:
     /// <see cref="Finding.GridReplace.Plan{TRow}"/> over the current result, and, when every match can
