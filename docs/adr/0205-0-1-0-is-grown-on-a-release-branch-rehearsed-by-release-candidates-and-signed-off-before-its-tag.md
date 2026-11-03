@@ -183,6 +183,20 @@ form of its own that says the sign-off is being made against this candidate, and
   *(2026-10-12, decided with the user: nor does a version without a suffix that a stable tag is above by
   SemVer precedence, a patch to an older line, so `0.1.1` from `release/0.1` after `0.2.0` leaves
   `0.2.0`'s site in place. A stable version exists once the repository has a tag without a suffix.)*
+  *(Rewritten 2026-11-03, decided with the user: **the site describes the newest version tagged.** A
+  version, a prerelease included, publishes it when no tag is above it by SemVer 2's whole precedence,
+  its suffix compared too; a version some tag is above publishes none. What the rule above did: from
+  `v0.1.0` on 2026-10-18 the site stayed on 0.1.0 through `0.2.0-beta.1` to `beta.3`, which moved every
+  product onto the TypeScript core and published React on npm for the first time, so a reader coming
+  from npm met a site with no React in it. The reason it was taken, that the site would document what a
+  stable Consumer cannot install, weighed less than a site that says nothing of the version npm installs.
+  So `0.2.0-beta.3` publishes it over `0.1.0`'s, and `0.1.1` from `release/0.1` after `0.2.0-beta.3`
+  publishes none, though it is still npm's `latest`, which stays the latest stable line's (ADR-0042).
+  `docs.yml` also publishes a released tag on demand, run from `main` and given the tag, once nuget.org
+  and npm have every package at its version: that is how `0.2.0-beta.3`, released under the rule above,
+  takes the site (ADR-0110). A tag runs the `release.yml` and the release tool of the commit it names, so
+  `release/0.1` and `release/0.2`, cut before this, would still publish a patch's site under the rule
+  above: such a branch takes this change before its next tag.)*
 
 ## Considered options
 
@@ -200,7 +214,8 @@ form of its own that says the sign-off is being made against this candidate, and
   ADR-0208.)*
 - **A prerelease republishing the site, or a second site under `/next/`.** The first documents
   parameters a stable Consumer cannot install, which ADR-0110 refused for `main`; the second doubles the
-  publishing for a need nobody has yet.
+  publishing for a need nobody has yet. *(2026-11-03: the first is taken, for a prerelease above every
+  tag, as the rewritten bullet above says. The second is still rejected.)*
 
 ## Consequences
 
@@ -210,7 +225,8 @@ form of its own that says the sign-off is being made against this candidate, and
   *(2026-10-12, decided with the user: the rewrite and this `release.yml` go in on `main` before
   `release/0.1` is cut, so the branch carries them from its cut, as "The release branch" asks.)*
 - ADR-0190 is amended: a stable version's tag goes on its release branch's Y, and its notes carry the
-  blocks above. ADR-0110: a prerelease publishes no site once a stable version exists.
+  blocks above. ADR-0110: a prerelease publishes no site once a stable version exists. *(2026-11-03: a
+  version publishes it when no tag is above it, a prerelease's included.)*
 - The package readmes are reworded for any version before `rc.1`. `check.sh`, PV-1 and the three Wrapper
   readmes state `[9.6.0,10.0.0)` *(`[9.0.0,10.0.0)` until the note of 2026-10-12 above)*.
   *(2026-10-12, decided with the user: the Definition of Done's Step 4 runs the floor and layer 2 across
