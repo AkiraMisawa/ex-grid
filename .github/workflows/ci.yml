@@ -156,7 +156,7 @@ jobs:
           product ExBoard "+ExBoard"
           product Data    "+ExGrid.Data;+ExGrid.Data.Arrow;+ExGrid.Data.Xlsx"
           {
-            echo '## Coverage per product'
+            echo '## .NET coverage per product'
             echo
             echo '| Product | Line | Branch |'
             echo '|---|---|---|'
@@ -206,11 +206,29 @@ jobs:
       - name: Build, and hold each package's public surface to its report
         run: npm run build
 
-      # The long run takes ST-1 at 10⁶ rows too (grid-consistency.test.ts, ADR-0205).
-      - name: Layers 1 and 2
+      # Every package's tests in one Vitest run with V8's coverage of the shipped sources (ADR-0041,
+      # tools/coverage/vitest.config.mjs): the same test files `npm test` runs, as the tests job runs the .NET suites
+      # with coverage. The long run takes ST-1 at 10⁶ rows too (grid-consistency.test.ts, ADR-0205).
+      - name: Layers 1 and 2, with coverage
         env:
           EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: npm test
+        run: npm run coverage
+
+      - name: Coverage per product
+        run: node tools/coverage/summary.mjs
+
+      - name: Coverage into the run's summary
+        run: cat coverage/ts/Summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-ts
+          path: |
+            coverage/ts/Summary.md
+            coverage/ts/products.json
+            coverage/ts/coverage-summary.json
+          if-no-files-found: error
+          retention-days: 30
 
       # The npm packages packed at the version and taken by an application as a Consumer takes them (ADR-0042,
       # ADR-0370 section 9), the counterpart of the package job's check of NuGet's: every tarball read back, its
@@ -1005,7 +1023,7 @@ jobs:
 
   badges:
     name: Publish the coverage badges
-    needs: tests
+    needs: [tests, script-core]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -1016,10 +1034,18 @@ jobs:
           name: coverage
           path: coverage
 
+      - uses: actions/download-artifact@v8
+        with:
+          name: coverage-ts
+          path: coverage-ts
+
       # The badges branch holds only the badges, the latest table and one line of history
       # per push to main. It is not a code branch and nothing merges it. Each badge is a
-      # shields.io endpoint file — the label names the product, which a generated SVG cannot —
-      # read by the README; the two SVGs stay for the links that still point at them.
+      # shields.io endpoint file — the label names what it counts, which a generated SVG cannot —
+      # read by the README. The README shows two, the Script Core's total and the .NET packages'
+      # (ADR-0041's note of 2026-11-03); the figure per product is in the table they link to, one
+      # column pair per platform. The other endpoint files and the two SVGs stay for the links that
+      # still point at them.
       - name: Update the badges branch
         env:
           REPO: ${{ github.repository }}
@@ -1034,6 +1060,8 @@ jobs:
               else if (v >= 50) print "orange"; else print "red" }'
           }
           figure() { grep -oP "$1 coverage: \K[0-9.]+" "$2"; }
+          # The Script Core's figure, from tools/coverage/summary.mjs's products.json; jq fails on a key it lacks.
+          ts() { jq -er "$1" coverage-ts/products.json; }
           # One badge: the label and the line coverage, coloured by it. Branch coverage is in the
           # table the badges link to; on a badge it doubled the width and read as noise.
           endpoint() {
@@ -1041,31 +1069,53 @@ jobs:
           }
           line=$(figure Line coverage/Summary.txt)
           branch=$(figure Branch coverage/Summary.txt)
+          ts_line=$(ts .total.line)
+          ts_branch=$(ts .total.branch)
           git clone --quiet --depth 1 --branch badges "https://x-access-token:${TOKEN}@github.com/${REPO}.git" out \
             || { git init --quiet out && git -C out checkout --quiet --orphan badges; }
           cp "coverage/badge_shieldsio_linecoverage_$(colour "$line").svg" out/coverage-line.svg
           cp "coverage/badge_shieldsio_branchcoverage_$(colour "$branch").svg" out/coverage-branch.svg
+          endpoint 'coverage (TS)' "$ts_line" > out/coverage-ts.json
+          endpoint 'coverage (.NET)' "$line" > out/coverage-dotnet.json
           endpoint coverage "$line" > out/coverage-total.json
           history="${line},${branch}"
+          ts_history="${ts_line},${ts_branch}"
+          table=''
           for name in ExGrid ExSheet ExPivot ExChart ExBoard Data; do
             summary="coverage/products/$name/Summary.txt"
             p_line=$(figure Line "$summary")
             p_branch=$(figure Branch "$summary")
+            t_line=$(ts ".products.${name}.line")
+            t_branch=$(ts ".products.${name}.branch")
             endpoint "$name" "$p_line" > "out/coverage-$(echo "$name" | tr '[:upper:]' '[:lower:]').json"
             history="${history},${p_line},${p_branch}"
+            ts_history="${ts_history},${t_line},${t_branch}"
+            table="${table}| ${name} | ${t_line}% | ${t_branch}% | ${p_line}% | ${p_branch}% |"$'\n'
           done
-          cat coverage/products/Summary.md coverage/SummaryGithub.md > out/coverage.md
-          # The history gained a column pair per product when the ten packages were first counted;
-          # rows before that have the total alone.
-          columns='date,commit,line,branch,exgrid_line,exgrid_branch,exsheet_line,exsheet_branch,expivot_line,expivot_branch,exchart_line,exchart_branch,exboard_line,exboard_branch,data_line,data_branch'
+          {
+            echo '## Coverage per product'
+            echo
+            echo 'Line and branch coverage of what ships: the npm packages'"'"' sources under `packages/*/src` (TypeScript), and'
+            echo 'the sixteen NuGet packages'"'"' assemblies (.NET). Each is counted against every test of its platform.'
+            echo
+            echo '| Product | TS line | TS branch | .NET line | .NET branch |'
+            echo '|---|---|---|---|---|'
+            printf '%s' "$table"
+            echo "| **Total** | **${ts_line}%** | **${ts_branch}%** | **${line}%** | **${branch}%** |"
+            echo
+            cat coverage-ts/Summary.md coverage/products/Summary.md coverage/SummaryGithub.md
+          } > out/coverage.md
+          # The history gained a column pair per product when the ten packages were first counted, and the Script
+          # Core's pairs on 2026-11-03; rows before each have the columns they had then.
+          columns='date,commit,line,branch,exgrid_line,exgrid_branch,exsheet_line,exsheet_branch,expivot_line,expivot_branch,exchart_line,exchart_branch,exboard_line,exboard_branch,data_line,data_branch,ts_line,ts_branch,ts_exgrid_line,ts_exgrid_branch,ts_exsheet_line,ts_exsheet_branch,ts_expivot_line,ts_expivot_branch,ts_exchart_line,ts_exchart_branch,ts_exboard_line,ts_exboard_branch,ts_data_line,ts_data_branch'
           if [ ! -f out/history.csv ]; then
             echo "$columns" > out/history.csv
           elif [ "$(head -n 1 out/history.csv)" != "$columns" ]; then
             sed -i "1s/.*/$columns/" out/history.csv
           fi
-          echo "$(date -u +%Y-%m-%dT%H:%MZ),${SHA::7},${history}" >> out/history.csv
+          echo "$(date -u +%Y-%m-%dT%H:%MZ),${SHA::7},${history},${ts_history}" >> out/history.csv
           cd out
           git add -A
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit --quiet -m "Coverage ${line}% lines, ${branch}% branches at ${SHA::7}"
+            commit --quiet -m "Coverage TS ${ts_line}% lines, .NET ${line}% lines at ${SHA::7}"
           git push --quiet "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:badges
