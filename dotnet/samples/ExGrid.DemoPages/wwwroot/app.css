@@ -48,6 +48,15 @@ body {
     align-items: flex-start;
 }
 
+/* The MudBlazor paper may be given less than its grid's width, which a declared grid keeps
+   (mud-ex-grid.css, ADR-0045), so in a window too narrow for both the grid overflowed onto
+   its neighbour, and a press on the Formula Bar's end fell on the positions grid (ED-30's k9
+   on CI's Windows runner, 2026-11-03). Here it keeps its width, as the built-in Chrome's
+   Sheet does, and the page scrolls instead. */
+.demo-side-by-side > .mud-ex-grid {
+    flex-shrink: 0;
+}
+
 .demo-pane {
     max-width: 60rem;
     margin-bottom: 2rem;
