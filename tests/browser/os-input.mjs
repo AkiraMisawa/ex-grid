@@ -67,23 +67,38 @@ async function ask(command) {
 let calls = 0;
 
 /**
+ * Starts recording the events of `type` that `page` sees, in the capture phase on its window, before
+ * any of the page's own listeners: of each, `property`, or with several, their values in that order.
+ * Answers a function that reads them, whose `stop` ends the recording early; the harness ends it, and
+ * takes the record away, as the test ends (alterPage).
+ */
+export async function eventsSeenBy(page, type, ...properties) {
+    const name = `exOsSeen${++calls}`;
+    await alterPage(page, ({ record, kind, read }) => {
+        const seen = [];
+        window[record] = seen;
+        const note = (event) => seen.push(read.length === 1 ? event[read[0]] : read.map((p) => event[p]));
+        const stop = () => window.removeEventListener(kind, note, true);
+        window[`${record}Stop`] = stop;
+        window.addEventListener(kind, note, true);
+        return () => {
+            stop();
+            delete window[record];
+            delete window[`${record}Stop`];
+        };
+    }, { record: name, kind: type, read: properties });
+    const read = () => page.evaluate((record) => window[record], name);
+    read.stop = () => page.evaluate((record) => window[`${record}Stop`](), name);
+    return read;
+}
+
+/**
  * Starts recording the keys `page` sees, by `key`, in the capture phase on its window, before any of
  * the page's own listeners: their `keydown`, or with `type` their `keyup`. Answers a function that reads
  * them.
  */
-export async function keysSeenBy(page, kind = 'keydown') {
-    const name = `exOsKeys${++calls}`;
-    await alterPage(page, ({ record, type }) => {
-        const seen = [];
-        window[record] = seen;
-        const note = (event) => seen.push(event.key);
-        window.addEventListener(type, note, true);
-        return () => {
-            window.removeEventListener(type, note, true);
-            delete window[record];
-        };
-    }, { record: name, type: kind });
-    return () => page.evaluate((record) => window[record], name);
+export function keysSeenBy(page, kind = 'keydown') {
+    return eventsSeenBy(page, kind, 'key');
 }
 
 /**
@@ -161,31 +176,70 @@ export async function osKeys(page, ...chords) {
     return seen.slice(0, seen.indexOf('F24'));
 }
 
+// The physical key each name os-keys.ps1 sends is, as the page's `code` names it: a key the IME takes
+// reaches the page as `Process`, by `key`, but keeps its `code`.
+const CODES = {
+    ctrl: 'ControlLeft', shift: 'ShiftLeft', alt: 'AltLeft', space: 'Space', enter: 'Enter', escape: 'Escape',
+    tab: 'Tab', backspace: 'Backspace', delete: 'Delete', plus: 'Equal', minus: 'Minus', left: 'ArrowLeft',
+    up: 'ArrowUp', right: 'ArrowRight', down: 'ArrowDown', home: 'Home', end: 'End', pageup: 'PageUp',
+    pagedown: 'PageDown',
+};
+
+/** The `code` of each key a chord releases, in the order it releases them; none for the IME's own keys. */
+function released(chord) {
+    return chord.toLowerCase().split('+').reverse().flatMap((key) => {
+        if (key === 'imeon' || key === 'imeoff') return [];
+        if (key in CODES) return [CODES[key]];
+        if (/^f\d+$/.test(key)) return [key.toUpperCase()];
+        if (/^[a-z]$/.test(key)) return [`Key${key.toUpperCase()}`];
+        if (/^\d$/.test(key)) return [`Digit${key}`];
+        throw new Error(`osTyped has no code for the key ${key}`);
+    });
+}
+
+/** Whether `wanted` appears in `seen` in order, other keys between them or not. */
+function inOrder(wanted, seen) {
+    let at = 0;
+    for (const code of seen) {
+        if (code === wanted[at]) at++;
+    }
+    return at === wanted.length;
+}
+
+const keyups = new WeakMap();
+
 /**
- * Sends the chords as osKeysThen does, then waits until the page has seen each of their keys released:
- * a key an IME takes reaches the page as `Process`, and the composition it changes is told before its
- * keyup, so what the keys composed can be read once this returns. VK_IME_ON and VK_IME_OFF ('imeon',
- * 'imeoff') are the IME's alone and are not waited for; the keys after them are, and the IME takes keys
- * in the order they were sent. What the page then did with them is the caller's to read.
+ * Sends the chords as osKeysThen does, then waits until the page has seen each of their keys released,
+ * in order, by `code`: a key an IME takes reaches the page as `Process`, and the composition it changes
+ * is told before its keyup, so what the keys composed can be read once this returns. VK_IME_ON and
+ * VK_IME_OFF ('imeon', 'imeoff') are the IME's alone and are not waited for; the keys after them are, and
+ * the IME takes keys in the order they were sent. What the page then did with them is the caller's to read.
  */
 export async function osTyped(page, ...chords) {
-    const keys = chords.flatMap((chord) => chord.split('+')).filter((key) => key !== 'imeon' && key !== 'imeoff');
-    const released = await keysSeenBy(page, 'keyup');
+    if (!keyups.has(page)) {
+        keyups.set(page, await eventsSeenBy(page, 'keyup', 'code'));
+    }
+    const seen = keyups.get(page);
+    const wanted = chords.flatMap(released);
+    const from = (await seen()).length;
     await osKeysThen(page, ...chords);
-    await expect.poll(async () => (await released()).length, {
-        message: `${chords.join(', ')}, sent through the OS: the page saw fewer than ${keys.length} keys released`,
-    }).toBeGreaterThanOrEqual(keys.length);
+    await expect.poll(async () => inOrder(wanted, (await seen()).slice(from)), {
+        message: `${chords.join(', ')}, sent through the OS: the page has not seen ${wanted.join(', ')} released, in that order`,
+    }).toBe(true);
 }
 
 /**
  * Brings the page's tab and window to the front and switches the window to the Japanese keyboard and the
- * Microsoft IME (ED-30), which windows/japanese-input.ps1 installs, and reads where the page is on the
- * screen for osPressed. The IME starts off: 'imeon' sent through osTyped switches it on.
+ * Microsoft IME (ED-30), which windows/japanese-input.ps1 installs, with the IME off, and reads where the
+ * page is on the screen for osPressed. The IME's open status is the browser window's thread's, which an
+ * earlier test's window may have left on, so it is switched off here; 'imeon' sent through osTyped
+ * switches it on.
  */
 export async function osJapanese(page) {
     await page.bringToFront();
     await inFront(page, 'the keyboard\'s switch');
     await ask('japanese');
+    await ask('keys imeoff');
     // Where the page is on the screen, read now rather than at the first press, which may come in
     // the middle of a composition.
     await originOf(page);
@@ -204,18 +258,7 @@ async function originOf(page) {
     if (known !== undefined) {
         return known;
     }
-    const name = `exOsMoves${++calls}`;
-    await alterPage(page, ({ record }) => {
-        const moves = [];
-        window[record] = moves;
-        const note = (event) => moves.push([event.clientX, event.clientY]);
-        window.addEventListener('mousemove', note, true);
-        return () => {
-            window.removeEventListener('mousemove', note, true);
-            delete window[record];
-        };
-    }, { record: name });
-    const moves = () => page.evaluate((record) => window[record], name);
+    const moves = await eventsSeenBy(page, 'mousemove', 'clientX', 'clientY');
     const frame = await page.evaluate(() => ({ x: screenX, y: screenY, outer: [outerWidth, outerHeight], inner: [innerWidth, innerHeight], dpr: devicePixelRatio }));
     // The window's frame is as wide on each side as below the page; the rest of its height is above it.
     const side = (frame.outer[0] - frame.inner[0]) / 2;
@@ -235,6 +278,7 @@ async function originOf(page) {
         if (at[0] === aim[0] && at[1] === aim[1]) {
             const origin = { x, y, dpr: frame.dpr };
             origins.set(page, origin);
+            await moves.stop();
             return origin;
         }
         x += (aim[0] - at[0]) * frame.dpr;
@@ -253,14 +297,17 @@ async function originOf(page) {
 export async function osPressed(locator, position = null) {
     const page = locator.page();
     const origin = await originOf(page);
-    const box = await locator.evaluate((element) => {
-        element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        const rect = element.getBoundingClientRect();
-        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-    });
-    if (box.width === 0 || box.height === 0) {
-        throw new Error(`Nothing is painted to press: ${locator}`);
-    }
+    // Waits until it is painted, as sheet-helpers.mjs's pressAt does: on a circuit a press can come before
+    // the render that paints what it presses.
+    let box = null;
+    await expect.poll(async () => {
+        box = await locator.evaluate((element) => {
+            element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            const rect = element.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        });
+        return box.width > 0 && box.height > 0;
+    }, { message: `${locator} is painted, to be pressed` }).toBe(true);
     const x = box.x + (position ? position.x : box.width / 2);
     const y = box.y + (position ? position.y : box.height / 2);
     await inFront(page, 'a press');

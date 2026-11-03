@@ -1171,7 +1171,17 @@ nobody had asked for. What that means when writing a test:
   grid that edits or the one that does not, and a press on one still opening its popover; the release of Tab ending when DOM focus leaves, on a grid with a field and one without
   (KB-8); the root's ring after Tab and not after a click (KB-12); and over the DevTools protocol's
   `Accessibility` domain, the focused node the field and its active descendant the Focus cell, or
-  the chosen action's button while Interactive (A11Y-21). A real IME is the sixteenth Windows run's.
+  the chosen action's button while Interactive (A11Y-21). A real IME is `windows-ime.spec.mjs`'s,
+  below.
+
+`windows-ime.spec.mjs` is ED-30 with a real IME (ADR-0450): the Microsoft IME, Japanese, which CI's
+`windows-ime` job installs on its Windows runner (`windows/japanese-input.ps1`, Predictive input off),
+and the Windows runs' cases k1 to k16 (but k15, a case to record) and DC-47's on `/sheet`, `/features` and
+`/sheets`. Every key goes through the OS (`os-input.mjs`'s `osTyped`, which returns once the page has seen
+each key released, in order, by `code`, since a key the IME takes is `Process` by `key`), and so does every
+press during a composition (`osPressed`, placed by where the pointer lands in the page). What the IME
+converted is read from each composition's `compositionend`, never named. Off a Windows desktop with
+`EXGRID_JAPANESE=1`, every test skips.
 
 `sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the

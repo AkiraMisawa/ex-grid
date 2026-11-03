@@ -59,6 +59,7 @@ pull request that changes their own machinery (`os-input.mjs`, `windows/`, `wind
 | SH-52 | `windows-desktop` | `windows-desktop.spec.mjs`: Alt released alone, and F10, through the OS, then a row's letter and an item's, under both Chromes (the built-in on the React host, MudBlazor's on the WebAssembly host); and with an edit open, Alt and F10 start nothing |
 | FN-12e (macOS) | `macos-desktop` | the same two FN-12e tests, Chrome and Edge |
 | KB-3 (macOS) | `macos-desktop` | every test that fills with `ControlOrMeta+Enter`, the editor's key path included, and the two Apple-only caret tests, on the React host and the Server host |
+| ED-30 *(2026-11-02, "ED-30 moves into CI")* | `windows-ime` | `windows-ime.spec.mjs`: the Microsoft IME installed, its Predictive input off; the Windows runs' cases k1 to k16 but k15, and DC-47's, keys and presses through the OS, Chrome and Edge, on the React host and under the MudBlazor Chrome on both Blazor hosts, the Server host also behind 150 ms |
 
 **A key the browser could take goes through the OS.** `tests/browser/os-input.mjs` brings the page's tab
 and window to the front, refuses to send when the window in front is not the page's, and sends the

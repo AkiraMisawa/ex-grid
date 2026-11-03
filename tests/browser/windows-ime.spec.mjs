@@ -1,8 +1,8 @@
-import { test, expect, alterPage, setRoundTrip, settled, chromeHost } from './fixtures.mjs';
+import { test, expect, setRoundTrip, settled, chromeHost } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { sheet, openSheet, cell, pressCell, pressAt, editor, bar, columnHeader, expectFocusAt } from './sheet-helpers.mjs';
 import { keyField, expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
-import { onWindowsDesktop, keysSeenBy, osJapanese, osTyped, osPressed } from './os-input.mjs';
+import { onWindowsDesktop, eventsSeenBy, keysSeenBy, osJapanese, osTyped, osPressed } from './os-input.mjs';
 
 // ED-30 with a real IME (ADR-0450): the Microsoft IME, Japanese, on CI's Windows runner, where the
 // Windows runs once took it by hand (docs/specs/exsheet/verify-on-windows-16.md, Part A, the cases k1 to
@@ -44,26 +44,8 @@ const fieldState = (grid) => keyField(grid).evaluate((field) => ({
 const sameBox = (a, b) => Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1
     && Math.abs(a.width - b.width) <= 1 && Math.abs(a.height - b.height) <= 1;
 
-let recorders = 0;
-
-/**
- * Starts recording what each composition the page sees ends with (compositionend's data), in the
- * capture phase on its window. Answers a function that reads them.
- */
-async function compositionEnds(page) {
-    const name = `exImeEnds${++recorders}`;
-    await alterPage(page, ({ record }) => {
-        const ends = [];
-        window[record] = ends;
-        const note = (event) => ends.push(event.data);
-        window.addEventListener('compositionend', note, true);
-        return () => {
-            window.removeEventListener('compositionend', note, true);
-            delete window[record];
-        };
-    }, { record: name });
-    return () => page.evaluate((record) => window[record], name);
-}
+/** Starts recording what each composition the page sees ends with (compositionend's data). */
+const compositionEnds = (page) => eventsSeenBy(page, 'compositionend', 'data');
 
 /** Waits until `count` compositions have ended, and answers what they ended with. */
 async function ended(ends, count) {
@@ -100,7 +82,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await setRoundTrip(ms);
         });
 
-        test(`ED-30 (k1, k2): the IME switched on over a selected cell composes from the first key in the Keyboard Field drawn over it; nothing moves while it lasts; its end opens the Cell Editor holding it; Enter commits ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k1, k2): the IME switched on over a selected cell composes from the first key in the Keyboard Field drawn over it; nothing moves while it lasts; its end opens the Cell Editor holding it; Enter commits ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             const pressed = await keysSeenBy(page);
@@ -131,7 +113,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectKeyboardOn(grid);
         });
 
-        test(`ED-30 (k3): Escape during a composition ends it empty and leaves the edit open and empty; Escape again cancels it ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k3): Escape during a composition ends it empty and leaves the edit open and empty; Escape again cancels it ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a');
@@ -149,7 +131,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectKeyboardOn(grid);
         });
 
-        test(`ED-30 (k4): Down while a composition is converted is the IME's: the Focus stays and nothing is written ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k4): Down while a composition is converted is the IME's: the Focus stays and nothing is written ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a', 'space', 'down', 'down');
@@ -167,7 +149,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectFocusAt(grid, 'D11');
         });
 
-        test(`ED-30 (k5): with the IME left on by an earlier edit, a press on the cell, then keys at machine speed, compose from the first key ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k5): with the IME left on by an earlier edit, a press on the cell, then keys at machine speed, compose from the first key ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'f2');
@@ -185,7 +167,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectFocusAt(grid, 'D11');
         });
 
-        test(`ED-30 (k6, k6y): a second clause typed after the first was converted is one entry with it, read key by key and typed at machine speed alike ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k6, k6y): a second clause typed after the first was converted is one entry with it, read key by key and typed at machine speed alike ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a', 'space');
@@ -210,7 +192,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expect(editor(grid)).toHaveCount(0);
         });
 
-        test(`ED-30 (k7): two compositions and the keys after them at machine speed are typed in order, nothing lost, doubled or reordered ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k7): two compositions and the keys after them at machine speed are typed in order, nothing lost, doubled or reordered ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a', 'space', 'enter', 'd', 'e', 's', 'u', 'space', 'enter', 'enter');
@@ -223,7 +205,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
         });
 
         for (const [id, pressed] of [['k8', 'D12'], ['k8x', 'D8']]) {
-            test(`ED-30 (${id}): a press on ${pressed} during a composition puts it in D10, commits it there and selects ${pressed} ${named}`, async ({ page }) => {
+            test(`ED-30/ADR-0080/ADR-0450 (${id}): a press on ${pressed} during a composition puts it in D10, commits it there and selects ${pressed} ${named}`, async ({ page }) => {
                 const grid = sheet(page);
                 const ends = await compositionEnds(page);
                 await osTyped(page, 'imeon', 'k', 'a', 'n', 'a');
@@ -238,7 +220,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             });
         }
 
-        test(`ED-30 (k9): a press on the Formula Bar during a composition puts it in the edit, and the bar takes the keyboard holding it ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k9): a press on the Formula Bar during a composition puts it in the edit, and the bar takes the keyboard holding it ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a');
@@ -256,7 +238,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expect(editor(grid)).toHaveCount(0);
         });
 
-        test(`ED-30 (k10): a press on a column's header during a composition ends it in D10 first, then selects the column ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k10): a press on a column's header during a composition ends it in D10 first, then selects the column ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a');
@@ -273,7 +255,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectKeyboardOn(grid);
         });
 
-        test(`ED-30 (k12): Space with the IME on and nothing composed is the IME's ideographic space, and opens an edit holding it ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k12): Space with the IME on and nothing composed is the IME's ideographic space, and opens an edit holding it ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'space');
@@ -283,7 +265,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectFocusAt(grid, 'D10');
         });
 
-        test(`ED-30 (k13, k13x): with the IME on and nothing composed, the arrows, Tab, Enter, Delete, and the copy and the paste are the grid's ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k13, k13x): with the IME on and nothing composed, the arrows, Tab, Enter, Delete, and the copy and the paste are the grid's ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await page.keyboard.type('150');
@@ -309,7 +291,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             expect(await ends(), 'nothing was composed').toEqual([]);
         });
 
-        test(`ED-30 (k16): a press on the composition's own text loses nothing: what it composed reaches D10 ${named}`, async ({ page }) => {
+        test(`ED-30/ADR-0080/ADR-0450 (k16): a press on the composition's own text loses nothing: what it composed reaches D10 ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await osTyped(page, 'imeon', 'k', 'a', 'n', 'a');
@@ -327,7 +309,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             await expectKeyboardOn(grid);
         });
 
-        test(`DC-47/ED-30: a composition after =A1+ shows the field's own text while it lasts, and A1's colour comes back when it ends ${named}`, async ({ page }) => {
+        test(`DC-47/ED-30/ADR-0057/ADR-0450: a composition after =A1+ shows the field's own text while it lasts, and A1's colour comes back when it ends ${named}`, async ({ page }) => {
             const grid = sheet(page);
             const ends = await compositionEnds(page);
             await page.keyboard.type('=A1+');
@@ -352,7 +334,7 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
 // A cell that does not edit, and two Sheets on one page: k11 on /features and k14 on /sheets, under each
 // Chrome, as the Windows runs took them.
 for (const chrome of ['builtin', 'mud']) {
-    test(`ED-30 (k11): over a cell that does not edit nothing composes and nothing opens; over one that does, the IME composes (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
+    test(`ED-30/ADR-0080/ADR-0450 (k11): over a cell that does not edit nothing composes and nothing opens; over one that does, the IME composes (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/features' : `/features?chrome=${chrome}`);
         const grid = page.locator('.ex-grid').first();
         await expect(grid.locator('.ex-row').first()).toBeVisible();
@@ -382,7 +364,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
     });
 
-    test(`ED-30 (k14): a composition in the second Sheet is its own: the first Sheet's open edit stands, and nothing reaches it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
+    test(`ED-30/ADR-0080/ADR-0450 (k14): a composition in the second Sheet is its own: the first Sheet's open edit stands, and nothing reaches it (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
         await page.goto(chrome === 'builtin' ? '/sheets' : `/sheets?chrome=${chrome}`);
         await expect(cell(sheet(page, 0), 'A1')).toHaveText('Left');
         await expect(cell(sheet(page, 1), 'A1')).toHaveText('Right');
