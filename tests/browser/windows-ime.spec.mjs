@@ -229,8 +229,15 @@ for (const [chrome, ms] of [['builtin', 0], ['mud', 0], ['mud', 150]]) {
             const box = await bar(grid).boundingBox();
             await osPressed(bar(grid), { x: box.width - 8, y: box.height / 2 });
             expect(await ended(ends, 1)).toEqual(['かな']);
-            await expect(bar(grid)).toBeFocused();
-            await expect(bar(grid)).toHaveValue('かな');
+            // Which field holds the keyboard, and what each holds, read together: a failure says where the keyboard went.
+            await expect.poll(() => grid.evaluate((root) => {
+                const field = root.querySelector('input.ex-formula-bar-text, .ex-formula-bar-text input');
+                const active = document.activeElement;
+                return {
+                    focused: active === field ? 'the bar' : `${active?.tagName.toLowerCase()}.${[...(active?.classList ?? [])].join('.')}`,
+                    bar: field?.value,
+                };
+            })).toEqual({ focused: 'the bar', bar: 'かな' });
             await expect(cell(grid, 'D10')).toHaveText('');
 
             await osTyped(page, 'enter');

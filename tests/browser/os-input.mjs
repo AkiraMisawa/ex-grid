@@ -322,6 +322,17 @@ export async function osPressed(locator, position = null) {
     }, { message: `${locator} is painted, to be pressed` }).toBe(true);
     const x = box.x + (position ? position.x : box.width / 2);
     const y = box.y + (position ? position.y : box.height / 2);
+    // A mouse presses whatever is on top at the point, which may not be the element aimed at: one drawn over it
+    // takes the press, and the test would read what that did as the element's doing.
+    const hit = await locator.evaluate((element, [px, py]) => {
+        const top = document.elementFromPoint(px, py);
+        const name = (node) => (node === null ? 'nothing'
+            : `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}.${[...node.classList].join('.')}`);
+        return element === top || element.contains(top) ? null : name(top);
+    }, [x, y]);
+    if (hit !== null) {
+        throw new Error(`A press aimed at ${locator} at (${x}, ${y}) would land on ${hit}, which is drawn over it`);
+    }
     await inFront(page, 'a press');
     await ask(`press ${Math.round(origin.x + x * origin.dpr)} ${Math.round(origin.y + y * origin.dpr)}`);
 }
