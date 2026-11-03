@@ -136,3 +136,80 @@ describe('the Focus band', () => {
         expect(root.querySelector('.ex-viewport > .ex-selection > .ex-focus-row')?.getAttribute('style')).toContain('top: 48px');
     });
 });
+
+// The Focus column band's pieces in a layer, each as the four lengths of its inline style.
+interface Box { readonly left: string; readonly top: string; readonly width: string; readonly height: string }
+const column = (root: HTMLElement, layer = 'ex-selection'): Box[] =>
+    [...root.querySelectorAll<HTMLElement>(`.ex-viewport > .${layer} > .ex-focus-column`)].map(piece => ({
+        left: piece.style.left, top: piece.style.top, width: piece.style.width, height: piece.style.height,
+    }));
+const box = (left: number, top: number, width: number, height: number): Box =>
+    ({ left: `${String(left)}px`, top: `${String(top)}px`, width: `${String(width)}px`, height: `${String(height)}px` });
+const press = (root: HTMLElement, x: number, row: number): void => {
+    pointer(root, 'mousedown', x, rowY(row), { button: 0, buttons: 1 });
+    pointer(root, 'mouseup', x, rowY(row), { button: 0 });
+};
+const key = (root: HTMLElement, name: string): void => {
+    root.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+};
+
+describe('the Focus column band', () => {
+    it('ADR-0008 (2026-11-03): asked for, it lies down the Focus\'s column over the painted rows and one past them, moves with it, and no row is painted again', async () => {
+        const options = { columns, rows: trades(100), rowHeight: 24, viewportHeight: 480, highlightFocusColumn: true };
+        const { root } = mount(options);
+        await painted();
+        expect(column(root)).toEqual([]);
+        press(root, 150, 2);
+        await painted();
+        const paint = paintId(root);
+        // The painted rows from the first, and the one past them that every rectangle reaches (ADR-0053).
+        const heightPx = (rowsOf(root).length + 1) * 24;
+        expect(column(root)).toEqual([box(120, 0, 100, heightPx)]);
+        expect(root.querySelector('.ex-focus-row')).toBeNull();
+        key(root, 'ArrowLeft');
+        await painted();
+        expect([column(root), paintId(root)]).toEqual([[box(0, 0, 120, heightPx)], paint]);
+    });
+
+    it('ADR-0008 (2026-11-03): with the Focus band as well the two cross, and the Focus\'s cell is tinted once', async () => {
+        const options = { columns, rows: trades(100), rowHeight: 24, viewportHeight: 480, highlightFocusRow: true, highlightFocusColumn: true };
+        const { root } = mount(options);
+        await painted();
+        press(root, 150, 3);
+        await painted();
+        const heightPx = (rowsOf(root).length + 1) * 24;
+        expect(column(root)).toEqual([box(120, 0, 100, 72), box(120, 96, 100, heightPx - 96)]);
+        expect(pieces(root, 'ex-selection').slice(0, 3)).toEqual(['ex-focus-row', 'ex-focus-column', 'ex-focus-column']);
+        // On the first row, nothing lies above it.
+        key(root, 'ArrowUp');
+        key(root, 'ArrowUp');
+        key(root, 'ArrowUp');
+        await painted();
+        expect(column(root)).toEqual([box(120, 24, 100, heightPx - 24)]);
+    });
+
+    it('ADR-0053: scrolled into a long grid, it is cut to the painted rows and one past each end', async () => {
+        const { root } = mount({ columns, rows: trades(100_000), rowHeight: 24, viewportHeight: 480, highlightFocusColumn: true });
+        await painted();
+        press(root, 150, 2);
+        await scrollTo(root, 24 * 50_000);
+        const [piece] = column(root);
+        expect([piece?.top, piece?.height]).toEqual(['-24px', `${String((rowsOf(root).length + 2) * 24)}px`]);
+    });
+
+    it('ADR-0206: on a Pinned Column it lies in the pinned shade, beneath every tint; turned off, it goes', async () => {
+        const options = { columns, rows: trades(100), rowHeight: 24, viewportHeight: 480, pinnedColumnCount: 1, highlightFocusColumn: true };
+        const { root, view } = mount(options);
+        await painted();
+        press(root, 10, 1);
+        await painted();
+        expect([column(root, 'ex-shade-pinned').length, column(root).length]).toEqual([1, 0]);
+        view.update({ ...options, highlightFocusColumn: false });
+        await painted();
+        expect(root.querySelector('.ex-focus-column')).toBeNull();
+    });
+
+    it('ADR-0008: anything but true or false is refused by name', () => {
+        expect(() => mount({ columns, rows: trades(1), highlightFocusColumn: 'yes' as unknown as boolean })).toThrow('highlightFocusColumn is true or false.');
+    });
+});

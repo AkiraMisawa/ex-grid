@@ -1,1 +1,3 @@
 #nullable enable
+ExGrid.Components.ExGrid<TRow>.HighlightFocusColumn.get -> bool
+ExGrid.Components.ExGrid<TRow>.HighlightFocusColumn.set -> void

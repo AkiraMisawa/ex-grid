@@ -664,6 +664,8 @@ const INTERNAL_CLASSES = [
     // A Blazor Chrome's Razor fragment, moved into its slot (ADR-0410), and a paste waiting for its answer (ADR-0240
     // section 12), both entered in ADR-0029.
     'ex-razor-slot', 'ex-pasting',
+    // The Focus column band (ADR-0008 of 2026-11-03, entered in ADR-0029).
+    'ex-focus-column',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
