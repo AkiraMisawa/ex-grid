@@ -1,12 +1,14 @@
 # 31: Drag a Reference Outline to rewrite its Reference, with its corner squares
 
-Status: needs-triage
-Roadmap: ExSheet — Dragging a Reference Outline to move or resize the Reference it outlines, by the
-corner squares Excel draws as its handles (ADR-0057).
+Status: done — decided and built on 2026-11-03 as ADR-0480, put into 0.2.0 by the user that day
 
 **Not built, and kept in view on purpose** (ADR-0057, "Not done", decided with the user
 2026-09-30). The corner squares of a Reference Outline wait for this gesture, so that they never
 offer a drag that does nothing. Whoever builds the gesture builds the squares with it.
+
+*(2026-11-03: decided in [ADR-0480](../../../adr/0480-a-reference-outline-is-dragged-by-its-edge-to-move-its-reference-and-by-a-corner-square-to-resize-it.md),
+which answers the four questions below as decisions, and built with it: the grid's gesture is DC-67, ExSheet's rewrite
+SH-69.)*
 
 **Needs a decision before an agent can take it.** It is a new pointer gesture over the grid. It
 would compete for the same presses with the fill handle (ADR-0050, item 5) and with a selecting

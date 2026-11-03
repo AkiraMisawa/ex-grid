@@ -1,1 +1,3 @@
 #nullable enable
+ExGrid.Components.ExGrid<TRow>.MoveReference.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Components.ExGrid<TRow>.MoveReference.set -> void

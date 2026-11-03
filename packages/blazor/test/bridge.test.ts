@@ -1052,6 +1052,32 @@ describe('the Consumer\'s own script for Formula entry (ADR-0431)', () => {
         expect(editorOf(root)?.value).toBe('=$A$1');
     });
 
+    it('ADR-0480: an outline dragged by its edge is rewritten to what the Consumer\'s moveReference answers', async () => {
+        const asked: unknown[][] = [];
+        const { root } = mount({ options: options({ rowHeight: 24, scripts: { ...pointing, moveReference: script('moveReference') }, hears: ['edit'] }) },
+            new FakeDotNet(), new FakeCollector(), {
+                pointAt: () => false, referenceText: reference, cycleReference: () => null,
+                referencesIn: (text: unknown) => (text === '=X' ? [{ start: 1, length: 1, range: { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 } }] : null),
+                moveReference: (...args: unknown[]) => { asked.push(args); return 'Y'; },
+            });
+        await turns();
+        press(root, 10, 5);
+        type('=X');
+        await turns();
+        const grip = root.querySelector<HTMLElement>('.ex-reference-grip[data-ex-grip=bottom]');
+        if (grip === null) throw new Error('The outline carries no grip.');
+        const pressed = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, buttons: 1 });
+        Object.defineProperty(pressed, 'offsetX', { value: 2 });
+        Object.defineProperty(pressed, 'offsetY', { value: 2 });
+        grip.dispatchEvent(pressed);
+        const released = new MouseEvent('mouseup', { bubbles: true, cancelable: true, button: 0, buttons: 0 });
+        Object.defineProperty(released, 'offsetX', { value: 10 });
+        Object.defineProperty(released, 'offsetY', { value: 24 + 12 });
+        root.querySelector('.ex-viewport')?.dispatchEvent(released);
+        expect(asked).toEqual([['X', { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 }]]);
+        expect(editorOf(root)?.value).toBe('=Y');
+    });
+
     it('ADR-0431: a function answering what its option does not take is refused naming it, never read as another answer', async () => {
         const { root } = mount({ options: options({ rowHeight: 24, scripts: pointing, hears: ['edit'] }) }, new FakeDotNet(), new FakeCollector(), {
             pointAt: () => 'yes', referenceText: reference, cycleReference: () => null, referencesIn: () => null,

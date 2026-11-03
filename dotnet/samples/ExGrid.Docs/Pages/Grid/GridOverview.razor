@@ -158,6 +158,15 @@
             asked as you type. <code>OnReferenceKeyColoursChanged</code> tells the colour each key was given, and
             <code>OutlinedColumns</code> outlines the columns you pass it in the colours you were told.
         </p>
+        <p>
+            Give <code>MoveReference</code> too, a fifth script function, and every outline can be dragged while the edit
+            is open: its edges move the Reference and a square at each corner resizes it. The grid works out the range
+            the drag has reached, and asks your function for the text of the Reference that names it, written as the
+            one being dragged was (<code>$C$1</code> for <code>$A$1</code> moved two columns); it writes that text in
+            place, keeps the caret where it stood, and puts the Reference back on Escape. Without it, the outlines carry
+            no squares and nothing can be dragged. Under React the option is <code>moveReference</code>, a plain
+            function. In the Example below, drag the outline of <code>A1</code> down a row.
+        </p>
         <DocsExample Builtin="typeof(ScriptCoreFormulaEntry)" Files="@(["wwwroot/js/formula-entry.js"])" />
         <p>
             A dialog or panel of yours that took the keyboard over the grid gives it back with

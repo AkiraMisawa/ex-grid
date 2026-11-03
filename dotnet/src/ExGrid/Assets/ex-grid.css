@@ -872,6 +872,21 @@
    above the overlay can cover part of it (ADR-0057, "deliberately unlike Excel"). The padding is
    the line and the gap, and it only clips the wash. Paint only, like every rectangle here. */
 .ex-reference-outline { position: absolute; box-sizing: border-box; padding: 3px; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent) content-box; }
+/* A Reference Outline's grips (ADR-0480), drawn while a Consumer rewrites a dragged Reference: a
+   strip along each edge, which moves the Reference, and a square at each corner, which resizes it.
+   The strips are not seen; the squares are the Reference's colour with a margin of the grid's
+   ground, as Excel draws them. Their boxes and the margin's width come inline from the Grid Metrics. They are the overlay's
+   only rectangles that take the pointer, so that the browser shows their cursor where the pointer
+   is, and nothing is heard for it. During a drag they let the pointer through to the rows, which
+   read the drag's moves, and the cursor stays the drag's. */
+.ex-reference-grip { position: absolute; box-sizing: border-box; pointer-events: auto; cursor: move; }
+.ex-reference-square { background: currentColor; border: 0 solid var(--ex-background, Canvas); }
+.ex-reference-grip-topLeft, .ex-reference-grip-bottomRight { cursor: nwse-resize; }
+.ex-reference-grip-topRight, .ex-reference-grip-bottomLeft { cursor: nesw-resize; }
+.ex-grid[data-ex-reference-drag] .ex-reference-grip { pointer-events: none; }
+.ex-grid[data-ex-reference-drag=move] .ex-viewport { cursor: move; }
+.ex-grid[data-ex-reference-drag=nwse] .ex-viewport { cursor: nwse-resize; }
+.ex-grid[data-ex-reference-drag=nesw] .ex-viewport { cursor: nesw-resize; }
 /* Point's dashes over the outline of the Reference it writes: in the Focus outline's colour, as
    Excel lays its active-cell green over the pointed Reference's own line, just inside that line
    so both show (the eighth Windows run). */
@@ -888,7 +903,7 @@
    Template's control — let the press through to the rows or the header, which hand it on as the
    cell or the column it landed on. Nothing else marks the grid. */
 .ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) { cursor: cell; }
-.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive, .ex-header-group-toggle, .ex-hidden-mark) { pointer-events: none; }
+.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive, .ex-header-group-toggle, .ex-hidden-mark, .ex-reference-grip) { pointer-events: none; }
 .ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
 .ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
 .ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }

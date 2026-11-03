@@ -1184,6 +1184,8 @@ export class GridMetrics {
     readonly menuButtonInsetPx: number;
     readonly menuButtonWidthPx: number;
     get nameBoxWidthPx(): number;
+    get referenceGripPx(): number;
+    get referenceHandleSizePx(): number;
     readonly resizeGripWidthPx: number;
     static resolve(options: GridMetricsOptions): GridMetrics;
     readonly rowHeightPx: number;
@@ -1237,6 +1239,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;
     readonly marks?: RowMarks<Row>;
+    readonly moveReference?: (reference: string, range: SelectionRange) => string;
     readonly onAction?: (event: GridActionEvent<Row>) => void;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;

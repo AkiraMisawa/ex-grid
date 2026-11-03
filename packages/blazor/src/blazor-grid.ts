@@ -94,6 +94,7 @@ export interface WireScripts {
     readonly referenceText?: WireScript;
     readonly cycleReference?: WireScript;
     readonly referencesIn?: WireScript;
+    readonly moveReference?: WireScript;
     readonly rowHeadings?: WireScript;
     readonly nameBoxLabel?: WireScript;
     readonly findMatch?: WireScript;
@@ -1021,7 +1022,7 @@ function gridOptions(
     };
 }
 
-type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn' | 'rowHeadings' | 'nameBoxLabel' | 'findMatch' | 'dataEdge'>;
+type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn' | 'moveReference' | 'rowHeadings' | 'nameBoxLabel' | 'findMatch' | 'dataEdge'>;
 
 /**
  * The Consumer's functions of Formula entry as the core takes them (ADR-0431), each made once per function, so the
@@ -1053,7 +1054,7 @@ class ScriptHooks {
 
     options(wire: WireScripts | undefined): Partial<ScriptOptions> {
         if (wire === undefined) return {};
-        const { pointAt, referenceText, cycleReference, referencesIn, rowHeadings, nameBoxLabel, findMatch, dataEdge } = wire;
+        const { pointAt, referenceText, cycleReference, referencesIn, moveReference, rowHeadings, nameBoxLabel, findMatch, dataEdge } = wire;
         return {
             // A position's label, asked as each row is painted, a row not yet arrived included (ADR-0050 item 1).
             ...(rowHeadings === undefined ? {} : { rowHeadings: this.#hook('rowHeadings', rowHeadings, f => (row: number) => checkedAnswer(rowHeadings,
@@ -1069,6 +1070,8 @@ class ScriptHooks {
                 f(text, caret), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
             ...(referenceText === undefined ? {} : { referenceText: this.#hook('referenceText', referenceText, f => (range: SelectionRange) => checkedAnswer(referenceText,
                 'referenceText', f(range), (a): a is string => typeof a === 'string', 'text')) }),
+            ...(moveReference === undefined ? {} : { moveReference: this.#hook('moveReference', moveReference, f => (reference: string, range: SelectionRange) =>
+                checkedAnswer(moveReference, 'moveReference', f(reference, range), (a): a is string => typeof a === 'string', 'text')) }),
             // Nothing is null, as .NET writes it; undefined is a function that answered nothing, and is refused, since
             // taken as nothing it would quietly leave the text, or outline nothing. What the core takes beyond the shape,
             // a span inside the text, is the core's to check.
