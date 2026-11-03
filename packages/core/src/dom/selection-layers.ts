@@ -13,7 +13,8 @@ import {
 } from '../paint/selection-styles';
 import type { OutlinedRange } from './reference-outlines';
 import type { FillHandleCorner } from '../selection/fill-rules';
-import type { SelectionRange } from '../selection/range';
+import type { CellPosition } from '../selection/cell';
+import { selectionRange, type SelectionRange } from '../selection/range';
 import type { Selection } from '../selection/selection';
 import type { RowRange } from '../viewport/row-range';
 
@@ -35,12 +36,16 @@ const pieceOf = (className: string, style: string | undefined): readonly LayerPi
 
 const nothing: SelectionLayers = Object.freeze({ shade: undefined, pinned: Object.freeze([]), scrollable: Object.freeze([]) });
 
-/** The row bands painted beneath the Selection (ADR-0008, ADR-0029): the row under the pointer, and whether
- * the Focus's row is banded. */
-export interface RowBands {
+/** The bands painted beneath the Selection (ADR-0008, ADR-0029): the row under the pointer, whether the
+ * Focus's row and the Focus's column are banded, and the grid's row count, the column band's height. */
+export interface Bands {
     readonly hoverRow: number | undefined;
     readonly focusRow: boolean;
+    readonly focusColumn: boolean;
+    readonly rowCount: number;
 }
+
+const noBands: Bands = Object.freeze({ hoverRow: undefined, focusRow: false, focusColumn: false, rowCount: 0 });
 
 /** The fill handle where it is painted, and a running fill drag's outline, the source and what it has reached
  * as one rectangle (ADR-0050, item 5). */
@@ -79,7 +84,7 @@ const outlineClass = ([, colour]: OutlinedRange): string => `ex-reference-outlin
 /** The rectangles the layers hold over the painted rows `painted`, the Copied Range's `copied` among them. */
 export function selectionLayers(
     selection: Selection, copied: readonly SelectionRange[], columns: ColumnGeometry, rowHeightPx: number, painted: RowRange,
-    cover: OutlineCover, bands: RowBands = { hoverRow: undefined, focusRow: false }, fill: FillPaint = noFill,
+    cover: OutlineCover, bands: Bands = noBands, fill: FillPaint = noFill,
     outlines: OutlinePaint = noOutlines,
 ): SelectionLayers {
     // The Copied Range's dashes (ADR-0170) come after the Focus, so they lie over the Selection's outline
@@ -111,10 +116,20 @@ export function selectionLayers(
             ? pinnedPart(outlines.pointDashes, columns, rowHeightPx, painted) : scrollablePart(outlines.pointDashes, columns, rowHeightPx, painted))),
     ];
     const focus = selection.focus;
-    // With no column there is no row to band.
+    // The Focus's column down every row, cut to the painted rows as every rectangle is (ADR-0053); with the
+    // Focus's row banded as well it leaves that row out, so the crossing is tinted once (ADR-0008, 2026-11-03).
+    const columnBandsOf = (at: CellPosition): readonly SelectionRange[] => (!bands.focusRow
+        ? [selectionRange(0, at.column, bands.rowCount, 1)]
+        : [
+            ...(at.row > 0 ? [selectionRange(0, at.column, at.row, 1)] : []),
+            ...(at.row + 1 < bands.rowCount ? [selectionRange(at.row + 1, at.column, bands.rowCount - at.row - 1, 1)] : []),
+        ]);
+    // With no column there is no row to band, and with no row no column.
     const rowBands = columns.count === 0 ? [] : [
         ...(bands.hoverRow === undefined ? [] : [{ className: 'ex-hover-row', range: bandOf(bands.hoverRow) }]),
         ...(bands.focusRow && focus !== undefined ? [{ className: 'ex-focus-row', range: bandOf(focus.row) }] : []),
+        ...(bands.focusColumn && focus !== undefined && bands.rowCount > 0
+            ? columnBandsOf(focus).map(range => ({ className: 'ex-focus-column', range })) : []),
     ];
     const pinnedBands = rowBands.flatMap(({ className, range }) => pieceOf(className, pinnedPart(range, columns, rowHeightPx, painted)));
     const scrollableBands = rowBands.flatMap(({ className, range }) => pieceOf(className, scrollablePart(range, columns, rowHeightPx, painted)));
