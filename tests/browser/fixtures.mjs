@@ -596,6 +596,25 @@ async function navigateInApp(page, path) {
     await page.locator('#demo-index').waitFor({ state: new URL(href).pathname === '/' ? 'attached' : 'detached' });
 }
 
+// Whether a move of Playwright's mouse reaches the page as a move. In Chromium, Playwright's mouse turns every
+// move into a dragover while it holds a drag it intercepted, and sends no press until that drag drops; a drag
+// left on by one test makes the next test's page hear nothing at all (pivot.spec's cancel over the report, the
+// Hunt of 2026-11-03). Two moves, so the pointer changes place whichever it was at; the protocol answers each
+// once the page has handled it, so what was heard is read after.
+async function pointerHeard(page) {
+    await page.evaluate(() => {
+        window.exPointerHeard = false;
+        window.addEventListener('mousemove', () => { window.exPointerHeard = true; }, { once: true, capture: true });
+    });
+    await page.mouse.move(1, 1);
+    await page.mouse.move(2, 2);
+    return page.evaluate(() => {
+        const heard = window.exPointerHeard;
+        delete window.exPointerHeard;
+        return heard;
+    });
+}
+
 // Reaches `target` the way every test after a file's first does: back to the index — so the
 // last page, and every grid on it, is disposed and the next is a new instance — then on to the
 // target. At the index, what a fresh load would have is restored: the scroll, no text
@@ -936,6 +955,9 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
             await navigateInApp(page, '/');
             await twoFrames(page);
             leaks.push(...await app.leaks());
+            if (!await pointerHeard(page)) {
+                leaks.push('Playwright\'s mouse still holds a drag the test began: the page hears no move, and a press is not sent');
+            }
         } catch (error) {
             leaks.push(`the page could not be left for the index: ${error.message}`);
         }
