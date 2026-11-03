@@ -14,13 +14,15 @@
     press <x> <y>              the pointer put at that screen pixel, then a left press and release,
                                in one SendInput call
     move <x> <y>               the pointer put at that screen pixel
+    pointer                    where the pointer is, answered as "ok <x> <y>" in screen pixels
     japanese                   the window in front to the Japanese keyboard and its IME (ED-30): asked
                                with WM_INPUTLANGCHANGEREQUEST, and answered once the window's thread
                                has taken it, or refused after five seconds
     foreground                 the title of the window in front
     quit
 
-    Each command is answered by one line: "ok <the title of the window in front>" or "err <why>".
+    Each command but pointer is answered by one line: "ok <the title of the window in front>" or
+    "err <why>".
 #>
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
@@ -32,6 +34,8 @@ public static class OsKeys {
     [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint n, INPUT[] i, int size);
     [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [StructLayout(LayoutKind.Sequential)] struct POINT { public int x; public int y; }
+    [DllImport("user32.dll", SetLastError = true)] static extern bool GetCursorPos(out POINT p);
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint message, IntPtr w, IntPtr l);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint process);
     [DllImport("user32.dll")] static extern IntPtr GetKeyboardLayout(uint thread);
@@ -79,6 +83,11 @@ public static class OsKeys {
     // reads back where each point landed in the page.
     public static void DpiAware() { SetProcessDPIAware(); }
     public static void Move(int x, int y) { if (!SetCursorPos(x, y)) throw new InvalidOperationException("the pointer could not be put at " + x + ", " + y); }
+    public static string Pointer() {
+        POINT p;
+        if (!GetCursorPos(out p)) throw new InvalidOperationException("where the pointer is could not be read: " + Marshal.GetLastWin32Error());
+        return p.x + " " + p.y;
+    }
     // The left button pressed and released where the pointer is (MOUSEEVENTF_LEFTDOWN 0x2, LEFTUP 0x4).
     public static void Press(int x, int y) {
         Move(x, y);
@@ -106,6 +115,7 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
     $words = $line.Trim().Split(' ', [StringSplitOptions]::RemoveEmptyEntries)
     if ($words.Length -eq 0) { continue }
     try {
+        $answer = $null
         switch ($words[0]) {
             'keys' {
                 if ($words.Length -lt 2) { throw 'keys names no chord' }
@@ -120,11 +130,13 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
                 [OsKeys]::Move([int]$words[1], [int]$words[2])
             }
             'japanese' { [void][OsKeys]::Japanese() }
+            'pointer' { $answer = [OsKeys]::Pointer() }
             'foreground' { }
             'quit' { exit 0 }
             default { throw "no command $($words[0])" }
         }
-        [Console]::Out.WriteLine("ok $([OsKeys]::Foreground())")
+        if ($null -eq $answer) { $answer = [OsKeys]::Foreground() }
+        [Console]::Out.WriteLine("ok $answer")
     } catch {
         [Console]::Out.WriteLine("err $($_.Exception.Message -replace '\s+', ' ')")
     }

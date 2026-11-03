@@ -265,12 +265,23 @@ async function originOf(page) {
     let x = (frame.x + side) * frame.dpr;
     let y = (frame.y + frame.outer[1] - frame.inner[1] - side) * frame.dpr;
     const landed = [];
-    // Each try aims at a point of its own, so the pointer always moves and the page always hears it.
+    // Each try aims at a point the pointer is not at, so the pointer always moves and the page always
+    // hears it: a pointer put where it already is sends no move, and an earlier test's calibration left
+    // it at the middle of a window placed where this one is.
+    let [atX, atY] = (await ask('pointer')).split(' ').map(Number);
+    let step = 0;
     for (let tries = 0; tries < 4; tries++) {
-        const aim = [Math.round(frame.inner[0] / 2) + tries * 7, Math.round(frame.inner[1] / 2) + tries * 5];
+        let aim;
+        let screen;
+        do {
+            aim = [Math.round(frame.inner[0] / 2) + step * 7, Math.round(frame.inner[1] / 2) + step * 5];
+            screen = [Math.round(x + aim[0] * frame.dpr), Math.round(y + aim[1] * frame.dpr)];
+            step++;
+        } while (screen[0] === atX && screen[1] === atY);
         const heard = (await moves()).length;
         await inFront(page, 'a pointer move');
-        await ask(`move ${Math.round(x + aim[0] * frame.dpr)} ${Math.round(y + aim[1] * frame.dpr)}`);
+        await ask(`move ${screen[0]} ${screen[1]}`);
+        [atX, atY] = screen;
         await expect.poll(async () => (await moves()).length, { message: `the pointer, moved to the page's ${aim}, never reached the page: it landed outside it, after ${JSON.stringify(landed)}` })
             .toBeGreaterThan(heard);
         const at = (await moves()).at(-1);
