@@ -5,19 +5,19 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.7% | 85.1% | 88.1% | 78.6% |
+| ExGrid | 93.8% | 85.1% | 88.1% | 78.5% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
-| ExPivot | 93.1% | 82% | 86.2% | 82.1% |
-| ExChart | 92.3% | 83% | 91.1% | 85% |
-| ExBoard | 93.2% | 75.8% | 67.4% | 59.6% |
+| ExPivot | 93.1% | 82% | 86.1% | 82% |
+| ExChart | 92.3% | 83% | 91.1% | 84.9% |
+| ExBoard | 93.2% | 75.8% | 67.3% | 59.6% |
 | Data | 94.3% | 83.6% | 94.5% | 89.9% |
-| **Total** | **93.5%** | **84.1%** | **86.9%** | **82.9%** |
+| **Total** | **93.5%** | **84.1%** | **86.9%** | **82.8%** |
 
 <details><summary>TypeScript coverage per package</summary>
 
 | Package | Product | Line | Branch | Lines |
 |---|---|---|---|---|
-| `packages/core` | ExGrid | 94.7% | 86.8% | 13955 |
+| `packages/core` | ExGrid | 94.9% | 86.8% | 13984 |
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.5% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.9% | 104 |
@@ -53,29 +53,29 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/03/2026 - 19:04:27 |
+| Generated on: | 11/03/2026 - 20:04:32 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1109 |
-| Files: | 495 |
-| **Line coverage:** | 86.9% (60425 of 69456) |
-| Covered lines: | 60425 |
-| Uncovered lines: | 9031 |
-| Coverable lines: | 69456 |
-| Total lines: | 105827 |
-| **Branch coverage:** | 82.9% (36440 of 43947) |
-| Covered branches: | 36440 |
-| Total branches: | 43947 |
+| Classes: | 1114 |
+| Files: | 496 |
+| **Line coverage:** | 86.9% (60442 of 69498) |
+| Covered lines: | 60442 |
+| Uncovered lines: | 9056 |
+| Coverable lines: | 69498 |
+| Total lines: | 105879 |
+| **Branch coverage:** | 82.8% (36444 of 43975) |
+| Covered branches: | 36444 |
+| Total branches: | 43975 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 67.4%</summary>
+<details><summary>ExBoard - 67.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**67.4%**|**59.6%**|
+|**ExBoard**|**67.3%**|**59.6%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|100%|
@@ -106,10 +106,10 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExBoard.BoundGridView|98.7%|92.1%|
 |ExBoard.BoundPivotView|100%|75%|
 |ExBoard.BoundView|100%||
-|ExBoard.Components.ExBoard|80.3%|72.6%|
+|ExBoard.Components.ExBoard|80%|73.6%|
 |ExBoard.Components.ExBoard.BoardSlots|100%||
 |ExBoard.Components.ExBoard.HeldPivot|100%||
-|ExBoard.Components.ExBoard<T>|80.3%|72.6%|
+|ExBoard.Components.ExBoard<T>|80%|73.6%|
 |ExBoard.Components.ScriptBridge|67.2%|33.3%|
 |ExBoard.Components.SourceCrossing|96.2%|77.2%|
 |ExBoard.Components.SourceCrossing.Held|100%||
@@ -123,6 +123,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.Components.ChartWire|0%|0%|
 |ExChart.Components.RowKeys|0%|0%|
 |ExChart.Components.SurfaceValues|0%||
+|ExGrid.Components.ClosingCircuit|0%|0%|
 |ExGrid.Components.CrossedText|52%|38.8%|
 |ExGrid.Components.HeldCalls|79.3%|62.5%|
 |ExGrid.Components.HeldCalls<T>|79.3%|62.5%|
@@ -139,11 +140,11 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Components.PivotRazorSlot|24.1%|34.1%|
 
 </details>
-<details><summary>ExChart - 84.3%</summary>
+<details><summary>ExChart - 84.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.3%**|**73.8%**|
+|**ExChart**|**84.2%**|**73.5%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -179,6 +180,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
 |ExChart.SnapshotChartData|100%|100%|
+|ExGrid.Components.ClosingCircuit|0%|0%|
 |ExGrid.Components.CrossedText|92%|66.6%|
 |ExGrid.Components.HeldCalls|80.4%|75%|
 |ExGrid.Components.HeldCalls<T>|80.4%|75%|
@@ -379,13 +381,14 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Columns.ResolvedHeaderGroup|100%||
 |ExGrid.ColumnViewState|90.9%||
 |ExGrid.ColumnWidthChange|100%||
+|ExGrid.Components.ClosingCircuit|100%|62.5%|
 |ExGrid.Components.CrossedText|80%|44.4%|
 |ExGrid.Components.ExGrid.ConsumerPopover<TRow>|100%||
 |ExGrid.Components.ExGrid.Heard<TRow>|100%||
 |ExGrid.Components.ExGrid.Turn<TRow>|100%||
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow, T>|71.4%|69.6%|
-|ExGrid.Components.ExGrid<TRow>|71.4%|69.6%|
+|ExGrid.Components.ExGrid<TRow, T>|71.3%|69.6%|
+|ExGrid.Components.ExGrid<TRow>|71.3%|69.6%|
 |ExGrid.Components.ExGrid<TRow>|84.4%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
@@ -628,7 +631,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -774,11 +777,12 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
 
 </details>
-<details><summary>ExPivot - 50.3%</summary>
+<details><summary>ExPivot - 50.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**50.3%**|**46.3%**|
+|**ExPivot**|**50.2%**|**46.1%**|
+|ExGrid.Components.ClosingCircuit|0%|0%|
 |ExGrid.Components.CrossedText|52%|38.8%|
 |ExGrid.Components.HeldCalls|74.2%|62.5%|
 |ExGrid.Components.HeldCalls<T>|74.2%|62.5%|
@@ -810,7 +814,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Chrome.PivotStaleReportView|0%||
 |ExPivot.Chrome.PivotToolbarView|0%||
 |ExPivot.Chrome.PivotValueFieldSettingsView|0%||
-|ExPivot.Components.ExPivot|62.1%|50.5%|
+|ExPivot.Components.ExPivot|62%|51.2%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotRazorSlot|0%|0%|
 |ExPivot.Components.ScriptBridge|42.4%|19.4%|
@@ -979,8 +983,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.3%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
@@ -1017,11 +1021,12 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.MudBlazor.PivotSlotMarkup|0%||
 
 </details>
-<details><summary>ExSheet - 60.4%</summary>
+<details><summary>ExSheet - 60.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**60.4%**|**51.7%**|
+|**ExSheet**|**60.3%**|**51.3%**|
+|ExGrid.Components.ClosingCircuit|0%|0%|
 |ExGrid.Components.CrossedText|92%|72.2%|
 |ExGrid.Components.HeldCalls|80.4%|75%|
 |ExGrid.Components.HeldCalls<T>|80.4%|75%|
@@ -1031,7 +1036,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Components.ScriptJson|23.3%|29.1%|
 |ExGrid.Components.ScriptMetricsJson|35.7%|33.3%|
 |ExGrid.Components.ScriptMetricsJson.Written|0%||
-|ExSheet.Components.ExSheet|84.4%|78.5%|
+|ExSheet.Components.ExSheet|84.1%|78.5%|
 |ExSheet.Components.ExSheet.Opening|100%||
 |ExSheet.Components.ExSheet.Press|100%||
 |ExSheet.Components.ExSheet.Saving|100%||
