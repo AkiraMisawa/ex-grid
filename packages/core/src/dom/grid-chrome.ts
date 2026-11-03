@@ -20,6 +20,7 @@ import type { SelectionRange } from '../selection/range';
 import type { SelectionSummaryStatus, SummaryFigureShown } from './selection-summary';
 import { filterSentinel, type FilterPanelAnswers, type FilterPlace } from './filter-panel';
 import { findElement, findForm, findSentinel, type FindHeld, type FindPanelAnswers, type FindPlace } from './find-panel';
+import type { GridFindAllList } from './find-all-list';
 import type { GridCommand } from './grid-command';
 import { MenuState, type MenuAnswers, type MenuKeyTable, type MenuPlace } from './menu-popover';
 
@@ -247,6 +248,13 @@ export interface GridFindPanelSlotContext {
     /** Find All, its list asked of the Consumer and drawn by the core under the contents (ADR-0470). Nothing while Find
      * All is not offered. */
     readonly findAll: () => void;
+    /** Find All, its list the contents' own (ADR-0470 §7), as ExSheet's over its Workbook: `list` is asked in the
+     * call's turn among the inputs, and the core draws what it answers under the contents as it draws its own list.
+     * Nothing while the find field is empty. */
+    readonly listFindAll: (list: () => GridFindAllList) => void;
+    /** An option of the contents' own changed what a search means (ADR-0470 §5), as ExSheet's Within does: the list
+     * standing goes, as it goes when the text or one of the core's options changes. */
+    readonly dropFindAll: () => void;
     /** Closes the panel as a Cancel, for a dismissal of the contents' own; the keyboard returns to the grid. */
     readonly close: () => void;
     /** The count of the core's requests for the find field to take the keyboard: the opening, Ctrl+F or Ctrl+H again,
@@ -1023,6 +1031,10 @@ export class SlottedFindPanel implements FindPlace {
             replace: act(() => { answers.replaceOne(); }),
             replaceAll: act(() => { answers.replaceAll(); }),
             findAll: act(() => { answers.findAll(); }),
+            listFindAll: act((list: () => GridFindAllList) => { answers.listFindAll(list); }, (list: () => GridFindAllList) => {
+                if (typeof list !== 'function') throw new TypeError('listFindAll is handed a function that answers the list, asked in its turn (ADR-0470 §7).');
+            }),
+            dropFindAll: act(() => { answers.dropFindAll(); }),
             close: act(() => { answers.close(); }),
             innerPopupChanged: contents.innerPopupChanged,
             takeFocus: contents.takeFocus,

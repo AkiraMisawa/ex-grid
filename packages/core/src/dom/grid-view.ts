@@ -99,7 +99,7 @@ import {
 } from './grid-chrome';
 import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
 import { FindPanel, type FindHeld, type FindPlace } from './find-panel';
-import { FindAllList, findAllVisibleLines, type FindAllLine } from './find-all-list';
+import { FindAllList, findAllVisibleLines, type GridFindAllLine, type GridFindAllList } from './find-all-list';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
@@ -1001,6 +1001,16 @@ interface Taken<Row> {
 /** How many entries of a Find All's list one page asks for (ADR-0470 §2). */
 const findAllPageSize = 100;
 
+// What a find panel slot's own Find All list must be (ADR-0470 §7): its count, its lines and its choice.
+function isFindAllList(value: unknown): value is GridFindAllList {
+    return typeof value === 'object' && value !== null && 'count' in value && typeof value.count === 'number'
+        && 'line' in value && typeof value.line === 'function' && 'choose' in value && typeof value.choose === 'function';
+}
+
+function isFindAllLine(value: unknown): value is GridFindAllLine {
+    return typeof value === 'object' && value !== null && 'where' in value && typeof value.where === 'string' && 'text' in value && typeof value.text === 'string';
+}
+
 /** The list of a Find All while it stands (ADR-0470): what it was asked under, and what has been read of it. */
 interface FindAllHeld<Row> {
     readonly source: GridSource<Row>;
@@ -1019,6 +1029,8 @@ interface FindAllHeld<Row> {
     /** Why the list went, while it shows only that. */
     gone: 'orderChanged' | 'sourceChanged' | undefined;
     part: FindAllList | undefined;
+    /** The list a find panel slot's contents hold themselves (ADR-0470 §7), which the grid only draws. */
+    readonly own: GridFindAllList | undefined;
 }
 
 type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPlace }
@@ -8185,6 +8197,8 @@ export class GridView<Row> {
             replaceOne: () => { this.#replaceOne(); },
             replaceAll: () => { this.#replaceAll(); },
             findAll: () => { this.#findAllStart(); },
+            listFindAll: (list: () => GridFindAllList) => { this.#findAllOwn(list); },
+            dropFindAll: () => { this.#dropFindAll(); },
             heldChanged: () => {
                 this.#findAllHeldChanged();
                 this.#invalidate();
@@ -8839,8 +8853,42 @@ export class GridView<Row> {
             source, sequence: this.#sequence(), request, columnCount: request.columns.length,
             headers: matchingHeaders(headers, pattern).map(index => itemAt(headers, index)),
             rowTotal: undefined, pages: new Map(), asking: new Map(), active: undefined, gone: undefined,
-            part: undefined,
+            part: undefined, own: undefined,
         };
+        this.#showFindAll(popover.panel, list);
+        this.#askFindAllPage(list, 0, true);
+    }
+
+    /**
+     * Find All with a list the find panel slot's contents hold themselves (ADR-0470 §7), as ExSheet's over its
+     * Workbook: asked in its turn, drawn as the grid's own list is, its count and lines the contents', a choice taken in
+     * its turn and handed back to them. It goes when the text or an option changes or the panel closes, never with the
+     * order: what the contents list is theirs to drop.
+     */
+    #findAllOwn(made: () => GridFindAllList): void {
+        if (this.#stepInTurn(() => { this.#findAllOwn(made); })) return;
+        const popover = this.#popover;
+        if (popover?.kind !== 'find' || this.#findHeld.text === '') return;
+        this.#dropFindAll();
+        const listed: unknown = made();
+        if (!isFindAllList(listed)) throw new TypeError('listFindAll\'s function answers a list: { count, line, choose } (ADR-0470 §7).');
+        if (!Number.isInteger(listed.count) || listed.count < 0) {
+            throw new RangeError(`listFindAll's list holds ${String(listed.count)} lines: a count is a whole number from 0 (ADR-0470 §7).`);
+        }
+        const request: Omit<GridFindAllRequest, 'start' | 'count'> = Object.freeze({
+            ...this.#findPattern(), columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const list: FindAllHeld<Row> = {
+            source: this.#source, sequence: this.#sequence(), request, columnCount: request.columns.length, headers: [],
+            rowTotal: listed.count, pages: new Map(), asking: new Map(), active: undefined, gone: undefined, part: undefined, own: listed,
+        };
+        this.#showFindAll(popover.panel, list);
+        this.#invalidate();
+    }
+
+    // The list's part, made and placed under the panel's contents.
+    #showFindAll(panel: FindPlace, list: FindAllHeld<Row>): void {
         this.#findAll = list;
         const part = new FindAllList(this.#root.ownerDocument, {
             count: () => this.#findAllCount(list),
@@ -8852,20 +8900,25 @@ export class GridView<Row> {
             label: this.#labelOf(findPanelLabelIds.findAllList),
         }, this.#metrics.rowHeightPx);
         list.part = part;
-        popover.panel.showFindAll(part.element);
+        panel.showFindAll(part.element);
         this.#sayFindAll(list);
-        this.#askFindAllPage(list, 0, true);
     }
 
     // The lines the list holds: the headers matched and every row's match, none once it has gone, or `undefined`
     // while the first page is out.
     #findAllCount(list: FindAllHeld<Row>): number | undefined {
         if (list.gone !== undefined) return 0;
+        if (list.own !== undefined) return list.own.count;
         return list.rowTotal === undefined ? undefined : list.headers.length + list.rowTotal;
     }
 
     // Line `index` in the grid's words (ADR-0470 §3), or `undefined` while its page is not read.
-    #findAllLine(list: FindAllHeld<Row>, index: number): FindAllLine | undefined {
+    #findAllLine(list: FindAllHeld<Row>, index: number): GridFindAllLine | undefined {
+        if (list.own !== undefined) {
+            const line: unknown = list.own.line(index);
+            if (!isFindAllLine(line)) throw new TypeError(`listFindAll's list answered line ${String(index)} as something other than { where, text } (ADR-0470 §7).`);
+            return line;
+        }
         const header = list.headers[index];
         if (header !== undefined) {
             return { where: filledWords(this.#labelOf(findPanelLabelIds.findAllInHeader), { column: header.text }), text: header.text };
@@ -8899,7 +8952,7 @@ export class GridView<Row> {
 
     // The list's lines from `first` to `last` are in view: their pages are asked, and the next one ahead.
     #findAllInView(list: FindAllHeld<Row>, first: number, last: number): void {
-        if (this.#findAll !== list || list.gone !== undefined || list.rowTotal === undefined) return;
+        if (this.#findAll !== list || list.own !== undefined || list.gone !== undefined || list.rowTotal === undefined) return;
         const rows = list.rowTotal;
         const from = Math.max(0, first - list.headers.length);
         const to = Math.min(rows - 1, last - list.headers.length + findAllVisibleLines);
@@ -9002,6 +9055,15 @@ export class GridView<Row> {
     #findAllChoose(list: FindAllHeld<Row>, index: number): void {
         if (this.#stepInTurn(() => { this.#findAllChoose(list, index); })) return;
         if (this.#findAll !== list || list.gone !== undefined) return;
+        if (list.own !== undefined) {
+            if (index < 0 || index >= list.own.count) return;
+            list.active = index;
+            list.own.choose(index);
+            // The contents may have taken the list away as they chose.
+            if (this.#findAll === list) list.part?.refresh();
+            this.#invalidate();
+            return;
+        }
         if (list.source !== this.#source) {
             this.#findAllGone(list, 'sourceChanged');
             return;
@@ -9074,7 +9136,7 @@ export class GridView<Row> {
     // In each pass: a list whose order or source has moved since it was read goes (ADR-0470 §5).
     #forgetFindAllOffSequence(): void {
         const list = this.#findAll;
-        if (list === undefined || list.gone !== undefined) return;
+        if (list === undefined || list.own !== undefined || list.gone !== undefined) return;
         if (list.source !== this.#source) this.#findAllGone(list, 'sourceChanged');
         else if (list.sequence !== this.#sequence()) this.#findAllGone(list, 'orderChanged');
     }

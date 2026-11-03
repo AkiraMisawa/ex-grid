@@ -5,7 +5,7 @@
 
 import {
     GridSource, findMatches, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridHeaderGroup, type GridTextOptions,
-    type GridFindPattern, type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
+    type GridFindAllPage, type GridFindAllRequest, type GridFindPattern, type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import {
@@ -13,7 +13,7 @@ import {
     type PivotReportState, type PivotToggle, type PivotValue,
 } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
-import { findInReport, type ReportFindGivenUp } from './report-find';
+import { findAllInReport, findInReport, type ReportFindAllMatches, type ReportFindGivenUp } from './report-find';
 import { summarizeReport } from './report-summary';
 import type { PivotScreenWords } from './words';
 
@@ -313,10 +313,26 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
         request.findGivenUp(read);
         throw new DOMException('The Find step over the report was given up.', 'AbortError');
     };
+    // Find All over the report as shown (ADR-0470 §7): the report is read to its end once for a question, and its
+    // pages are read from what was found while the question stands. A report that moves is another source.
+    let listed: { readonly key: string; readonly matches: ReportFindAllMatches } | undefined;
+    const findAll = async (asked: GridFindAllRequest, _query: unknown, signal: AbortSignal): Promise<GridFindAllPage> => {
+        const key = JSON.stringify([asked.text, asked.matchCase, asked.wholeCell, asked.scope, asked.columns]);
+        if (listed?.key !== key) {
+            const read = await findAllInReport(request.source, answered.metadata, asked, signal);
+            if (read.kind !== 'answered') {
+                request.findGivenUp(read);
+                throw new DOMException('The Find All over the report was given up.', 'AbortError');
+            }
+            listed = { key, matches: read.matches };
+        }
+        return listed.matches.page(asked.start, asked.count, asked.rowSequenceVersion);
+    };
     return GridSource.fetch(fetch, {
         rowKey: reportRowKey,
         readAheadRows: 60,
         find,
+        findAll,
         // The Selection Summary is the report source's, over the report the selection was made on (ADR-0130).
         summarize: (summary, _query, signal) => summarizeReport(request.source, version, summary, request.words(), signal),
         // A Window of another report is never shown beside this one's rows: the pivot asks again, and the grid

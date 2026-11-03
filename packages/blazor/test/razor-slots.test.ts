@@ -391,7 +391,7 @@ describe('a find panel filled with Razor', () => {
             label: id => `words for ${id}`,
             setText: text => { typed.push(text); }, setMatchCase: () => undefined, setWholeCell: () => undefined, setReplaceText: () => undefined,
             next: () => undefined, previous: () => undefined, replace: () => undefined, replaceAll: () => undefined, close: () => undefined,
-            findAll: () => { listed += 1; },
+            findAll: () => { listed += 1; }, listFindAll: () => undefined, dropFindAll: () => undefined,
             focusRequest: 1, innerPopupChanged: () => undefined, takeFocus: control => { focused.push(control); },
         };
         mountOf(slots, 'findPanel')(slot, context);

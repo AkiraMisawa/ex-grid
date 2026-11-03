@@ -8,6 +8,7 @@
 // The DOM is the C# core's built-in panel's, so ex-grid.css and layer 3 read both alike.
 
 import { findPanelLabelIds } from '../chrome/find-panel-labels';
+import type { GridFindAllList } from './find-all-list';
 
 /** What the find panel holds, kept by the grid across a close and a reopen (ADR-0055, ADR-0332 §4). */
 export interface FindHeld {
@@ -31,6 +32,10 @@ export interface FindPanelAnswers {
     readonly replaceAll: () => void;
     /** Find All, its list asked of the Consumer (ADR-0470). */
     readonly findAll: () => void;
+    /** Find All, its list a slot's contents' own (ADR-0470 §7), asked in its turn. */
+    readonly listFindAll: (list: () => GridFindAllList) => void;
+    /** An option of a slot's contents' own changed what a search means: the list standing goes (ADR-0470 §5). */
+    readonly dropFindAll: () => void;
     /** The text or an option changed: the Match Marks may move (ADR-0332 §4). */
     readonly heldChanged: () => void;
     /** An input reached the panel and was answered (ADR-0220). */

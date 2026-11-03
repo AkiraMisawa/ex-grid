@@ -875,6 +875,70 @@ describe('Find and Replace (ADR-0055, ADR-0332)', () => {
     });
 });
 
+const lines = (element: HTMLElement): string[] => Array.from(element.querySelectorAll('.ex-popover-find .ex-find-all-line'),
+    line => Array.from(line.children, part => part.textContent).join(' = '));
+const countLine = (element: HTMLElement): string | null | undefined => element.querySelector('.ex-popover-find .ex-find-all-count')?.textContent;
+const pressFindAll = (element: HTMLElement): void => {
+    const button = element.querySelector<HTMLButtonElement>('.ex-popover-find button.ex-find-all-button');
+    if (button?.hidden !== false) throw new Error('The find panel offers Find All.');
+    button.click();
+};
+const listbox = (element: HTMLElement): HTMLElement => {
+    const list = element.querySelector<HTMLElement>('.ex-popover-find .ex-find-all-list');
+    if (list === null) throw new Error('The find panel shows a Find All list.');
+    return list;
+};
+
+describe('Find All (ADR-0470)', () => {
+    it('ADR-0470 §7: Within the Sheet the grid lists the Sheet shown, each line by its row and column, and a line chosen selects its cell', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: 'apple', B3: '=40+2', C5: '42 apples' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 1)).toBe('42'); });
+        press(element, 0, 0);
+        key('f', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '42');
+        pressFindAll(element);
+        await settle();
+        await vi.waitFor(() => { expect(countLine(element)).toBe('2 cells found'); });
+        expect(lines(element)).toEqual(['Row 3, B = 42', 'Row 5, C = 42 apples']);
+        listbox(element).querySelectorAll<HTMLElement>('.ex-find-all-line')[1]?.click();
+        await settle();
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('C5'); });
+    });
+
+    it('ADR-0470 §7: Within the Workbook the Sheet lists every Sheet in tab order, named by Sheet and address; a line on another Sheet shows it, and the list stays', async () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Claim', 'My Summary']);
+        workbook.do('Claim', SheetEdit.enter(CellAddress.parse('D5'), 'travel'));
+        workbook.do('My Summary', SheetEdit.enter(CellAddress.parse('B1'), 'Travel total'));
+        workbook.do('Claim', SheetEdit.enter(CellAddress.parse('A2'), 'hotel'));
+        const { element, sheet } = sheetOf({ document: workbook.toDocument() });
+        await vi.waitFor(() => { expect(cellAt(element, 0, 0)).not.toBeNull(); });
+        press(element, 0, 0);
+        key('f', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find')).not.toBeNull(); });
+        element.querySelector<HTMLInputElement>('.ex-popover-find input.ex-sheet-find-within-workbook')?.click();
+        typeInFind(element, 'input.ex-find-field', 'travel');
+        pressFindAll(element);
+        await settle();
+        await vi.waitFor(() => { expect(countLine(element)).toBe('2 cells found'); });
+        expect(lines(element)).toEqual(['Claim!D5 = travel', "'My Summary'!B1 = Travel total"]);
+        listbox(element).querySelectorAll<HTMLElement>('.ex-find-all-line')[1]?.click();
+        await settle();
+        await vi.waitFor(() => { expect(sheet.workbook.shown.name).toBe('My Summary'); });
+        expect(nameBox(element).value).toBe('B1');
+        expect(lines(element)).toHaveLength(2);
+        // Back on the first Sheet, by the list's own key.
+        listbox(element).focus();
+        key('Home');
+        await settle();
+        await vi.waitFor(() => { expect([sheet.workbook.shown.name, nameBox(element).value]).toEqual(['Claim', 'D5']); });
+        // Within changed, the list goes: it no longer answers what the panel searches.
+        element.querySelector<HTMLInputElement>('.ex-popover-find input.ex-sheet-find-within-sheet')?.click();
+        await settle();
+        expect(element.querySelector('.ex-popover-find .ex-find-all')).toBeNull();
+    });
+});
+
 describe('the formatting and structure keys (ADR-0071, ADR-0050 item 14)', () => {
     it('ADR-0071 case 17: Ctrl+B sets bold on the Selection by the Focus cell\'s direction, Ctrl+Shift+% a Number Format; each is one step to undo', async () => {
         const { element, sheet } = sheetOf({ document: documentOf({ A1: '0.5', A2: '0.25' }) });

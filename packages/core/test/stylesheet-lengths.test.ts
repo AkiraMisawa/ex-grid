@@ -79,6 +79,7 @@ const bareLengths = new Map<string, string>([
     ['.ex-focus-row | outline-offset | -1px', outline],
     ['.ex-hover-row | outline | 1px', outline],
     ['.ex-hover-row | outline-offset | -1px', outline],
+    ['.ex-find-all-list | outline-offset | -1px', outline],
 
     ['.ex-row-total, .ex-row-total .ex-cell | --ex-tint | 1px', rule],
 
@@ -99,6 +100,9 @@ const bareLengths = new Map<string, string>([
     ['.ex-popover-join | gap | 12px', popover],
     ['.ex-popover-find-body | gap | 4px', popover],
     ['.ex-find-outcome | min-height | 1.2em', popover],
+    ['.ex-find-all | gap | 2px', popover],
+    ['.ex-find-all-count | min-height | 1.2em', popover],
+    ['.ex-find-all-list | border | 1px', popover],
     ['.ex-select-all::before | width | 1.2em', popover],
     ['.ex-summary-menu | min-width | 12em', popover],
     ['.ex-summary-menu-item | padding | 2px', popover],

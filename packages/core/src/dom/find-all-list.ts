@@ -4,20 +4,35 @@
 // shows, which is active and what a choice does are the grid's, read through its model; it draws them and says what
 // the user did.
 
-/** One line of the list: where the match is, and the text it displays; `undefined` while its page is not yet read. */
-export interface FindAllLine {
+/** One line of a Find All's list: where the match is, and the text it displays. */
+export interface GridFindAllLine {
     /** Where the match is, in the grid's words: "Row 12, Trader", "Header Trader", "Sheet2!B12". */
     readonly where: string;
     /** The matched cell's displayed text. */
     readonly text: string;
 }
 
+/**
+ * A Find All list a find panel slot's contents hold themselves (ADR-0470 §7), handed to the core to draw as it draws
+ * its own: ExSheet's over every Sheet of its Workbook. The contents answer how many lines it holds, each line, and
+ * what choosing one does; the core draws the count and the lines, takes the list's keys and clicks in their place in
+ * the Input Order, and takes the list away when the text or an option changes or the panel closes.
+ */
+export interface GridFindAllList {
+    /** How many lines the list holds: every match, never capped. */
+    readonly count: number;
+    /** Line `index`, from 0 to `count` − 1. */
+    readonly line: (index: number) => GridFindAllLine;
+    /** The user chose line `index`, in its turn: the contents move to it, as a step that found it would. */
+    readonly choose: (index: number) => void;
+}
+
 /** What the list reads from the grid, and what it says back. */
 export interface FindAllListModel {
     /** How many lines the list holds, or `undefined` while the first page is out. */
     readonly count: () => number | undefined;
-    /** Line `index`, or `undefined` while it is not yet read. */
-    readonly line: (index: number) => FindAllLine | undefined;
+    /** Line `index`, or `undefined` while its page is not yet read. */
+    readonly line: (index: number) => GridFindAllLine | undefined;
     /** The line chosen last, the current match, or none. */
     readonly active: () => number | undefined;
     /** The lines from `first` to `last` are in view: the grid reads them, and ahead of them. */

@@ -4,11 +4,11 @@
 // since that is the only time a position comes to mean another row (ADR-0011).
 
 import {
-    GridSummaryCells, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource, type GridSourceState,
+    GridSummaryCells, type DistinctValues, type GridFilter, type GridFindAllPage, type GridFindAllRequest, type GridFindRequest, type GridFindResult, type GridSource, type GridSourceState,
     type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowRange, type SortSpec,
 } from '@ex-grid/core';
 import { Sheet, type SheetChange } from '@ex-grid/sheet-engine';
-import { sheetFindStep } from './sheet-find';
+import { sheetFindAll, sheetFindStep } from './sheet-find';
 import { SheetRow } from './sheet-row';
 import { sheetSummaryDeclined, walkSheetSummary } from './sheet-summary';
 import type { SheetWords } from './sheet-words';
@@ -98,6 +98,18 @@ export class SheetSource implements GridSource<SheetRow> {
             : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
         if (sheet === undefined) return Promise.reject(new DOMException('The step was asked of a Sheet shown before the last one.', 'AbortError'));
         return this.#step(sheet, request);
+    }
+
+    /** A page of a Find All over the Sheet its Row Sequence Version names (ADR-0470 §7), as a step is answered: the
+     * one shown, or the one before it. Asked under an older version, the list named rows of a Sheet no longer shown:
+     * given up, never answered about cells nobody searched. Within the Workbook, the Sheet lists the matches itself. */
+    findAll(request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage> {
+        signal.throwIfAborted();
+        const before = this.#before;
+        const sheet = request.rowSequenceVersion === this.#version ? this.#sheet
+            : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
+        if (sheet === undefined) return Promise.reject(new DOMException('The Find All was asked of a Sheet shown before the last one.', 'AbortError'));
+        return Promise.resolve(sheetFindAll(sheet, request, request.rowSequenceVersion));
     }
 
     /** A Selection Summary over the Sheet its Row Sequence Version names (ADR-0130), as C#'s `SheetSummary` answers

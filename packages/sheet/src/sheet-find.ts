@@ -6,7 +6,10 @@
 // million rows is searched in the time its occupied cells take. `sheetCellMatches` is the one rule a step and the
 // Match Mark judge a cell by (ADR-0332 §4), so the mark never shows a match a step does not reach.
 
-import { findMatches, replacedEntry, type GridFindPattern, type GridFindRequest, type GridFindResult, type SelectionRange } from '@ex-grid/core';
+import {
+    findAllPage, findMatches, replacedEntry, type GridFindAllPage, type GridFindAllRequest, type GridFindPattern, type GridFindRequest, type GridFindResult,
+    type SelectionRange,
+} from '@ex-grid/core';
 import { CellAddress, Sheet } from '@ex-grid/sheet-engine';
 import { shownTextOf } from './sheet-row';
 
@@ -38,6 +41,87 @@ export function sheetFindStep(sheet: Sheet, request: GridFindRequest): GridFindR
         found = { found: true, row: address.row, column: columnName(request.columns, position) };
     }
     return found;
+}
+
+/**
+ * One page of a Find All over `sheet` (ADR-0470 §2, §7), answered under `rowSequenceVersion`: every cell a step over
+ * it would stop on, in the order a forward walk from A1 meets them, by rows and across a row in the request's column
+ * order, inside the scope when there is one. Like a step it walks only the cells that hold an Entry, and the page
+ * reads each one's text as it is shown now.
+ */
+export function sheetFindAll(sheet: Sheet, request: GridFindAllRequest, rowSequenceVersion: number): GridFindAllPage {
+    const { start, count } = request;
+    if (!Number.isInteger(start) || start < 0) throw new RangeError(`A Find All page starts at an entry at or after 0, not ${String(start)}.`);
+    if (!Number.isInteger(count) || count < 1) throw new RangeError(`A Find All page asks for 1 entry or more, not ${String(count)}.`);
+    const positions = positionsOf(request.columns);
+    const columnCount = request.columns.length;
+    const ordinals: number[] = [];
+    if (request.text !== '') {
+        for (const address of sheet.entryAddresses) {
+            const position = positions.get(address.column);
+            if (position === undefined) continue;
+            if (request.scope !== undefined && !inScope(request.scope, address.row, position)) continue;
+            if (sheetCellMatches(sheet, address, request)) ordinals.push((address.row * columnCount) + position);
+        }
+    }
+    // By rows and across a row in the request's order, which need not be the Sheet's own order of its columns.
+    ordinals.sort((a, b) => a - b);
+    const matches = ordinals.slice(start, start + count).map(ordinal => {
+        const row = Math.floor(ordinal / columnCount);
+        const position = ordinal % columnCount;
+        const column = columnName(request.columns, position);
+        const sheetColumn = CellAddress.tryParseColumn(column);
+        if (sheetColumn === undefined) throw new Error(`Internal: '${column}' names no Sheet column.`);
+        return { row, column, text: shownTextOf(sheet, new CellAddress(row, sheetColumn)) };
+    });
+    return findAllPage(ordinals.length, matches, rowSequenceVersion);
+}
+
+/**
+ * Every cell of every Sheet of `sheets` that matches `pattern` (ADR-0470 §7), Excel's Find All Within: Workbook: in tab
+ * order from the first Sheet, each Sheet by rows and across a row from column A. Held as each match's Sheet and the
+ * cell's ordinal in row-major order, so millions of matches hold no object each; the Selection is no scope here, as it
+ * is none for a step over the Workbook.
+ */
+export class SheetWorkbookMatches {
+    readonly #sheets: readonly Sheet[];
+    readonly #sheetOf: readonly number[];
+    readonly #ordinals: readonly number[];
+
+    constructor(sheets: readonly Sheet[], pattern: GridFindPattern) {
+        const sheetOf: number[] = [];
+        const ordinals: number[] = [];
+        if (pattern.text !== '') {
+            sheets.forEach((sheet, index) => {
+                const found: number[] = [];
+                for (const address of sheet.entryAddresses) {
+                    if (sheetCellMatches(sheet, address, pattern)) found.push((address.row * Sheet.columnCount) + address.column);
+                }
+                found.sort((a, b) => a - b);
+                for (const ordinal of found) {
+                    sheetOf.push(index);
+                    ordinals.push(ordinal);
+                }
+            });
+        }
+        this.#sheets = sheets;
+        this.#sheetOf = sheetOf;
+        this.#ordinals = ordinals;
+    }
+
+    /** How many cells match. */
+    get count(): number {
+        return this.#ordinals.length;
+    }
+
+    /** Match `index`: its Sheet and its cell. */
+    at(index: number): { readonly sheet: Sheet; readonly address: CellAddress } {
+        const sheetIndex = this.#sheetOf[index];
+        const ordinal = this.#ordinals[index];
+        const sheet = sheetIndex === undefined ? undefined : this.#sheets[sheetIndex];
+        if (sheet === undefined || ordinal === undefined) throw new RangeError(`The Workbook's Find All holds ${String(this.count)} matches, not one at ${String(index)}.`);
+        return { sheet, address: new CellAddress(Math.floor(ordinal / Sheet.columnCount), ordinal % Sheet.columnCount) };
+    }
 }
 
 /** Where a step over the Workbook found its match: the Sheet, the row and the column's place among the request's

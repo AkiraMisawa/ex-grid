@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { GridColumn } from '../src/dom/grid-column';
+import type { GridChromeSlot, GridFindPanelSlotContext } from '../src/dom/grid-chrome';
 import type { GridOptions } from '../src/dom/grid-view';
 import { findAllPage, type GridFindAllPage, type GridFindAllRequest } from '../src/finding/find-all';
 import type { GridSelection } from '../src/selection/selection';
@@ -265,5 +266,50 @@ describe('Find All', () => {
         expect(root.querySelector('.ex-find-all')).toBeNull();
         // The Escape cancelled the page and closed nothing (ADR-0240 section 12).
         expect(root.querySelector(':scope > .ex-popover-find')).not.toBeNull();
+    });
+
+    it('ADR-0470 §7: a list the slot\'s contents hold is drawn as the grid\'s, asked in its turn, its choice handed back, and dropped when they say', async () => {
+        const chosen: number[] = [];
+        let asked = 0;
+        let context: GridFindPanelSlotContext | undefined;
+        const findPanel: GridChromeSlot<GridFindPanelSlotContext> = (slot, given) => {
+            context = given;
+            const input = slot.ownerDocument.createElement('input');
+            input.className = 'ex-find-field';
+            input.addEventListener('input', () => { given.setText(input.value); });
+            slot.append(input);
+            given.takeFocus(input, { preventScroll: true });
+            return () => { input.remove(); };
+        };
+        const { root } = grid({ chrome: { findPanel } });
+        await painted();
+        key(root, 'f', { ctrlKey: true });
+        await painted();
+        const own = defined(context, 'the slot mounted');
+        // With nothing to search for, nothing is asked.
+        own.listFindAll(() => { asked += 1; return { count: 0, line: () => ({ where: '', text: '' }), choose: () => undefined }; });
+        await settle();
+        expect([asked, root.querySelector('.ex-find-all')]).toEqual([0, null]);
+        typeInto(field(root), 'x');
+        await painted();
+        own.listFindAll(() => {
+            asked += 1;
+            return { count: 300, line: index => ({ where: `Sheet${String(index % 2 + 1)}!A${String(index + 1)}`, text: `x${String(index)}` }), choose: index => { chosen.push(index); } };
+        });
+        await settle();
+        expect(asked).toBe(1);
+        expect(countLine(root)).toBe('300 cells found');
+        expect(lines(root).slice(0, 2)).toEqual(['Sheet1!A1 | x0', 'Sheet2!A2 | x1']);
+        expect(list(root).querySelectorAll('.ex-find-all-line').length).toBeLessThanOrEqual(9);
+        key(list(root), 'End');
+        await settle();
+        expect(chosen).toEqual([299]);
+        expect(list(root).getAttribute('aria-activedescendant')).toMatch(/-299$/);
+        own.dropFindAll();
+        await settle();
+        expect(root.querySelector('.ex-find-all')).toBeNull();
+        // A list that is not one is the contents' defect, said to them.
+        expect(() => { own.listFindAll(() => ({ count: -1, line: () => ({ where: '', text: '' }), choose: () => undefined })); })
+            .toThrow('a count is a whole number from 0');
     });
 });

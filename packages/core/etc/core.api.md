@@ -1056,6 +1056,19 @@ export interface GridFilterPanelSlotContext {
 }
 
 // @public
+export interface GridFindAllLine {
+    readonly text: string;
+    readonly where: string;
+}
+
+// @public
+export interface GridFindAllList {
+    readonly choose: (index: number) => void;
+    readonly count: number;
+    readonly line: (index: number) => GridFindAllLine;
+}
+
+// @public
 export interface GridFindAllMatch {
     readonly column: string;
     readonly row: number;
@@ -1082,10 +1095,12 @@ export interface GridFindAllRequest extends GridFindPattern {
 // @public
 export interface GridFindPanelSlotContext {
     readonly close: () => void;
+    readonly dropFindAll: () => void;
     readonly findAll: () => void;
     readonly focusRequest: number;
     readonly innerPopupChanged: (open: boolean) => void;
     readonly label: (id: string) => string;
+    readonly listFindAll: (list: () => GridFindAllList) => void;
     readonly next: () => void;
     readonly previous: () => void;
     readonly replace: () => void;
