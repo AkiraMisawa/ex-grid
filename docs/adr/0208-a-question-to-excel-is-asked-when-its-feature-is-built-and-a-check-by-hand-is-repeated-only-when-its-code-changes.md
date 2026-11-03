@@ -14,6 +14,9 @@ index this ADR made. VZ-18's check on the remote-isolation PC is withdrawn. ED-3
 indexed, held by their records as this ADR says.)*
 *(2026-11-02, later the same day, ADR-0450's note "WR-10 moves into CI": WR-10's floor run and its layer-2
 runs are CI's long run's too, and its entry left the index. ED-30 stays.)*
+*(2026-11-02, later still, ADR-0450's note "ED-30 moves into CI": a real IME runs on CI's Windows runner too,
+and ED-30 left the index. The index and the Definition of Done's table hold no row; what this ADR decided of a
+row checked by hand still holds for one a later decision puts there.)*
 
 The seventeenth Windows run takes about half a day of a person at a Windows desktop. ADR-0205 asks every
 stable version to pass all of §22, a patch included. Read with the by-hand rows, that is half a day at

@@ -135,6 +135,27 @@ public class ScriptGridSurfaceTests : BunitContext
         Assert.True(Parsed(_grid.Invocations["state"][^1].Arguments[0]).GetProperty("window")[1].GetProperty("m").GetBoolean());
     }
 
+    [Fact] // ADR-0370 section 1, CON-6: a state a source's change sent, called off by a circuit that closed meanwhile, is not raised
+    public async Task ADR0370_a_state_the_closing_circuit_calls_off_is_not_raised()
+    {
+        var source = GridSource.From(_rows, row => row.Book);
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps.Add(g => g.Source, source).Add(g => g.Columns, TestRows.Columns()));
+        _grid.SetupVoid("dispose", _ => true).SetVoidResult();
+        // The browser's reply is a round trip away, and the circuit closes before it comes.
+        var reply = _grid.SetupVoid("state", _ => true);
+        var sent = _grid.Invocations["state"].Count;
+
+        source.ReplaceAll([.. _rows.Reverse()]);
+        // The state is sent from the component's context once what runs there now is done.
+        cut.WaitForAssertion(() => Assert.True(_grid.Invocations["state"].Count > sent));
+        await DisposeComponentsAsync();
+        reply.SetCanceled();
+        // What the cancellation resumes runs in the component's context, in turn: read once that turn has passed.
+        await cut.InvokeAsync(() => { });
+
+        Assert.False(Renderer.UnhandledException.IsCompleted);
+    }
+
     [Fact] // ADR-0036 / ADR-0440 section 4: the grid's own words cross as a table, asked once per function, placeholders never asked
     public void ADR0440_command_label_crosses_as_a_table_of_the_ids_it_answers()
     {

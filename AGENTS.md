@@ -316,8 +316,9 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   `tests/browser`, or `nix develop .#browser -c npx playwright test` there. It needs Chrome and
   Edge installed and starts the DemoHost itself, and it runs **deliberately on Windows or
   Linux**, where the platform's own scrollbars occupy layout and the assertions are not
-  tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
-  runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
+  tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME (ED-30)
+  are CI's Windows runner's**, in the long run's `windows-desktop` and `windows-ime` jobs, with keys and presses
+  sent through the OS (`os-input.mjs`, ADR-0450), and no row is left checked by hand.
   `tests/browser/README.md` says what it asserts and what it deliberately does not.
   What to run locally, and what to leave to CI, is in "What counts as verified".
 

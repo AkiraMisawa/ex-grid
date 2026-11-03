@@ -1013,7 +1013,15 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (grid is null || _disposed || !_stateOwed)
             return;
         _stateOwed = false;
-        await grid.InvokeVoidAsync("state", StateJson());
+        try
+        {
+            await grid.InvokeVoidAsync("state", StateJson());
+        }
+        // Called off by a circuit that closed after the component was disposed, the state has nobody left to reach, as
+        // at disposal; every path that sends one (a source's change, a range asked, an event's handler) lets it go here.
+        catch (OperationCanceledException) when (_disposed)
+        {
+        }
     }
 
     private string AttachJson(string options) => Json(json =>
