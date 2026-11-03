@@ -529,3 +529,18 @@ script moves into the Chrome slot it fills and back
 ([ADR-0410](./0410-a-blazor-adapter-fills-a-slot-by-moving-its-razor-into-it-and-the-script-wires-the-controls.md) section 1). It
 draws no box of its own (`display: contents`), so there is nothing on it to style; UX-4's walk met it
 under the root once the DemoHost's pages moved onto Blazor's Script grid.
+
+## Added by ADR-0480 *(2026-11-03)*
+
+A Reference Outline's grips ([ADR-0480](./0480-a-reference-outline-is-dragged-by-its-edge-to-move-its-reference-and-by-a-corner-square-to-resize-it.md))
+enter the list here, all **internal**. They are painted only while a Formula is open in a grid whose Consumer
+declared `moveReference` beside `referencesIn`.
+
+- `ex-reference-grip`: a grip in the selection overlay, the only rectangle there that takes the pointer, with
+  `ex-reference-grip-top`, `-bottom`, `-left` and `-right` naming an edge's strip, and `ex-reference-grip-topLeft`,
+  `-topRight`, `-bottomLeft` and `-bottomRight` a corner's square. It wears the outline's `ex-reference-1` to
+  `ex-reference-7`.
+- `ex-reference-square`: a corner's square, drawn in the Reference's colour with a margin of `--ex-background`.
+- **No Visual Token is added.** The squares take the outline's `--ex-reference-1` to `--ex-reference-7`; their sizes
+  are Grid Metrics, emitted inline. The root's `data-ex-reference-drag` (`move`, `nwse` or `nesw`) stands while a grip
+  is dragged and gives the cursor.

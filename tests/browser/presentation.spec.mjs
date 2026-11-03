@@ -664,6 +664,9 @@ const INTERNAL_CLASSES = [
     // A Blazor Chrome's Razor fragment, moved into its slot (ADR-0410), and a paste waiting for its answer (ADR-0240
     // section 12), both entered in ADR-0029.
     'ex-razor-slot', 'ex-pasting',
+    // A Reference Outline's grips (ADR-0480, entered in ADR-0029): each edge's strip and corner's square.
+    'ex-reference-grip', 'ex-reference-square',
+    ...['top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'].map((kind) => `ex-reference-grip-${kind}`),
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */
@@ -872,7 +875,7 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-focus-among-ranges', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
         'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
-        'ex-completion', 'ex-reference-outline',
+        'ex-completion', 'ex-reference-outline', 'ex-reference-grip', 'ex-reference-square',
         'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
         'ex-heading-marked', 'ex-heading-whole', 'ex-heading-state', 'ex-headings-corner-marked'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);
