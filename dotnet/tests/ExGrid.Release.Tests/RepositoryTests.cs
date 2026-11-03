@@ -99,6 +99,10 @@ public partial class RepositoryTests
         // A candidate's release opens with the candidate's note, any other prerelease's with the prerelease note (ADR-0190, 2026-10-12).
         Assert.Contains("cat docs/releases/candidate-note.md", release);
         Assert.Contains("cat docs/releases/prerelease-note.md", release);
+        // npm publishes a tarball named as a path: a bare "dir/file.tgz" is read as a GitHub repository, and the
+        // publish of v0.2.0-beta.1 failed on it (2026-11-03).
+        Assert.Contains("file=\"./npm-tarballs/$tarball\"", release);
+        Assert.Contains("npm publish \"$file\"", release);
     }
 
     [Fact] // DoD §22 Step 2: the explicit tests the release tool allows are exactly the [Fact(Explicit = true)] tests in the source, ten
