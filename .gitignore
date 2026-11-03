@@ -30,6 +30,8 @@ docs/agent-runs/
 # package is published.
 node_modules/
 packages/*/dist/
+# What `npm run coverage` writes (tools/coverage/)
+/coverage/
 packages/*/temp/
 # The npm packages' check (tools/npm-package/check.mjs): the tarballs it packed and tested
 tools/npm-package/.tarballs/
