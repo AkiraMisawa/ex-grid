@@ -982,7 +982,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 if (_attached)
                     await SendStateAsync();
             }
-            catch (Exception ex) when (ex is not JSDisconnectedException)
+            // Called off by a circuit that closed meanwhile, the state has nobody left to reach, as at disposal.
+            catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
             {
                 await DispatchExceptionAsync(ex);
             }
@@ -997,9 +998,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             await SendStateAsync();
         }
-        catch (JSDisconnectedException)
+        catch (Exception ex) when (ex is JSDisconnectedException || (_disposed && ex is OperationCanceledException))
         {
-            // The circuit is gone, and the browser the state was for with it.
+            // The circuit is gone, or closed meanwhile and called the state off, and the browser it was for with it.
         }
         catch (Exception ex)
         {
@@ -1400,7 +1401,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             if (_attached)
                 await SendStateAsync();
         }
-        catch (Exception ex) when (ex is not JSDisconnectedException)
+        // Called off by a circuit that closed meanwhile, the state has nobody left to reach, as at disposal.
+        catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
         {
             await DispatchExceptionAsync(ex);
         }
