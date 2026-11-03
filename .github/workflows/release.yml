@@ -403,7 +403,9 @@ jobs:
             *) tag=next ;;
           esac
           while IFS= read -r tarball; do
-            file="npm-tarballs/$tarball"
+            # "./" makes it a file: npm reads "npm-tarballs/<name>.tgz" as a GitHub repository, owner/name
+            # (v0.2.0-beta.1's first publish, 2026-11-03).
+            file="./npm-tarballs/$tarball"
             name=$(tar -xzOf "$file" package/package.json | node -e "process.stdin.on('data', d => process.stdout.write(JSON.parse(d).name))")
             integrity="sha512-$(openssl dgst -sha512 -binary "$file" | base64 -w 0)"
             if published=$(npm view "$name@$VERSION" dist.integrity 2> "$RUNNER_TEMP/view.err"); then
