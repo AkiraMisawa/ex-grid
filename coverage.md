@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/03/2026 - 20:36:00 |
+| Generated on: | 11/03/2026 - 23:05:07 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1114 |
@@ -63,8 +63,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | Uncovered lines: | 9056 |
 | Coverable lines: | 69498 |
 | Total lines: | 105879 |
-| **Branch coverage:** | 82.8% (36444 of 43975) |
-| Covered branches: | 36444 |
+| **Branch coverage:** | 82.8% (36445 of 43975) |
+| Covered branches: | 36445 |
 | Total branches: | 43975 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
