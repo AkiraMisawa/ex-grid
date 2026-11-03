@@ -131,9 +131,9 @@ internal sealed class ScriptMount(
         {
             await handle.InvokeVoidAsync("update", Compose(state, moved));
         }
-        catch (JSDisconnectedException)
+        // The circuit is gone, and the drawing with it (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, Disposed))
         {
-            // The circuit is gone, and the drawing with it.
         }
     }
 

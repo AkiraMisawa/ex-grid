@@ -8,8 +8,10 @@ import { defined } from '../src/must';
 import type { GridChromeSlot, GridFindPanelSlotContext } from '../src/dom/grid-chrome';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
+import { notFound, type GridFindRequest, type GridFindResult } from '../src/finding/find';
 import { replacedCells, type GridReplaceResult } from '../src/finding/replace';
 import type { GridSelection } from '../src/selection/selection';
+import { GridSource } from '../src/source/grid-source';
 import { mount, painted, q, unmountAll } from './grid-harness';
 
 afterEach(unmountAll);
@@ -86,7 +88,7 @@ function grid(options: Partial<GridOptions<Deal>> = {}): {
     const drawn: Drawn = { contexts: [], cleanups: 0 };
     const selections: GridSelection[] = [];
     const { root, view } = mount<Deal>({
-        columns, rows: deals, rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false,
+        columns, ...(options.source === undefined ? { rows: deals } : {}), rowHeight: 24, viewportHeight: 320, viewportWidth: 720, findsHeaders: false,
         onSelectionChanged: next => { selections.push(next); }, chrome: { findPanel: plainFind(drawn) }, ...options,
     });
     return { root, view, drawn, selections };
@@ -319,6 +321,44 @@ describe('the find panel\'s slot', () => {
         key(root, 'f', { ctrlKey: true });
         view.destroy();
         expect(drawn.cleanups).toBe(1);
+    });
+
+    it('ADR-0240 §3 / ADR-0451: a step and a tick the contents call for while a step is out wait for its answer, as a Framework Adapter\'s calls arrive a round trip after their clicks', async () => {
+        // The calls a Blazor Wrapper's contents make reach the core straight after one another, all three behind the
+        // clicks the root already let through: the second step still starts where the first landed, with the option ticked.
+        const inMemory = GridSource.from(deals);
+        const requests: GridFindRequest[] = [];
+        const answers: ((result: GridFindResult) => void)[] = [];
+        const source: GridSource<Deal> = {
+            subscribe: listener => inMemory.subscribe(listener),
+            snapshot: () => inMemory.snapshot(),
+            setColumns: given => { inMemory.setColumns(given); },
+            setSorts: sorts => { inMemory.setSorts(sorts); },
+            setFilter: filter => { inMemory.setFilter(filter); },
+            needRange: range => inMemory.needRange(range),
+            rows: (range, signal) => inMemory.rows(range, signal),
+            distinctValues: (name, signal) => inMemory.distinctValues(name, signal),
+            find: request => {
+                requests.push(request);
+                return new Promise(resolve => { answers.push(resolve); });
+            },
+        };
+        const { root, drawn, selections } = grid({ source });
+        await painted();
+        key(root, 'f', { ctrlKey: true });
+        const context = last(drawn);
+        context.setText('NOVAK');
+        context.next();
+        context.setMatchCase(true);
+        context.next();
+        await settle();
+        expect(requests.map(request => request.matchCase)).toEqual([false]);
+        defined(answers[0], 'the first step')({ found: true, row: 3, column: 'Trader' });
+        await settle();
+        expect(requests.map(request => [request.matchCase, request.from])).toEqual([[false, undefined], [true, { row: 3, column: 1 }]]);
+        defined(answers[1], 'the second step')(notFound);
+        await settle();
+        expect([focusOf(selections), last(drawn).view().outcome]).toEqual([{ row: 3, column: 1 }, 'No match']);
     });
 
     it('ADR-0390: a step after the panel went reaches nothing, and contents that cannot be drawn leave no panel standing', async () => {

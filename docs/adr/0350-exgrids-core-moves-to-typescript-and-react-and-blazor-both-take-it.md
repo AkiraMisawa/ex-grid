@@ -246,7 +246,8 @@ handler that checks its token before it writes writes nothing the user took back
 
 *(2026-10-27, implemented: [ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)
 section 3's error step crosses as `OnFindError`, answered in .NET in its turn among the events and numbered as a
-verdict is, so stepping again calls off the step still out. A step asked of a source the Consumer has since
+verdict is, so stepping again calls off the step still out (replaced 2026-11-03 by ADR-0451 section 3: a step
+asked while one is out waits for its answer). A step asked of a source the Consumer has since
 replaced, or under a row sequence version its source has left, is not handed to the Consumer, which would read
 positions in an order they were not taken in: .NET sends what its source owes and answers it as moved, and the
 bridge waits until what a write of the user's holds is taken in, so the core holds the newer order and says the

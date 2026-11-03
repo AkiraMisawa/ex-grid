@@ -75,6 +75,7 @@
     <!-- The browser's calls in their order, a call too large for a circuit's message among them: compiled into each
          Script adapter, beside the Shared Script's half (packages/blazor/src/held-messages.ts). -->
     <Compile Include="..\Shared\Components\HeldCalls.cs" Link="Components\HeldCalls.cs" />
+    <Compile Include="..\Shared\Components\ClosingCircuit.cs" Link="Components\ClosingCircuit.cs" />
     <Compile Include="..\Shared\Components\CrossedText.cs" Link="Components\CrossedText.cs" />
     <!-- Chrome slots filled with Razor (ADR-0410): the holders every adapter renders, and the Sheet's grid's slots,
          read and drawn as ExGrid's own adapter reads and draws them. -->

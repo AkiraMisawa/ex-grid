@@ -119,6 +119,23 @@ public class SpecLintTests
             """)));
     }
 
+    [Theory] // ADR-0451: a drag Playwright emulates is refused, and no allowance lets it through
+    [InlineData("    await entry(page, 'Desk').dragTo(report(page));")]
+    [InlineData("    await page.dragAndDrop('#from', '#to');")]
+    [InlineData("    // spec-lint: early-read: the drag is a drag of the page's own link\n    await link.dragTo(report(page), { targetPosition: { x: 80, y: 60 } });")]
+    public void A_drag_Playwright_emulates_is_refused(string line)
+    {
+        Assert.Contains(Rule.EmulatedDrag, Rules(InTest(line)));
+    }
+
+    [Theory] // ADR-0451: drag.mjs's helpers are no emulated drag
+    [InlineData("    await dragAndDrop(page, entry(page, 'Desk'), report(page), { targetPosition: { x: 80, y: 60 } });")]
+    [InlineData("    const drag = await startDrag(page, entry(page, 'Desk'));\n    await drag.over(report(page));\n    await drag.cancel();")]
+    public void A_drag_through_drag_mjs_is_let_through(string body)
+    {
+        Assert.DoesNotContain(Rule.EmulatedDrag, Rules(InTest(body)));
+    }
+
     [Theory] // ADR-0220 §6: a fixed wait, however it is spelled
     [InlineData("    await page.waitForTimeout(500);")]
     [InlineData("    await grid.page().waitForTimeout(PACE_MS);")]

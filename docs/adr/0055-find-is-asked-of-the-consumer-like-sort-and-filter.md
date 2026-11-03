@@ -58,6 +58,12 @@ or "not found"**. The grid then:
 A step asked while one is out cancels the one that is out, whose answer is discarded — the fetching
 Source's rule ([ADR-0025](./0025-what-the-bundled-fetching-source-promises.md)).
 
+*(2026-11-03, replaced by [ADR-0451](./0451-layer-three-reds-are-fixed-by-their-cause-and-the-cause-is-guarded.md)
+section 3: the rule made a Next clicked straight after another start from a Focus the first never moved,
+whenever the source answered slower than the click came, which `find.spec.mjs` met on CI. A step now waits
+its turn in the Input Order: the inputs made while one is out are held and taken once its answer lands,
+and an Escape that sees it out cancels it.)*
+
 ## Where the search comes from
 
 - **A Grid Source answers it** through `IGridSource.FindAsync`, advertised by `CanFind`. The

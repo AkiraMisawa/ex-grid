@@ -29,9 +29,10 @@ public static class SpecLint
 {
     /// <summary>
     /// What a finding refuses: a fixed wait, an early read, a key whose landing is recorded under a round
-    /// trip with the host's answers flowing, or an allowance that names no reason.
+    /// trip with the host's answers flowing, an allowance that names no reason, or a drag Playwright emulates
+    /// (ADR-0451), which no allowance lets through.
     /// </summary>
-    public enum Rule { FixedWait, EarlyRead, RoundTrip, Allowance }
+    public enum Rule { FixedWait, EarlyRead, RoundTrip, Allowance, EmulatedDrag }
 
     /// <summary>One finding: its rule, the line its statement starts on, the statement, and why.</summary>
     public sealed record Finding(Rule Rule, int Line, string Statement, string Why);
@@ -72,6 +73,10 @@ public static class SpecLint
         @"(?:(?!\bawait\b)[^;])*?\.(?:evaluate|evaluateAll|textContent|innerText|innerHTML|inputValue|getAttribute|boundingBox|count|isVisible|isHidden|isChecked|isEnabled|isDisabled|isEditable|screenshot|allTextContents|allInnerTexts|ariaSnapshot)\(" +
         @"|(?:boxOf|spanOf|painted|readClipboard|keySeenUntouched|headerRowsOf|dataRowCount|rowAt|stretchesOf|caretInField|activeDescendant|keyboardIsOn)\()",
         RegexOptions.CultureInvariant);
+
+    // Playwright's own drag and drop, which its Chromium mouse emulates and can lose (ADR-0451): drag.mjs drives
+    // every drag instead.
+    private static readonly Regex EmulatedDrag = new(@"\.(?:dragTo|dragAndDrop)\(", RegexOptions.CultureInvariant);
 
     private static readonly Regex FixedWait = new(
         @"\.waitForTimeout\(|(?<![\w$.])setTimeout\(|\bwindow\.setTimeout\(|(?<![\w$.])sleep\(",
@@ -158,6 +163,11 @@ public static class SpecLint
                 said = true;
                 findings.Add(new(Rule.RoundTrip, key.FirstLine, key.Text,
                     $"where this key lands is asserted on line {statement.FirstLine}, under a round trip with the host's answers flowing: hold them across the keys (holdAnswers), for the round trip only makes it likely that what stood still stands (ADR-0220 §6)"));
+            }
+            if (EmulatedDrag.IsMatch(s))
+            {
+                findings.Add(new(Rule.EmulatedDrag, statement.FirstLine, s,
+                    "Playwright emulates this drag and can lose it, leaving the browser holding a drag the page never hears the end of: drag with startDrag or dragAndDrop from drag.mjs (ADR-0451)"));
             }
             if (FixedWait.IsMatch(s) && !Allowed(statement, "fixed-wait", lines, comments))
             {

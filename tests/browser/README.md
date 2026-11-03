@@ -300,7 +300,7 @@ acknowledges every render batch once it has applied it, so by then the last one 
 
 ## The spec lint
 
-A layer-2 test reads every spec here and refuses three things (ADR-0220 §6;
+A layer-2 test reads every spec here and refuses four things (ADR-0220 §6, ADR-0451;
 `dotnet/tests/ExGrid.Components/SpecLintTests.cs`, the lint itself in `Support/SpecLint.cs`):
 
 - **A fixed wait**: `waitForTimeout`, a `setTimeout` waited on, or a `sleep`. Wait for the state the
@@ -319,6 +319,8 @@ A layer-2 test reads every spec here and refuses three things (ADR-0220 §6;
   it is typed; the round trip only makes it likely that the list or popover still stands, and a slow
   runner types the last key after it has gone (PR #206). Hold the answers across the keys and let
   them go before reading. A record attached to the report but not asserted is not refused.
+- **A drag Playwright emulates**: `locator.dragTo` or `page.dragAndDrop`, which no comment lets
+  through. Drag with `drag.mjs` instead (below, "Drags").
 
 It reads statements, not lines, so a call over several lines is one statement, and each test, hook
 or function starts owing nothing. Apart from the third rule, it does not judge what a test asserts, and it does not see an input
@@ -335,6 +337,26 @@ await page.waitForTimeout(500);
 
 `early-read` and `round-trip` are the others. A reason shorter than a few words, or a rule the lint does not have,
 is itself a finding.
+
+## Drags
+
+The browser's own drag and drop (`draggable`, `dragstart`, `drop`: the Pivot Field List, a report's
+fields dragged off) is driven by `drag.mjs` alone (ADR-0451). `dragAndDrop(page, source, target)`
+drops; `startDrag(page, source)` returns a drag to move `over(target)` and end with `drop()` or
+`cancel()`, for a test that reads what the page shows mid-drag.
+
+Playwright's Chromium mouse emulates such a drag and decides whether one began a task after the first
+move, which a page that hears the move at the next frame has not answered yet. It then decides no drag
+began while the browser has begun one, the page hears no mouse event again until a drop nobody sends,
+and a test whose drop should change nothing passes without its drop having been made. That passed
+pivot.spec's report removals for weeks and failed v0.2.0-beta.2's release gate. `drag.mjs` presses
+and moves over the DevTools Protocol, waits for the page's own `dragstart`, sends each drag event the
+Protocol hands back, and waits until the page hears the pointer again, so a drag that did not begin
+is said rather than read as a refusal.
+
+Two guards keep it so: the spec lint refuses `dragTo` and `page.dragAndDrop`, and the fixture makes both
+throw and counts every `dragstart` a page hears, failing a test whose page began a drag `drag.mjs`
+did not drive.
 
 ## Reading pixels
 

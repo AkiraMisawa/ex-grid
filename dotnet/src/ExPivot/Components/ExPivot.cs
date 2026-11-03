@@ -476,7 +476,14 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         });
         _sourceReplaced = false;
         _layoutOwed = false;
-        await pivot.InvokeVoidAsync("update", update);
+        try
+        {
+            await pivot.InvokeVoidAsync("update", update);
+        }
+        // A parameter changed as the circuit closed: the page the update was for is gone (ADR-0451).
+        catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
+        {
+        }
     }
 
     private string AttachJson(string options) => Json(json =>
@@ -690,7 +697,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
                 await pivot.InvokeVoidAsync("changed", generation, text);
             }
             // Called off by a circuit that closed meanwhile, the notice has nobody left to reach, as at disposal.
-            catch (Exception ex) when (ex is JSDisconnectedException || (_disposed && ex is OperationCanceledException))
+            catch (Exception ex) when (ClosingCircuit.Ended(ex, _disposed))
             {
             }
             catch (Exception ex)
