@@ -19,11 +19,13 @@ public partial class RepositoryTests
     // KB-3 on macOS left them on 2026-11-02, run by CI's own desktops at the commit being released, and
     // VZ-18's check on the remote-isolation PC was withdrawn the same day (ADR-0450). WR-10, the Wrappers'
     // MudBlazor floor run, indexed beside them since 2026-10-12, left them on 2026-11-02 too, run by CI's
-    // long run (ADR-0450's note of that date).
-    private static readonly string[] IndexedRows = ["ED-30"];
+    // long run (ADR-0450's note of that date), and so did ED-30, run by CI's windows-ime job with a real IME
+    // (the same note). None is left; the index stays, read as before, for a row a later decision checks by
+    // hand.
+    private static readonly string[] IndexedRows = [];
 
-    /// <summary>The rows CI's Windows and macOS desktop jobs and its MudBlazor floor jobs run in place of a record (ADR-0450).</summary>
-    private static readonly string[] RunOnCi = ["VZ-14", "VZ-16", "FN-12e", "SH-42", "SH-51", "SH-52", "KB-3", "WR-10"];
+    /// <summary>The rows CI's Windows and macOS desktop jobs, its real-IME job and its MudBlazor floor jobs run in place of a record (ADR-0450).</summary>
+    private static readonly string[] RunOnCi = ["VZ-14", "VZ-16", "FN-12e", "SH-42", "SH-51", "SH-52", "KB-3", "WR-10", "ED-30"];
 
     [Fact] // ADR-0208: the record index and the Definition of Done's table cannot drift
     public void The_record_index_and_the_table_name_the_same_rows_and_paths()
@@ -53,9 +55,9 @@ public partial class RepositoryTests
     {
         var index = ByHand.ReadIndex(Tree, new Report())!;
 
+        // Vacuous while the index holds no row (since 2026-11-02, ADR-0450); ByHandTests holds the rule on rows
+        // of its own, and this holds it again on the first row a later decision indexes.
         Assert.All(index.Where(r => r.Record is not null), r => Assert.Equal(ByHand.TagFor(r.Record!.Path), r.Record!.Tag));
-        // Not vacuous: a row with a record is read, whichever run made it last.
-        Assert.StartsWith("verified/", Assert.Single(index, r => r.Row == "ED-30").Record!.Tag);
     }
 
     [Fact] // ADR-0208: a path that names nothing is a list nobody reviewed when its code moved
@@ -185,7 +187,7 @@ public partial class RepositoryTests
         Assert.All(table.Rows, r => Assert.Null(r.KnownLimitation));
         // What runs them instead: the jobs, in the long run release.yml calls for a release candidate and a stable version.
         var ci = Tree.ReadText(".github/workflows/ci.yml")!;
-        foreach (var job in new[] { "windows-desktop", "macos-desktop", "mudblazor-floor-hosts", "mudblazor-floor", "mudblazor-range" })
+        foreach (var job in new[] { "windows-desktop", "windows-ime", "macos-desktop", "mudblazor-floor-hosts", "mudblazor-floor", "mudblazor-range" })
             Assert.Contains($"\n  {job}:\n", ci);
         Assert.Contains("long: ${{ needs.admit.outputs.long == 'true' }}", Tree.ReadText(".github/workflows/release.yml")!);
     }

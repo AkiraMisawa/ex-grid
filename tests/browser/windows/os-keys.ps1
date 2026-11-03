@@ -1,15 +1,22 @@
 <#
 .SYNOPSIS
-    Keys through Windows' own input queue, as a keyboard sends them (ADR-0450), for os-input.mjs.
-    A key Playwright sends reaches the page alone; one sent here reaches the browser first, so its own
-    shortcuts and menu meet it, as they meet a person's. Every key goes out as a virtual-key and its
-    scan code through SendInput, never as a Unicode character, so that an IME composes from it.
+    Keys and presses through Windows' own input queue, as a keyboard and a mouse send them (ADR-0450),
+    for os-input.mjs. A key Playwright sends reaches the page alone; one sent here reaches the browser
+    first, so its own shortcuts and menu meet it, as they meet a person's, and so does the IME. Every key
+    goes out as a virtual-key and its scan code through SendInput, never as a Unicode character, so that
+    an IME composes from it. The process is DPI-aware, so a point is the screen's physical pixels.
 
         powershell -NoProfile -ExecutionPolicy Bypass -File os-keys.ps1     (commands on stdin)
 
     keys <chord> <chord> ...   each chord pressed and released, in one SendInput call for all of
                                them: ctrl+1, alt, f10, ctrl+plus, h. A chord's keys go down in order
                                and come up in reverse.
+    press <x> <y>              the pointer put at that screen pixel, then a left press and release,
+                               in one SendInput call
+    move <x> <y>               the pointer put at that screen pixel
+    japanese                   the window in front to the Japanese keyboard and its IME (ED-30): asked
+                               with WM_INPUTLANGCHANGEREQUEST, and answered once the window's thread
+                               has taken it, or refused after five seconds
     foreground                 the title of the window in front
     quit
 
@@ -20,8 +27,14 @@ Add-Type -TypeDefinition @'
 using System; using System.Collections.Generic; using System.Runtime.InteropServices; using System.Text;
 public static class OsKeys {
     [StructLayout(LayoutKind.Sequential)] struct KEYBDINPUT { public ushort wVk; public ushort wScan; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
-    [StructLayout(LayoutKind.Explicit, Size = 40)] struct INPUT { [FieldOffset(0)] public uint type; [FieldOffset(8)] public KEYBDINPUT ki; }
+    [StructLayout(LayoutKind.Sequential)] struct MOUSEINPUT { public int dx; public int dy; public uint mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+    [StructLayout(LayoutKind.Explicit, Size = 40)] struct INPUT { [FieldOffset(0)] public uint type; [FieldOffset(8)] public KEYBDINPUT ki; [FieldOffset(8)] public MOUSEINPUT mi; }
     [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint n, INPUT[] i, int size);
+    [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint message, IntPtr w, IntPtr l);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint process);
+    [DllImport("user32.dll")] static extern IntPtr GetKeyboardLayout(uint thread);
     [DllImport("user32.dll")] static extern uint MapVirtualKey(uint code, uint type);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
@@ -56,13 +69,39 @@ public static class OsKeys {
             foreach (var vk in vks) events.Add(Key(vk, false));
             for (int k = vks.Count - 1; k >= 0; k--) events.Add(Key(vks[k], true));
         }
-        var a = events.ToArray();
+        Out(events.ToArray());
+    }
+    static void Out(INPUT[] a) {
         if (SendInput((uint)a.Length, a, Marshal.SizeOf(typeof(INPUT))) != a.Length)
-            throw new InvalidOperationException("SendInput sent fewer keys than asked: " + Marshal.GetLastWin32Error());
+            throw new InvalidOperationException("SendInput sent fewer events than asked: " + Marshal.GetLastWin32Error());
+    }
+    // Its answer is not read: a helper whose points were scaled would fail os-input.mjs's calibration, which
+    // reads back where each point landed in the page.
+    public static void DpiAware() { SetProcessDPIAware(); }
+    public static void Move(int x, int y) { if (!SetCursorPos(x, y)) throw new InvalidOperationException("the pointer could not be put at " + x + ", " + y); }
+    // The left button pressed and released where the pointer is (MOUSEEVENTF_LEFTDOWN 0x2, LEFTUP 0x4).
+    public static void Press(int x, int y) {
+        Move(x, y);
+        var down = new INPUT(); down.type = 0; down.mi.dwFlags = 2;
+        var up = new INPUT(); up.type = 0; up.mi.dwFlags = 4;
+        Out(new[] { down, up });
+    }
+    static uint Layout(IntPtr window) { uint process; return (uint)(long)GetKeyboardLayout(GetWindowThreadProcessId(window, out process)); }
+    // The Japanese keyboard with the Microsoft IME is 0x04110411; its language is the low word, 0x0411.
+    public static string Japanese() {
+        var window = GetForegroundWindow();
+        if (!PostMessage(window, 0x0050, IntPtr.Zero, (IntPtr)0x04110411)) throw new InvalidOperationException("WM_INPUTLANGCHANGEREQUEST could not be posted: " + Marshal.GetLastWin32Error());
+        var until = DateTime.UtcNow.AddSeconds(5);
+        while ((Layout(window) & 0xFFFF) != 0x0411) {
+            if (DateTime.UtcNow > until) throw new InvalidOperationException("the window in front kept the keyboard 0x" + Layout(window).ToString("x8") + ": is Japanese installed?");
+            System.Threading.Thread.Sleep(20);
+        }
+        return "0x" + Layout(window).ToString("x8");
     }
     public static string Foreground() { var s = new StringBuilder(512); GetWindowText(GetForegroundWindow(), s, 512); return s.ToString(); }
 }
 '@
+[OsKeys]::DpiAware()
 while ($null -ne ($line = [Console]::In.ReadLine())) {
     $words = $line.Trim().Split(' ', [StringSplitOptions]::RemoveEmptyEntries)
     if ($words.Length -eq 0) { continue }
@@ -72,6 +111,15 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
                 if ($words.Length -lt 2) { throw 'keys names no chord' }
                 [OsKeys]::Send($words[1..($words.Length - 1)])
             }
+            'press' {
+                if ($words.Length -ne 3) { throw 'press names no point' }
+                [OsKeys]::Press([int]$words[1], [int]$words[2])
+            }
+            'move' {
+                if ($words.Length -ne 3) { throw 'move names no point' }
+                [OsKeys]::Move([int]$words[1], [int]$words[2])
+            }
+            'japanese' { [void][OsKeys]::Japanese() }
             'foreground' { }
             'quit' { exit 0 }
             default { throw "no command $($words[0])" }

@@ -81,7 +81,7 @@ jobs:
           fi
           # The desktop rows' own machinery (ADR-0450): a pull request that changes it runs them, so a
           # change to them is proved before a release candidate first needs them.
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-desktop\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(tests/browser/(os-input\.mjs|windows/.*|windows-(desktop|ime)\.spec\.mjs)|\.github/workflows/ci\.yml)$'; then
             echo "desktops=true" >> "$GITHUB_OUTPUT"
           fi
           # WR-10's runs (ADR-0450's note of 2026-11-02): a pull request that changes a Wrapper, or how the
@@ -586,6 +586,69 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: layer3-records-windows-desktop
+          path: |
+            verification/
+            tests/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # ED-30 with a real IME (ADR-0450's note of 2026-11-02): the Microsoft IME, Japanese, installed on the
+  # hosted runner (about half an hour, as Windows capabilities), its Predictive input off, and the
+  # Windows runs' cases k1 to k16 and DC-47's typed through Windows' input queue on /sheet, /features and
+  # /sheets: on the React host, and under the MudBlazor Chrome on both Blazor hosts, the Server host also
+  # behind 150 ms. A job of its own beside windows-desktop, so the install runs while that job does.
+  # Triggered as the desktop rows are.
+  windows-ime:
+    name: ED-30 with a real IME (Windows, Japanese)
+    needs: [changes, hosts]
+    if: github.event_name == 'schedule' || inputs.long == true || inputs.desktops == true || needs.changes.outputs.desktops == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 100
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXGRID_HOSTS: ${{ github.workspace }}/hosts
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          (Get-Item "${env:ProgramFiles}/Google/Chrome/Application/chrome.exe").VersionInfo.ProductVersion
+          (Get-Item "${env:ProgramFiles(x86)}/Microsoft/Edge/Application/msedge.exe").VersionInfo.ProductVersion
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
+
+      - name: The display at 1920x1080
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+
+      - name: Japanese input and the Microsoft IME
+        timeout-minutes: 45
+        run: ./tests/browser/windows/japanese-input.ps1
+
+      # Every host runs, whichever failed before it, and the step fails if any did.
+      - name: ED-30 on the React host, then both Blazor hosts
+        working-directory: tests/browser
+        run: |
+          $env:EXGRID_JAPANESE = '1'
+          $failed = 0
+          foreach ($hosting in 'react', 'wasm', 'server') {
+            $env:EXGRID_HOSTING = $hosting
+            npx playwright test windows-ime.spec.mjs --project=chrome --project=msedge --output "test-results/$hosting"
+            if ($LASTEXITCODE) { $failed = 1 }
+          }
+          exit $failed
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-windows-ime
           path: |
             verification/
             tests/browser/test-results/

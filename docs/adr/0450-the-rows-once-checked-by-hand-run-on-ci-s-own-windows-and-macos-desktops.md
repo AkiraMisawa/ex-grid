@@ -46,7 +46,8 @@ They run in the long run: weekly, on a dispatch that asks for them, and in the l
 for a release candidate and for a version without a suffix (ADR-0205). A red job fails that call, so each
 row gates every release candidate and every version without a suffix, at its own commit. They also run on a
 pull request that changes their own machinery (`os-input.mjs`, `windows/`, `windows-desktop.spec.mjs`,
-`ci.yml`), so a change to how they send keys is judged before it merges.
+`ci.yml`), so a change to how they send keys is judged before it merges. *(2026-11-02: and
+`windows-ime.spec.mjs`, which the `windows-ime` job beside them runs; see "ED-30 moves into CI".)*
 
 | Row | Job | What runs |
 |---|---|---|
@@ -94,7 +95,8 @@ them, are run, and are no longer Known limitations of it.
 - **ED-30, a real IME.** The runner installs the Japanese language and the Microsoft IME (its capabilities
   take about half an hour to add). Whether a composition it starts from keys sent through the OS reaches
   Chrome and Edge as a person's does is the next measurement. Until it is made, ED-30 stays by hand, and
-  this ADR is amended when it is.
+  this ADR is amended when it is. *(2026-11-02, later the same day: measured, and it does. See "ED-30 moves
+  into CI" below.)*
 - **VZ-18, the remote-isolation PC: withdrawn, not kept by hand.** The user answered the question the
   Definition of Done's §21 held open since 2026-10-09: what that PC showed was its remote browser isolation
   mirror, not Citrix, and the user asked that it no longer be tested. Its check by hand leaves the
@@ -123,6 +125,53 @@ the versions the records named. A run at the commit being released, with the ver
 for each of those by running it. The release tool's `--mudblazor-index` and the code that read the list went
 with them. The procedure is the one a person ran; what it typed, the floor `9.6.0` and the version list, it
 now reads, from the Wrappers' projects and from nuget.org.
+
+### ED-30 moves into CI
+
+*(2026-11-02, a note added the same day, under the user's request that the rows checked by hand be checked
+by a machine wherever one can.)* Two probe runs on this ADR's branch measured what "What stays by hand" left
+open. On `windows-latest`, the Japanese language's basic features and fonts installed as Windows capabilities
+(21 to 28 minutes), Japanese added to the user's languages, the browser's window switched to the Japanese
+keyboard (`WM_INPUTLANGCHANGEREQUEST`, `0x04110411`) and the IME switched on by its key (`VK_IME_ON`):
+
+- **The Microsoft IME composes from keys sent through the OS, in Chrome and in Edge.** In a plain field,
+  `n i h o n` and Space composed `日本`, every key reached the page as `Process` with keyCode 229, and the
+  composition's events came as a person's do.
+- **On `/sheet` of the React host, the sixteenth run's k2 read as the Windows runs read it, in both
+  browsers:** `ｋ`, `か`, `かｎ`, `かな` composed in the Keyboard Field over D10 with no edit open; the first
+  Enter ended it and the Cell Editor opened holding `かな`, with the keyboard; the second committed it, and the
+  Focus moved to D11.
+
+So ED-30 is a job of CI's, `windows-ime`, beside `windows-desktop` so that its install runs while the other
+job does, and triggered as the desktop rows are. `tests/browser/windows/japanese-input.ps1` installs Japanese
+and turns the IME's Predictive input off; `tests/browser/windows-ime.spec.mjs` runs the Windows runs' cases on
+Chrome and Edge, on the React host and under the MudBlazor Chrome on both Blazor hosts, the Server host also
+behind 150 ms, as the runs took them. Every key goes through the OS (`os-input.mjs`'s `osTyped`, which waits
+until the page has seen each key released, since a key's composition is told before its keyup), and so does
+every press made during a composition (`osPressed`): the browser and the IME meet a press before the page
+does, and a press Playwright dispatches reaches the page alone. ED-30 leaves the record index as the other rows
+did, and the index and the Definition of Done's table hold no row now. The release check still reads them, so
+a row a later decision checks by hand is held as ADR-0208 says.
+
+What the job does not do as the Windows runs did, and why:
+
+- **Predictive input is off for every case,** not for k8 alone, and is not put back: the runner is thrown
+  away. With it on, the IME's list of suggestions stands under the composition and takes a press that falls on
+  it, which is the IME's, not the grid's (decided for k8 with the user, 2026-10-16); off throughout, no case's
+  press depends on where the list happens to stand. The values are those the Settings app wrote on the
+  desktop of the runs (`PredictionUseInputHistory` and `PredictionUseSystemDictionary` 0), written before the
+  IME first starts, since the runner's Settings app has no IME pages.
+- **What the IME converts a reading to is read, not named.** A fresh IME's first candidate is its own; the
+  runs recorded `かな` for `かな` and Space on one desktop. Each case reads what a composition ended with from
+  its `compositionend` and holds the cell, the editor and the order of entries to that.
+- **Keys run at machine speed** (ADR-0220): k6x's typist's pace is not kept, and k6y and k7 send their keys in
+  one call. k6 reads key by key and then types the same keys at once in D11, which must hold the same entry.
+- **k1's open status is read from the composition,** which starts from the first key, not from the IME's own
+  answer, which the probe found Edge's window did not give.
+- **k15, Alt+Tab mid-composition, is not run.** It was a case to record: which of two ways it ends changed from
+  run to run (the nineteenth run's report), and `key-field.spec.mjs` holds what ADR-0080 asks of it.
+- **k16 holds that nothing is lost,** not the runs' recording that the composition went on after the press:
+  after Enter, Enter, D10 holds what was composed, either way.
 
 ### What a runner is not
 

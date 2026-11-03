@@ -5,9 +5,11 @@ import { alterPage, expect } from './fixtures.mjs';
 
 // Keys through Windows' own input queue (ADR-0450), for the rows the Definition of Done once checked by
 // hand on a Windows desktop: whether the browser's own shortcuts and menu meet a key before the page
-// takes it. A key Playwright sends is dispatched to the page alone, so a test of it passes whether or
-// not the browser would have taken the key first; one sent here reaches the browser as a keyboard's
-// does. windows/os-keys.ps1 does the sending, one process for the worker, started at the first key.
+// takes it, and what a real IME makes of the keys (ED-30). A key Playwright sends is dispatched to the
+// page alone, so a test of it passes whether or not the browser would have taken the key first, and no
+// IME ever sees it; one sent here reaches the browser as a keyboard's does. So does a press sent here,
+// which the browser, and an IME composing in it, meet before the page. windows/os-keys.ps1 does the
+// sending, one process for the worker, started at the first key.
 
 /** Whether keys can go through the OS input queue here: a Windows desktop session, as CI's runner has. */
 export const onWindowsDesktop = process.platform === 'win32';
@@ -91,15 +93,20 @@ export async function keysSeenBy(page, kind = 'keydown') {
  * page to the front would give it the keyboard back.
  */
 export async function osKeysThen(page, ...chords) {
+    await inFront(page, 'keys');
+    await ask(`keys ${chords.join(' ')}`);
+}
+
+/** Refuses unless the window in front is the page's: what is sent through the OS goes to that window. */
+async function inFront(page, what) {
     const title = await page.title();
     if (title === '') {
         throw new Error('The page has no title, so the window in front cannot be told to be its own: give it one.');
     }
     const front = await ask('foreground');
     if (!front.startsWith(title)) {
-        throw new Error(`The window in front is "${front}", not the page's "${title}": keys sent now would go there.`);
+        throw new Error(`The window in front is "${front}", not the page's "${title}": ${what} sent now would go there.`);
     }
-    await ask(`keys ${chords.join(' ')}`);
 }
 
 /** Brings the page's tab and window to the front, then sends the chords as osKeysThen does. */
@@ -152,4 +159,110 @@ export async function osKeys(page, ...chords) {
     const { from: seen } = await osKeysLandOn(page, page, ...chords, 'f24');
     await osKeysThenLandOn(page, page, 'f24');
     return seen.slice(0, seen.indexOf('F24'));
+}
+
+/**
+ * Sends the chords as osKeysThen does, then waits until the page has seen each of their keys released:
+ * a key an IME takes reaches the page as `Process`, and the composition it changes is told before its
+ * keyup, so what the keys composed can be read once this returns. VK_IME_ON and VK_IME_OFF ('imeon',
+ * 'imeoff') are the IME's alone and are not waited for; the keys after them are, and the IME takes keys
+ * in the order they were sent. What the page then did with them is the caller's to read.
+ */
+export async function osTyped(page, ...chords) {
+    const keys = chords.flatMap((chord) => chord.split('+')).filter((key) => key !== 'imeon' && key !== 'imeoff');
+    const released = await keysSeenBy(page, 'keyup');
+    await osKeysThen(page, ...chords);
+    await expect.poll(async () => (await released()).length, {
+        message: `${chords.join(', ')}, sent through the OS: the page saw fewer than ${keys.length} keys released`,
+    }).toBeGreaterThanOrEqual(keys.length);
+}
+
+/**
+ * Brings the page's tab and window to the front and switches the window to the Japanese keyboard and the
+ * Microsoft IME (ED-30), which windows/japanese-input.ps1 installs, and reads where the page is on the
+ * screen for osPressed. The IME starts off: 'imeon' sent through osTyped switches it on.
+ */
+export async function osJapanese(page) {
+    await page.bringToFront();
+    await inFront(page, 'the keyboard\'s switch');
+    await ask('japanese');
+    // Where the page is on the screen, read now rather than at the first press, which may come in
+    // the middle of a composition.
+    await originOf(page);
+}
+
+const origins = new WeakMap();
+
+/**
+ * Where the page's client point (0, 0) is on the screen, in physical pixels, with the page's
+ * devicePixelRatio: a first guess from the window's own figures, then put right by where the pointer
+ * moved to lands in the page, until a point lands where it was aimed. Read once a page. The window
+ * stays where it is, so it holds for every press after.
+ */
+async function originOf(page) {
+    const known = origins.get(page);
+    if (known !== undefined) {
+        return known;
+    }
+    const name = `exOsMoves${++calls}`;
+    await alterPage(page, ({ record }) => {
+        const moves = [];
+        window[record] = moves;
+        const note = (event) => moves.push([event.clientX, event.clientY]);
+        window.addEventListener('mousemove', note, true);
+        return () => {
+            window.removeEventListener('mousemove', note, true);
+            delete window[record];
+        };
+    }, { record: name });
+    const moves = () => page.evaluate((record) => window[record], name);
+    const frame = await page.evaluate(() => ({ x: screenX, y: screenY, outer: [outerWidth, outerHeight], inner: [innerWidth, innerHeight], dpr: devicePixelRatio }));
+    // The window's frame is as wide on each side as below the page; the rest of its height is above it.
+    const side = (frame.outer[0] - frame.inner[0]) / 2;
+    let x = (frame.x + side) * frame.dpr;
+    let y = (frame.y + frame.outer[1] - frame.inner[1] - side) * frame.dpr;
+    const landed = [];
+    // Each try aims at a point of its own, so the pointer always moves and the page always hears it.
+    for (let tries = 0; tries < 4; tries++) {
+        const aim = [Math.round(frame.inner[0] / 2) + tries * 7, Math.round(frame.inner[1] / 2) + tries * 5];
+        const heard = (await moves()).length;
+        await inFront(page, 'a pointer move');
+        await ask(`move ${Math.round(x + aim[0] * frame.dpr)} ${Math.round(y + aim[1] * frame.dpr)}`);
+        await expect.poll(async () => (await moves()).length, { message: `the pointer, moved to the page's ${aim}, never reached the page: it landed outside it, after ${JSON.stringify(landed)}` })
+            .toBeGreaterThan(heard);
+        const at = (await moves()).at(-1);
+        landed.push({ aim, at });
+        if (at[0] === aim[0] && at[1] === aim[1]) {
+            const origin = { x, y, dpr: frame.dpr };
+            origins.set(page, origin);
+            return origin;
+        }
+        x += (aim[0] - at[0]) * frame.dpr;
+        y += (aim[1] - at[1]) * frame.dpr;
+    }
+    throw new Error(`The pointer never landed where it was aimed in the page: ${JSON.stringify(landed)}`);
+}
+
+/**
+ * A left press through the OS, at the middle of where `locator` is painted, or at `position` within it
+ * (as Playwright's), as a mouse makes it: the browser, and an IME composing in it, meet it before the
+ * page does. The element is brought into view and its place read in one step, as sheet-helpers.mjs's
+ * pressAt reads it. It does not bring the window to the front, which could end a composition: the
+ * window in front must already be the page's. What the press did is the caller's to read.
+ */
+export async function osPressed(locator, position = null) {
+    const page = locator.page();
+    const origin = await originOf(page);
+    const box = await locator.evaluate((element) => {
+        element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        const rect = element.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    });
+    if (box.width === 0 || box.height === 0) {
+        throw new Error(`Nothing is painted to press: ${locator}`);
+    }
+    const x = box.x + (position ? position.x : box.width / 2);
+    const y = box.y + (position ? position.y : box.height / 2);
+    await inFront(page, 'a press');
+    await ask(`press ${Math.round(origin.x + x * origin.dpr)} ${Math.round(origin.y + y * origin.dpr)}`);
 }
