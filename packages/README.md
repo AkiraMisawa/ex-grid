@@ -33,7 +33,7 @@ nix develop .#browser -c bash -c 'npm test'            # Vitest: layers 1 and 2
 nix develop .#browser -c bash -c 'npm run coverage && node tools/coverage/summary.mjs'   # the same, with coverage
 ```
 
-`npm run coverage` is what CI runs: every package's tests in one Vitest run, with V8's coverage of each package's
+`npm run coverage` is what CI's coverage job runs, beside the `npm test` that gates: every package's tests in one Vitest run, with V8's coverage of each package's
 `src/` written to `coverage/ts/` (an HTML report among it), and `tools/coverage/summary.mjs` turns it into the table
 per product that CI puts into the run's summary and the README's badge reads (ADR-0041). Coverage slows the
 CPU-bound property tests, so that run gives each test 30 seconds where `npm test` gives Vitest's five.

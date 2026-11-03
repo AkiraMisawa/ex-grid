@@ -206,29 +206,11 @@ jobs:
       - name: Build, and hold each package's public surface to its report
         run: npm run build
 
-      # Every package's tests in one Vitest run with V8's coverage of the shipped sources (ADR-0041,
-      # tools/coverage/vitest.config.mjs): the same test files `npm test` runs, as the tests job runs the .NET suites
-      # with coverage. The long run takes ST-1 at 10⁶ rows too (grid-consistency.test.ts, ADR-0205).
-      - name: Layers 1 and 2, with coverage
+      # The long run takes ST-1 at 10⁶ rows too (grid-consistency.test.ts, ADR-0205).
+      - name: Layers 1 and 2
         env:
           EXGRID_ST1_MILLION: ${{ env.LONG_RUN == 'true' && '1' || '' }}
-        run: npm run coverage
-
-      - name: Coverage per product
-        run: node tools/coverage/summary.mjs
-
-      - name: Coverage into the run's summary
-        run: cat coverage/ts/Summary.md >> "$GITHUB_STEP_SUMMARY"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: coverage-ts
-          path: |
-            coverage/ts/Summary.md
-            coverage/ts/products.json
-            coverage/ts/coverage-summary.json
-          if-no-files-found: error
-          retention-days: 30
+        run: npm test
 
       # The npm packages packed at the version and taken by an application as a Consumer takes them (ADR-0042,
       # ADR-0370 section 9), the counterpart of the package job's check of NuGet's: every tarball read back, its
@@ -280,6 +262,46 @@ jobs:
         env:
           EXGRID_SHEET_SEED: 20261026
         run: EXGRID_SHEET_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/dotnet/tools/sheet-oracle/bin/Release/net10.0/ExSheet.Oracle.dll serve" npm run differential
+
+  # The Script Core's coverage (ADR-0041's note of 2026-11-03), reported and never gated: every package's tests in one
+  # Vitest run with V8's coverage of each package's src/ (tools/coverage/vitest.config.mjs), the same test files the
+  # script-core job's `npm test` runs. A job of its own, so that run stays the gate as each package's own script runs
+  # it, under Vitest's own timeout: coverage slows the CPU-bound property tests, and this run gives each 30 seconds.
+  script-coverage:
+    name: Script Core coverage (npm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install the workspace
+        run: npm ci
+
+      - name: Layers 1 and 2, with coverage
+        run: npm run coverage
+
+      - name: Coverage per product
+        run: node tools/coverage/summary.mjs
+
+      - name: Coverage into the run's summary
+        run: cat coverage/ts/Summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage-ts
+          path: |
+            coverage/ts/Summary.md
+            coverage/ts/Packages.md
+            coverage/ts/products.json
+            coverage/ts/coverage-summary.json
+          if-no-files-found: error
+          retention-days: 30
 
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
@@ -1023,7 +1045,7 @@ jobs:
 
   badges:
     name: Publish the coverage badges
-    needs: [tests, script-core]
+    needs: [tests, script-coverage]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -1080,8 +1102,12 @@ jobs:
           endpoint coverage "$line" > out/coverage-total.json
           history="${line},${branch}"
           ts_history="${ts_line},${ts_branch}"
+          # The products are the tests job's and summary.mjs's, in the history's order: a list that differs stops here.
+          products='ExGrid ExSheet ExPivot ExChart ExBoard Data'
+          [ "$(jq -r '.products | keys_unsorted | join(" ")' coverage-ts/products.json)" = "$products" ] \
+            || { echo "summary.mjs names other products than '$products'" >&2; exit 1; }
           table=''
-          for name in ExGrid ExSheet ExPivot ExChart ExBoard Data; do
+          for name in $products; do
             summary="coverage/products/$name/Summary.txt"
             p_line=$(figure Line "$summary")
             p_branch=$(figure Branch "$summary")
@@ -1103,7 +1129,7 @@ jobs:
             printf '%s' "$table"
             echo "| **Total** | **${ts_line}%** | **${ts_branch}%** | **${line}%** | **${branch}%** |"
             echo
-            cat coverage-ts/Summary.md coverage/products/Summary.md coverage/SummaryGithub.md
+            cat coverage-ts/Packages.md coverage/SummaryGithub.md
           } > out/coverage.md
           # The history gained a column pair per product when the ten packages were first counted, and the Script
           # Core's pairs on 2026-11-03; rows before each have the columns they had then.

@@ -1,8 +1,9 @@
 // `npm run coverage`: every package's layers 1 and 2 in one Vitest run, each package as a project under its own
 // configuration, with V8's coverage of the shipped sources (ADR-0041). One run, not one per package, because a
 // package's tests read its neighbours' sources (the Script ExSheet's tests run the core's), and the figure counts
-// every test against every shipped line, as ReportGenerator's merge does for the .NET suites. CI runs this in place
-// of `npm test`; `summary.mjs` turns its report into the table per product.
+// every test against every shipped line, as ReportGenerator's merge does for the .NET suites. CI runs it in a job of
+// its own beside the script-core job's `npm test`, which stays the gate; `summary.mjs` turns its report into the table
+// per product.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +24,8 @@ export default defineConfig({
             // What ships: each package's src/. Never its tests, a differential's harness, or a sample.
             include: ['packages/*/src/**/*.{ts,tsx}'],
             exclude: ['**/*.d.ts', '**/*.test.{ts,tsx}'],
-            reporter: ['json-summary', 'text-summary', 'html'],
+            // HTML for a person reading it locally; CI reads only the summary, and skips the pages.
+            reporter: ['json-summary', 'text-summary', ...(process.env.CI === undefined ? ['html'] : [])],
             reportsDirectory: 'coverage/ts',
         },
     },

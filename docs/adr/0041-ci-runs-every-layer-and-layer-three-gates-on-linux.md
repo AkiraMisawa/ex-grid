@@ -100,9 +100,10 @@ before, so nothing reaches `main` or a tag without layer 3 having run on it.)*
   counts no coverage. `npm run coverage` runs every package's Vitest tests in one run, as
   ReportGenerator merges the .NET suites, with V8's coverage of each package's `src/`;
   `tools/coverage/summary.mjs` reports it per product by an explicit list of each product's
-  packages, and stops on a package the list does not name. CI runs it in place of `npm test`
-  and puts the table into the run's summary. The README now shows two badges, the Script
-  Core's total and the .NET packages' total, and the table they link to gives every product
+  packages, and stops on a package the list does not name. CI runs it in a job of its own,
+  beside the `npm test` that stays the gate, and puts the table into the run's summary;
+  coverage slows the CPU-bound property tests, so that run gives each test 30 seconds. The
+  README now shows two badges, the Script Core's total and the .NET packages' total, and the table they link to gives every product
   one column pair per platform; the per-product endpoint files stay on the `badges` branch for
   links that point at them. The history gained the Script Core's pairs at its end.)*
 

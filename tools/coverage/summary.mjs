@@ -1,6 +1,6 @@
 // `node tools/coverage/summary.mjs`, after `npm run coverage`: the Script Core's coverage per product, as the tests job
 // reports the .NET packages' (ADR-0041). Reads Vitest's coverage/ts/coverage-summary.json and writes beside it
-// Summary.md, the table CI puts into the run's summary, and products.json, which the badges job reads. A package is
+// Summary.md, the table CI puts into the run's summary, and Packages.md and products.json, which the badges job reads. A package is
 // counted under its product by the list below; one the list does not name stops the script, because counting it
 // nowhere, or under a guessed product, would make a figure that is quietly wrong.
 import fs from 'node:fs';
@@ -29,7 +29,8 @@ for (const [file, figures] of Object.entries(report)) {
     if (file === 'total') {
         continue;
     }
-    const match = /[\\/]packages[\\/]([^\\/]+)[\\/]src[\\/]/.exec(file);
+    // Read against the workspace, so a checkout that sits under another packages/…/src/ is not mistaken for it.
+    const match = /^packages[\\/]([^\\/]+)[\\/]src[\\/]/.exec(path.relative(workspace, file));
     if (match === null) {
         throw new Error(`${file} is not under a package's src/, which is all the coverage includes.`);
     }
@@ -60,13 +61,16 @@ const add = (into, sum) => {
     return into;
 };
 // One decimal, as ReportGenerator gives the .NET figures, rounded down so a figure never reads higher than it is.
-const percent = (covered, total) => {
-    if (total === 0) {
-        throw new Error('A figure over no lines or branches has no percentage.');
+const percent = (covered, total) => Math.floor((1000 * covered) / total) / 10;
+// A product, and the total, always hold lines and branches: one that holds none is a list gone wrong, and stops here.
+const figure = sum => {
+    if (sum.lines === 0 || sum.branches === 0) {
+        throw new Error('A product with no lines or no branches has no percentage: is its list of packages right?');
     }
-    return Math.floor((1000 * covered) / total) / 10;
+    return { line: percent(sum.linesCovered, sum.lines), branch: percent(sum.branchesCovered, sum.branches) };
 };
-const figure = sum => ({ line: percent(sum.linesCovered, sum.lines), branch: percent(sum.branchesCovered, sum.branches) });
+// A package may hold no branch at all (straight-line code, or only re-exports): its cell says so, not a number.
+const cell = (covered, total) => (total === 0 ? 'no branches' : `${percent(covered, total)}%`);
 
 const total = empty();
 const perProduct = products.map(([product, members]) => {
@@ -75,29 +79,38 @@ const perProduct = products.map(([product, members]) => {
     return [product, sum];
 });
 
-const rows = [
-    '## TypeScript coverage per product',
-    '',
-    '| Product | Line | Branch |',
-    '|---|---|---|',
-    ...perProduct.map(([product, sum]) => `| ${product} | ${figure(sum).line}% | ${figure(sum).branch}% |`),
-    `| **Total** | **${figure(total).line}%** (${total.linesCovered} of ${total.lines}) | **${figure(total).branch}%** (${total.branchesCovered} of ${total.branches}) |`,
-    '',
-    '<details><summary>Per package</summary>',
+const totals = figure(total);
+const packageRows = [
+    '<details><summary>TypeScript coverage per package</summary>',
     '',
     '| Package | Product | Line | Branch | Lines |',
     '|---|---|---|---|---|',
     ...[...productOf].map(([name, product]) => {
         const sum = byPackage.get(name);
-        return `| \`packages/${name}\` | ${product} | ${figure(sum).line}% | ${figure(sum).branch}% | ${sum.lines} |`;
+        return `| \`packages/${name}\` | ${product} | ${cell(sum.linesCovered, sum.lines)} | ${cell(sum.branchesCovered, sum.branches)} | ${sum.lines} |`;
     }),
     '',
     '</details>',
     '',
 ];
+const rows = [
+    '## TypeScript coverage per product',
+    '',
+    '| Product | Line | Branch |',
+    '|---|---|---|',
+    ...perProduct.map(([product, sum]) => {
+        const figures = figure(sum);
+        return `| ${product} | ${figures.line}% | ${figures.branch}% |`;
+    }),
+    `| **Total** | **${totals.line}%** (${total.linesCovered} of ${total.lines}) | **${totals.branch}%** (${total.branchesCovered} of ${total.branches}) |`,
+    '',
+    ...packageRows,
+];
+// Packages.md is the table per package alone, for the badges branch's page, whose table per product has both platforms.
+fs.writeFileSync(path.join(directory, 'Packages.md'), `${packageRows.join('\n')}\n`);
 fs.writeFileSync(path.join(directory, 'Summary.md'), `${rows.join('\n')}\n`);
 fs.writeFileSync(
     path.join(directory, 'products.json'),
-    `${JSON.stringify({ total: figure(total), products: Object.fromEntries(perProduct.map(([product, sum]) => [product, figure(sum)])) }, null, 4)}\n`,
+    `${JSON.stringify({ total: totals, products: Object.fromEntries(perProduct.map(([product, sum]) => [product, figure(sum)])) }, null, 4)}\n`,
 );
 process.stdout.write(fs.readFileSync(path.join(directory, 'Summary.md'), 'utf8'));
