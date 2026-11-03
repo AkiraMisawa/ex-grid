@@ -6,6 +6,7 @@ using ExGrid.Release;
 //
 //   dotnet run --project tools/release/ExGrid.Release -- admit --tag v0.1.0-rc.1 --commit HEAD
 //   dotnet run --project tools/release/ExGrid.Release -- gate --tag v0.1.0-rc.1 --commit HEAD
+//   dotnet run --project tools/release/ExGrid.Release -- site --tag v0.2.0-beta.3
 //   dotnet run --project tools/release/ExGrid.Release -- by-hand --at HEAD --version 0.1.0
 //   dotnet run --project tools/release/ExGrid.Release -- skips --trx ../verification/<date>
 //
@@ -15,7 +16,10 @@ const string Usage = """
     Usage:
       admit   --tag <v-tag> --commit <rev> [--repo <dir>] [--remote <name>]
               Reads the tag, refuses a malformed version or a commit on neither main nor a release/*
-              branch, and writes version, kind, long and site to $GITHUB_OUTPUT when it is set.
+              branch, and writes version, kind, long, site and latest to $GITHUB_OUTPUT when it is set.
+      site    --tag <v-tag> [--repo <dir>]
+              Whether the tag's version publishes the Docs Site: no tag of this clone is above it by
+              SemVer precedence (ADR-0205). docs.yml asks it before it publishes a tag's site.
       gate    --tag <v-tag> --commit <rev> [--repo <dir>] [--remote <name>] [--fetch-missing]
               For a stable version: the Signed off block, X a release candidate's commit, and the
               structural check (ADR-0205). For a stable version and a release candidate: the corpus
@@ -78,6 +82,25 @@ try
             foreach (var line in admission.Outputs()) Console.WriteLine(line);
             if (Environment.GetEnvironmentVariable("GITHUB_OUTPUT") is { Length: > 0 } output)
                 File.AppendAllLines(output, admission.Outputs());
+            return 0;
+        }
+        case "site":
+        {
+            if (Option("--tag") is not { } tag) break;
+            var version = TagVersion.Read(tag, report);
+            var tags = git.Tags();
+            // The tag itself is among them, or the clone's tags were not fetched, and none would seem above it.
+            if (version is not null && !tags.Contains(tag))
+                report.Refuse($"{tag} is not among this clone's tags, so whether a later tag is above it cannot be checked. Fetch the tags, as docs.yml's checkout does with fetch-depth 0.");
+            var publishes = version is not null && report.Admitted && Admission.SiteIsPublishedBy(tags, version, report);
+            report.WriteTo(Console.Out);
+            if (!report.Admitted) return 1;
+            if (!publishes)
+            {
+                Console.WriteLine($"::error::{tag} publishes no Docs Site (ADR-0205).");
+                return 1;
+            }
+            Console.WriteLine($"{tag} publishes the Docs Site: no tag is above it (ADR-0205).");
             return 0;
         }
         case "gate":

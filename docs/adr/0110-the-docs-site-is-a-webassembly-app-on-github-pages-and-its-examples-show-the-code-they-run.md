@@ -248,6 +248,18 @@ above; the theme and the Chrome still are not.)*
     - `release.yml`'s first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
       and refuses too when it cannot read the repository's tags.
     - The on-demand publish of `main` or a `lab/*` branch stays, under its banner.
+  - *(Rewritten 2026-11-03, decided with the user, ADR-0205.)* **The site describes the newest version
+    tagged.** A version's release publishes it when no tag is above it by SemVer precedence, a
+    prerelease's included, its suffix compared too; the rule just above kept the site on 0.1.0 through
+    every 0.2.0 prerelease, though those were the first to carry React. A patch to an older line still
+    publishes none.
+    - `release.yml`'s first job decides it, and says so, and `docs.yml` asks the same tool (`site`) before
+      it publishes any tag's site.
+    - **A released tag can be published on demand**: `docs.yml` run from `main` and given the tag
+      builds the site from the tag, states its version and the day nuget.org received ExGrid, and refuses
+      unless every package its notes name is on nuget.org and every package npm publishes is on npm at
+      that version, as the release's own call follows both pushes. It runs from `main`, not from the
+      tag, because a dispatch runs the workflow its ref holds, and an older tag's knows no such path.
   - **On demand stays, from `main` or a `lab/*` branch**, and refuses any other. A lab publish is how
     an experiment reaches a machine nobody can run a build on, and it stays possible.
   - **A site not published from a tag says so on every page**: a banner above the page names the
