@@ -118,10 +118,16 @@ async function inFront(page, what) {
     if (title === '') {
         throw new Error('The page has no title, so the window in front cannot be told to be its own: give it one.');
     }
-    const front = await ask('foreground');
-    if (!front.startsWith(title)) {
-        throw new Error(`The window in front is "${front}", not the page's "${title}": ${what} sent now would go there.`);
-    }
+    // Read until it holds: a browser names its window by the page's URL until it has the page's title, which
+    // Edge took a moment to show for a page just loaded (k11 on the Server host, 2026-11-03).
+    let front = '';
+    await expect.poll(async () => {
+        front = await ask('foreground');
+        return front.startsWith(title);
+    }, { message: `the window in front is the page's "${title}": ${what} sent now would go to the one in front` }).toBe(true)
+        .catch((error) => {
+            throw new Error(`The window in front is "${front}", not the page's "${title}": ${what} sent now would go there.`, { cause: error });
+        });
 }
 
 /** Brings the page's tab and window to the front, then sends the chords as osKeysThen does. */
