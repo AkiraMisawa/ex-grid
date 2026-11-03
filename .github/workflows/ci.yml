@@ -631,8 +631,8 @@ jobs:
         timeout-minutes: 45
         run: ./tests/browser/windows/japanese-input.ps1
 
-      # Every host runs, whichever failed before it, and the step fails if any did. A host stops at its
-      # sixth failure: a cause every test shares then reports on each host within the job's time, rather
+      # Every host and browser runs, whichever failed before it, and the step fails if any did. Each stops
+      # at its sixth failure: a cause every test shares then reports on each within the job's time, rather
       # than spend a minute a test until the job is cancelled with nothing reported.
       - name: ED-30 on the React host, then both Blazor hosts
         working-directory: tests/browser
@@ -641,8 +641,10 @@ jobs:
           $failed = 0
           foreach ($hosting in 'react', 'wasm', 'server') {
             $env:EXGRID_HOSTING = $hosting
-            npx playwright test windows-ime.spec.mjs --project=chrome --project=msedge --max-failures=6 --output "test-results/$hosting"
-            if ($LASTEXITCODE) { $failed = 1 }
+            foreach ($browser in 'chrome', 'msedge') {
+              npx playwright test windows-ime.spec.mjs --project=$browser --max-failures=6 --output "test-results/$hosting-$browser"
+              if ($LASTEXITCODE) { $failed = 1 }
+            }
           }
           exit $failed
 

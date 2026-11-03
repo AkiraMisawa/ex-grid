@@ -281,7 +281,8 @@ async function originOf(page) {
         const heard = (await moves()).length;
         await inFront(page, 'a pointer move');
         await ask(`move ${screen[0]} ${screen[1]}`);
-        [atX, atY] = screen;
+        // Where the pointer went, which the screen's edge may have moved it from.
+        [atX, atY] = (await ask('pointer')).split(' ').map(Number);
         await expect.poll(async () => (await moves()).length, { message: `the pointer, moved to the page's ${aim}, never reached the page: it landed outside it, after ${JSON.stringify(landed)}` })
             .toBeGreaterThan(heard);
         const at = (await moves()).at(-1);

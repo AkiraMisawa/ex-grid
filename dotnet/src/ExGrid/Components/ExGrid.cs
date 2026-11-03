@@ -982,8 +982,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 if (_attached)
                     await SendStateAsync();
             }
-            // Called off by a circuit that closed meanwhile, the state has nobody left to reach, as at disposal.
-            catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
+            catch (Exception ex) when (ex is not JSDisconnectedException)
             {
                 await DispatchExceptionAsync(ex);
             }
@@ -998,9 +997,9 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         {
             await SendStateAsync();
         }
-        catch (Exception ex) when (ex is JSDisconnectedException || (_disposed && ex is OperationCanceledException))
+        catch (JSDisconnectedException)
         {
-            // The circuit is gone, or closed meanwhile and called the state off, and the browser it was for with it.
+            // The circuit is gone, and the browser the state was for with it.
         }
         catch (Exception ex)
         {
@@ -1014,7 +1013,15 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (grid is null || _disposed || !_stateOwed)
             return;
         _stateOwed = false;
-        await grid.InvokeVoidAsync("state", StateJson());
+        try
+        {
+            await grid.InvokeVoidAsync("state", StateJson());
+        }
+        // Called off by a circuit that closed after the component was disposed, the state has nobody left to reach, as
+        // at disposal; every path that sends one (a source's change, a range asked, an event's handler) lets it go here.
+        catch (OperationCanceledException) when (_disposed)
+        {
+        }
     }
 
     private string AttachJson(string options) => Json(json =>
@@ -1401,8 +1408,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             if (_attached)
                 await SendStateAsync();
         }
-        // Called off by a circuit that closed meanwhile, the state has nobody left to reach, as at disposal.
-        catch (Exception ex) when (ex is not JSDisconnectedException && !(_disposed && ex is OperationCanceledException))
+        catch (Exception ex) when (ex is not JSDisconnectedException)
         {
             await DispatchExceptionAsync(ex);
         }

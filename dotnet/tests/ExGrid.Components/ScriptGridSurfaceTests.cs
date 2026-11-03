@@ -150,6 +150,8 @@ public class ScriptGridSurfaceTests : BunitContext
         cut.WaitForAssertion(() => Assert.True(_grid.Invocations["state"].Count > sent));
         await DisposeComponentsAsync();
         reply.SetCanceled();
+        // What the cancellation resumes runs in the component's context, in turn: read once that turn has passed.
+        await cut.InvokeAsync(() => { });
 
         Assert.False(Renderer.UnhandledException.IsCompleted);
     }

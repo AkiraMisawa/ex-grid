@@ -596,23 +596,34 @@ async function navigateInApp(page, path) {
     await page.locator('#demo-index').waitFor({ state: new URL(href).pathname === '/' ? 'attached' : 'detached' });
 }
 
-// Whether a move of Playwright's mouse reaches the page as a move. In Chromium, Playwright's mouse turns every
-// move into a dragover while it holds a drag it intercepted, and sends no press until that drag drops; a drag
-// left on by one test makes the next test's page hear nothing at all (pivot.spec's cancel over the report, the
-// Hunt of 2026-11-03). Two moves, so the pointer changes place whichever it was at; the protocol answers each
-// once the page has handled it, so what was heard is read after.
-async function pointerHeard(page) {
+// Whether a move of Playwright's mouse reaches the page as a move with no button held. In Chromium, Playwright's
+// mouse turns every move into a dragover while it holds a drag it intercepted, and sends no press until that drag
+// drops; a drag left on by one test makes the next test's page hear nothing at all (pivot.spec's cancel over the
+// report, the Hunt of 2026-11-03). A button left down is the same leak by another road: the next test's moves carry
+// it, and its first press comes without the release before it. Two moves, so the pointer changes place whichever it
+// was at; read two frames later, since the browser hands moves to the page at a frame.
+async function pointerFree(page) {
     await page.evaluate(() => {
-        window.exPointerHeard = false;
-        window.addEventListener('mousemove', () => { window.exPointerHeard = true; }, { once: true, capture: true });
+        const heard = [];
+        const note = (event) => heard.push(event.buttons);
+        window.addEventListener('mousemove', note, true);
+        window.exPointerHeard = () => {
+            window.removeEventListener('mousemove', note, true);
+            delete window.exPointerHeard;
+            return heard;
+        };
     });
     await page.mouse.move(1, 1);
     await page.mouse.move(2, 2);
-    return page.evaluate(() => {
-        const heard = window.exPointerHeard;
-        delete window.exPointerHeard;
-        return heard;
-    });
+    await twoFrames(page);
+    const heard = await page.evaluate(() => window.exPointerHeard());
+    if (heard.length === 0) {
+        return 'Playwright\'s mouse still holds a drag the test began: the page hears no move, and a press is not sent';
+    }
+    if (heard.some((buttons) => buttons !== 0)) {
+        return `the test left a mouse button down: the page hears moves with buttons ${heard.join(', ')}`;
+    }
+    return null;
 }
 
 // Reaches `target` the way every test after a file's first does: back to the index — so the
@@ -955,8 +966,9 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
             await navigateInApp(page, '/');
             await twoFrames(page);
             leaks.push(...await app.leaks());
-            if (!await pointerHeard(page)) {
-                leaks.push('Playwright\'s mouse still holds a drag the test began: the page hears no move, and a press is not sent');
+            const pointer = await pointerFree(page);
+            if (pointer !== null) {
+                leaks.push(pointer);
             }
         } catch (error) {
             leaks.push(`the page could not be left for the index: ${error.message}`);
