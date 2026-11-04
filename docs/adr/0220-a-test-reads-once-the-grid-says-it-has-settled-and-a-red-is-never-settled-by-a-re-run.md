@@ -220,3 +220,16 @@ frame callbacks, then delivers that frame's resize observations, and the grid ha
 timer of no delay. The browser runs timers of equal delay in the order they were set, so the report is told
 first. This is an order, not a wait on time. The layer-2 emulation lays out nothing, so it answers at once,
 unless a test holds the layout to prove the wait (`grid-dom.test.ts`).
+
+## A pivot's question joins the mark, 2026-11-04 (ExPivot)
+
+A move in the Field List, a layout the Consumer hands in, a Refresh or a Retry asks the Pivot Source a question,
+and the report it answers is that input's effect. The report's grid did not know of the question: it took no input
+of its own, so it showed the mark while the answer was still being built, and a script that waited for the mark read
+the report of an earlier layout. The Hunt's widened run found it in `differential.spec.mjs` (ExPivot, seed 1, at a
+quarter of the CPU: the areas the same both ways, the report of the fast run one layout behind).
+
+From now on the pivot holds its report grid's mark while a question under the loading indication is out, and lets it
+go once the answer, a refusal or a failure has been drawn. The quiet question a live source's notice asks holds
+nothing, as it shows no loading indication either: a report whose data ticks every 250 ms would otherwise never
+settle, and nobody's input waits on it.

@@ -10,26 +10,40 @@
 // the Protocol, the page's own `dragstart`, the Protocol's `Input.dragIntercepted`, then each drag event, and at the end
 // the page hearing the pointer again. A drag that did not begin is said, naming what the page heard, rather than read as a refusal.
 
-import { expect, noteDrivenDrag } from './fixtures.mjs';
+import { circuitQuiet, expect, noteDrivenDrag } from './fixtures.mjs';
 
-/** A point on `locator`: `position` from its top-left corner, or its middle. */
-async function pointOn(locator, position) {
-    const box = await locator.boundingBox();
-    if (box === null) {
-        throw new Error(`drag: ${locator} is not laid out, so there is no point on it to drag from or to`);
-    }
-    return position === undefined
-        ? { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-        : { x: box.x + position.x, y: box.y + position.y };
-}
-
-/** Whether the element drawn at `point` is `locator`'s element or inside it, and what is drawn there. */
-async function hits(locator, point) {
-    return locator.evaluate((element, { x, y }) => {
+/**
+ * A point on `locator`, `position` from its top-left corner or its middle, read once the page has stopped moving it, and
+ * what is drawn there, read in the same task. A hand aims at what stands still: a point read while the page is still
+ * laying out what the last step set off (a Show Details tab opening, a circuit's render on its way) is where the element
+ * was, and the press lands on whatever has moved there since (pivot.spec's report removal under the widened run of
+ * 2026-11-04, which pressed Region's caption for Desk's button). So the host's renders are waited for first (circuitQuiet,
+ * on the Server host), then the element's box must be the same at two frames running, and the point and what is drawn at
+ * it are read at the second.
+ */
+async function standingPoint(locator, position) {
+    await circuitQuiet();
+    const read = await locator.evaluate(async (element, at) => {
+        const frame = () => new Promise((resolve) => { requestAnimationFrame(() => resolve()); });
+        const same = (a, b) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+        let box = element.getBoundingClientRect();
+        for (;;) {
+            await frame();
+            const now = element.getBoundingClientRect();
+            if (same(now, box)) break;
+            box = now;
+        }
+        if (box.width === 0 && box.height === 0) return null;
+        const x = at === undefined ? box.x + box.width / 2 : box.x + at.x;
+        const y = at === undefined ? box.y + box.height / 2 : box.y + at.y;
         const top = document.elementFromPoint(x, y);
         const name = top === null ? 'nothing' : `${top.tagName.toLowerCase()}${[...top.classList].map((c) => `.${c}`).join('')}`;
-        return { inside: top !== null && (top === element || element.contains(top)), name };
-    }, point);
+        return { point: { x, y }, inside: top !== null && (top === element || element.contains(top)), name };
+    }, position);
+    if (read === null) {
+        throw new Error(`drag: ${locator} is not laid out, so there is no point on it to drag from or to`);
+    }
+    return read;
 }
 
 /** Steps from `from` to `to`, the last one `to` itself, so the page crosses what lies between as a hand would. */
@@ -48,8 +62,8 @@ export async function startDrag(page, source, { position } = {}) {
     await expect(source).toBeVisible();
     // Brought into view before the press, as a hand would reach it: a scroll once the drag has begun would end it.
     await source.scrollIntoViewIfNeeded();
-    const press = await pointOn(source, position);
-    const under = await hits(source, press);
+    const under = await standingPoint(source, position);
+    const press = under.point;
     if (!under.inside) {
         throw new Error(`drag: ${source} is not what is drawn at its own point (${press.x}, ${press.y}); ${under.name} is`);
     }
@@ -153,7 +167,7 @@ export async function startDrag(page, source, { position } = {}) {
         async over(target, { position, steps = 5 } = {}) {
             if (ended) throw new Error('drag: this drag has already ended');
             try {
-                const to = await pointOn(target, position);
+                const { point: to } = await standingPoint(target, position);
                 const view = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
                 if (to.x < 0 || to.y < 0 || to.x >= view.width || to.y >= view.height) {
                     throw new Error(`drag: ${target}'s point (${to.x}, ${to.y}) is outside the window, and a scroll would end the drag`);

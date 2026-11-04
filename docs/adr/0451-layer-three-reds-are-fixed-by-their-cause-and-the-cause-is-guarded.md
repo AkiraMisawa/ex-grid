@@ -101,6 +101,34 @@ request that merges on its own green head. A red it cannot explain is recorded a
 it passes ([ADR-0220](./0220-a-test-reads-once-the-grid-says-it-has-settled-and-a-red-is-never-settled-by-a-re-run.md) section 3).
 Per-push CI is not lengthened for this: the Hunt is where many passes run.
 
+## The first widened night, 2026-11-04
+
+The Hunt of 2026-11-04 ran every test ten times green; its widened run (150 ms round trip, a quarter of the CPU)
+failed five tests in four jobs, from four causes:
+
+1. **The latency proxy let a connection's end through on its last chunk's heels** (CON-6, `navigation.spec.mjs`'s
+   RI-3 on both browsers). A page that goes away sends its disconnect beacon and closes the connection about 50 ms
+   later. The proxy delayed the beacon by the trip and its end by nothing, so the host read the request with the
+   connection's end right behind it, took it as called off and answered 499: 24 beacons of 26 that night, none of
+   110 in the plain Hunt. The circuit stayed for its retention period, and a call to the browser in flight then was
+   called off by the circuit's call timeout a minute later, an unhandled exception in whatever test was running. The
+   end now takes the trip as a chunk does, and the Server DemoHost logs a cut disconnect as an error, so a cut
+   beacon fails the test whose page went away rather than one a minute on. The product's handling stands: a call
+   timed out on a circuit that may yet reconnect is a failure, not a closing circuit.
+2. **The report's grid said it had settled while the pivot's question was out** (`differential.spec.mjs`, ExPivot,
+   seed 1, WebAssembly). A product race, fixed in the product: [ADR-0220](./0220-a-test-reads-once-the-grid-says-it-has-settled-and-a-red-is-never-settled-by-a-re-run.md)'s
+   note of 2026-11-04.
+3. **A drag's press point was read before the page stopped moving its source** (`pivot.spec.mjs`, report removal
+   under the MudBlazor Chrome, Server host): `drag.mjs` refused the press, as it should, naming the caption of
+   another entry. It now reads its points once the circuit is quiet and the element's box has stood still for two
+   frames, and reads what is drawn there in the same task. Every drag goes through it (section 1).
+4. **A .NET Undo that got no answer** (`script-sheet.spec.mjs`, Server host): the page's Undo was clicked and its
+   status never changed in a minute. It did not reproduce in three local runs under the same conditions. The likely
+   cause is a press on a button the circuit disabled between Playwright's check and its press (the page disables it
+   while an edit is open, and the edit's end and its render are a round trip behind); Chromium tells the page of
+   such a press and makes no click. The harness now says any press that lands on a disabled control as a console
+   error, so the next one names itself; the two tests that press one on purpose name the error.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs

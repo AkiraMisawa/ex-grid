@@ -1,4 +1,4 @@
-import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet, settled, chromeHost } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet, settled, chromeHost, PRESSED_DISABLED } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
@@ -760,41 +760,47 @@ for (const chrome of CHROMES) {
             expect(byEnter).toBe(byOk);
         });
 
-        test(`with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76) ${chromeHost(chrome)}`, async ({ page }) => {
-            const all = await grid(page).getAttribute('aria-rowcount');
-            const popover = grid(page).locator('.ex-popover');
-            const values = VALUE_LIST[chrome];
-            await clickCell(page, 1, 0);
-            await page.keyboard.press('Alt+ArrowDown');
-            await expect.poll(() => activeText(page)).toBe('Sort ascending');
-            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+        test.describe(() => {
+            // The press on the disabled control is the test's own: the harness says it, and the test names it. A
+            // MudBlazor button takes no pointer while disabled, so the press lands on what is under it, and nothing is said.
+            test.use({ expectedErrors: chrome === 'mud' ? [] : [PRESSED_DISABLED] });
 
-            // "(Select All)" toggled from every value to none.
-            await values.selectAll(popover).click();
-            await expect(values.ticked(popover)).toHaveCount(0);
+            test(`with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76) ${chromeHost(chrome)}`, async ({ page }) => {
+                const all = await grid(page).getAttribute('aria-rowcount');
+                const popover = grid(page).locator('.ex-popover');
+                const values = VALUE_LIST[chrome];
+                await clickCell(page, 1, 0);
+                await page.keyboard.press('Alt+ArrowDown');
+                await expect.poll(() => activeText(page)).toBe('Sort ascending');
+                await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
 
-            // Enter in the search box submits the form whatever Apply's state (ADR-0039); an In
-            // with no values is not a filter the engine takes (ADR-0023), so the panel stands.
-            // Absence cannot be waited for, so the submission is given time to land.
-            await values.search(popover).focus();
-            await page.keyboard.press('Enter');
-            // spec-lint: fixed-wait: Enter in the search box submits the popover's form, an event Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the panel will not close
-            await page.waitForTimeout(600);
-            await circuitQuiet();
-            await expect(popover).toHaveCount(1);
-            await expect(values.apply(popover)).toBeDisabled();
-            // A press on the unavailable Apply does nothing either.
-            await values.apply(popover).click({ force: true });
-            // spec-lint: fixed-wait: the press on Apply is a click Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that nothing will be applied
-            await page.waitForTimeout(600);
-            await circuitQuiet();
-            await expect(popover).toHaveCount(1);
-            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+                // "(Select All)" toggled from every value to none.
+                await values.selectAll(popover).click();
+                await expect(values.ticked(popover)).toHaveCount(0);
 
-            // Escape closes it as a Cancel, and the rows are as they were.
-            await page.keyboard.press('Escape');
-            await expect(popover).toHaveCount(0);
-            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+                // Enter in the search box submits the form whatever Apply's state (ADR-0039); an In
+                // with no values is not a filter the engine takes (ADR-0023), so the panel stands.
+                // Absence cannot be waited for, so the submission is given time to land.
+                await values.search(popover).focus();
+                await page.keyboard.press('Enter');
+                // spec-lint: fixed-wait: Enter in the search box submits the popover's form, an event Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that the panel will not close
+                await page.waitForTimeout(600);
+                await circuitQuiet();
+                await expect(popover).toHaveCount(1);
+                await expect(values.apply(popover)).toBeDisabled();
+                // A press on the unavailable Apply does nothing either.
+                await values.apply(popover).click({ force: true });
+                // spec-lint: fixed-wait: the press on Apply is a click Blazor hears on its own, which the Settled Mark does not cover (ADR-0220, As built); circuitQuiet() proves it on the Server host, and on WebAssembly nothing marks that nothing will be applied
+                await page.waitForTimeout(600);
+                await circuitQuiet();
+                await expect(popover).toHaveCount(1);
+                expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+
+                // Escape closes it as a Cancel, and the rows are as they were.
+                await page.keyboard.press('Escape');
+                await expect(popover).toHaveCount(0);
+                expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+            });
         });
 
         test(`a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) ${chromeHost(chrome)}`, async ({ page }) => {
