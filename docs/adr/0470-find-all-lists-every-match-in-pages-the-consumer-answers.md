@@ -77,12 +77,14 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
   `findAllShown`; the count line is the core's, in the list's part.
 - **Contents that list their own matches hand them to the core to draw** (§7): `GridFindPanelSlotContext.listFindAll`
   takes a function, asked in the call's turn among the inputs, that answers a `GridFindAllList` (the count, each
-  line's place and text, and what choosing a line does). The core draws it as it draws its own list and takes its
+  line's place and text, and what choosing a line does, answering whether the Focus moved, so the line is marked
+  current only then). The core draws it as it draws its own list and takes its
   keys and clicks in the Input Order; it goes when the text or an option changes or the panel closes, and when the
   contents call `dropFindAll`, for an option of their own (ExSheet's Within) or a change to what they hold. It does not
   go when the order moves, because what it names is not the grid's rows.
-- **The count line** says "*n* cells found" in the panel's words (`findPanelLabelIds`), in the live region the
-  outcome already uses (ADR-0033). "No cells found" for none.
+- **The count line** says "*n* cells found" in the panel's words (`findPanelLabelIds`), "No cells found" for none.
+  It is a status region of the list's own (ADR-0033), in the list's part: the outcome line is drawn by the Chrome's
+  contents, which the core does not write into, and the count belongs with the list it counts, going when it goes.
 - **Each line shows where the match is and its displayed text.** Where it is: in ExGrid, the column's header text
   and the row (the second of the choices); in ExSheet, the Sheet's name and the cell's address (`Sheet2!B12`);
   in ExPivot, as ExGrid. A header match says it is in the header (ADR-0333's "Found in the header").

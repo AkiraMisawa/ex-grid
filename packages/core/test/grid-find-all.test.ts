@@ -183,6 +183,46 @@ describe('Find All', () => {
         expect(root.querySelector(':scope > .ex-popover-find')).not.toBeNull();
     });
 
+    it('ADR-0470 §4: End in a list longer than a page waits for the last page, then moves the Focus to its last line', async () => {
+        const { source, requests } = listing(GridSource.from(deals));
+        const { root, selection } = grid({ source, findsHeaders: false });
+        await painted();
+        await findAll(root, 'o');
+        expect(countLine(root)).toBe('199 cells found');
+        key(list(root), 'End');
+        await settle();
+        expect(requests.map(({ start }) => start)).toEqual([0, 100]);
+        expect(selection().focus).toEqual({ row: 399, column: 1 });
+        expect(list(root).getAttribute('aria-activedescendant')).toMatch(/-198$/u);
+    });
+
+    it('ADR-0470 §3: a list scrolled away from its current line stays where it was scrolled', async () => {
+        const { root } = grid({ findsHeaders: false });
+        await painted();
+        await findAll(root, 'o');
+        list(root).querySelector<HTMLElement>('[data-ex-index="1"]')?.click();
+        await settle();
+        const box = list(root);
+        box.scrollTop = 24 * 150;
+        box.dispatchEvent(new Event('scroll'));
+        await settle();
+        expect(box.scrollTop).toBe(24 * 150);
+        expect(lines(root)[0]).toMatch(/\| (?:Novak|Osei)$/u);
+    });
+
+    it('ADR-0470 §4: a step of the panel moves the list\'s current line with the current match', async () => {
+        const { root, selection } = grid({ findsHeaders: false });
+        await painted();
+        await findAll(root, 'novak');
+        list(root).querySelector<HTMLElement>('[data-ex-index="2"]')?.click();
+        await settle();
+        expect(list(root).getAttribute('aria-activedescendant')).toMatch(/-2$/u);
+        (q(root, '.ex-popover-find button.ex-find-next') as HTMLButtonElement).click();
+        await settle();
+        expect(selection().focus).toEqual({ row: 15, column: 1 });
+        expect(list(root).getAttribute('aria-activedescendant')).toMatch(/-3$/u);
+    });
+
     it('ADR-0470 §2: scrolling the list asks the pages it comes to, and no page twice', async () => {
         const { source, requests } = listing(GridSource.from(deals));
         const { root } = grid({ source, findsHeaders: false });
@@ -287,14 +327,14 @@ describe('Find All', () => {
         await painted();
         const own = defined(context, 'the slot mounted');
         // With nothing to search for, nothing is asked.
-        own.listFindAll(() => { asked += 1; return { count: 0, line: () => ({ where: '', text: '' }), choose: () => undefined }; });
+        own.listFindAll(() => { asked += 1; return { count: 0, line: () => ({ where: '', text: '' }), choose: () => false }; });
         await settle();
         expect([asked, root.querySelector('.ex-find-all')]).toEqual([0, null]);
         typeInto(field(root), 'x');
         await painted();
         own.listFindAll(() => {
             asked += 1;
-            return { count: 300, line: index => ({ where: `Sheet${String(index % 2 + 1)}!A${String(index + 1)}`, text: `x${String(index)}` }), choose: index => { chosen.push(index); } };
+            return { count: 300, line: index => ({ where: `Sheet${String(index % 2 + 1)}!A${String(index + 1)}`, text: `x${String(index)}` }), choose: index => { chosen.push(index); return true; } };
         });
         await settle();
         expect(asked).toBe(1);
@@ -309,7 +349,7 @@ describe('Find All', () => {
         await settle();
         expect(root.querySelector('.ex-find-all')).toBeNull();
         // A list that is not one is the contents' defect, said to them.
-        expect(() => { own.listFindAll(() => ({ count: -1, line: () => ({ where: '', text: '' }), choose: () => undefined })); })
+        expect(() => { own.listFindAll(() => ({ count: -1, line: () => ({ where: '', text: '' }), choose: () => false })); })
             .toThrow('a count is a whole number from 0');
     });
 });

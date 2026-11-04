@@ -23,8 +23,10 @@ export interface GridFindAllList {
     readonly count: number;
     /** Line `index`, from 0 to `count` − 1. */
     readonly line: (index: number) => GridFindAllLine;
-    /** The user chose line `index`, in its turn: the contents move to it, as a step that found it would. */
-    readonly choose: (index: number) => void;
+    /** The user chose line `index`, in its turn: the contents move to it, as a step that found it would, and answer
+     * whether they did; a choice they refuse (ExSheet's, while a cell is edited) leaves the list's current line as it
+     * was. */
+    readonly choose: (index: number) => boolean;
 }
 
 /** What the list reads from the grid, and what it says back. */
@@ -37,7 +39,7 @@ export interface FindAllListModel {
     readonly active: () => number | undefined;
     /** The lines from `first` to `last` are in view: the grid reads them, and ahead of them. */
     readonly inView: (first: number, last: number) => void;
-    /** The user chose line `index`: a click, Enter, or ↑, ↓, Home or End moving onto it. */
+    /** The user chose line `index`: a click, Enter, or ↑, ↓, Home or End moving onto it, read or not yet. */
     readonly choose: (index: number) => void;
     /** An input reached the list and was answered (ADR-0220). */
     readonly answered: () => void;
@@ -65,6 +67,9 @@ export class FindAllList {
     readonly #spacer: HTMLElement;
     readonly #id: string;
     #scrollTopPx = 0;
+    // The active line last brought into view: a line is revealed as it becomes active, never again while it stays so,
+    // so the user scrolls the list away from it freely.
+    #revealed: number | undefined;
     // The lines drawn, by index, so a refresh rewrites only what changed.
     readonly #drawn = new Map<number, HTMLElement>();
 
@@ -102,7 +107,7 @@ export class FindAllList {
             const index = Number(line.dataset['exIndex']);
             if (!Number.isInteger(index)) throw new Error('Internal: a Find All line without its index.');
             model.answered();
-            if (model.line(index) !== undefined) model.choose(index);
+            model.choose(index);
         });
         element.addEventListener('keydown', event => {
             if (event.ctrlKey || event.altKey || event.metaKey || event.isComposing) return;
@@ -122,23 +127,22 @@ export class FindAllList {
         if (this.#countLine.textContent !== text) this.#countLine.textContent = text;
     }
 
-    // The line a key moves to (ADR-0470 §4), -1 for a key the list takes that moves nowhere, or `undefined` for a key
-    // that is not the list's.
+    // The line a key moves to (ADR-0470 §4), read or not yet, -1 for a key the list takes that moves nowhere, or
+    // `undefined` for a key that is not the list's.
     #keyTarget(key: string): number | undefined {
         const count = this.#model.count();
         if (!['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', 'PageDown', 'PageUp'].includes(key)) return undefined;
         if (count === undefined || count === 0) return -1;
         const active = this.#model.active();
         const last = count - 1;
-        const at = (index: number): number => this.#model.line(index) === undefined ? -1 : index;
         switch (key) {
-            case 'ArrowDown': return at(active === undefined ? 0 : Math.min(last, active + 1));
-            case 'ArrowUp': return at(active === undefined ? 0 : Math.max(0, active - 1));
-            case 'PageDown': return at(active === undefined ? 0 : Math.min(last, active + findAllVisibleLines));
-            case 'PageUp': return at(active === undefined ? 0 : Math.max(0, active - findAllVisibleLines));
-            case 'Home': return at(0);
-            case 'End': return at(last);
-            default: return active === undefined ? -1 : at(active);
+            case 'ArrowDown': return active === undefined ? 0 : Math.min(last, active + 1);
+            case 'ArrowUp': return active === undefined ? 0 : Math.max(0, active - 1);
+            case 'PageDown': return active === undefined ? 0 : Math.min(last, active + findAllVisibleLines);
+            case 'PageUp': return active === undefined ? 0 : Math.max(0, active - findAllVisibleLines);
+            case 'Home': return 0;
+            case 'End': return last;
+            default: return active === undefined ? -1 : active;
         }
     }
 
@@ -148,7 +152,10 @@ export class FindAllList {
         const lines = count === undefined ? 0 : count;
         this.#spacer.style.height = `${lines * this.#lineHeightPx}px`;
         const active = this.#model.active();
-        if (active !== undefined && active < lines) this.#reveal(active);
+        if (active !== this.#revealed) {
+            this.#revealed = active;
+            if (active !== undefined && active < lines) this.#reveal(active);
+        }
         const first = Math.min(Math.max(0, lines - 1), Math.floor(this.#scrollTopPx / this.#lineHeightPx));
         const last = Math.min(lines - 1, first + findAllVisibleLines);
         for (const [index, line] of this.#drawn) {

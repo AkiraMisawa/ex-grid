@@ -1030,8 +1030,12 @@ interface FindAllHeld<Row> {
     rowTotal: number | undefined;
     readonly pages: Map<number, readonly GridFindAllMatch[]>;
     readonly asking: Map<number, AbortController>;
-    /** The line chosen last. */
+    /** The line of the current match, chosen or followed. */
     active: number | undefined;
+    /** The current match `active` was read against: when a step or a write moves it, `active` follows (ADR-0470 §4). */
+    activeFor: object | undefined;
+    /** The lines in view, whose pages are asked one at a time (ADR-0470 §2). */
+    view: { readonly first: number; readonly last: number } | undefined;
     /** Why the list went, while it shows only that. */
     gone: 'orderChanged' | 'sourceChanged' | undefined;
     part: FindAllList | undefined;
@@ -8866,11 +8870,11 @@ export class GridView<Row> {
         const list: FindAllHeld<Row> = {
             source, sequence: this.#sequence(), request, columnCount: request.columns.length,
             headers: matchingHeaders(headers, pattern).map(index => itemAt(headers, index)),
-            rowTotal: undefined, pages: new Map(), asking: new Map(), active: undefined, gone: undefined,
+            rowTotal: undefined, pages: new Map(), asking: new Map(), active: undefined, activeFor: undefined, view: undefined, gone: undefined,
             part: undefined, own: undefined,
         };
         this.#showFindAll(popover.panel, list);
-        this.#askFindAllPage(list, 0, true);
+        this.#askFindAllPage(list, 0, 'first');
     }
 
     /**
@@ -8895,7 +8899,8 @@ export class GridView<Row> {
         });
         const list: FindAllHeld<Row> = {
             source: this.#source, sequence: this.#sequence(), request, columnCount: request.columns.length, headers: [],
-            rowTotal: listed.count, pages: new Map(), asking: new Map(), active: undefined, gone: undefined, part: undefined, own: listed,
+            rowTotal: listed.count, pages: new Map(), asking: new Map(), active: undefined, activeFor: undefined, view: undefined, gone: undefined,
+            part: undefined, own: listed,
         };
         this.#showFindAll(popover.panel, list);
         this.#invalidate();
@@ -8964,51 +8969,68 @@ export class GridView<Row> {
         list.part?.say(text);
     }
 
-    // The list's lines from `first` to `last` are in view: their pages are asked, and the next one ahead.
+    // The list's lines from `first` to `last` are in view: their pages are asked, and the next one ahead, one at a time
+    // (ADR-0470 §2): a page asked while another is out waits for it.
     #findAllInView(list: FindAllHeld<Row>, first: number, last: number): void {
-        if (this.#findAll !== list || list.own !== undefined || list.gone !== undefined || list.rowTotal === undefined) return;
+        list.view = { first, last };
+        if (this.#findAll !== list || list.own !== undefined || list.gone !== undefined || list.rowTotal === undefined || list.asking.size > 0) return;
         const rows = list.rowTotal;
         const from = Math.max(0, first - list.headers.length);
         const to = Math.min(rows - 1, last - list.headers.length + findAllVisibleLines);
         for (let page = Math.floor(from / findAllPageSize); page <= Math.floor(to / findAllPageSize); page++) {
-            if (!list.pages.has(page) && !list.asking.has(page)) this.#askFindAllPage(list, page, false);
+            if (!list.pages.has(page)) {
+                this.#askFindAllPage(list, page, undefined);
+                return;
+            }
         }
     }
 
-    // One page of the list asked of the source. The first is an answer out in the Input Order (ADR-0451 section 3).
-    #askFindAllPage(list: FindAllHeld<Row>, page: number, first: boolean): void {
+    /**
+     * One page of the list asked of the source. The first, and one a choice waits on, is an answer out in the Input
+     * Order (ADR-0451 section 3): the inputs made meanwhile wait for it, and an Escape cancels it. `then` runs once it
+     * has landed, before those inputs.
+     */
+    #askFindAllPage(list: FindAllHeld<Row>, page: number, pended: 'first' | 'choice' | undefined, then?: () => void): void {
         const { source } = list;
         const controller = new AbortController();
         list.asking.set(page, controller);
         const request: GridFindAllRequest = Object.freeze({ ...list.request, start: page * findAllPageSize, count: findAllPageSize });
-        if (first) this.#invalidate();
+        if (pended !== undefined) this.#invalidate();
         const asked = Promise.resolve().then(() => {
             if (source.findAll === undefined) throw new Error('Internal: a Find All page asked of a source that lists nothing.');
             return source.findAll(request, controller.signal);
         });
+        // The next page in view is asked once this one is in, while the list stands.
+        const next = (): void => {
+            const { view } = list;
+            if (this.#findAll === list && list.gone === undefined && view !== undefined) this.#findAllInView(list, view.first, view.last);
+        };
         // oxlint-disable-next-line ex-grid/no-catch -- a page given up by whoever answers lists nothing and says nothing; any other failure is rethrown
         const landed = asked.then(answer => {
             if (this.#destroyed || list.asking.get(page) !== controller) return;
             list.asking.delete(page);
-            if (first) this.#invalidate();
+            if (pended !== undefined) this.#invalidate();
             if (this.#findAll === list && list.gone === undefined) this.#findAllAnswered(list, page, request, answer);
+            then?.();
+            next();
         }, (error: unknown) => {
             if (this.#destroyed || list.asking.get(page) !== controller) return;
             list.asking.delete(page);
-            if (first) this.#invalidate();
+            if (pended !== undefined) this.#invalidate();
             // Given up by whoever answers, who says why itself: the list claims nothing about cells nobody read.
             if (error instanceof DOMException && error.name === 'AbortError') {
-                if (first && this.#findAll === list) this.#dropFindAll();
+                if (pended === 'first' && this.#findAll === list) this.#dropFindAll();
+                else next();
                 return;
             }
             throw error;
         });
-        if (!first) return;
-        // Cancelled by an Escape: no list is shown, as for a step given up.
+        if (pended === undefined) return;
+        // Cancelled by an Escape: no list is shown for a first page, and a choice waiting on its page moves nothing.
         this.#pendStep(landed, controller, () => {
             if (list.asking.get(page) !== controller) return;
             list.asking.delete(page);
-            if (this.#findAll === list) this.#dropFindAll();
+            if (pended === 'first' && this.#findAll === list) this.#dropFindAll();
             this.#invalidate();
         });
     }
@@ -9064,16 +9086,25 @@ export class GridView<Row> {
     /**
      * A line chosen from the list (ADR-0470 §4): the Focus moves to its cell and reveals it, as a step that found it
      * does, or a header becomes the current match. Taken in its turn, against what the list was read under: under
-     * another version or source, the list goes and says so, and nothing moves.
+     * another version or source, the list goes and says so, and nothing moves. A line whose page is not yet read, as
+     * End's in a long list, waits for its page as an answer out, and is chosen once it is in.
      */
     #findAllChoose(list: FindAllHeld<Row>, index: number): void {
         if (this.#stepInTurn(() => { this.#findAllChoose(list, index); })) return;
+        this.#findAllChooseNow(list, index, true);
+    }
+
+    #findAllChooseNow(list: FindAllHeld<Row>, index: number, mayAsk: boolean): void {
         if (this.#findAll !== list || list.gone !== undefined) return;
         if (list.own !== undefined) {
             if (index < 0 || index >= list.own.count) return;
-            list.active = index;
-            list.own.choose(index);
+            const moved: unknown = list.own.choose(index);
+            if (typeof moved !== 'boolean') throw new TypeError(`listFindAll's choose answers whether it moved, not ${typeof moved} (ADR-0470 §7).`);
             // The contents may have taken the list away as they chose.
+            if (moved && this.#findAll === list) {
+                list.active = index;
+                list.activeFor = this.#findCurrent ?? this.#findCurrentHeader;
+            }
             if (this.#findAll === list) list.part?.refresh();
             this.#invalidate();
             return;
@@ -9088,7 +9119,15 @@ export class GridView<Row> {
         }
         const header = list.headers[index];
         const match = header === undefined ? this.#findAllMatchAt(list, index - list.headers.length) : undefined;
-        if (header === undefined && match === undefined) return;
+        if (header === undefined && match === undefined) {
+            const count = this.#findAllCount(list);
+            if (!mayAsk || count === undefined || index < list.headers.length || index >= count) return;
+            // The page is asked alone: a read-ahead still out is called off, and asked again once this one is in.
+            for (const controller of list.asking.values()) controller.abort();
+            list.asking.clear();
+            this.#askFindAllPage(list, Math.floor((index - list.headers.length) / findAllPageSize), 'choice', () => { this.#findAllChooseNow(list, index, false); });
+            return;
+        }
         this.#findStepping?.abort();
         this.#findStepping = undefined;
         this.#reconcileSelection();
@@ -9100,6 +9139,7 @@ export class GridView<Row> {
             }
             list.active = index;
             this.#landOnHeader(now);
+            list.activeFor = this.#findCurrentHeader;
         } else if (match !== undefined) {
             const column = this.#columns.findIndex(({ column: declared }) => declared.name === match.column);
             if (column < 0) {
@@ -9109,6 +9149,7 @@ export class GridView<Row> {
             list.active = index;
             const found = cellPosition(match.row, column);
             this.#findCurrent = { cell: found, version: this.#sequence() };
+            list.activeFor = this.#findCurrent;
             this.#findCurrentHeader = undefined;
             this.#setFindOutcome({ kind: 'found' });
             // Within a selected scope the Selection stands and the Focus moves inside it, as a step's does.
@@ -9120,6 +9161,36 @@ export class GridView<Row> {
         }
         list.part?.refresh();
         this.#invalidate();
+    }
+
+    // In each pass: the list's current line follows the current match, which a step, a Replace or a placed match may
+    // have moved since the line was chosen (ADR-0470 §4): the line of the new one where its page is read, else none.
+    // A list of the Chrome's own keeps the line it chose: what its contents' current match is, the contents know.
+    #findAllFollowCurrent(): void {
+        const list = this.#findAll;
+        if (list === undefined || list.own !== undefined || list.gone !== undefined) return;
+        const current = this.#findCurrent ?? this.#findCurrentHeader;
+        if (current === list.activeFor) return;
+        list.activeFor = current;
+        list.active = this.#findAllLineOf(list);
+        list.part?.refresh();
+    }
+
+    // The line the current match stands on among what the list has read, or none.
+    #findAllLineOf(list: FindAllHeld<Row>): number | undefined {
+        const header = this.#findCurrentHeader;
+        if (header !== undefined) {
+            const at = list.headers.findIndex(({ id }) => id === header.id);
+            return at < 0 ? undefined : at;
+        }
+        const current = this.#findCurrent;
+        if (current === undefined || current.version !== list.sequence) return undefined;
+        const column = this.#columns[current.cell.column]?.column.name;
+        for (const [page, matches] of list.pages) {
+            const at = matches.findIndex(match => match.row === current.cell.row && match.column === column);
+            if (at >= 0) return list.headers.length + (page * findAllPageSize) + at;
+        }
+        return undefined;
     }
 
     // The list read under another order or from another source (ADR-0470 §5): its lines go, the count line says why,
@@ -10981,6 +11052,7 @@ export class GridView<Row> {
         // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
         this.#forgetCurrentMatchOffFocus();
         this.#forgetFindAllOffSequence();
+        this.#findAllFollowCurrent();
         if (this.#popover?.kind === 'find') this.#popover.panel.offerFindAll(this.#canFindAll);
         this.#paintHeader();
         this.#paintViewport();

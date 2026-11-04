@@ -2504,27 +2504,29 @@ class SheetView {
                 const { sheet, address } = matches.at(index);
                 return { where: referenceText(new CellRange(address), sheet.name), text: shownTextOf(sheet, address) };
             },
-            choose: index => { this.#chooseWorkbookMatch(matches.at(index)); },
+            choose: index => this.#chooseWorkbookMatch(matches.at(index)),
         };
     }
 
     // A line of the Workbook's list chosen (ADR-0470 §4): a match on the Sheet shown is placed as a step's answer is;
     // one on another Sheet shows that Sheet with the cell selected, as a step over the Workbook does. While an edit is
-    // open nothing moves, and the notice says why.
-    #chooseWorkbookMatch({ sheet, address }: { readonly sheet: Sheet; readonly address: CellAddress }): void {
-        if (this.#destroyed) return;
+    // open nothing moves, and the notice says why. Answers whether the Focus moved, so the list marks the line only then.
+    #chooseWorkbookMatch({ sheet, address }: { readonly sheet: Sheet; readonly address: CellAddress }): boolean {
+        if (this.#destroyed) return false;
         if (this.#editing) {
             this.#tell(this.#words.editIsOpen);
-            return;
+            return false;
         }
         const cell = { row: address.row, column: address.column };
         if (sheet === this.#source.sheet) {
-            this.#grid?.placeMatch(cell, this.#source.snapshot().rowSequenceVersion);
-            return;
+            const grid = this.#grid;
+            if (grid === undefined) throw new Error('Internal: the Workbook\'s Find All list was chosen from with no grid drawn.');
+            return grid.placeMatch(cell, this.#source.snapshot().rowSequenceVersion);
         }
         this.#clearNotice();
         this.#showSheet(sheet, cell);
         this.#raiseDocument();
+        return true;
     }
 
     // The Workbook's Find All list goes: the cells it was read from changed.

@@ -1063,7 +1063,7 @@ export interface GridFindAllLine {
 
 // @public
 export interface GridFindAllList {
-    readonly choose: (index: number) => void;
+    readonly choose: (index: number) => boolean;
     readonly count: number;
     readonly line: (index: number) => GridFindAllLine;
 }
