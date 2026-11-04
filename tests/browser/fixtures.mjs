@@ -122,8 +122,8 @@ async function harnessContext(browser, options) {
             // (script-sheet.spec's Undo, pressed as the edit before it was still being told to .NET, under the widened run
             // of 2026-11-04). The click is lost and the test fails a minute later, or passes having pressed nothing. A
             // test that presses a disabled control on purpose names this message in expectedErrors.
-            const control = event.isTrusted && event.target instanceof Element ? event.target.closest(':disabled') : null;
-            if (control !== null) {
+            const control = event.isTrusted && event.target instanceof Element ? event.target.closest('button, input, select, textarea') : null;
+            if (control !== null && control.matches(':disabled')) {
                 console.error(`layer 3: a press landed on a disabled control (${control.tagName.toLowerCase()}`
                     + `${control.id === '' ? '' : `#${control.id}`} "${(control.textContent ?? '').trim().slice(0, 40)}"): `
                     + 'it was enabled when the press was aimed, and the page disabled it before the press; read what the '

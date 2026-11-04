@@ -223,7 +223,7 @@ unless a test holds the layout to prove the wait (`grid-dom.test.ts`).
 
 ## A pivot's question joins the mark, 2026-11-04 (ExPivot)
 
-A move in the Field List, a layout the Consumer hands in, a Refresh or a Retry asks the Pivot Source a question,
+A move in the Field List, a layout the Consumer hands in, a Refresh, a Retry or a new source asks the Pivot Source a question,
 and the report it answers is that input's effect. The report's grid did not know of the question: it took no input
 of its own, so it showed the mark while the answer was still being built, and a script that waited for the mark read
 the report of an earlier layout. The Hunt's widened run found it in `differential.spec.mjs` (ExPivot, seed 1, at a

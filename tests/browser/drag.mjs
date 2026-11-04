@@ -18,30 +18,44 @@ import { circuitQuiet, expect, noteDrivenDrag } from './fixtures.mjs';
  * laying out what the last step set off (a Show Details tab opening, a circuit's render on its way) is where the element
  * was, and the press lands on whatever has moved there since (pivot.spec's report removal under the widened run of
  * 2026-11-04, which pressed Region's caption for Desk's button). So the host's renders are waited for first (circuitQuiet,
- * on the Server host), then the element's box must be the same at two frames running, and the point and what is drawn at
- * it are read at the second.
+ * on the Server host, before a drag begins), then the element's box must be the same at two frames running, and the
+ * point and what is drawn at it are read at the second.
  */
-async function standingPoint(locator, position) {
-    await circuitQuiet();
-    const read = await locator.evaluate(async (element, at) => {
+// How many frames an element is given to stand still: a layout set off by the step before settles in a few, and one
+// that moves for longer (a transition, an animation) is said rather than waited on until the test times out.
+const STILL_WITHIN_FRAMES = 120;
+
+async function standingPoint(locator, position, { quiet = true } = {}) {
+    if (quiet) await circuitQuiet();
+    const read = await locator.evaluate(async (element, { at, frames }) => {
+        // The mouse is driven in the top document's coordinates, which an element's own box is only there.
+        if (element.ownerDocument.defaultView !== window.top) return { framed: true };
         const frame = () => new Promise((resolve) => { requestAnimationFrame(() => resolve()); });
         const same = (a, b) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
         let box = element.getBoundingClientRect();
-        for (;;) {
+        let still = false;
+        for (let i = 0; i < frames && !still; i++) {
             await frame();
             const now = element.getBoundingClientRect();
-            if (same(now, box)) break;
+            still = same(now, box);
             box = now;
         }
+        if (!still) return { moving: true };
         if (box.width === 0 && box.height === 0) return null;
         const x = at === undefined ? box.x + box.width / 2 : box.x + at.x;
         const y = at === undefined ? box.y + box.height / 2 : box.y + at.y;
         const top = document.elementFromPoint(x, y);
         const name = top === null ? 'nothing' : `${top.tagName.toLowerCase()}${[...top.classList].map((c) => `.${c}`).join('')}`;
         return { point: { x, y }, inside: top !== null && (top === element || element.contains(top)), name };
-    }, position);
+    }, { at: position, frames: STILL_WITHIN_FRAMES });
     if (read === null) {
         throw new Error(`drag: ${locator} is not laid out, so there is no point on it to drag from or to`);
+    }
+    if (read.framed) {
+        throw new Error(`drag: ${locator} stands in a frame, and drag.mjs drags in the top document only`);
+    }
+    if (read.moving) {
+        throw new Error(`drag: ${locator} did not stand still for two frames running within ${STILL_WITHIN_FRAMES} frames, so there is no point to aim at`);
     }
     return read;
 }
@@ -167,7 +181,9 @@ export async function startDrag(page, source, { position } = {}) {
         async over(target, { position, steps = 5 } = {}) {
             if (ended) throw new Error('drag: this drag has already ended');
             try {
-                const { point: to } = await standingPoint(target, position);
+                // Mid-drag the circuit is not waited on: a dragover may set off renders of its own. The target stands
+                // still, which is what its point needs.
+                const { point: to } = await standingPoint(target, position, { quiet: false });
                 const view = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
                 if (to.x < 0 || to.y < 0 || to.x >= view.width || to.y >= view.height) {
                     throw new Error(`drag: ${target}'s point (${to.x}, ${to.y}) is outside the window, and a scroll would end the drag`);

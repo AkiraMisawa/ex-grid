@@ -764,6 +764,32 @@ describe('ExPivot\'s live data (ADR-0067)', () => {
         expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
     });
 
+    it('ADR-0220 section 1: the quiet question a notice asks holds no Settled Mark', async () => {
+        const live = liveServer();
+        const { grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0 });
+        await settled();
+        // A live report asks quietly, with no loading indication, and would otherwise never settle.
+        const release = live.hold();
+        const before = live.asked();
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await vi.waitFor(() => { expect(live.asked()).toBe(before + 1); });
+        expect(grid.settledHolds).toBe(0);
+        release();
+        await settled();
+        expect(grid.settledHolds).toBe(0);
+    });
+
+    it('ADR-0220 section 1: a move\'s question that is refused lets the Settled Mark go once the refusal is said', async () => {
+        const refused: string[] = [];
+        const { root, grid } = mount({ source: local(), layout: byRegion, maxLeaves: 3, onRefused: event => refused.push(event.message) });
+        await settled();
+        tick(root, 'Desk');
+        expect(grid.settledHolds).toBe(1);
+        await settled();
+        expect(refused).toEqual(['This layout needs more than 3 cells.']);
+        expect(grid.settledHolds).toBe(0);
+    });
+
     it('ADR-0067: notices within the redraw interval of the last change shown are gathered into one question, asked when the interval ends', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
         const live = liveServer();

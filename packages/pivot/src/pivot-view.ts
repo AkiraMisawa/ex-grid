@@ -1439,6 +1439,7 @@ export class PivotView {
         if (answered === undefined || !this.#reportDrawn) {
             this.#grid?.destroy();
             this.#grid = undefined;
+            this.#holdWhileLoading();
             return;
         }
         const { answer, question } = answered;
@@ -1576,6 +1577,8 @@ export class PivotView {
             // (ADR-0240 section 6). The draw that follows keeps it there, or puts the report's notice in its place.
             if (this.#gridRoot.parentNode !== this.#sheet) this.#sheet.prepend(this.#gridRoot);
             this.#grid = this.#mountGrid(this.#gridRoot, options);
+            // A grid made while a question is out is held from its first paint, as the one it replaced was.
+            this.#holdWhileLoading();
         } else {
             this.#grid.update(options);
         }
