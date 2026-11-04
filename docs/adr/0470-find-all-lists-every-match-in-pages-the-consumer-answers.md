@@ -1,8 +1,10 @@
 # Find All lists every match, in pages the Consumer answers
 
-*Proposed 2026-11-03, for 0.2.0: the user put Find All in the release on 2026-11-03, which is the trigger
-[§21.11 of the Definition of Done](../definition-of-done.md) left unnamed. Three questions are the user's, and
-are asked under "The choices" below; the text states the recommended answer to each until the user answers.*
+*Accepted 2026-11-04, for 0.2.0. Proposed 2026-11-03: the user put Find All in the release on 2026-11-03, which is the
+trigger [§21.11 of the Definition of Done](../definition-of-done.md) left unnamed. Three questions were the user's,
+asked under "The choices" below, and the text stated the recommended answer to each until the user answered. On
+2026-11-04 the user took the recommended answer to all three ("推奨でいいよ", "the recommended ones are fine"), so the
+text stands as written.*
 
 ## Context
 
@@ -136,7 +138,8 @@ The grid asks a **Find All Request**: Find's pattern, the scope, the columns, th
 
 ## The choices
 
-These are the user's. Each is stated with the option the text above takes until the user answers.
+These were the user's, each stated with the option the text above took until the user answered. *Decided with the user
+on 2026-11-04: the recommended answer to each.* What was set against each is kept as the option not taken.
 
 1. **Who draws the list** (§3). *Recommended:* the core draws it under every Chrome, styled by Visual Tokens, so its
    paging, virtualisation and keys are written once and behave alike under every Wrapper (the spine's fourth rule).
