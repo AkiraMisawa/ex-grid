@@ -27,6 +27,7 @@ export interface ReferenceOutlineOptions {
     readonly referencesIn: ((text: string) => readonly GridEditorReference[] | undefined) | undefined;
     readonly onReferenceKeyColoursChanged: ((keys: readonly ReferenceKeyColour[]) => void) | undefined;
     readonly outlinedColumns: readonly GridOutlinedColumn[] | undefined;
+    readonly moveReference: ((reference: string, range: SelectionRange) => string) | undefined;
 }
 
 /** The options checked, refused by name where they are not what they say. */
@@ -34,10 +35,12 @@ export function referenceOutlineOptions(given: {
     readonly referencesIn?: ReferenceOutlineOptions['referencesIn'];
     readonly onReferenceKeyColoursChanged?: ReferenceOutlineOptions['onReferenceKeyColoursChanged'];
     readonly outlinedColumns?: readonly GridOutlinedColumn[] | undefined;
+    readonly moveReference?: ReferenceOutlineOptions['moveReference'];
 }): ReferenceOutlineOptions {
     // Read as unknown first: a Consumer in plain JavaScript hands whatever it hands.
-    const { referencesIn, onReferenceKeyColoursChanged, outlinedColumns }: {
+    const { referencesIn, onReferenceKeyColoursChanged, outlinedColumns, moveReference }: {
         readonly referencesIn?: unknown; readonly onReferenceKeyColoursChanged?: unknown; readonly outlinedColumns?: unknown;
+        readonly moveReference?: unknown;
     } = given;
     if (referencesIn !== undefined && typeof referencesIn !== 'function') {
         throw new TypeError('referencesIn is a function of the editor\'s text, answering its References (ADR-0057).');
@@ -48,11 +51,15 @@ export function referenceOutlineOptions(given: {
     if (outlinedColumns !== undefined && !Array.isArray(outlinedColumns)) {
         throw new TypeError('outlinedColumns is a list of columns, each named with its colour (ADR-0057).');
     }
+    if (moveReference !== undefined && typeof moveReference !== 'function') {
+        throw new TypeError('moveReference is a function of a Reference\'s text and the range it is to name (ADR-0480).');
+    }
     const asked: readonly unknown[] | undefined = given.outlinedColumns;
     return {
         referencesIn: given.referencesIn,
         onReferenceKeyColoursChanged: given.onReferenceKeyColoursChanged,
         outlinedColumns: asked === undefined ? undefined : Object.freeze(asked.map(outlinedColumn)),
+        moveReference: given.moveReference,
     };
 }
 

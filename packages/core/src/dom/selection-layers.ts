@@ -8,9 +8,10 @@
 
 import type { ColumnGeometry } from '../columns/column-geometry';
 import {
-    box, copied as copiedStyle, focusStyle, handle as handleStyle, pinned as pinnedPart, reaches, scrollable as scrollablePart, tint, tinted,
-    whole, type OutlineCover, type ReadableEdge,
+    box, copied as copiedStyle, focusStyle, handle as handleStyle, pinned as pinnedPart, reaches, gripResizes, referenceGrips, referenceSquareMarginPx, scrollable as scrollablePart, tint,
+    tinted, whole, type OutlineCover, type ReadableEdge, type ReferenceGripKind,
 } from '../paint/selection-styles';
+import type { ReferenceColour } from '../cells/reference-colouring';
 import type { OutlinedRange } from './reference-outlines';
 import type { FillHandleCorner } from '../selection/fill-rules';
 import type { CellPosition } from '../selection/cell';
@@ -18,10 +19,21 @@ import { selectionRange, type SelectionRange } from '../selection/range';
 import type { Selection } from '../selection/selection';
 import type { RowRange } from '../viewport/row-range';
 
-/** One rectangle of a layer: its classes and its inline style. */
+/** One rectangle of a layer: its classes and its inline style, and for a Reference Outline's grip (ADR-0480) which
+ * outline and which grip it is, and where its box stands in the layer, so a press on it is read without the layout. */
 export interface LayerPiece {
     readonly className: string;
     readonly style: string;
+    readonly grip?: LayerGrip | undefined;
+}
+
+/** A grip as its layer drew it (ADR-0480): the outline's place among the open edit's outlines, its kind, and the
+ * top-left of its box in the layer's coordinates. */
+export interface LayerGrip {
+    readonly outline: number;
+    readonly kind: ReferenceGripKind;
+    readonly leftPx: number;
+    readonly topPx: number;
 }
 
 /** The three layers' rectangles; `shade` is undefined when the pinned shade layer holds nothing. */
@@ -75,6 +87,28 @@ export interface OutlinePaint {
     readonly columns: readonly OutlinedRange[];
     readonly point: PointPaint | undefined;
     readonly pointDashes?: SelectionRange | undefined;
+    readonly grips?: GripPaint | undefined;
+}
+
+/** The grips of the Reference Outlines (ADR-0480), drawn while a Reference can be dragged: the outlines that carry
+ * them, by their place among the open edit's outlines, as drawn and in their colours, the grips' sizes, and the
+ * left edge of what each layer leaves readable. */
+export interface GripPaint {
+    readonly outlines: readonly GrippedOutline[];
+    readonly gripPx: number;
+    readonly squarePx: number;
+    readonly pinnedLeftPx: number;
+    readonly scrollableLeftPx: number;
+}
+
+/** One outline that carries grips. */
+export interface GrippedOutline {
+    readonly outline: number;
+    /** The range as drawn, cut to the grid's extent. */
+    readonly range: SelectionRange;
+    /** The range the Reference names, which may reach past the extent: only its own edges carry grips. */
+    readonly named: SelectionRange;
+    readonly colour: ReferenceColour;
 }
 
 const noOutlines: OutlinePaint = Object.freeze({ references: Object.freeze([]), columns: Object.freeze([]), point: undefined, pointDashes: undefined });
@@ -114,7 +148,17 @@ export function selectionLayers(
         // What a press outside the grid wrote for is dashed, Selection or none, cut at the boundary as a column is.
         ...(outlines.pointDashes === undefined ? [] : pieceOf('ex-point-dashes', pinnedLayer
             ? pinnedPart(outlines.pointDashes, columns, rowHeightPx, painted) : scrollablePart(outlines.pointDashes, columns, rowHeightPx, painted))),
+        // The grips last, over everything a layer holds, a later outline's over an earlier's (ADR-0480).
+        ...(withReferences && outlines.grips !== undefined ? gripPieces(outlines.grips, pinnedLayer) : []),
     ];
+    const gripPieces = (grips: GripPaint, pinnedLayer: boolean): readonly LayerPiece[] => grips.outlines.flatMap(({ outline, range, named, colour }) =>
+        referenceGrips(range, columns, rowHeightPx, painted, pinnedLayer, grips.gripPx, grips.squarePx, pinnedLayer ? grips.pinnedLeftPx : grips.scrollableLeftPx, named)
+            .map(({ kind, leftPx, topPx, widthPx, heightPx }): LayerPiece => ({
+                className: `ex-reference-grip ex-reference-grip-${kind}${gripResizes(kind) ? ' ex-reference-square' : ''} ex-reference-${String(colour)}`,
+                style: `left: ${String(leftPx)}px; top: ${String(topPx)}px; width: ${String(widthPx)}px; height: ${String(heightPx)}px${
+                    gripResizes(kind) ? `; border-width: ${String(referenceSquareMarginPx)}px` : ''}`,
+                grip: { outline, kind, leftPx, topPx },
+            })));
     const focus = selection.focus;
     // The Focus's column down every row, cut to the painted rows as every rectangle is (ADR-0053); with the
     // Focus's row banded as well it leaves that row out, so the crossing is tinted once (ADR-0008, 2026-11-03).

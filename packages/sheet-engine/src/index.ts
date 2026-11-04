@@ -20,7 +20,7 @@ export { DocumentChanges } from './document-changes';
 export { Entry } from './entry';
 export {
     completeFormula, constantText, cycleReference, formulaHintAt, formulaPointAt, formulaReferences, LinkedTableColumn,
-    lookupFinds, lookupText, referenceText, structuredReferenceText,
+    lookupFinds, lookupText, moveReference, referenceText, structuredReferenceText,
     type ArgumentHint, type CompletionCandidate, type CompletionKind, type FormulaCompletion, type FormulaReference,
     type PointSite, type ReferenceCycle,
 } from './formula-entry';

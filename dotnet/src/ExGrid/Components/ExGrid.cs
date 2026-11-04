@@ -310,6 +310,16 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [Parameter] public ScriptFunction? ReferencesIn { get; set; }
 
     /// <summary>
+    /// The text a Reference is rewritten to when its Reference Outline is dragged (ADR-0480): the Consumer's own
+    /// script (ADR-0431), since the browser asks it as the drag reaches each cell. The function is called with the
+    /// Reference's text as it stands in the editor and the range it is to name, <c>{ topRow, leftColumn, rowCount,
+    /// columnCount }</c>, and answers the Reference naming that range written as the one given was: <c>$C$1</c> for
+    /// <c>$A$1</c> moved two columns. Given with <see cref="ReferencesIn"/>, every outline carries grips while an edit
+    /// is open: its edges move the Reference, and a square at each corner resizes it.
+    /// </summary>
+    [Parameter] public ScriptFunction? MoveReference { get; set; }
+
+    /// <summary>
     /// Tells the Consumer the colour each key <see cref="ReferencesIn"/> answered was given (ADR-0057): each key once,
     /// in order of first appearance, whenever that set changes, and an empty list when the edit ends. The
     /// Consumer outlines what a key names wherever it shows it, through a grid's
@@ -597,6 +607,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             yield return cycleReference;
         if (ReferencesIn is { } referencesIn)
             yield return referencesIn;
+        if (MoveReference is { } moveReference)
+            yield return moveReference;
         foreach (var script in PaintScripts())
             yield return script;
     }
@@ -1183,6 +1195,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             WriteScript(json, "referenceText", ReferenceText);
             WriteScript(json, "cycleReference", CycleReference);
             WriteScript(json, "referencesIn", ReferencesIn);
+            WriteScript(json, "moveReference", MoveReference);
             WriteSurfaceScripts(json);
             json.WriteEndObject();
         }

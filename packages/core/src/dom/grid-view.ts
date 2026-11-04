@@ -70,6 +70,7 @@ import { HeldSelection } from '../selection/held';
 import { bottomRow, boundingRange, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, selectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { GridFillIntent } from '../selection/fill-intent';
 import { fillExtensionFor, fillHandleCorner, fillHandleRange, planHandleFill, type FillHandleCorner } from '../selection/fill-rules';
+import { gripCursor, gripResizes, type ReferenceGripKind } from '../paint/selection-styles';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -78,6 +79,7 @@ import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summ
 import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type SummaryFigure } from '../summary/summary-accumulator';
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
+import { clamp } from '../viewport/checks';
 import { ViewportBox } from '../viewport/viewport-box';
 import { PageGeometry } from '../viewport/page-geometry';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
@@ -106,7 +108,7 @@ import {
     resolveColumns, type GridAction, type GridActionEvent, type GridColumn, type GridTemplate, type GridTemplateCell, type ResolvedColumn,
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
-import { selectionLayers, type FillPaint, type LayerPiece, type PointPaint } from './selection-layers';
+import { selectionLayers, type FillPaint, type GripPaint, type LayerGrip, type LayerPiece, type PointPaint } from './selection-layers';
 import { handle as paintedHandle, handleCell, handleCentrePx, type ReadableEdge } from '../paint/selection-styles';
 import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
@@ -642,6 +644,16 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * earlier. None, and nothing is outlined.
      */
     readonly outlinedColumns?: readonly GridOutlinedColumn[];
+    /**
+     * The text a Reference is rewritten to when its Reference Outline is dragged (ADR-0480): `reference` as it stands
+     * in the editor's text, and the cells it is to name, answered as the Reference naming them written as `reference`
+     * was (`$A$1` moved two columns is `$C$1`). Declared beside `referencesIn`, every outline over this grid's cells
+     * carries grips while an edit is open: its edges, which move the Reference keeping its size, and a square at each
+     * corner, which resizes it from the opposite corner. The text is rewritten each time the range reached changes;
+     * the caret stays where it was, and Escape mid-drag puts the Reference back. A non-string or empty answer is
+     * refused by name. None, and no outline carries a grip.
+     */
+    readonly moveReference?: (reference: string, range: SelectionRange) => string;
     /**
      * Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051): after `=`, an operator,
      * `(` or `,` in a Formula. Asked synchronously on the editor's text and caret as each key or press finds them,
@@ -1246,6 +1258,51 @@ interface PointDashesAsked {
 function sameDashesAsked(was: PointDashesAsked, now: PointDashesAsked): boolean {
     return was.dashes === now.dashes && was.columns === now.columns && was.window === now.window && was.windowStart === now.windowStart
         && was.start === now.start && was.count === now.count && was.totalRows === now.totalRows;
+}
+
+/**
+ * A Reference Outline's grip drag (ADR-0480): the edit it was pressed in, the Reference's span in the text as it now
+ * stands and the text last written, the range drawn when it was pressed and the one reached since, what the drag
+ * holds still (the cell pressed, for a move; the opposite corner, for a resize), and the edit as it was, which Escape
+ * puts back.
+ */
+interface GripDrag {
+    readonly edit: object;
+    readonly resizes: boolean;
+    readonly from: SelectionRange;
+    readonly held: CellPosition;
+    readonly start: number;
+    length: number;
+    written: string;
+    reached: SelectionRange;
+    readonly before: GripBefore;
+}
+
+/** The edit as a grip drag found it (ADR-0480, section 6). */
+interface GripBefore {
+    readonly text: string;
+    readonly selectionStart: number;
+    readonly selectionEnd: number;
+    readonly mode: 'overwrite' | 'caret' | 'point';
+    readonly pointer: Selection | undefined;
+    readonly pointStart: number;
+    readonly pointLength: number;
+    readonly pointWritten: string | undefined;
+}
+
+// The corner of `range` across from the square `kind` names: what a resize holds still (ADR-0480).
+function oppositeCorner(range: SelectionRange, kind: ReferenceGripKind): CellPosition {
+    const top = kind === 'bottomLeft' || kind === 'bottomRight';
+    const left = kind === 'topRight' || kind === 'bottomRight';
+    return cellPosition(top ? range.topRow : bottomRow(range), left ? range.leftColumn : rightColumn(range));
+}
+
+// The cell of `range` nearest a press at `at` on the edge `kind` names: what a move holds (ADR-0480). Across the edge
+// it is the edge's own row or column, whatever `at` says there, as half the edge's strip lies outside the range.
+function edgeCellOf(range: SelectionRange, kind: ReferenceGripKind, at: CellPosition): CellPosition {
+    const row = kind === 'top' ? range.topRow : kind === 'bottom' ? bottomRow(range) : clamp(at.row, range.topRow, bottomRow(range));
+    const column = kind === 'left' ? range.leftColumn : kind === 'right' ? rightColumn(range) : clamp(at.column, range.leftColumn, rightColumn(range));
+    return cellPosition(row, column);
 }
 
 /** An open edit's Point as it stood before a write from outside: what taking the write back returns it to. */
@@ -1934,7 +1991,9 @@ export class GridView<Row> {
     #topRowOwed: number | undefined;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     // The Reference Outline options (ADR-0057), and the colouring, columns and key colours they make.
-    #referenceOptions: ReferenceOutlineOptions = { referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined };
+    #referenceOptions: ReferenceOutlineOptions = {
+        referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined, moveReference: undefined,
+    };
     readonly #referenceOutlines = new ReferenceOutlines();
     // Point (ADR-0051): the options, and the pointing outline as a Focus and an Extent of its own, a one-range
     // selection moved by the transitions the Selection's own use; the span of the text its Reference occupies, and
@@ -1948,6 +2007,10 @@ export class GridView<Row> {
     #pointLength = 0;
     #pointWritten: string | undefined;
     #pointDragging = false;
+    // A Reference Outline's grip drag (ADR-0480): what it was pressed on and against, and what it has reached. The
+    // grips as last drawn, each element with what it is, so a press on one is read without the layout.
+    #gripDrag: GripDrag | undefined;
+    readonly #gripElements = new WeakMap<Element, { readonly grip: LayerGrip; readonly pinned: boolean }>();
     // Whether what Point wrote was handed in from outside (ADR-0058): no outline stands over this grid's cells for
     // it, and F4 and the arrows change nothing while it stands. With it, the edit as it was before that write.
     #pointedFromOutside = false;
@@ -3720,6 +3783,11 @@ export class GridView<Row> {
             this.#taken(event);
             return;
         }
+        // A grip drag is the innermost layer Escape peels: the Reference goes back, and the edit stays (ADR-0480, section 6).
+        if (escape && !event.repeat && this.#gripDrag !== undefined && this.#cancelGripDrag()) {
+            this.#taken(event);
+            return;
+        }
         // Escape peels a popover before anything else, from inside it or from the grid (ADR-0012's layering,
         // ADR-0039); the keyboard comes back to the grid.
         if (popover !== undefined && escape && (onGrid || inPopover) && !innerPopupOpen(popover)) {
@@ -4327,16 +4395,27 @@ export class GridView<Row> {
         this.#secondaryPress = event.target === this.#viewport && (event.button === 2 || (event.button === 0 && event.ctrlKey))
             ? { at: this.#cellUnder(event), leftPx: event.offsetX - this.#scrollLeftPx, topPx: this.#viewportYOf(event) }
             : undefined;
-        // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
+        // A Reference Outline's grip (ADR-0480) takes the pointer of its own, for its cursor: where it was drawn says
+        // where on the rows the press is.
+        const grip = event.button === 0 && event.target instanceof Element ? this.#gripElements.get(event.target) : undefined;
+        // Otherwise only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
-        if (event.button !== 0 || event.target !== this.#viewport) return;
+        if (event.button !== 0 || (grip === undefined && event.target !== this.#viewport)) return;
+        const modified = event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+        if (grip !== undefined && !modified && this.#pressGrip(grip.grip, this.#cellAtGrip(event, grip, true))) {
+            this.#answered += 1;
+            event.preventDefault();
+            this.#invalidate();
+            return;
+        }
         // Read before anything below changes what is painted: the handle is grabbed where the user saw it
         // (ADR-0050, item 5).
-        const grabbed = event.shiftKey || event.ctrlKey || event.metaKey ? undefined : this.#fillHandleUnder(event);
+        const grabbed = grip !== undefined || event.shiftKey || event.ctrlKey || event.metaKey ? undefined : this.#fillHandleUnder(event);
         this.#reconcileSelection();
-        const at = this.#cellUnder(event);
+        // With a modifier, a press on a grip is the press on the cell beneath it (ADR-0480, section 3).
+        const at = grip === undefined ? this.#cellUnder(event) : this.#cellAtGrip(event, grip);
         if (at === undefined) return;
-        if (this.#inRowHeadings(event)) {
+        if (grip === undefined && this.#inRowHeadings(event)) {
             this.#pressRowHeading(event, at.row);
             return;
         }
@@ -4393,6 +4472,13 @@ export class GridView<Row> {
         if (event.target !== this.#viewport) return;
         const at = this.#cellUnder(event);
         if (at === undefined) return;
+        // A grip drag (ADR-0480) scrolls at the edge as a selecting drag does (section 7).
+        if (this.#gripDrag !== undefined) {
+            this.#moveGripDrag(at);
+            const gripY = this.#viewportYOf(event);
+            if (gripY !== undefined) this.#updateEdgeBand(event.offsetX - this.#scrollLeftPx, gripY);
+            return;
+        }
         if (this.#pointDragging) {
             this.#pointDrag(at);
             return;
@@ -4419,6 +4505,11 @@ export class GridView<Row> {
         // Where a Heading drag is released counts as a move: a fast release reaches another column without
         // a move between (ADR-0050, item 1; ADR-0012).
         if (this.#headingDrag && this.#headingHears(event)) this.#moveHeadingDrag(event);
+        // A grip drag's release counts as a move: a fast one reaches its cell with no move between (ADR-0480, section 8).
+        if (this.#gripDrag !== undefined && event.target === this.#viewport) {
+            const at = this.#cellUnder(event);
+            if (at !== undefined) this.#moveGripDrag(at);
+        }
         // A fill-handle drag is raised where it is released, and over no cell where it was last reached.
         if (this.#handleDrag !== undefined) {
             this.#finishHandleDrag(event.target === this.#viewport ? this.#cellUnder(event) : undefined);
@@ -6064,7 +6155,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         this.#edit = undefined;
-        if (this.#endPointing()) this.#setDragging(false);
+        if (this.#endPointing() || this.#gripDrag !== undefined) this.#setDragging(false);
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         this.#closeCompletion();
         this.#completionSeen = undefined;
@@ -6317,6 +6408,182 @@ export class GridView<Row> {
         if (reached !== undefined && sameCell(reached, at)) return;
         this.#pointer = pointer.extendTo(at, this.#extent);
         this.#writePointedReference(edit, false);
+    }
+
+    // ---- Dragging a Reference Outline (ADR-0480) ---------------------------------------------------------------
+
+    // Whether the open edit's outlines carry grips: a Reference can be dragged while an edit is open whose References
+    // the Consumer answers and rewrites, its commit not waiting on a verdict, and pointed at from outside by no one.
+    #gripsShown(): boolean {
+        const { referencesIn, moveReference } = this.#referenceOptions;
+        return this.#edit !== undefined && referencesIn !== undefined && moveReference !== undefined && this.#pending === undefined
+            && !this.#pointedAtNow();
+    }
+
+    // The outlines that carry grips, by their place among the colouring's outlines, as they are drawn on the grid.
+    #gripPaint(colouring: ReferenceColouring, rowCount: number, columnCount: number): GripPaint | undefined {
+        const visible = this.#visible;
+        const geometry = this.#geometry;
+        if (visible === undefined || geometry === undefined) return undefined;
+        const outlines = colouring.outlines.flatMap(([range, colour], outline) => {
+            const drawn = withinExtent(range, { rowCount, columnCount });
+            return drawn === undefined ? [] : [{ outline, range: drawn, named: range, colour }];
+        });
+        if (outlines.length === 0) return undefined;
+        const readable = this.#readableEdge(visible, geometry);
+        return {
+            outlines, gripPx: this.#metrics.referenceGripPx, squarePx: this.#metrics.referenceHandleSizePx,
+            pinnedLeftPx: this.#styles.geometry.leadWidthPx, scrollableLeftPx: readable.leftPx,
+        };
+    }
+
+    // The cell under a press on a grip, from where the grip was drawn and the press's offset inside it: a pinned
+    // layer's coordinates are the Viewport's less the scroll offset, as it is held against the Viewport's left edge.
+    // `along` reads an edge's strip only along its edge: across it, half the strip lies outside the range, past the
+    // last row or column where the range ends there, and the drag holds the edge's own row or column (edgeCellOf),
+    // so the axis across is not read and is answered as 0.
+    #cellAtGrip(event: MouseEvent, drawn: { readonly grip: LayerGrip; readonly pinned: boolean }, along = false): CellPosition | undefined {
+        const geometry = this.#geometry;
+        const visible = this.#visible;
+        if (geometry === undefined || visible === undefined) return undefined;
+        const x = drawn.grip.leftPx + event.offsetX + (drawn.pinned ? this.#scrollLeftPx : 0);
+        const row = geometry.rowAt(drawn.grip.topPx + event.offsetY + geometry.offsetPxOf(visible.start));
+        const column = this.#styles.geometry.columnAt(x, this.#scrollLeftPx);
+        const { kind } = drawn.grip;
+        if (along && (kind === 'left' || kind === 'right')) return row === undefined ? undefined : cellPosition(row, 0);
+        if (along && (kind === 'top' || kind === 'bottom')) return column === undefined ? undefined : cellPosition(0, column);
+        return row === undefined || column === undefined ? undefined : cellPosition(row, column);
+    }
+
+    /**
+     * A press on a grip (ADR-0480, section 3): an edge holds the cell of the range nearest the press, a square the
+     * opposite corner, and the drag begins; the text is not touched until the range reached changes. Taken against
+     * the colouring the grips were drawn for: an outline gone, or text changed since, refuses the press, which does
+     * nothing. Whether the press was the grip's.
+     */
+    #pressGrip(grip: LayerGrip, at: CellPosition | undefined): boolean {
+        const edit = this.#edit;
+        const moveReference = this.#referenceOptions.moveReference;
+        if (edit === undefined || moveReference === undefined || !this.#gripsShown()) return false;
+        const text = this.#editorText(edit);
+        const colouring = this.#referenceOutlines.asked;
+        const named = colouring.references.filter(reference => reference.range !== undefined)[grip.outline];
+        // The range as the Reference names it, never cut to the grid's extent: a move or a resize of a Reference that
+        // reaches past the grid keeps what lies there (the spine's first rule).
+        const from = colouring.outlines[grip.outline]?.[0];
+        const resizes = gripResizes(grip.kind);
+        if (this.#referenceOutlines.askedFor !== text || named === undefined || from === undefined
+            || withinExtent(from, this.#extent) === undefined || (!resizes && at === undefined)) return true;
+        const surface = this.#surfaceOf(edit);
+        const held = resizes ? oppositeCorner(from, grip.kind) : edgeCellOf(from, grip.kind, defined(at, 'the cell an edge was pressed on'));
+        this.#gripDrag = {
+            edit, resizes, from, held, start: named.start, length: named.length, written: text, reached: from,
+            before: {
+                text, selectionStart: surface?.selectionStart ?? -1, selectionEnd: surface?.selectionEnd ?? -1, // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: a caret not known is put back as not known
+                mode: edit.mode, pointer: this.#pointer, pointStart: this.#pointStart, pointLength: this.#pointLength, pointWritten: this.#pointWritten,
+            },
+        };
+        this.#root.setAttribute('data-ex-reference-drag', gripCursor(grip.kind));
+        this.#setDragging(true);
+        // The keyboard stays in the edit, and comes back to its surface from a control it had gone to (ADR-0058, SH-35).
+        if (surface !== undefined && this.#root.ownerDocument.activeElement !== surface) surface.focus({ preventScroll: true });
+        return true;
+    }
+
+    /**
+     * The drag reached `at` (ADR-0480, section 3): a move takes the range by as many rows and columns as `at` lies
+     * from the cell held, kept inside the grid, or where it reached past the grid when pressed, no further past it
+     * than it was; a resize spans the held corner and `at`. Where the range reached
+     * changed, the Reference is rewritten in place by the Consumer's answer, the caret and Point's span moved with the
+     * text around them. Text changed meanwhile by anything but the drag ends it: the span it holds is no longer the
+     * Reference's. Whether anything changed.
+     */
+    #moveGripDrag(at: CellPosition): boolean {
+        const drag = this.#gripDrag;
+        const edit = this.#edit;
+        const moveReference = this.#referenceOptions.moveReference;
+        if (drag === undefined) return false;
+        if (edit === undefined || edit !== drag.edit || moveReference === undefined || this.#editorText(edit) !== drag.written) {
+            this.#setDragging(false);
+            return false;
+        }
+        const extent = this.#extent;
+        const { from, held } = drag;
+        const reached = drag.resizes ? fromCorners(held, at) : selectionRange(
+            clamp(from.topRow + at.row - held.row, 0, Math.max(extent.rowCount - from.rowCount, from.topRow)),
+            clamp(from.leftColumn + at.column - held.column, 0, Math.max(extent.columnCount - from.columnCount, from.leftColumn)),
+            from.rowCount, from.columnCount);
+        if (sameSelectionRange(reached, drag.reached)) return false;
+        const answer: unknown = moveReference(drag.written.slice(drag.start, drag.start + drag.length), reached);
+        if (typeof answer !== 'string' || answer === '') {
+            throw new TypeError('moveReference answered no text for a dragged Reference: a Reference is a non-empty string (ADR-0480).');
+        }
+        const [text] = replaceSpan(drag.written, drag.start, drag.length, answer);
+        const end = drag.start + drag.length;
+        const delta = answer.length - drag.length;
+        // Text after the Reference moves with it; a place inside it goes to its end (ADR-0480, section 3).
+        const moved = (place: number): number => (place < 0 || place <= drag.start ? place : place >= end ? place + delta : drag.start + answer.length);
+        const surface = this.#surfaceOf(edit);
+        const selectionStart = moved(surface?.selectionStart ?? -1); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: a caret not known stays not known
+        const selectionEnd = moved(surface?.selectionEnd ?? -1); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: as above
+        // Pointing goes on: over the moved range where it is the Reference Point writes, its span moved otherwise.
+        if (this.#pointWritten !== undefined && this.#pointingContinues(edit)) {
+            if (this.#pointStart === drag.start && this.#pointer !== undefined) {
+                this.#pointLength = answer.length;
+                this.#pointer = Selection.empty.click(cellPosition(reached.topRow, reached.leftColumn), extent)
+                    .extendTo(cellPosition(bottomRow(reached), rightColumn(reached)), extent);
+            } else if (this.#pointStart >= end) {
+                this.#pointStart += delta;
+            }
+            this.#pointWritten = text;
+        }
+        this.#writeEditorText(edit, text);
+        if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
+        if (surface !== undefined && selectionStart >= 0) surface.setSelectionRange(selectionStart, Math.max(selectionStart, selectionEnd));
+        drag.length = answer.length;
+        drag.written = text;
+        drag.reached = reached;
+        this.#closeCompletion();
+        this.#askReferences();
+        this.#tellPointState();
+        this.#invalidate();
+        return true;
+    }
+
+    // Escape mid-drag (ADR-0480, section 6): the edit as the press found it, its text, caret, mode and pointing, and
+    // the drag over. The edit stays open. Text typed since the drag last wrote has ended the drag already, as the
+    // next move would find (#moveGripDrag): the drag is over, nothing is put back, and the Escape is not the drag's.
+    // Whether the Escape was the drag's.
+    #cancelGripDrag(): boolean {
+        const drag = this.#gripDrag;
+        const edit = this.#edit;
+        this.#setDragging(false);
+        if (drag === undefined || edit === undefined || edit !== drag.edit || this.#editorText(edit) !== drag.written) return false;
+        const { before } = drag;
+        if (this.#editorText(edit) !== before.text) {
+            this.#writeEditorText(edit, before.text);
+            if (this.#formulaBarDeclared.shown) this.#bar.showText(before.text);
+            const surface = this.#surfaceOf(edit);
+            if (surface !== undefined && before.selectionStart >= 0) surface.setSelectionRange(before.selectionStart, before.selectionEnd);
+        }
+        edit.mode = before.mode;
+        if (before.pointWritten !== undefined) {
+            this.#pointer = before.pointer;
+            this.#pointStart = before.pointStart;
+            this.#pointLength = before.pointLength;
+            this.#pointWritten = before.pointWritten;
+        }
+        this.#askReferences();
+        this.#tellPointState();
+        this.#invalidate();
+        return true;
+    }
+
+    // The drag is over, wherever it reached: the root's cursor and the grips' pointer events come back.
+    #endGripDrag(): void {
+        if (this.#gripDrag === undefined) return;
+        this.#gripDrag = undefined;
+        this.#root.removeAttribute('data-ex-reference-drag');
     }
 
     // F2 moves between the states (ADR-0010), and where pointing is declared between Caret and Point: from Caret it
@@ -9403,6 +9670,7 @@ export class GridView<Row> {
         if (!dragging) {
             this.#forgetHeadingDrag();
             this.#endHandleDrag();
+            this.#endGripDrag();
             this.#pointDragging = false;
             this.#pointedDrag = undefined;
         }
@@ -10131,7 +10399,8 @@ export class GridView<Row> {
         if (row !== undefined && column !== undefined) {
             const extent = this.#extent;
             const current = this.#held.selection;
-            changed = this.#handleDrag !== undefined ? this.#moveHandlePointer(cellPosition(row, column))
+            changed = this.#gripDrag !== undefined ? this.#moveGripDrag(cellPosition(row, column))
+                : this.#handleDrag !== undefined ? this.#moveHandlePointer(cellPosition(row, column))
                 : this.#apply(!this.#headingDrag ? current.extendTo(cellPosition(row, column), extent)
                     : this.#headingAxis === 'rows' ? current.extendToRow(row, extent, this.#firstVisibleColumn)
                         : current.extendToColumn(column, extent, this.#firstVisibleRow));
@@ -10438,6 +10707,8 @@ export class GridView<Row> {
             pointer: this.#edit === undefined ? undefined : this.#pointer,
             outlinedColumns: this.#referenceOutlines.columns(this.#outlinedColumnsBoth(), this.#columnNames, this.#totalRows),
             pointDashes: this.#pointDashesRange(),
+            // The grips (ADR-0480): drawn while a Reference can be dragged, held at the edges of what covers them.
+            grips: this.#gripsShown(), pinnedWidthPx: this.#styles.geometry.pinnedWidthPx, leadWidthPx: this.#styles.geometry.leadWidthPx,
         };
         const was = this.#layerInputs;
         // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
@@ -10455,15 +10726,21 @@ export class GridView<Row> {
                         columns: inputs.outlinedColumns,
                         point: this.#pointPaint(inputs.pointer, inputs.colouring),
                         pointDashes: inputs.pointDashes,
+                        grips: inputs.grips ? this.#gripPaint(inputs.colouring, inputs.extentRows, inputs.extentColumns) : undefined,
                     });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
                 this.#paintedLayers = signature;
                 const fill = (layer: HTMLElement, held: readonly LayerPiece[]): void => {
-                    layer.replaceChildren(...held.map(({ className, style }) => {
+                    const pinned = layer !== this.#selectionLayer;
+                    layer.replaceChildren(...held.map(({ className, style, grip }) => {
                         const made = this.#root.ownerDocument.createElement('div');
                         made.className = className;
                         made.setAttribute('style', style);
+                        if (grip !== undefined) {
+                            made.setAttribute('data-ex-grip', grip.kind);
+                            this.#gripElements.set(made, { grip, pinned });
+                        }
                         return made;
                     }));
                 };

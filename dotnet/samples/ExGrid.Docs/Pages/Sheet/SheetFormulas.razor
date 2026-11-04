@@ -367,17 +367,24 @@
             </li>
             <li>
                 <b>Reference outlines.</b> Each Reference in the Formula being edited wears a colour, and the cells it
-                names are outlined on the Sheet in that colour.
+                names are outlined on the Sheet in that colour. An outline can be dragged, as in Excel: drag its edge
+                (the pointer becomes a four-way arrow) to move the Reference, keeping its size, and drag one of the
+                small squares at its corners to resize it from the opposite corner. The Formula's text is rewritten as
+                the drag reaches each cell, in the Reference's own form — <code>$A$1</code> moved two columns is
+                <code>$C$1</code>, <code>Sheet1!A1</code> keeps its Sheet, and <code>A:A</code> moved stays a whole
+                column — while the caret stays where you left it. Held at the Sheet's edge, the drag scrolls. Escape
+                during the drag puts the Reference back and keeps the edit open; a second Escape cancels the edit. A
+                touch cannot drag an outline yet.
             </li>
         </ul>
         <p>
             Try it in the sheet above: select an empty cell, type <code>=SU</code>, press Tab, then press ↑ to point
-            at a cell and Shift+↑ to make it a range.
+            at a cell and Shift+↑ to make it a range. Then drag the outline's bottom-right square down a row.
         </p>
         <p>
             Under React all of this works as above: completion and the argument hint, pointing, F4, the Reference
-            outlines, the colours of the References in the edited text and the grey ground under the Reference being
-            written.
+            outlines and dragging them, the colours of the References in the edited text and the grey ground under the
+            Reference being written.
         </p>
     </DocsSection>
 

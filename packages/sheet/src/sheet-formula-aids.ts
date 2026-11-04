@@ -3,7 +3,7 @@
 
 import { EditorCompletion, EditorHint, type GridEditorReference, type GridEditorRewrite, type ReferenceKeyColour, type SelectionRange } from '@ex-grid/core';
 import {
-    CellAddress, CellRange, cycleReference, formulaHintAt, formulaPointAt, LinkedTableColumn, referenceText, type ArgumentHint, type Sheet,
+    CellAddress, CellRange, cycleReference, formulaHintAt, formulaPointAt, LinkedTableColumn, moveReference, referenceText, type ArgumentHint, type Sheet,
 } from '@ex-grid/sheet-engine';
 import { defined } from './must';
 import type { LinkedColumnColour } from './pointing-scope';
@@ -62,6 +62,15 @@ export function sheetReferenceText(range: SelectionRange): string {
  */
 export function sheetReferenceTextOn(range: SelectionRange, shown: Sheet, home: Sheet | undefined): string {
     return home === undefined || home === shown ? sheetReferenceText(range) : referenceText(cellRangeOf(range), shown.name);
+}
+
+/**
+ * A Reference Outline dragged by its edge or a corner square (ADR-0480): the Reference, as it stands in the Formula,
+ * rewritten to name `range` on `sheet`, the Sheet shown, written as it was: each part's `$` kept, a Sheet qualifier
+ * kept, and whole columns or rows still whole where they span every row or column of the Sheet's size (ADR-0460).
+ */
+export function sheetMoveReference(sheet: Sheet, reference: string, range: SelectionRange): string {
+    return moveReference(reference, cellRangeOf(range), sheet.workbook.size);
 }
 
 function cellRangeOf(range: SelectionRange): CellRange {

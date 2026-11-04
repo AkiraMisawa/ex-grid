@@ -220,6 +220,18 @@ export class GridMetrics {
         return Math.max(5, roundHalfToEven(this.rowHeightPx * 0.3));
     }
 
+    /** The side of a Reference Outline's corner square (ADR-0480): 5px, as Excel draws it, in the Reference's colour
+     * with a 1px margin of the ground, centred on the outline's corner. */
+    get referenceHandleSizePx(): number {
+        return 5;
+    }
+
+    /** How wide the strip along a Reference Outline's line is that a press grabs it by (ADR-0480): 5px, centred on
+     * the line, wider than the line so that it can be pressed. */
+    get referenceGripPx(): number {
+        return 5;
+    }
+
     /** A cell's horizontal padding on one side; a cell pays it twice. */
     get cellPaddingXPx(): number {
         return this.cellMetrics.cellHorizontalPaddingPx;
