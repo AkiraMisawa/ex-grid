@@ -23,6 +23,7 @@ export default function DensityGrid(): ReactElement {
     const [density, setDensity] = useState<GridDensity>('standard');
     const [stripes, setStripes] = useState(true);
     const [focusRow, setFocusRow] = useState(true);
+    const [focusColumn, setFocusColumn] = useState(false);
     return (
         <>
             <div className="bar">
@@ -34,8 +35,9 @@ export default function DensityGrid(): ReactElement {
                 </label>
                 <label><input type="checkbox" checked={stripes} onChange={event => { setStripes(event.target.checked); }} /> Row stripes</label>
                 <label><input type="checkbox" checked={focusRow} onChange={event => { setFocusRow(event.target.checked); }} /> Focus row</label>
+                <label><input type="checkbox" checked={focusColumn} onChange={event => { setFocusColumn(event.target.checked); }} /> Focus column</label>
             </div>
-            <ExGrid source={source} columns={columns} density={density} stripeRows={stripes} highlightFocusRow={focusRow}
+            <ExGrid source={source} columns={columns} density={density} stripeRows={stripes} highlightFocusRow={focusRow} highlightFocusColumn={focusColumn}
                 viewportHeight={300} viewportWidth="stretch" />
         </>
     );

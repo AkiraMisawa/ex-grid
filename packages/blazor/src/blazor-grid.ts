@@ -112,13 +112,13 @@ export interface WirePointedAt {
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
-    | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
+    | 'highlightFocusRow' | 'highlightFocusColumn' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
     | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar' | 'outlinedColumns'
     | 'pageSize' | 'rangeRequestMargin' | 'rowHeadingWidth' | 'hideHeader' | 'summaryFigures' | 'declaredKeys' | 'changeHighlightDuration';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
-    'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
+    'highlightFocusRow', 'highlightFocusColumn', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
     'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar', 'outlinedColumns',
     'pageSize', 'rangeRequestMargin', 'rowHeadingWidth', 'hideHeader', 'summaryFigures', 'declaredKeys', 'changeHighlightDuration',
 ]);

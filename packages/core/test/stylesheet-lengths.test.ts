@@ -77,6 +77,8 @@ const bareLengths = new Map<string, string>([
     ['.ex-cell.ex-state-modified | outline-offset | -2px', outline],
     ['.ex-focus-row | outline | 1px', outline],
     ['.ex-focus-row | outline-offset | -1px', outline],
+    ['.ex-focus-column | outline | 1px', outline],
+    ['.ex-focus-column | outline-offset | -1px', outline],
     ['.ex-hover-row | outline | 1px', outline],
     ['.ex-hover-row | outline-offset | -1px', outline],
 

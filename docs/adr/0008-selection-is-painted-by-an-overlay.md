@@ -204,6 +204,7 @@ the Focus moves and the rows keep skipping (ADR-0003).
   The fill is a Visual Token (`--ex-focus-row-fill`,
   [ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
 - **A column band is the same mechanism turned sideways** and is reserved, not specified.
+  *(Specified 2026-11-03, for 0.2.0: "The Focus column band" below.)*
 - **Zebra striping was refused in its favour**
   ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)): stripes would
   need an absolute row index threaded through every row, answer a different question ("is this
@@ -212,6 +213,37 @@ the Focus moves and the rows keep skipping (ADR-0003).
 
 Implemented as specified: `HighlightFocusRow` on the component, one rectangle per layer
 painted first so every range stays readable over it, and `--ex-focus-row-fill` as the colour.
+
+### The Focus column band *(specified 2026-11-03, put into 0.2.0 by the user)*
+
+The reserved column band is the Focus band turned sideways: a translucent band down the full height
+of the column the Focus is in, for "which column am I on?" in a grid a thousand rows tall. With both
+bands on, the grid draws the cross Excel 365's Focus Cell draws. It is priced as the row band is:
+**one more overlay rectangle per layer, never anything per cell**, and no row learns of it, so the
+Focus moving across a column renders no row (ADR-0003).
+
+- **Its own switch, off by default**: `highlightFocusColumn` on the Script Core's options,
+  `HighlightFocusColumn` on the Blazor component, independent of `highlightFocusRow`. The row band
+  keeps its name and meaning, so nothing a Consumer wrote changes; a Consumer that wants Excel's
+  cross turns both on. One switch for both was the alternative, and was not taken: a grid that is
+  wide but short wants the row alone, and renaming the row band's switch would break every page
+  that sets it.
+- **Its colour is a Visual Token, `--ex-focus-column-fill`**, which is the row band's
+  `--ex-focus-row-fill` unless set (ADR-0029). A Wrapper that tints the row band in its palette
+  therefore tints the column band too without a line of its own.
+- **The cells of the column only.** The band covers the column's cells down every row, cut to the
+  painted rows as every rectangle is (ADR-0053), and stops at the header: the Heading Mark already marks the
+  Focus's column there (D1 below). Over a Pinned Column it lies in the pinned shade layer, as the
+  row band's pinned part does (ADR-0206).
+- **The crossing is tinted once.** With both bands on, the column band leaves out the Focus's row,
+  which the row band already covers, so the Focus's cell is not darker than the rest of either band.
+  With the column band alone it covers the Focus's cell as the row band alone does. The hover band
+  lies over the column band where the pointer's row crosses it, as it lies over the row band when the
+  two coincide: the hover band is a different answer (where the pointer is), and reads as one.
+- **Painted beneath the selection rectangles**, after the row bands, so a range stays readable over
+  it; under forced colours it is restated as a dotted outline, as the row band is.
+- **ExGrid's alone in 0.2.0.** ExSheet and ExPivot do not expose the row band either; neither gains
+  the column band here.
 
 ## Excel's look for the Focus and a single range *(decided with the user, 2026-09-29)*
 

@@ -6,9 +6,10 @@
         <MudSwitch T="bool" @bind-Value="_dense" Label="Dense" Color="Color.Primary" />
         <MudSwitch T="bool" @bind-Value="_stripes" Label="Striped" Color="Color.Primary" />
         <MudSwitch T="bool" @bind-Value="_focusRow" Label="Focus row" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="_focusColumn" Label="Focus column" Color="Color.Primary" />
     </ToolBarContent>
     <ChildContent>
-        <ExGrid TRow="Position" Source="_source" Columns="_columns" HighlightFocusRow="_focusRow" Chrome="_chrome"
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" HighlightFocusRow="_focusRow" HighlightFocusColumn="_focusColumn" Chrome="_chrome"
                 ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
 </MudExGridPaper>
@@ -21,6 +22,7 @@
     private bool _dense;
     private bool _stripes = true;
     private bool _focusRow = true;
+    private bool _focusColumn;
 
     private readonly GridColumn<Position>[] _columns =
     [

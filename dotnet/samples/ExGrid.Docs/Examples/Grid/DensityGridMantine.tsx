@@ -26,15 +26,17 @@ export default function DensityGridMantine(): ReactElement {
     const [density, setDensity] = useState<GridDensity>('standard');
     const [striped, setStriped] = useState(true);
     const [focusRow, setFocusRow] = useState(true);
+    const [focusColumn, setFocusColumn] = useState(false);
     return (
         <>
             <Group mb="sm">
                 <SegmentedControl size="xs" data={[...densities]} value={density} onChange={value => { setDensity(value as GridDensity); }} />
                 <Switch label="Striped" checked={striped} onChange={event => { setStriped(event.currentTarget.checked); }} />
                 <Switch label="Focus row" checked={focusRow} onChange={event => { setFocusRow(event.currentTarget.checked); }} />
+                <Switch label="Focus column" checked={focusColumn} onChange={event => { setFocusColumn(event.currentTarget.checked); }} />
             </Group>
             <MantineExGrid withBorder striped={striped} highlightOnHover source={source} columns={columns} density={density}
-                highlightFocusRow={focusRow} viewportHeight={300} viewportWidth="stretch" />
+                highlightFocusRow={focusRow} highlightFocusColumn={focusColumn} viewportHeight={300} viewportWidth="stretch" />
         </>
     );
 }

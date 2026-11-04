@@ -26,6 +26,7 @@ export default function DensityGridMui(): ReactElement {
     const [density, setDensity] = useState<GridDensity>('standard');
     const [stripes, setStripes] = useState(true);
     const [focusRow, setFocusRow] = useState(true);
+    const [focusColumn, setFocusColumn] = useState(false);
     return (
         <>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1.5 }}>
@@ -35,8 +36,9 @@ export default function DensityGridMui(): ReactElement {
                 </ToggleButtonGroup>
                 <FormControlLabel label="Striped" control={<Switch checked={stripes} onChange={event => { setStripes(event.target.checked); }} />} />
                 <FormControlLabel label="Focus row" control={<Switch checked={focusRow} onChange={event => { setFocusRow(event.target.checked); }} />} />
+                <FormControlLabel label="Focus column" control={<Switch checked={focusColumn} onChange={event => { setFocusColumn(event.target.checked); }} />} />
             </Stack>
-            <MuiExGrid stripeRows={stripes} highlightHoverRow highlightFocusRow={focusRow} source={source} columns={columns}
+            <MuiExGrid stripeRows={stripes} highlightHoverRow highlightFocusRow={focusRow} highlightFocusColumn={focusColumn} source={source} columns={columns}
                 density={density} viewportHeight={300} viewportWidth="stretch" />
         </>
     );

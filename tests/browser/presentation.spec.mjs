@@ -667,6 +667,8 @@ const INTERNAL_CLASSES = [
     // A Reference Outline's grips (ADR-0480, entered in ADR-0029): each edge's strip and corner's square.
     'ex-reference-grip', 'ex-reference-square',
     ...['top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'].map((kind) => `ex-reference-grip-${kind}`),
+    // The Focus column band (ADR-0008 of 2026-11-03, entered in ADR-0029).
+    'ex-focus-column',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */

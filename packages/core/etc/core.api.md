@@ -1235,6 +1235,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly hideColumnMenu?: boolean;
     readonly hideCopyWithHeaders?: boolean;
     readonly hideHeader?: boolean;
+    readonly highlightFocusColumn?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;

@@ -82,6 +82,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Whether the Focus's row is tinted (ADR-0029).</summary>
     [Parameter] public bool HighlightFocusRow { get; set; }
 
+    /// <summary>Whether the Focus's column is tinted down its cells, beneath the Selection (ADR-0008, 2026-11-03). With
+    /// <see cref="HighlightFocusRow"/> as well the two bands cross as Excel's Focus Cell does.</summary>
+    [Parameter] public bool HighlightFocusColumn { get; set; }
+
     /// <summary>Whether the row under the pointer is tinted (ADR-0029).</summary>
     [Parameter] public bool HighlightHoverRow { get; set; }
 
@@ -1126,6 +1130,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (_stripesSupplied)
             json.WriteBoolean("stripeRows", StripeRows);
         json.WriteBoolean("highlightFocusRow", HighlightFocusRow);
+        json.WriteBoolean("highlightFocusColumn", HighlightFocusColumn);
         if (_hoverSupplied)
             json.WriteBoolean("highlightHoverRow", HighlightHoverRow);
         if (CellMetrics is { } metrics)
