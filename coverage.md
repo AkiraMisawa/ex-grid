@@ -5,7 +5,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.6% | 84.8% | 88.2% | 78.2% |
+| ExGrid | 93.7% | 84.8% | 88.2% | 78.2% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82.1% | 86.1% | 82% |
 | ExChart | 92.3% | 83% | 91.1% | 84.9% |
@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/04/2026 - 01:51:45 |
+| Generated on: | 11/04/2026 - 02:26:10 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1119 |
