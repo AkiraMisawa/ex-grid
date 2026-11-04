@@ -19,9 +19,11 @@ async function open(page) {
 
 test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2) @behaviour', async ({ page }) => {
     await open(page);
-    const before = await grid(page).locator('.ex-row').first()
-        .evaluate((el) => getComputedStyle(el).height);
-    expect(before).toBe('24px');
+    // Read as an assertion that waits, never once: on the first boot the first row can be painted
+    // again between the locator's finding it and the read, and a row no longer in the document has
+    // no computed height (ADR-0220).
+    const firstRow = grid(page).locator('.ex-row').first();
+    await expect(firstRow).toHaveCSS('height', '24px');
 
     // On body and in the head, which outlive the page: alterPage takes both off as the test
     // ends (ADR-0056).
@@ -40,9 +42,8 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
         };
     });
 
-    const after = await grid(page).locator('.ex-row').first()
-        .evaluate((el) => getComputedStyle(el).height);
-    expect(after, 'the inline declaration wins; painted row height is unchanged').toBe('24px');
+    // The inline declaration wins; the painted row height is unchanged.
+    await expect(firstRow).toHaveCSS('height', '24px');
 });
 
 // A density change on /density (ADR-0028): each preset's resolved Grid Metrics, from
