@@ -74,6 +74,12 @@ const delayed = (from, to, direction) => {
     // ("Incomplete message").
     const queue = [];
     let timer = null;
+    // When what arrives now crosses: half the round trip on, never earlier than what arrived before it, even if the
+    // delay was lowered since.
+    const later = () => {
+        releaseAt = Math.max(Date.now() + halfTripMs + floorMs / 2, releaseAt);
+        return releaseAt;
+    };
     const drain = () => {
         timer = null;
         if (direction === 'fromHost' && answersHeld) {
@@ -123,20 +129,23 @@ const delayed = (from, to, direction) => {
         held++;
         crossed[direction]++;
         lastCrossed = Date.now();
-        // Never earlier than the chunk before it, even if the delay was lowered since.
-        releaseAt = Math.max(Date.now() + halfTripMs + floorMs / 2, releaseAt);
-        queue.push({ chunk, at: releaseAt });
+        queue.push({ chunk, at: later() });
         if (timer === null) {
             drain();
         }
     });
-    // The end goes behind the last chunk, through the same queue.
+    // The end goes behind the last chunk, through the same queue, and takes the trip as a chunk does. Released with
+    // the last chunk instead, the end of a connection the browser closed soon after its last request reached the host
+    // on that request's heels, where a network carries it as far behind as it was sent: the host took the request as
+    // called off, and a page's disconnect beacon, closed 50 ms after it was sent, was answered 499 and left its
+    // circuit standing, whose calls in flight the circuit's timeout called off a minute later as unhandled exceptions
+    // (CON-6, navigation.spec's RI-3 under the widened run of 2026-11-04; 24 beacons of 26 then, none of 110 without).
     from.on('end', () => {
         if (to.destroyed) {
             return;
         }
         held++;
-        queue.push({ end: true, at: Math.max(Date.now(), releaseAt) });
+        queue.push({ end: true, at: later() });
         if (timer === null) {
             drain();
         }

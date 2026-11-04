@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded, chromeHost } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded, chromeHost, PRESSED_DISABLED } from './fixtures.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { dragAndDrop, startDrag } from './drag.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
@@ -774,24 +774,30 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
-        test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
-            await open(page, chrome);
-            const menu = page.getByRole('menu', { name: 'Options for Region' });
-            for (const target of ['disabled item', 'padding']) {
-                await entry(page, 'Region').click();
-                await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
-                if (target === 'disabled item') {
-                    const disabled = menu.getByRole('menuitem', { name: 'Move Up', exact: true });
-                    await expect(disabled).toBeDisabled();
-                    await disabled.click({ force: true });
-                } else {
-                    await menu.click({ position: { x: 2, y: 2 } });
+        test.describe(() => {
+            // The press on the disabled control is the test's own: the harness says it, and the test names it. A
+            // MudBlazor button takes no pointer while disabled, so the press lands on what is under it, and nothing is said.
+            test.use({ expectedErrors: chrome === 'mud' ? [] : [PRESSED_DISABLED] });
+
+            test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {
+                await open(page, chrome);
+                const menu = page.getByRole('menu', { name: 'Options for Region' });
+                for (const target of ['disabled item', 'padding']) {
+                    await entry(page, 'Region').click();
+                    await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+                    if (target === 'disabled item') {
+                        const disabled = menu.getByRole('menuitem', { name: 'Move Up', exact: true });
+                        await expect(disabled).toBeDisabled();
+                        await disabled.click({ force: true });
+                    } else {
+                        await menu.click({ position: { x: 2, y: 2 } });
+                    }
+                    await page.keyboard.press('Escape');
+                    await expect(menu).toHaveCount(0);
+                    await expect(entry(page, 'Region')).toBeFocused();
+                    await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
                 }
-                await page.keyboard.press('Escape');
-                await expect(menu).toHaveCount(0);
-                await expect(entry(page, 'Region')).toBeFocused();
-                await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
-            }
+            });
         });
 
         test(`ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (${chrome}) ${chromeHost(chrome)}`, async ({ page }) => {

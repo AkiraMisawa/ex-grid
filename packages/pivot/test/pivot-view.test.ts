@@ -114,6 +114,8 @@ class GridStandIn {
     element: HTMLElement | undefined;
     /** The Input Root the report's grid found as it was mounted, as the real grid looks for it once. */
     inputRoot: Element | null | undefined;
+    /** How many holds of the report grid's Settled Mark the pivot has taken and not let go (ADR-0220). */
+    settledHolds = 0;
 
     readonly mount = <Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row> => {
         const handle = (update: (next: GridOptions<Row>) => void, destroy: () => void): GridHandle<Row> => ({
@@ -138,7 +140,16 @@ class GridStandIn {
             keyName: () => { throw new Error('The pivot names no key.'); },
             openPopover: () => { throw new Error('The pivot opens no popover.'); },
             closePopover: () => { throw new Error('The pivot closes no popover.'); },
-            holdSettled: () => { throw new Error('The pivot holds no grid\'s Settled Mark.'); },
+            holdSettled: () => {
+                if (element.closest('.ex-pivot-details-panel, .ex-pivot-dialog') !== null) throw new Error('The pivot holds no details grid\'s Settled Mark.');
+                this.settledHolds++;
+                let held = true;
+                return () => {
+                    if (!held) return;
+                    held = false;
+                    this.settledHolds--;
+                };
+            },
             canSummarize: false,
             refreshSummary: () => { throw new Error('The pivot refreshes no summary.'); },
             returnKeyboard: () => { throw new Error('The pivot returns no grid\'s keyboard.'); },
@@ -753,6 +764,32 @@ describe('ExPivot\'s live data (ADR-0067)', () => {
         expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
     });
 
+    it('ADR-0220 section 1: the quiet question a notice asks holds no Settled Mark', async () => {
+        const live = liveServer();
+        const { grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0 });
+        await settled();
+        // A live report asks quietly, with no loading indication, and would otherwise never settle.
+        const release = live.hold();
+        const before = live.asked();
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await vi.waitFor(() => { expect(live.asked()).toBe(before + 1); });
+        expect(grid.settledHolds).toBe(0);
+        release();
+        await settled();
+        expect(grid.settledHolds).toBe(0);
+    });
+
+    it('ADR-0220 section 1: a move\'s question that is refused lets the Settled Mark go once the refusal is said', async () => {
+        const refused: string[] = [];
+        const { root, grid } = mount({ source: local(), layout: byRegion, maxLeaves: 3, onRefused: event => refused.push(event.message) });
+        await settled();
+        tick(root, 'Desk');
+        expect(grid.settledHolds).toBe(1);
+        await settled();
+        expect(refused).toEqual(['This layout needs more than 3 cells.']);
+        expect(grid.settledHolds).toBe(0);
+    });
+
     it('ADR-0067: notices within the redraw interval of the last change shown are gathered into one question, asked when the interval ends', async () => {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
         const live = liveServer();
@@ -982,6 +1019,27 @@ describe('ExPivot\'s Field List', () => {
         expect(changed).toHaveLength(1);
         expect(changed[0]?.rows.map(p => p.field)).toEqual(['Desk']);
         expect((await grid.texts()).map(row => row[0])).toEqual(['Credit', 'FX', 'Rates', 'Grand Total']);
+    });
+
+    it('ADR-0220 section 1: the report grid does not say it has settled while the question a move asked is out', async () => {
+        const source = new HeldSource();
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        source.held.shift()?.();
+        await settled();
+        expect(grid.settledHolds).toBe(0);
+        tick(root, 'Desk');
+        // The answer the move asked for is the move's effect: until it is shown, the grid's mark is held, through a move
+        // made meanwhile, which asks again.
+        expect(grid.settledHolds).toBe(1);
+        tick(root, 'Region');
+        expect(grid.settledHolds).toBe(1);
+        for (let round = 0; round < 5; round++) {
+            for (const release of source.held.splice(0)) release();
+            await settled();
+        }
+        expect((await grid.texts()).map(row => row[0])).toEqual(['Credit', 'FX', 'Rates', 'Grand Total']);
+        expect(grid.settledHolds).toBe(0);
     });
 
     it('ADR-0061: a gesture taken against a layout that was replaced is refused, and changes nothing', async () => {

@@ -103,6 +103,10 @@ function widened(context) {
 // having pressed nothing it meant to. So every document of a context the fixtures make says such a press as a console
 // error, which fails the test that made it by name (CON-1). No test presses at the page's corner on purpose; a frame's
 // own corner is not the page's, and is left alone.
+/** The error the harness writes for a press that landed on a disabled control: a test that presses one on purpose names it
+ * in `expectedErrors`. */
+export const PRESSED_DISABLED = /^layer 3: a press landed on a disabled control/;
+
 async function harnessContext(browser, options) {
     const context = widened(await browser.newContext({ ...options, baseURL: BASE_URL }));
     await context.addInitScript(() => {
@@ -111,6 +115,19 @@ async function harnessContext(browser, options) {
             if (event.isTrusted && event.clientX === 0 && event.clientY === 0) {
                 console.error('layer 3: a press landed at the page\'s corner, (0, 0), where Playwright presses a node that '
                     + 'left the document during its click: press at a point read from what stands there (press-journal.mjs)');
+            }
+            // Chromium tells a press on a disabled control to the page, and makes no click of it. A locator's click
+            // waits for its control to be enabled, so a press that lands on one disabled was aimed at a control the page
+            // disabled between that check and the press: on the Server host, a render the circuit still carried
+            // (script-sheet.spec's Undo, pressed as the edit before it was still being told to .NET, under the widened run
+            // of 2026-11-04). The click is lost and the test fails a minute later, or passes having pressed nothing. A
+            // test that presses a disabled control on purpose names this message in expectedErrors.
+            const control = event.isTrusted && event.target instanceof Element ? event.target.closest('button, input, select, textarea') : null;
+            if (control !== null && control.matches(':disabled')) {
+                console.error(`layer 3: a press landed on a disabled control (${control.tagName.toLowerCase()}`
+                    + `${control.id === '' ? '' : `#${control.id}`} "${(control.textContent ?? '').trim().slice(0, 40)}"): `
+                    + 'it was enabled when the press was aimed, and the page disabled it before the press; read what the '
+                    + 'host has still to say before aiming (circuitQuiet)');
             }
         }, true);
     });

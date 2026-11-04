@@ -551,6 +551,11 @@ export class PivotView {
     #counts: PivotItemCounts | undefined;
     #countsAsked: AbortController | undefined;
     #grid: GridHandle<PivotDisplayRow> | undefined;
+    // The report grid's Settled Mark, held while a question under the loading indication is out (ADR-0220 section 1):
+    // the report that question brings is the effect of the move, the Consumer's layout or the Refresh that asked it,
+    // and a reading taken before it lands reads the report before. A quiet question a source's notice asked holds
+    // nothing, as it shows no loading either: a live report would otherwise never settle.
+    #loadingHold: { readonly grid: GridHandle<PivotDisplayRow>; readonly release: () => void } | undefined;
     #rows: FetchingGridSource<PivotDisplayRow> | undefined;
     // The grid's columns as last drawn, whose names a copy asks the report source for.
     #gridColumns: readonly GridColumn<PivotDisplayRow>[] = [];
@@ -890,6 +895,7 @@ export class PivotView {
         this.#generation++;
         this.#asked?.controller.abort();
         this.#asked = undefined;
+        this.#holdWhileLoading();
         this.#countsAsked?.abort();
         this.#placing?.();
         this.#grid?.destroy();
@@ -1106,7 +1112,18 @@ export class PivotView {
             maxRows: this.#maxRows, maxColumns: this.#maxColumns, toggled: focusOn,
         };
         this.#asked = question;
+        this.#holdWhileLoading();
         void this.#run(question);
+    }
+
+    // Holds the report grid's Settled Mark while a question under the loading indication is out, and lets it go once
+    // none is: called wherever the question out or the grid changes, and by every draw, which follows each landing
+    // after the grid has the report it brought.
+    #holdWhileLoading(): void {
+        const grid = this.#loading() ? this.#grid : undefined;
+        if (this.#loadingHold?.grid === grid) return;
+        this.#loadingHold?.release();
+        this.#loadingHold = grid === undefined ? undefined : { grid, release: grid.holdSettled() };
     }
 
     async #run(question: Question): Promise<void> {
@@ -1422,6 +1439,7 @@ export class PivotView {
         if (answered === undefined || !this.#reportDrawn) {
             this.#grid?.destroy();
             this.#grid = undefined;
+            this.#holdWhileLoading();
             return;
         }
         const { answer, question } = answered;
@@ -1559,6 +1577,8 @@ export class PivotView {
             // (ADR-0240 section 6). The draw that follows keeps it there, or puts the report's notice in its place.
             if (this.#gridRoot.parentNode !== this.#sheet) this.#sheet.prepend(this.#gridRoot);
             this.#grid = this.#mountGrid(this.#gridRoot, options);
+            // A grid made while a question is out is held from its first paint, as the one it replaced was.
+            this.#holdWhileLoading();
         } else {
             this.#grid.update(options);
         }
@@ -2481,6 +2501,7 @@ export class PivotView {
 
     #draw(): void {
         if (this.#destroyed) return;
+        this.#holdWhileLoading();
         const words = this.#words;
         const layout = this.#paneLayout;
         const fields = this.#options.source.fields;
