@@ -5,7 +5,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.8% | 85.1% | 88.1% | 78.5% |
+| ExGrid | 93.8% | 85.2% | 88.1% | 78.5% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82% | 86.1% | 82% |
 | ExChart | 92.3% | 83% | 91.1% | 84.9% |
@@ -17,13 +17,13 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Package | Product | Line | Branch | Lines |
 |---|---|---|---|---|
-| `packages/core` | ExGrid | 94.9% | 86.8% | 13991 |
+| `packages/core` | ExGrid | 94.9% | 86.9% | 14167 |
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.5% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.9% | 104 |
-| `packages/blazor` | ExGrid | 85.3% | 68.5% | 1451 |
-| `packages/sheet` | ExSheet | 88.8% | 77.9% | 4013 |
-| `packages/sheet-engine` | ExSheet | 96.6% | 89.6% | 9248 |
+| `packages/blazor` | ExGrid | 85.3% | 68.7% | 1453 |
+| `packages/sheet` | ExSheet | 88.8% | 77.9% | 4015 |
+| `packages/sheet-engine` | ExSheet | 96.6% | 89.6% | 9269 |
 | `packages/sheet-xlsx` | ExSheet | 95.4% | 86.8% | 1348 |
 | `packages/sheet-react` | ExSheet | 94.8% | 84.7% | 213 |
 | `packages/sheet-mantine` | ExSheet | 81.5% | 75.6% | 168 |
@@ -53,19 +53,19 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/03/2026 - 23:33:45 |
+| Generated on: | 11/04/2026 - 00:41:10 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1114 |
 | Files: | 496 |
-| **Line coverage:** | 86.9% (60445 of 69500) |
-| Covered lines: | 60445 |
-| Uncovered lines: | 9055 |
-| Coverable lines: | 69500 |
-| Total lines: | 105884 |
-| **Branch coverage:** | 82.8% (36445 of 43975) |
-| Covered branches: | 36445 |
-| Total branches: | 43975 |
+| **Line coverage:** | 86.9% (60448 of 69506) |
+| Covered lines: | 60448 |
+| Uncovered lines: | 9058 |
+| Coverable lines: | 69506 |
+| Total lines: | 105897 |
+| **Branch coverage:** | 82.8% (36447 of 43979) |
+| Covered branches: | 36447 |
+| Total branches: | 43979 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -302,11 +302,11 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 88.1%</summary>
+<details><summary>ExGrid - 88%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**88.1%**|**79.7%**|
+|**ExGrid**|**88%**|**79.6%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|90%|75%|
@@ -387,8 +387,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Components.ExGrid.Heard<TRow>|100%||
 |ExGrid.Components.ExGrid.Turn<TRow>|100%||
 |ExGrid.Components.ExGrid.Work<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow, T>|71.3%|69.6%|
-|ExGrid.Components.ExGrid<TRow>|71.3%|69.6%|
+|ExGrid.Components.ExGrid<TRow, T>|71.3%|69.5%|
+|ExGrid.Components.ExGrid<TRow>|71.3%|69.5%|
 |ExGrid.Components.ExGrid<TRow>|84.5%|76.8%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.FormatNames|100%||
@@ -631,7 +631,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
