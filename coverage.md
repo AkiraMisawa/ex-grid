@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/04/2026 - 08:52:26 |
+| Generated on: | 11/04/2026 - 19:23:52 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1119 |
 | Files: | 499 |
-| **Line coverage:** | 86.9% (60655 of 69742) |
-| Covered lines: | 60655 |
-| Uncovered lines: | 9087 |
+| **Line coverage:** | 86.9% (60656 of 69742) |
+| Covered lines: | 60656 |
+| Uncovered lines: | 9086 |
 | Coverable lines: | 69742 |
 | Total lines: | 106264 |
-| **Branch coverage:** | 82.8% (36527 of 44107) |
-| Covered branches: | 36527 |
+| **Branch coverage:** | 82.8% (36529 of 44107) |
+| Covered branches: | 36529 |
 | Total branches: | 44107 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -144,7 +144,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.2%**|**73.4%**|
+|**ExChart**|**84.2%**|**73.5%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -158,7 +158,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.Components.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Components.ChartWire|81%|75%|
 |ExChart.Components.DrawingState|100%||
-|ExChart.Components.ExChart|88%|86.6%|
+|ExChart.Components.ExChart|88%|87.3%|
 |ExChart.Components.ExChartStylesheet|0%||
 |ExChart.Components.ExSurface|79%|62.9%|
 |ExChart.Components.RowKeys|77.5%|71.6%|
@@ -636,7 +636,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
