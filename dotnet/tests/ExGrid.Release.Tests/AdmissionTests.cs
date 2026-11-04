@@ -5,10 +5,10 @@ namespace ExGrid.Release.Tests;
 public class AdmissionTests
 {
     [Theory] // ADR-0205: a stable version and a candidate run the long run; a beta does not
-    [InlineData("v0.1.0-beta.3", "prerelease", "false")]
-    [InlineData("v0.1.0-rc.1", "candidate", "true")]
-    [InlineData("v0.1.0", "stable", "true")]
-    public void The_long_run_gates_a_stable_version_and_a_candidate(string tag, string kind, string longRun)
+    [InlineData("v0.1.0-beta.3", "prerelease", "false", "false")]
+    [InlineData("v0.1.0-rc.1", "candidate", "true", "false")]
+    [InlineData("v0.1.0", "stable", "true", "true")]
+    public void The_long_run_gates_a_stable_version_and_a_candidate(string tag, string kind, string longRun, string latest)
     {
         using var repo = new Repo();
         var commit = repo.Write("a.txt", "a").Commit();
@@ -19,7 +19,7 @@ public class AdmissionTests
 
         Assert.Empty(report.Refusals);
         Assert.Equal(
-            [$"version={tag[1..]}", $"kind={kind}", $"long={longRun}", "site=true"],
+            [$"version={tag[1..]}", $"kind={kind}", $"long={longRun}", "site=true", $"latest={latest}"],
             admission!.Outputs());
     }
 
@@ -71,29 +71,58 @@ public class AdmissionTests
         Assert.Equal(2, report.Refusals.Count);
     }
 
-    [Fact] // ADR-0205: once a stable version exists, a prerelease publishes no Docs Site
-    public void A_prerelease_after_a_stable_version_publishes_no_site()
+    [Fact] // ADR-0205 (2026-11-03): a prerelease above every tag publishes the Docs Site, a stable version existing or not
+    public void A_prerelease_above_a_stable_version_publishes_the_site()
     {
         using var repo = new Repo();
         var stable = repo.Write("a.txt", "a").Commit();
         repo.Tag("v0.1.0", stable).Tag("v0.1.0-rc.1", stable);
         var next = repo.Write("a.txt", "b").Commit();
-        repo.Remote("main", next);
+        repo.Remote("main", next).Tag("v0.2.0-beta.1", next).Tag("v0.2.0-beta.2", next);
 
         var beta = new Report();
-        Assert.False(Admission.Admit(repo.Git, "v0.2.0-beta.1", next, beta)!.PublishesSite);
-        Assert.Empty(beta.Refusals);
-        Assert.Contains("v0.1.0 is tagged, so v0.2.0-beta.1, a prerelease, publishes no Docs Site", Assert.Single(beta.Notices));
+        var admitted = Admission.Admit(repo.Git, "v0.2.0-beta.3", next, beta)!;
+        Assert.True(admitted.PublishesSite);
+        Assert.False(admitted.Latest);
+        Assert.Empty(beta.Notices);
 
-        var candidate = new Report();
-        Assert.False(Admission.Admit(repo.Git, "v0.1.1-rc.1", next, candidate)!.PublishesSite);
-
-        var patch = new Report();
-        Assert.True(Admission.Admit(repo.Git, "v0.1.1", next, patch)!.PublishesSite);
-        Assert.Empty(patch.Notices);
+        // Its re-run, and the candidate and the version that follow, publish it too.
+        repo.Tag("v0.2.0-beta.3", next);
+        Assert.True(Admission.Admit(repo.Git, "v0.2.0-beta.3", next, new Report())!.PublishesSite);
+        Assert.True(Admission.Admit(repo.Git, "v0.2.0-rc.1", next, new Report())!.PublishesSite);
+        var release = Admission.Admit(repo.Git, "v0.2.0", next, new Report())!;
+        Assert.True(release.PublishesSite);
+        Assert.True(release.Latest);
     }
 
-    [Fact] // ADR-0205: the site describes the latest stable version, so a patch to an older line publishes none
+    [Fact] // ADR-0205 (2026-11-03): a version some tag is above publishes no Docs Site, though it is the latest stable line
+    public void A_version_a_prerelease_is_above_publishes_no_site()
+    {
+        using var repo = new Repo();
+        var first = repo.Write("a.txt", "a").Commit();
+        repo.Tag("v0.1.0", first);
+        var second = repo.Write("a.txt", "b").Commit();
+        repo.Tag("v0.2.0-beta.3", second).Remote("main", second);
+        repo.Branch("release/0.1", first);
+        var fix = repo.Write("a.txt", "fixed").Commit("An urgent fix on the older line");
+        repo.Remote("release/0.1", fix);
+
+        var candidate = new Report();
+        Assert.False(Admission.Admit(repo.Git, "v0.1.1-rc.1", fix, candidate)!.PublishesSite);
+        Assert.Contains("v0.2.0-beta.3 is tagged above v0.1.1-rc.1, so v0.1.1-rc.1 publishes no Docs Site", Assert.Single(candidate.Notices));
+
+        // The patch is still npm's latest, the latest stable line, but the site stays on 0.2.0-beta.3.
+        var patch = new Report();
+        var admitted = Admission.Admit(repo.Git, "v0.1.1", fix, patch)!;
+        Assert.False(admitted.PublishesSite);
+        Assert.True(admitted.Latest);
+        Assert.Empty(patch.Refusals);
+
+        // An older prerelease tagged late publishes none either.
+        Assert.False(Admission.Admit(repo.Git, "v0.2.0-beta.2", second, new Report())!.PublishesSite);
+    }
+
+    [Fact] // ADR-0205: a patch to an older line publishes no site, and npm's latest stays on the later line
     public void A_patch_to_an_older_line_publishes_no_site()
     {
         using var repo = new Repo();
@@ -106,7 +135,9 @@ public class AdmissionTests
         repo.Remote("release/0.1", fix);
 
         var patch = new Report();
-        Assert.False(Admission.Admit(repo.Git, "v0.1.1", fix, patch)!.PublishesSite);
+        var admitted = Admission.Admit(repo.Git, "v0.1.1", fix, patch)!;
+        Assert.False(admitted.PublishesSite);
+        Assert.False(admitted.Latest);
         Assert.Empty(patch.Refusals);
         Assert.Contains("v0.2.0, v0.9.0 are tagged above v0.1.1, so v0.1.1 publishes no Docs Site", Assert.Single(patch.Notices));
 

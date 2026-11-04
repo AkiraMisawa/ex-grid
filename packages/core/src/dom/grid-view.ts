@@ -317,6 +317,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     /** A band across the Focus's row, beneath the Selection's tints (ADR-0008), filled with
      * `--ex-focus-row-fill`. Off unless given. */
     readonly highlightFocusRow?: boolean;
+    /** A band down the Focus's column, beneath the Selection's tints (ADR-0008, 2026-11-03), filled with
+     * `--ex-focus-column-fill`, which is `--ex-focus-row-fill` unless set. It covers the column's cells and not its
+     * header, and with `highlightFocusRow` as well the two cross as Excel's Focus Cell does, the Focus's cell tinted
+     * once. Off unless given. */
+    readonly highlightFocusColumn?: boolean;
     /** A band across the row under the pointer, what every design system's table calls Hover (ADR-0029),
      * filled with `--ex-row-hover-background`. It is the overlay's, so no row learns anything and none is
      * painted again; it goes when the pointer leaves the grid or the rows move under it. Off unless given,
@@ -938,6 +943,7 @@ interface Taken<Row> {
     readonly showFillHandle: boolean;
     readonly onFill: ((intent: GridFillIntent) => void | PromiseLike<void>) | undefined;
     readonly highlightFocusRow: boolean;
+    readonly highlightFocusColumn: boolean;
     readonly highlightHoverRow: boolean;
     readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>) | undefined;
     readonly declaredKeys: ReadonlySet<string>;
@@ -1622,6 +1628,7 @@ export class GridView<Row> {
     #handlePointer: CellPosition | undefined;
     #handleOutline: SelectionRange | undefined;
     #highlightFocusRow = false;
+    #highlightFocusColumn = false;
     #highlightHoverRow = false;
     #stripeRows = false;
     // The pager (ADR-0015): the rows a page holds while one stands, and the page shown, transient view state as the
@@ -2608,9 +2615,14 @@ export class GridView<Row> {
         const { showFillHandle, onFill }: { readonly showFillHandle?: unknown; readonly onFill?: unknown } = options;
         if (showFillHandle !== undefined && typeof showFillHandle !== 'boolean') throw new TypeError('showFillHandle is true or false.');
         if (onFill !== undefined && typeof onFill !== 'function') throw new TypeError('onFill is a function of the fill\'s intent.');
-        const { highlightFocusRow, highlightHoverRow }: { readonly highlightFocusRow?: unknown; readonly highlightHoverRow?: unknown } = options;
+        const { highlightFocusRow, highlightFocusColumn, highlightHoverRow }: {
+            readonly highlightFocusRow?: unknown; readonly highlightFocusColumn?: unknown; readonly highlightHoverRow?: unknown;
+        } = options;
         if (highlightFocusRow !== undefined && typeof highlightFocusRow !== 'boolean') {
             throw new TypeError('highlightFocusRow is true or false.');
+        }
+        if (highlightFocusColumn !== undefined && typeof highlightFocusColumn !== 'boolean') {
+            throw new TypeError('highlightFocusColumn is true or false.');
         }
         if (highlightHoverRow !== undefined && typeof highlightHoverRow !== 'boolean') {
             throw new TypeError('highlightHoverRow is true or false.');
@@ -2805,6 +2817,7 @@ export class GridView<Row> {
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             showFillHandle: options.showFillHandle === true, onFill: options.onFill,
             highlightFocusRow: options.highlightFocusRow === true,
+            highlightFocusColumn: options.highlightFocusColumn === true,
             highlightHoverRow: (options.highlightHoverRow ?? options.presentationDefaults?.highlightHoverRow) === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
             stripeRows: (options.stripeRows ?? options.presentationDefaults?.stripeRows) === true, pageSize: options.pageSize, rowKind: options.rowKind,
@@ -3021,6 +3034,7 @@ export class GridView<Row> {
         // no selection drag either.
         if (!taken.showFillHandle && this.#handleDrag !== undefined) this.#setDragging(false);
         this.#highlightFocusRow = taken.highlightFocusRow;
+        this.#highlightFocusColumn = taken.highlightFocusColumn;
         if (taken.highlightHoverRow !== this.#highlightHoverRow) {
             this.#highlightHoverRow = taken.highlightHoverRow;
             // Heard only while the band is on: off, a pointer crossing the grid costs nothing (ADR-0021's fifth
@@ -10795,6 +10809,7 @@ export class GridView<Row> {
             // A row the source has since taken away has no band; the next movement finds the row there now.
             hoverRow: this.#hoverRow !== undefined && this.#hoverRow < this.#totalRows ? this.#hoverRow : undefined,
             focusRow: this.#highlightFocusRow,
+            focusColumn: this.#highlightFocusColumn,
             // Each held, so a pass that changed neither text nor columns finds them the same.
             colouring: this.#colouring(), extentRows: this.#totalRows, extentColumns: this.#columns.length,
             pointer: this.#edit === undefined ? undefined : this.#pointer,
@@ -10808,7 +10823,7 @@ export class GridView<Row> {
             const pieces = visible === undefined || geometry === undefined
                 ? { shade: undefined, pinned: [], scrollable: [] }
                 : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
-                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow },
+                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow, focusColumn: inputs.focusColumn, rowCount: inputs.extentRows },
                     this.#fillPaint(handle, readable), {
                         references: inputs.colouring.outlines.flatMap(([range, colour]) => {
                             const drawn = withinExtent(range, { rowCount: inputs.extentRows, columnCount: inputs.extentColumns });

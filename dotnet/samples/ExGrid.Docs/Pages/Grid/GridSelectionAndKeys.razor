@@ -293,11 +293,16 @@
         </DocsExample>
     </DocsSection>
 
-    <DocsSection Title="Which row am I on?">
+    <DocsSection Title="Which row and column am I on?">
         <ul>
             <li>
                 <code>HighlightFocusRow</code> paints a band across the row holding the Focus — Excel 365's Focus
                 Cell — which helps on a grid wider than the screen.
+            </li>
+            <li>
+                <code>HighlightFocusColumn</code> paints a band down the column holding the Focus, over its cells and
+                not its header, which helps on a grid taller than the screen. Turn both on and the two bands cross as
+                Excel's Focus Cell does, with the Focus's own cell tinted once.
             </li>
             <li>
                 <code>HighlightHoverRow</code> paints a band under the pointer, what design systems call
@@ -305,8 +310,10 @@
             </li>
         </ul>
         <p>
-            Both are drawn by an overlay, not by the rows, so moving them renders no row. Their colours are the
-            Visual Tokens <code>--ex-focus-row-fill</code> and <code>--ex-row-hover-background</code>.
+            All three are drawn by an overlay, not by the rows, so moving them renders no row. Their colours are the
+            Visual Tokens <code>--ex-focus-row-fill</code>, <code>--ex-focus-column-fill</code> (the Focus row's
+            colour unless you set it) and <code>--ex-row-hover-background</code>. Each is off unless you turn it on;
+            the example under <a href="exgrid/appearance">Appearance</a> switches the Focus row and column.
         </p>
     </DocsSection>
 
