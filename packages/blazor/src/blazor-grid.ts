@@ -7,9 +7,9 @@
 import {
     createGrid, EditorCompletion, EditorHint, gridInputRoot, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
     type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest, type GridEditorReference,
-    type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
+    type GridEditorRewrite, type GridFindAllMatch, type GridFindAllPage, type GridFindAllRequest, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
-    type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
+    type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findAllPage, findMatches, textOf,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
@@ -94,6 +94,7 @@ export interface WireScripts {
     readonly referenceText?: WireScript;
     readonly cycleReference?: WireScript;
     readonly referencesIn?: WireScript;
+    readonly moveReference?: WireScript;
     readonly rowHeadings?: WireScript;
     readonly nameBoxLabel?: WireScript;
     readonly findMatch?: WireScript;
@@ -111,13 +112,13 @@ export interface WirePointedAt {
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
 type PassedOption =
     | 'density' | 'rowHeight' | 'headerHeight' | 'viewportHeight' | 'viewportWidth' | 'pinnedColumnCount' | 'virtualiseColumns' | 'stripeRows'
-    | 'highlightFocusRow' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
+    | 'highlightFocusRow' | 'highlightFocusColumn' | 'highlightHoverRow' | 'hideColumnMenu' | 'hideCopyWithHeaders' | 'headerClickSelects' | 'pasteMaySpill' | 'findsHeaders'
     | 'showSelectionSummary' | 'copyCellCap' | 'pasteByteCap' | 'headerGroups' | 'showFillHandle' | 'showFormulaBar' | 'outlinedColumns'
     | 'pageSize' | 'rangeRequestMargin' | 'rowHeadingWidth' | 'hideHeader' | 'summaryFigures' | 'declaredKeys' | 'changeHighlightDuration';
 
 const passedOptions: readonly PassedOption[] = Object.freeze([
     'density', 'rowHeight', 'headerHeight', 'viewportHeight', 'viewportWidth', 'pinnedColumnCount', 'virtualiseColumns', 'stripeRows',
-    'highlightFocusRow', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
+    'highlightFocusRow', 'highlightFocusColumn', 'highlightHoverRow', 'hideColumnMenu', 'hideCopyWithHeaders', 'headerClickSelects', 'pasteMaySpill', 'findsHeaders',
     'showSelectionSummary', 'copyCellCap', 'pasteByteCap', 'headerGroups', 'showFillHandle', 'showFormulaBar', 'outlinedColumns',
     'pageSize', 'rangeRequestMargin', 'rowHeadingWidth', 'hideHeader', 'summaryFigures', 'declaredKeys', 'changeHighlightDuration',
 ]);
@@ -265,7 +266,7 @@ const heldGridCalls: ReadonlySet<string> = new Set([
 
 /** The calls that carry an input of the user's that .NET carries out or answers, numbered as they cross (ADR-0240
  * section 11). A write crosses as a numbered `Heard`, and a Validate on its own, since each tells the user itself. */
-const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
+const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindAll', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
 
 /** What a call lost on the way to .NET is to a step that would otherwise wait on it: given up, as the core reads an
  * `AbortError`, and said by {@link InputNumbers}' owner instead (ADR-0240 section 11). */
@@ -369,7 +370,8 @@ export function attach(
         return summaryResultOf(answer);
     });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const taken = new DotNetSource(numbered, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize);
+        const taken = new DotNetSource(numbered, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize,
+            (generation, request, signal) => askedFindAll(generation, request, signal));
         taken.take(state);
         return taken;
     };
@@ -428,6 +430,23 @@ export function attach(
             return { found: false };
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    // A page of a Find All (ADR-0470), asked as a step is. One .NET answers as moved was asked under a source or an order
+    // it no longer holds: once what it sent meanwhile is taken in, the core holds the newer one and drops the list, so
+    // the page is given up here and claims nothing.
+    const askedFindAll = (generation: number, request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage> =>
+        asking(signal, async number => {
+            const askedOf = source;
+            const answer = await numbered.invokeMethodAsync('FindAll', number, generation, request);
+            signal.throwIfAborted();
+            givenUp(answer);
+            const listed = findAllPageOf(answer);
+            if (listed !== 'moved') return listed;
+            await gate.released();
+            if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+                throw new Error('Internal: .NET answered the Find All as moved, and sent no other source or order.');
+            }
+            throw new DOMException('The rows moved while the Find All was asked.', 'AbortError');
+        });
     // The Error Count, asked of the source the grid holds now (ADR-0381 section 3's note of 2026-11-01). One .NET answers
     // as moved was asked under a source or an order it no longer holds: once what it sent meanwhile is taken in, the core
     // holds the newer one and asks again, which lets this question go. Nothing is shown for it meanwhile.
@@ -819,6 +838,27 @@ function findResultOf(answer: unknown): GridFindResult | 'moved' {
     throw new TypeError(`Internal: .NET answered the error step with ${JSON.stringify(found)}.`);
 }
 
+/** .NET's answer to a page of a Find All, as `ExGrid.Components` writes it, or `moved` where .NET did not ask the source,
+ * since what the page was asked under is gone there. A page .NET did not answer, its component gone, is given up. */
+function findAllPageOf(answer: unknown): GridFindAllPage | 'moved' {
+    if (answer === null) throw new DOMException('.NET gave the Find All no answer: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the Find All with something other than JSON text.');
+    const page = parsed<{ readonly moved?: unknown; readonly total?: unknown; readonly rowSequenceVersion?: unknown; readonly matches?: unknown }>(answer);
+    if (page.moved === true) return 'moved';
+    if (typeof page.total !== 'number' || typeof page.rowSequenceVersion !== 'number' || !Array.isArray(page.matches)) {
+        throw new TypeError(`Internal: .NET answered the Find All with ${answer}.`);
+    }
+    const matches = page.matches.map((match: unknown): GridFindAllMatch => {
+        if (typeof match !== 'object' || match === null) throw new TypeError(`Internal: .NET answered a Find All match with ${JSON.stringify(match)}.`);
+        const { row, column, text, rowLabel } = match as { readonly row?: unknown; readonly column?: unknown; readonly text?: unknown; readonly rowLabel?: unknown };
+        if (typeof row !== 'number' || typeof column !== 'string' || typeof text !== 'string' || (rowLabel !== undefined && typeof rowLabel !== 'string')) {
+            throw new TypeError(`Internal: .NET answered a Find All match with ${JSON.stringify(match)}.`);
+        }
+        return rowLabel === undefined ? { row, column, text } : { row, column, text, rowLabel };
+    });
+    return findAllPage(page.total, matches, page.rowSequenceVersion);
+}
+
 /** .NET's answer to the Error Count, as `ExGrid.Components` writes it, or `moved` where .NET did not ask the Consumer,
  * since what the count was asked under is gone there. A count .NET did not answer, its component gone or its
  * `OnCountErrors` taken away meanwhile, is given up: nothing is shown for it. */
@@ -1021,7 +1061,7 @@ function gridOptions(
     };
 }
 
-type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn' | 'rowHeadings' | 'nameBoxLabel' | 'findMatch' | 'dataEdge'>;
+type ScriptOptions = Pick<GridOptions<BlazorRow>, 'pointAt' | 'referenceText' | 'cycleReference' | 'referencesIn' | 'moveReference' | 'rowHeadings' | 'nameBoxLabel' | 'findMatch' | 'dataEdge'>;
 
 /**
  * The Consumer's functions of Formula entry as the core takes them (ADR-0431), each made once per function, so the
@@ -1053,7 +1093,7 @@ class ScriptHooks {
 
     options(wire: WireScripts | undefined): Partial<ScriptOptions> {
         if (wire === undefined) return {};
-        const { pointAt, referenceText, cycleReference, referencesIn, rowHeadings, nameBoxLabel, findMatch, dataEdge } = wire;
+        const { pointAt, referenceText, cycleReference, referencesIn, moveReference, rowHeadings, nameBoxLabel, findMatch, dataEdge } = wire;
         return {
             // A position's label, asked as each row is painted, a row not yet arrived included (ADR-0050 item 1).
             ...(rowHeadings === undefined ? {} : { rowHeadings: this.#hook('rowHeadings', rowHeadings, f => (row: number) => checkedAnswer(rowHeadings,
@@ -1069,6 +1109,8 @@ class ScriptHooks {
                 f(text, caret), (a): a is boolean => typeof a === 'boolean', 'true or false')) }),
             ...(referenceText === undefined ? {} : { referenceText: this.#hook('referenceText', referenceText, f => (range: SelectionRange) => checkedAnswer(referenceText,
                 'referenceText', f(range), (a): a is string => typeof a === 'string', 'text')) }),
+            ...(moveReference === undefined ? {} : { moveReference: this.#hook('moveReference', moveReference, f => (reference: string, range: SelectionRange) =>
+                checkedAnswer(moveReference, 'moveReference', f(reference, range), (a): a is string => typeof a === 'string', 'text')) }),
             // Nothing is null, as .NET writes it; undefined is a function that answered nothing, and is refused, since
             // taken as nothing it would quietly leave the text, or outline nothing. What the core takes beyond the shape,
             // a span inside the text, is the core's to check.

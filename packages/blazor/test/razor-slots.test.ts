@@ -381,8 +381,9 @@ describe('a find panel filled with Razor', () => {
     it('ADR-0410 sections 2 and 3: .NET is handed the panel as data and draws it again as a step\'s outcome is said; the field takes the keyboard, and what is typed is the core\'s', () => {
         const { dotnet, slots, slot } = made();
         const listeners = new Set<() => void>();
-        let view: FindPanelView = { text: 'Osei', matchCase: false, wholeCell: true, replaceShown: false, replaceText: '', replaceWaiting: false, outcome: '' };
+        let view: FindPanelView = { text: 'Osei', matchCase: false, wholeCell: true, replaceShown: false, replaceText: '', replaceWaiting: false, outcome: '', findAllShown: true };
         const typed: string[] = [];
+        let listed = 0;
         const focused: HTMLElement[] = [];
         const context: GridFindPanelSlotContext = {
             view: () => view,
@@ -390,6 +391,7 @@ describe('a find panel filled with Razor', () => {
             label: id => `words for ${id}`,
             setText: text => { typed.push(text); }, setMatchCase: () => undefined, setWholeCell: () => undefined, setReplaceText: () => undefined,
             next: () => undefined, previous: () => undefined, replace: () => undefined, replaceAll: () => undefined, close: () => undefined,
+            findAll: () => { listed += 1; }, listFindAll: () => undefined, dropFindAll: () => undefined,
             focusRequest: 1, innerPopupChanged: () => undefined, takeFocus: control => { focused.push(control); },
         };
         mountOf(slots, 'findPanel')(slot, context);
@@ -400,15 +402,20 @@ describe('a find panel filled with Razor', () => {
         for (const listener of listeners) listener();
         const sent = dotnet.calls.map(call => ({ method: call.method, version: call.args[1], json: JSON.parse(String(call.args.at(-1))) as Record<string, unknown> }));
         expect(sent.map(each => [each.method, each.version, each.json['outcome']])).toEqual([['MountSlot', 1, ''], ['UpdateSlot', 2, 'No match']]);
-        expect(sent[0]?.json).toMatchObject({ text: 'Osei', wholeCell: true, replaceShown: false, words: { next: 'words for find-next', replaceAll: 'words for find-replace-all' } });
+        expect(sent[0]?.json).toMatchObject({
+            text: 'Osei', wholeCell: true, replaceShown: false, findAllShown: true,
+            words: { next: 'words for find-next', replaceAll: 'words for find-replace-all', findAll: 'words for find-all' },
+        });
         expect(sent[1]?.json['text']).toBe('Osei');
-        const contents = rendered(`<input ${findPanelAttributes.field}="find">`);
+        const contents = rendered(`<input ${findPanelAttributes.field}="find"><button ${findPanelAttributes.step}="findAll">Find All</button>`);
         slots.rendered(1, 2, contents);
         const field = contents.querySelector('input');
         if (field === null) throw new Error('No field.');
         field.value = 'Novak';
         field.dispatchEvent(new Event('input', { bubbles: true }));
-        expect([focused, typed]).toEqual([[field], ['Novak']]);
+        // ADR-0470 §1: a press on the button marked findAll is the core's Find All.
+        contents.querySelector('button')?.click();
+        expect([focused, typed, listed]).toEqual([[field], ['Novak'], 1]);
     });
 });
 

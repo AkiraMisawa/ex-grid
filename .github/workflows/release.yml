@@ -51,13 +51,13 @@
 # published once the secret NPM_TOKEN, a granular token that may publish @ex-grid, takes its place; it is
 # deleted once every package has its Trusted Publisher. A prerelease and a release candidate go out under
 # npm's dist-tag next, so that npm install without a version keeps the latest stable one; a version
-# without a suffix takes latest when it publishes the Docs Site too, the latest stable line, and
-# release-<major>.<minor> when it is a patch to an older line. The GitHub
+# without a suffix takes latest when no stable tag is above it, the latest stable line (the admit job's
+# latest), and release-<major>.<minor> when it is a patch to an older line. The GitHub
 # release's text is the version's Release Notes. Last, once nuget.org has the packages, the Docs
 # Site is published for the version (docs.yml, ADR-0110), with the UTC day of the push (ADR-0190).
-# The site describes the latest stable version once one is tagged (ADR-0205), so a version without a
-# suffix publishes it when no stable tag is above it by SemVer precedence (a patch to an older line
-# does not), and a prerelease only while no version without a suffix is tagged.
+# The site describes the newest version tagged (ADR-0205, rewritten 2026-11-03), so a version publishes
+# it when no tag, a prerelease's included, is above it by SemVer precedence: a prerelease of the next
+# version publishes it over the latest stable version's, and a patch to an older line does not.
 name: Release
 
 on:
@@ -84,9 +84,10 @@ jobs:
       kind: ${{ steps.admit.outputs.kind }}
       long: ${{ steps.admit.outputs.long }}
       site: ${{ steps.admit.outputs.site }}
+      latest: ${{ steps.admit.outputs.latest }}
     steps:
       # Every branch and every tag: main and release/* for where the tag is; the tags for whether a
-      # stable version exists, for the release candidate a stable version's X was tagged as, and for
+      # later version is tagged, for the release candidate a stable version's X was tagged as, and for
       # the verified/* tags through which the by-hand records' commits are read (ADR-0208, 2026-10-12).
       - uses: actions/checkout@v7
         with:
@@ -96,8 +97,8 @@ jobs:
         with:
           fallback: false
 
-      # The version and its kind; the branch; whether the long run gates it and whether its release
-      # publishes the Docs Site (ADR-0042, ADR-0205).
+      # The version and its kind; the branch; whether the long run gates it, whether its release
+      # publishes the Docs Site, and whether npm's latest moves to it (ADR-0042, ADR-0205).
       - id: admit
         name: The version, and the branch it is on
         working-directory: dotnet
@@ -343,7 +344,7 @@ jobs:
     env:
       VERSION: ${{ needs.admit.outputs.version }}
       KIND: ${{ needs.admit.outputs.kind }}
-      SITE: ${{ needs.admit.outputs.site }}
+      LATEST: ${{ needs.admit.outputs.latest }}
     steps:
       # The tag's manifests name the packages to expect, and .node-version the Node they were packed with.
       - uses: actions/checkout@v7
@@ -399,7 +400,7 @@ jobs:
           set -euo pipefail
           case "$KIND" in
             stable)
-              if [[ "$SITE" == true ]]; then tag=latest; else tag="release-$(cut -d. -f1,2 <<<"$VERSION")"; fi ;;
+              if [[ "$LATEST" == true ]]; then tag=latest; else tag="release-$(cut -d. -f1,2 <<<"$VERSION")"; fi ;;
             *) tag=next ;;
           esac
           while IFS= read -r tarball; do
@@ -429,9 +430,10 @@ jobs:
   # The Docs Site for this version, once nuget.org and npm have it (ADR-0110, ADR-0042): the site states a
   # version only after its packages can be installed, and the day they could be (ADR-0190).
   # Trusted Publishing stays in the publish job above, since nuget.org's policy names this file.
-  # The site describes the latest stable version once one is tagged (ADR-0205): a prerelease then
-  # publishes none, its notes being on its GitHub release, and neither does a stable version some
-  # stable tag is above, a patch to an older line. The admit job decides it, and says so.
+  # The site describes the newest version tagged (ADR-0205, rewritten 2026-11-03): a version, a
+  # prerelease included, publishes it when no tag is above it by SemVer precedence, so 0.2.0-beta.3
+  # publishes it over 0.1.0's, and a patch to an older line publishes none. The admit job decides it,
+  # and says so.
   docs:
     name: The Docs Site
     needs: [admit, publish, publish-npm]

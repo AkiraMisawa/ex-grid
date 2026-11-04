@@ -84,6 +84,8 @@ export { gridCellMetrics, gridHeaderRequiredPx, gridTextGeometry } from './text-
 export type { GridTextGeometry, GridTextOptions } from './text-geometry';
 export type { BeyondRow, DistinctValues, GridSourceState } from './source/grid-source';
 export { findMatches, findStep, type GridFindRequest, type GridFindResult } from './finding/find';
+export { FindAllMatches, findAll, findAllPage, type GridFindAllMatch, type GridFindAllPage, type GridFindAllRequest } from './finding/find-all';
+export type { GridFindAllLine, GridFindAllList } from './dom/find-all-list';
 export { displayText, textOf } from './cells/display-text';
 export { applyQuery } from './query/query-engine';
 export { answeredSummary, declinedSummary, GridSummaryCells, summaryOf, type GridSummaryRequest, type GridSummaryResult } from './summary/grid-summary';

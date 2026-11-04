@@ -607,6 +607,9 @@ outline Point moves is the Reference Outline of the Reference it is writing. It 
 edit commits or is cancelled. A structured reference's outline is drawn over the **Linked Table**'s
 column by whichever grid the Consumer shows that table in, told the colour by ExSheet
 ([ADR-0057](./docs/adr/0057-references-are-outlined-in-colour-while-a-formula-is-edited.md)).
+Its edges and the square at each corner are its **grips**: dragged by an edge it moves its Reference, by a square it
+resizes it, and the Formula's text is rewritten as it goes
+([ADR-0480](./docs/adr/0480-a-reference-outline-is-dragged-by-its-edge-to-move-its-reference-and-by-a-corner-square-to-resize-it.md)).
 _Avoid_: range finder (Excel's name for it; nothing is found), highlight (the word is kept out of
 Selection's vocabulary), pointing outline
 
@@ -799,6 +802,13 @@ as it answers for sort and filter; the grid only moves the Focus
 ([ADR-0055](./docs/adr/0055-find-is-asked-of-the-consumer-like-sort-and-filter.md)).
 _Avoid_: search (that is the filter panel's box over the value list), filter (that hides rows;
 Find hides nothing), lookup
+
+**Find All**:
+The list of every cell a Find would stop on, with the exact count, under the find panel; a line chosen
+moves the Focus there. The Consumer answers it a page at a time, never capped, and the core draws the
+list; the list goes when the order moves or the search changes
+([ADR-0470](./docs/adr/0470-find-all-lists-every-match-in-pages-the-consumer-answers.md)).
+_Avoid_: search results (the filter panel's), find list, select all matches (Excel's Ctrl+A in the list, which is not offered)
 
 **Replace**:
 Writing a replacement over cells whose entry matches what the user typed: the current match alone, or

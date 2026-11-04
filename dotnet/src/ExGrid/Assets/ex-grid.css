@@ -706,6 +706,9 @@
 /* The Focus band (ADR-0008): one more overlay rectangle, first in its layer so every
    range stays readable over it. Enabling it is a parameter; this is only its colour. */
 .ex-focus-row { position: absolute; background: var(--ex-focus-row-fill, rgba(128, 128, 128, 0.10)); }
+/* The Focus column band (ADR-0008, 2026-11-03): the Focus band turned sideways, down the
+   column's cells. Its colour is the row band's unless set, so a Wrapper that tints one tints both. */
+.ex-focus-column { position: absolute; background: var(--ex-focus-column-fill, var(--ex-focus-row-fill, rgba(128, 128, 128, 0.10))); }
 /* The hover band (ADR-0029): the row under the pointer, told to the grid only when it
    changes (ADR-0021's fifth entry) and painted as the Focus band is. Enabling it is a
    parameter; this is only its colour, and the default is a shade lighter than the
@@ -872,6 +875,21 @@
    above the overlay can cover part of it (ADR-0057, "deliberately unlike Excel"). The padding is
    the line and the gap, and it only clips the wash. Paint only, like every rectangle here. */
 .ex-reference-outline { position: absolute; box-sizing: border-box; padding: 3px; outline: 2px solid currentColor; outline-offset: -2px; background: color-mix(in srgb, currentColor 10%, transparent) content-box; }
+/* A Reference Outline's grips (ADR-0480), drawn while a Consumer rewrites a dragged Reference: a
+   strip along each edge, which moves the Reference, and a square at each corner, which resizes it.
+   The strips are not seen; the squares are the Reference's colour with a margin of the grid's
+   ground, as Excel draws them. Their boxes and the margin's width come inline from the Grid Metrics. They are the overlay's
+   only rectangles that take the pointer, so that the browser shows their cursor where the pointer
+   is, and nothing is heard for it. During a drag they let the pointer through to the rows, which
+   read the drag's moves, and the cursor stays the drag's. */
+.ex-reference-grip { position: absolute; box-sizing: border-box; pointer-events: auto; cursor: move; }
+.ex-reference-square { background: currentColor; border: 0 solid var(--ex-background, Canvas); }
+.ex-reference-grip-topLeft, .ex-reference-grip-bottomRight { cursor: nwse-resize; }
+.ex-reference-grip-topRight, .ex-reference-grip-bottomLeft { cursor: nesw-resize; }
+.ex-grid[data-ex-reference-drag] .ex-reference-grip { pointer-events: none; }
+.ex-grid[data-ex-reference-drag=move] .ex-viewport { cursor: move; }
+.ex-grid[data-ex-reference-drag=nwse] .ex-viewport { cursor: nwse-resize; }
+.ex-grid[data-ex-reference-drag=nesw] .ex-viewport { cursor: nesw-resize; }
 /* Point's dashes over the outline of the Reference it writes: in the Focus outline's colour, as
    Excel lays its active-cell green over the pointed Reference's own line, just inside that line
    so both show (the eighth Windows run). */
@@ -888,7 +906,7 @@
    Template's control — let the press through to the rows or the header, which hand it on as the
    cell or the column it landed on. Nothing else marks the grid. */
 .ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) { cursor: cell; }
-.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive, .ex-header-group-toggle, .ex-hidden-mark) { pointer-events: none; }
+.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive, .ex-header-group-toggle, .ex-hidden-mark, .ex-reference-grip) { pointer-events: none; }
 .ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
 .ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
 .ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }
@@ -1069,6 +1087,36 @@
    keeps its height when empty, so the panel does not jump when a step says "no match". */
 .ex-popover-find-body { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .ex-find-outcome { min-height: 1.2em; }
+/* Find All's list (ADR-0470 §3): the count line, then a listbox of a fixed number of lines, each a row's height,
+   placed by the core from the Grid Metrics so nothing is measured; only the lines in view stand in it. The
+   active line is painted as the completion list's chosen candidate is, from the selection's token. */
+.ex-find-all { display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+.ex-find-all-count { min-height: 1.2em; }
+.ex-find-all-list {
+    position: relative;
+    overflow-y: auto;
+    /* Never shrunk below its lines: the core reveals the active line by the count it shows, so in a short grid
+       the panel scrolls rather than the list hiding lines the core counts as shown. */
+    flex-shrink: 0;
+    outline-offset: -1px;
+    border: 1px solid var(--ex-header-rule-color, rgba(0, 0, 0, 0.12));
+}
+.ex-find-all-spacer { position: relative; }
+.ex-find-all-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    display: flex;
+    gap: var(--ex-cell-padding-x, 8px);
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    cursor: default;
+}
+.ex-find-all-where { flex: 0 0 auto; }
+.ex-find-all-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.ex-find-all-active { background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
    same tokens the cells read, so the text does not jump when editing starts. The coloured
@@ -1420,6 +1468,7 @@
        (ADR-0170): dashed, where the Selection's restated outlines are solid. */
     .ex-copied-range::after { border-color: Canvas; outline-color: Highlight; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
+    .ex-focus-column { outline: 1px dotted Highlight; outline-offset: -1px; }
     .ex-hover-row { outline: 1px dotted GrayText; outline-offset: -1px; }
     /* The chosen action stays tellable from its neighbours, which keep their own
        ButtonBorder (ADR-0037). */

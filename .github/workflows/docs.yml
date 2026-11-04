@@ -2,15 +2,19 @@
 #
 # - by the release (release.yml's last job), once the packages are on nuget.org: it passes the
 #   version, its tag and the UTC day of the push (ADR-0190), and the site states that version. The
-#   site describes the latest stable version once one is tagged (ADR-0205): a version without a
-#   suffix publishes it when no stable tag is above it by SemVer precedence, so a patch to an older
-#   line does not; a prerelease, a release candidate among them, only while no version without a
-#   suffix is tagged (2026-10-12, decided with the user). A release candidate's section opens with
-#   the candidate's note, docs/releases/candidate-note.md, and its Signed off block says the sign-off
-#   is being made against it: the build that publishes it reads both;
-# - on demand (workflow_dispatch), from main or a lab/* branch and from no other ref: the site then
-#   states the branch and the commit, and says above every page that it describes changes that are
-#   not on nuget.org. A lab/* site says that it is an experiment.
+#   site describes the newest version tagged (ADR-0205, rewritten 2026-11-03, decided with the user):
+#   a version, a prerelease included, publishes it when no tag is above it by SemVer precedence, so
+#   0.2.0-beta.3 publishes it over 0.1.0's and a patch to an older line does not. A release
+#   candidate's section opens with the candidate's note, docs/releases/candidate-note.md, and its
+#   Signed off block says the sign-off is being made against it: the build that publishes it reads both;
+# - on demand (workflow_dispatch) from main, given a v* tag whose release has put every package on
+#   nuget.org and npm: the site is built from the tag and states that version and the day nuget.org
+#   received it, as the release would have (2026-11-03, for a tag whose release ran under the rule
+#   this replaced), and the same rule refuses a tag some later one is above. It runs from main, not
+#   from the tag, because a dispatch runs the workflow its ref holds, and an older tag's has no such path;
+# - on demand from main or a lab/* branch, and from no other ref: the site then states the branch and
+#   the commit, and says above every page that it describes changes that are not on nuget.org. A
+#   lab/* site says that it is an experiment.
 #
 # A tag no longer starts it: run beside the release, the site stated a version before nuget.org had
 # it, and would have stated it had the release failed. CI builds the site with the solution on
@@ -33,6 +37,11 @@ on:
         type: string
         default: ''
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'A released tag whose site to publish, as v0.2.0-beta.3; empty publishes the branch run on'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -62,6 +71,7 @@ jobs:
           VERSION: ${{ inputs.version }}
           TAG: ${{ inputs.ref }}
           PUBLISHED_ON: ${{ inputs.published-on }}
+          RELEASED_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           if [[ -n "$TAG" ]]; then
@@ -81,13 +91,32 @@ jobs:
             {
               echo "version=$VERSION"
               echo "ref=$TAG"
+              echo "tag=$TAG"
               echo "published-on=$PUBLISHED_ON"
+            } >> "$GITHUB_OUTPUT"
+          elif [[ -n "$RELEASED_TAG" ]]; then
+            # On demand, a released tag: run from main, whose workflow and release tool know the rule.
+            # Its version and day are stated once the registries have it (the steps below check both).
+            if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+              echo "::error::A released tag's site is published on demand from main (ADR-0110), and this run is on $GITHUB_REF."
+              exit 1
+            fi
+            if [[ ! "$RELEASED_TAG" =~ ^v[0-9A-Za-z.+-]+$ ]]; then
+              echo "::error::'$RELEASED_TAG' is not a v* tag, as v0.2.0-beta.3."
+              exit 1
+            fi
+            {
+              echo "version=${RELEASED_TAG#v}"
+              echo "ref=$RELEASED_TAG"
+              echo "tag=$RELEASED_TAG"
+              echo "on-demand=true"
+              echo "published-on="
             } >> "$GITHUB_OUTPUT"
           else
             # On demand: main or a lab/* branch, and its commit.
             branch="${GITHUB_REF#refs/heads/}"
             if [[ "$GITHUB_REF" != refs/heads/* || ( "$branch" != main && "$branch" != lab/* ) ]]; then
-              echo "::error::The Docs Site is published on demand only from main or a lab/* branch (ADR-0110), and $GITHUB_REF is neither. A version's site is published by its release, once nuget.org has the packages."
+              echo "::error::The Docs Site is published on demand only from main or a lab/* branch (ADR-0110), and $GITHUB_REF is neither. A version's site is published by its release, once nuget.org has the packages, or from main given its tag."
               exit 1
             fi
             if [[ ! "$branch" =~ ^[A-Za-z0-9._/-]+$ ]]; then
@@ -97,52 +126,110 @@ jobs:
             {
               echo "version=dev"
               echo "ref=$branch@$GITHUB_SHA"
+              echo "tag="
               echo "published-on="
             } >> "$GITHUB_OUTPUT"
           fi
 
+      # A tag's site needs every tag, to know whether a later one is above it.
       - uses: actions/checkout@v7
-
-      # The site describes the latest stable version (ADR-0205). Once a version without a suffix is
-      # tagged, a prerelease publishes no site, and a stable version publishes it only when no stable
-      # tag is above it by SemVer precedence: a patch to an older line (v0.1.1 from release/0.1 after
-      # v0.2.0) leaves the newer version's site in place. The release decides that before it calls
-      # this workflow (dotnet/tools/release/ExGrid.Release, admit); a call that comes anyway is refused here
-      # rather than put its pages over the latest stable version's. A tag list that cannot be read
-      # refuses too: ls-remote runs alone and its failure ends the step, and only grep's finding
-      # nothing is let pass.
-      - name: No site over a later stable version's
-        if: inputs.ref != ''
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          set -euo pipefail
-          refs=$(git ls-remote --tags --refs origin 'v*') || {
-            echo "::error::The repository's tags could not be read, so whether a later stable version's site would be replaced cannot be checked. Run the job again."
-            exit 1
-          }
-          stable=$(printf '%s\n' "$refs" | sed 's#.*refs/tags/##' \
-            | { grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' || true; })
-          [[ -n "$stable" ]] || exit 0
-          if [[ "$VERSION" == *-* ]]; then
-            echo "::error::$VERSION is a prerelease, and $(echo $stable) is tagged: once a stable version exists, a prerelease publishes no Docs Site (ADR-0205)."
-            exit 1
-          fi
-          # sort -V orders MAJOR.MINOR.PATCH by number, so v0.10.0 is above v0.9.0.
-          latest=$(printf '%s\n' $stable "v$VERSION" | sort -V | tail -n 1)
-          if [[ "$latest" != "v$VERSION" ]]; then
-            echo "::error::$latest is tagged above $VERSION: the site describes the latest stable version, and a patch to an older line publishes no Docs Site (ADR-0205)."
-            exit 1
-          fi
+        with:
+          fetch-depth: ${{ steps.states.outputs.tag != '' && '0' || '1' }}
 
       - uses: ./.github/actions/dotnet
+
+      # The site describes the newest version tagged (ADR-0205): a tag's site is published only when no
+      # tag is above it by SemVer precedence, a prerelease's included. The release decides that before it
+      # calls this workflow (dotnet/tools/release/ExGrid.Release, admit), and this asks the same tool, as
+      # the commit checked out has it, so a call that comes anyway, or a released tag given on demand, is
+      # refused here rather than put its pages over a later version's.
+      - name: No site over a later version's
+        if: steps.states.outputs.tag != ''
+        env:
+          TAG: ${{ steps.states.outputs.tag }}
+        working-directory: dotnet
+        run: dotnet run --project tools/release/ExGrid.Release -c Release -- site --tag "$TAG"
+
+      # On demand, the released tag is what is built: its pages, its notes, its packages, and the SDK,
+      # Node and dependencies it names, set up again from the tag as its release set them up.
+      - name: The released tag
+        if: steps.states.outputs.on-demand == 'true'
+        env:
+          TAG: ${{ steps.states.outputs.tag }}
+        run: git checkout --detach "refs/tags/$TAG"
+
+      - if: steps.states.outputs.on-demand == 'true'
+        uses: ./.github/actions/dotnet
+
+      # On demand from a tag, the site states a version only once a Consumer can install it, as the
+      # release's call does by running after both pushes: every package its notes name on nuget.org,
+      # and every package the release publishes to npm (pack.mjs's packOrder, as release.yml lists
+      # them), at the version. The day is the one nuget.org says it received ExGrid (ADR-0190). Any
+      # answer but the package or "not found" refuses too, saying that it could not be checked.
+      - name: On nuget.org and npm
+        id: registries
+        if: steps.states.outputs.on-demand == 'true'
+        env:
+          VERSION: ${{ steps.states.outputs.version }}
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+            import { packOrder } from './tools/npm-package/pack.mjs';
+            for (const { manifest } of packOrder()) console.log(manifest.name);
+          " > "$RUNNER_TEMP/npm-packages.txt"
+          python3 - <<'PY'
+          import gzip, json, os, sys, urllib.error, urllib.parse, urllib.request
+
+          version = os.environ["VERSION"]
+          notes = f"docs/releases/{version}.md"
+          if not os.path.exists(notes):
+              sys.exit(f"::error::The tag has no {notes}, so it was never released (ADR-0190).")
+          lines = [l for l in open(notes, encoding="utf-8").read().splitlines() if l.startswith("Packages: ")]
+          if len(lines) != 1:
+              sys.exit(f"::error file={notes}::{notes} has no Packages line naming what nuget.org holds (ADR-0190).")
+          nuget = [p.strip() for p in lines[0][len("Packages: "):].split(",") if p.strip()]
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "npm-packages.txt"), encoding="utf-8") as listed:
+              npm = [line.strip() for line in listed if line.strip()]
+          if not npm:
+              sys.exit("::error::pack.mjs names no package npm publishes, so npm cannot be checked.")
+
+          def get(url):
+              try:
+                  with urllib.request.urlopen(url, timeout=60) as response:
+                      body = response.read()
+                      return gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      return None
+                  sys.exit(f"::error::{url} answered {e.code}, so whether {version} is published could not be checked. Run the job again.")
+              except OSError as e:
+                  sys.exit(f"::error::{url} could not be read ({e}), so whether {version} is published could not be checked. Run the job again.")
+
+          missing, day = [], None
+          for package in nuget:
+              leaf = get(f"https://api.nuget.org/v3/registration5-gz-semver2/{package.lower()}/{version.lower()}.json")
+              if leaf is None:
+                  missing.append(f"{package} on nuget.org")
+              elif package == "ExGrid":
+                  day = json.loads(leaf)["published"][:10]
+          for package in npm:
+              if get(f"https://registry.npmjs.org/{urllib.parse.quote(package, safe='@')}/{version}") is None:
+                  missing.append(f"{package} on npm")
+          if missing:
+              sys.exit(f"::error::{version} is not published in full: {', '.join(missing)} not found. A version's site is published once its release has pushed every package (ADR-0110).")
+          if day is None:
+              sys.exit(f"::error file={notes}::{notes} does not name ExGrid, whose day on nuget.org the site states (ADR-0190).")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"published-on={day}\n")
+          print(f"{version}: {len(nuget)} packages on nuget.org since {day}, {len(npm)} on npm.")
+          PY
 
       # The build reads the three together and refuses inputs that disagree (ADR-0110).
       - name: Publish
         env:
           DOCS_VERSION: ${{ steps.states.outputs.version }}
           DOCS_REF: ${{ steps.states.outputs.ref }}
-          DOCS_PUBLISHED_ON: ${{ steps.states.outputs.published-on }}
+          DOCS_PUBLISHED_ON: ${{ steps.registries.outputs.published-on || steps.states.outputs.published-on }}
         run: |
           set -euo pipefail
           # From dotnet/, where the SDK finds global.json (ADR-0370 section 9).

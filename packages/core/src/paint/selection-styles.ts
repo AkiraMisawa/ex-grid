@@ -181,6 +181,92 @@ export function focusStyle(
     return style + outlineSides(focus.row, focus.column, columns, pinnedLayer, cover, true);
 }
 
+/** Where a Reference Outline is grabbed (ADR-0480): an edge, which moves the Reference, or a corner square, which
+ * resizes it from the opposite corner. */
+export type ReferenceGripKind = 'top' | 'bottom' | 'left' | 'right' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+
+/** Whether a grip is a corner square, which resizes, rather than an edge, which moves (ADR-0480). */
+export function gripResizes(kind: ReferenceGripKind): kind is 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' {
+    return kind === 'topLeft' || kind === 'topRight' || kind === 'bottomLeft' || kind === 'bottomRight';
+}
+
+/** One grip of a Reference Outline in one layer: its kind, and its box in that layer's coordinates. */
+export interface ReferenceGripBox {
+    readonly kind: ReferenceGripKind;
+    readonly leftPx: number;
+    readonly topPx: number;
+    readonly widthPx: number;
+    readonly heightPx: number;
+}
+
+/** The margin of the grid's ground round a Reference Outline's corner square (ADR-0480), emitted inline with its box. */
+export const referenceSquareMarginPx = 1;
+
+/** The cursor a grip is dragged under (ADR-0480): a move over an edge, and a resize along the corner's diagonal. */
+export function gripCursor(kind: ReferenceGripKind): 'move' | 'nwse' | 'nesw' {
+    if (kind === 'topLeft' || kind === 'bottomRight') return 'nwse';
+    return kind === 'topRight' || kind === 'bottomLeft' ? 'nesw' : 'move';
+}
+
+/**
+ * The grips of a Reference Outline as one layer draws them (ADR-0480): a strip of `gripPx` along each edge, centred
+ * on the range's edge, and a square of `squarePx` with a margin of `referenceSquareMarginPx` at each corner, centred
+ * on the range's corner. The outline's line lies just inside that edge, so both cover it without the grid knowing how
+ * wide the stylesheet draws it.
+ * Only real edges have grips: an edge is drawn in the layer its column (a side) or its columns (the top and bottom,
+ * cut to the layer's side of the pinned boundary) belong to, and only while its row is among the painted rows, so a
+ * cut never offers a grip; nor does an edge where the grid's extent cut `named`, the range the Reference names, to
+ * `range`. Nothing is drawn left of `readableLeftPx`, the edge of what covers the layer there (the
+ * Row Headings, and in the scrollable layer the pinned block), where a grip could be neither seen nor meant. The
+ * squares come last, so a corner is a corner's.
+ */
+export function referenceGrips(
+    range: SelectionRange, columns: ColumnGeometry, rowHeightPx: number, painted: RowRange, pinnedLayer: boolean,
+    gripPx: number, squarePx: number, readableLeftPx: number, named: SelectionRange = range,
+): readonly ReferenceGripBox[] {
+    const side = sideOf(range, columns, pinnedLayer);
+    const rows = clip(range, painted);
+    if (side === undefined || rows === undefined) return [];
+    const rowPainted = (row: number): boolean => row >= painted.start - 1 && row <= painted.start + painted.count;
+    const hasLeft = sideOf(cellRange({ row: range.topRow, column: range.leftColumn }), columns, pinnedLayer) !== undefined
+        && range.leftColumn === named.leftColumn;
+    const hasRight = sideOf(cellRange({ row: range.topRow, column: rightColumn(range) }), columns, pinnedLayer) !== undefined
+        && rightColumn(range) === rightColumn(named);
+    // An edge where the grid's extent cut the range, the Reference naming cells past it, is no edge of the Reference.
+    const hasTop = rowPainted(range.topRow) && range.topRow === named.topRow;
+    const hasBottom = rowPainted(bottomRow(range)) && bottomRow(range) === bottomRow(named);
+    const leftX = columns.offsetPxOf(range.leftColumn);
+    const rightX = columns.offsetPxOf(rightColumn(range) + 1);
+    const topY = (range.topRow - painted.start) * rowHeightPx;
+    const bottomY = (bottomRow(range) + 1 - painted.start) * rowHeightPx;
+    const spanLeft = Math.max(columns.offsetPxOf(side.first), readableLeftPx);
+    const spanRight = columns.offsetPxOf(side.last + 1);
+    const spanTop = (rows.top - painted.start) * rowHeightPx;
+    const spanBottom = spanTop + (rows.count * rowHeightPx);
+    const half = gripPx / 2;
+    const grips: ReferenceGripBox[] = [];
+    const strip = (kind: ReferenceGripKind, leftPx: number, topPx: number, widthPx: number, heightPx: number): void => {
+        const clippedLeft = Math.max(leftPx, readableLeftPx);
+        const clippedWidth = widthPx - (clippedLeft - leftPx);
+        if (clippedWidth > 0 && heightPx > 0) grips.push(Object.freeze({ kind, leftPx: clippedLeft, topPx, widthPx: clippedWidth, heightPx }));
+    };
+    if (hasTop) strip('top', spanLeft, topY - half, spanRight - spanLeft, gripPx);
+    if (hasBottom) strip('bottom', spanLeft, bottomY - half, spanRight - spanLeft, gripPx);
+    if (hasLeft) strip('left', leftX - half, spanTop, gripPx, spanBottom - spanTop);
+    if (hasRight) strip('right', rightX - half, spanTop, gripPx, spanBottom - spanTop);
+    // A square is the colour's `squarePx` and the margin round it.
+    const squareBox = squarePx + (2 * referenceSquareMarginPx);
+    const square = (kind: ReferenceGripKind, x: number, y: number): void => {
+        if (x < readableLeftPx) return;
+        grips.push(Object.freeze({ kind, leftPx: x - (squareBox / 2), topPx: y - (squareBox / 2), widthPx: squareBox, heightPx: squareBox }));
+    };
+    if (hasTop && hasLeft) square('topLeft', leftX, topY);
+    if (hasTop && hasRight) square('topRight', rightX, topY);
+    if (hasBottom && hasLeft) square('bottomLeft', leftX, bottomY);
+    if (hasBottom && hasRight) square('bottomRight', rightX, bottomY);
+    return grips;
+}
+
 /** The part of a range that pans with the content, or `undefined` when it lies under the Pinned Columns. */
 export function scrollable(range: SelectionRange, columns: ColumnGeometry, rowHeightPx: number, painted: RowRange): string | undefined {
     return part(range, columns, rowHeightPx, painted, false);

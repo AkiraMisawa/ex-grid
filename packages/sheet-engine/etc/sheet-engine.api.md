@@ -417,6 +417,9 @@ export function lookupText(table: string, keyColumn: string, key: Value, column:
 export function lookupText(table: string, keyColumns: readonly string[], keys: readonly Value[], column: string): string;
 
 // @public
+export function moveReference(reference: string, range: CellRange, size?: SheetSize): string;
+
+// @public
 export class NumberFormat {
     static builtInCurrency(culture: Culture): NumberFormat;
     get code(): string;

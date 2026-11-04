@@ -70,6 +70,63 @@ public class GridFindTests
         Assert.Equal("x", asked!.Text);
     }
 
+    private static GridFindAllRequest AskAll(string text, int start = 0, int count = 100, int version = 0) => new()
+    {
+        Text = text,
+        Columns = Columns,
+        RowSequenceVersion = version,
+        Start = start,
+        Count = count,
+    };
+
+    [Fact] // ADR-0470 section 2: a fetching Source lists through its findAll delegate, which it refuses without find
+    public async Task The_fetching_source_lists_through_its_find_all_delegate()
+    {
+        static ValueTask<GridPage<Trade>> Fetch(GridQuery query, CancellationToken token)
+            => ValueTask.FromResult(new GridPage<Trade>([], query.Range.Start, 0));
+        static Task<GridFindResult> Find(GridFindRequest request, GridFilter? filter, IReadOnlyList<SortSpec> sorts, CancellationToken token)
+            => Task.FromResult(GridFindResult.NotFound);
+
+        using var finding = GridSource.Fetch<Trade>(Fetch, find: Find);
+        Assert.False(finding.CanFindAll);
+        Assert.False(((IGridSource<Trade>)finding).CanFindAll);
+
+        GridFindAllRequest? asked = null;
+        using var listing = GridSource.Fetch<Trade>(Fetch, find: Find, findAll: (request, filter, sorts, token) =>
+        {
+            asked = request;
+            return Task.FromResult(GridFindAllPage.Of(12, [new GridFindAllMatch(3, "Book", "Alpha")], request.RowSequenceVersion));
+        });
+        Assert.True(listing.CanFindAll);
+        var page = await listing.FindAllAsync(AskAll("al", start: 4, count: 1), CancellationToken.None);
+        Assert.Equal((12, 3, "Book"), (page.Total, page.Matches[0].Row, page.Matches[0].Column));
+        Assert.Equal((4, 1), (asked!.Start, asked.Count));
+
+        var refused = Assert.Throws<ArgumentException>(() => GridSource.Fetch<Trade>(Fetch,
+            findAll: (request, filter, sorts, token) => Task.FromResult(GridFindAllPage.Of(0, [], 0))));
+        Assert.Contains("find", refused.Message);
+    }
+
+    [Fact] // ADR-0470 sections 2 and 3: the in-memory Source lists its displayed texts, a page at a time, naming rows as told
+    public async Task The_in_memory_source_lists_every_match_a_page_at_a_time()
+    {
+        var source = GridSource.From<Trade>(Rows);
+        source.OnColumnsChanged([.. Columns.Select(name => new ColumnInfo<Trade>(name, ColumnType.Text, row => TextOf(name)!(row)))]);
+        Assert.True(source.CanFindAll);
+
+        var first = await source.FindAllAsync(AskAll("a", count: 3), CancellationToken.None);
+        Assert.Equal(7, first.Total);
+        Assert.Equal(["0 Book Alpha", "0 Trader Ishikawa", "1 Book Beta"], first.Matches.Select(m => $"{m.Row} {m.Column} {m.Text}"));
+        Assert.All(first.Matches, match => Assert.Null(match.RowLabel));
+        Assert.Equal(source.RowSequenceVersion, first.RowSequenceVersion);
+
+        source.FindAllRowLabel = trade => $"{trade.Book}/{trade.Trader}";
+        var last = await source.FindAllAsync(AskAll("a", start: 6, count: 3), CancellationToken.None);
+        Assert.Equal(["Alpha/Osei"], last.Matches.Select(m => m.RowLabel));
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => source.FindAllAsync(AskAll("a", start: -1), CancellationToken.None));
+    }
+
     private sealed class OldSource : IGridSource<Trade>
     {
         public IReadOnlyList<Trade> Window => [];
@@ -96,6 +153,8 @@ public class GridFindTests
         IGridSource<Trade> source = new OldSource();
         Assert.False(source.CanFind);
         await Assert.ThrowsAsync<NotSupportedException>(() => source.FindAsync(Ask("x"), CancellationToken.None));
+        Assert.False(source.CanFindAll);
+        await Assert.ThrowsAsync<NotSupportedException>(() => source.FindAllAsync(AskAll("x"), CancellationToken.None));
     }
 
     [Fact] // ADR-0055: a step searching the selection moves only the Focus, inside it

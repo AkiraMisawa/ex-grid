@@ -9,6 +9,7 @@ import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
 import { FetchingGridSource, type FetchingSourceOptions, type GridPage, type GridQuery } from './fetching-source';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
+import type { GridFindAllPage, GridFindAllRequest } from '../finding/find-all';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import type { RowMarks } from '../rows/row-marks';
 import type { RowKey, RowKeyOf } from './row-key';
@@ -84,6 +85,9 @@ export interface GridSource<Row> {
      * this member, and otherwise refuses Find as unavailable. `findStep` is the reference for what a match
      * is. */
     find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    /** Answers a page of a Find All (ADR-0470), where this source lists every match: the grid offers Find All only
+     * for a source that has this member beside `find`. `findAll` is the reference for the list and its order. */
+    findAll?(request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage>;
     /** Answers a Selection Summary (ADR-0130), where this source summarises: the grid asks only a source
      * that has this member, and otherwise shows no figure. `summaryOf` is the reference for what each
      * figure is. */

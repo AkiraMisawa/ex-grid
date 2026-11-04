@@ -13,7 +13,7 @@ import {
     type PivotReportSource, type PivotSlicing,
     type PivotServerNotice, type PivotSource,
 } from '@ex-grid/pivot-engine';
-import { findInReport } from '../src/report-find';
+import { findAllInReport, findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
 import type {
@@ -2392,6 +2392,20 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findStepOf(grid, 'rates', cellAt(5, 0), { scope })).toEqual({ found: true, row: 5, column: label });
     });
 
+    it('ADR-0470 §7: the report grid\'s source lists every match over the report as shown, a page at a time', async () => {
+        const { grid } = mount({ source: local(), layout: regionThenDesk });
+        await settled();
+        const { source, columns } = grid.current;
+        if (source?.findAll === undefined) throw new Error('The report grid was handed a source that does not list.');
+        const ask = (start: number, count: number) => source.findAll?.(Object.freeze({
+            text: 'rates', matchCase: false, wholeCell: false, columns: columns.map(column => column.name),
+            rowSequenceVersion: source.snapshot().rowSequenceVersion, start, count,
+        }), new AbortController().signal);
+        const label = elementAt(columns, 0).name;
+        expect(await ask(0, 10)).toMatchObject({ total: 2, matches: [{ row: 2, column: label, text: 'Rates' }, { row: 5, column: label, text: 'Rates' }] });
+        expect(await ask(1, 1)).toMatchObject({ total: 2, matches: [{ row: 5 }] });
+    });
+
     it('ADR-0332 §4: the painted matches are judged by the rule the step finds by, over the same text', async () => {
         const { grid } = mount({ source: local(), layout: regionThenDesk });
         await settled();
@@ -2462,6 +2476,38 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findInReport(source, metadata, { ...request, text: 'z', from: cellAt(60, 0), scope }, signal))
             .toEqual({ kind: 'answered', answer: { found: false } });
         expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }, { top: 60, left: 0, bottom: 60, right: 0 }]);
+    });
+
+    it('ADR-0470 §7: a Find All reads the report to its end in blocks, by rows across the request\'s columns, within the scope, and pages what it found', async () => {
+        const metadata = { version: 'v1', rowCount: 30_000, labelColumns: [{ name: 'L' }], valueColumns: [{ name: 'V' }] } as unknown as PivotReportMetadata;
+        const asked: PivotReportRange[] = [];
+        const source = copyingWith(query => {
+            const range = elementAt(query.ranges, 0);
+            asked.push(range);
+            const rows = Array.from({ length: range.bottom - range.top + 1 }, (_, i) => {
+                const row = range.top + i;
+                return [{ text: row % 10_000 === 7 ? 'x' : 'y', isNumber: false }, { text: row === 7 ? 'x1' : '2', isNumber: true }];
+            });
+            return { version: 'v1', blocks: [{ headers: ['L', 'V'], rows }] };
+        });
+        const request = Object.freeze({ text: 'x', matchCase: false, wholeCell: false, columns: ['L', 'Other', 'V'], rowSequenceVersion: 3 });
+        const signal = new AbortController().signal;
+        const read = await findAllInReport(source, metadata, request, signal);
+        if (read.kind !== 'answered') throw new Error(`The report answered: ${read.kind}.`);
+        expect(asked).toEqual([{ top: 0, left: 0, bottom: 9_999, right: 1 }, { top: 10_000, left: 0, bottom: 19_999, right: 1 }, { top: 20_000, left: 0, bottom: 29_999, right: 1 }]);
+        const page = read.matches.page(0, 100, 3);
+        expect(page.total).toBe(4);
+        expect(page.matches).toEqual([{ row: 7, column: 'L', text: 'x' }, { row: 7, column: 'V', text: 'x1' }, { row: 10_007, column: 'L', text: 'x' }, { row: 20_007, column: 'L', text: 'x' }]);
+        expect(read.matches.page(3, 2, 3).matches).toEqual([{ row: 20_007, column: 'L', text: 'x' }]);
+        expect(() => read.matches.page(-1, 2, 3)).toThrow(RangeError);
+        asked.length = 0;
+        const scope = [Object.freeze({ topRow: 5, leftColumn: 2, rowCount: 10, columnCount: 1 })];
+        const scoped = await findAllInReport(source, metadata, { ...request, scope }, signal);
+        if (scoped.kind !== 'answered') throw new Error(`The report answered: ${scoped.kind}.`);
+        expect(scoped.matches.page(0, 10, 3).matches).toEqual([{ row: 7, column: 'V', text: 'x1' }]);
+        expect(asked).toEqual([{ top: 5, left: 0, bottom: 14, right: 1 }]);
+        expect(await findAllInReport(copyingWith(() => ({ version: 'v1', blocks: [], refusal: refusalOf('reportVersionNotHeld') })), metadata, request, signal))
+            .toEqual({ kind: 'notHeld' });
     });
 });
 

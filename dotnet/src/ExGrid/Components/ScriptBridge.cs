@@ -37,6 +37,9 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     public Task<string?> Find(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindAsync(number, generation, request));
 
     [JSInvokable]
+    public Task<string?> FindAll(long number, int generation, JsonElement request) => Calls.InOrder(() => grid.FindAllAsync(number, generation, request));
+
+    [JSInvokable]
     public Task<string?> ContextCommands(long number, int generation, int columnsVersion, long row, string column, JsonElement selection, int rowSequenceVersion)
         => Calls.InOrder(() => grid.ContextCommandsAsync(number, generation, columnsVersion, row, column, selection, rowSequenceVersion));
 
@@ -153,6 +156,8 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
                 return await grid.ValidateAsync(At(0).GetInt64(), At(1).GetInt32(), At(2).GetInt64(), Text(3), Text(4));
             case nameof(Find):
                 return await grid.FindAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
+            case nameof(FindAll):
+                return await grid.FindAllAsync(At(0).GetInt64(), At(1).GetInt32(), At(2));
             case nameof(ContextCommands):
                 return await grid.ContextCommandsAsync(At(0).GetInt64(), At(1).GetInt32(), At(2).GetInt32(), At(3).GetInt64(), Text(4), At(5), At(6).GetInt32());
             case nameof(RunContextCommand):

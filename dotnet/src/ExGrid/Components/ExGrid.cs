@@ -82,6 +82,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Whether the Focus's row is tinted (ADR-0029).</summary>
     [Parameter] public bool HighlightFocusRow { get; set; }
 
+    /// <summary>Whether the Focus's column is tinted down its cells, beneath the Selection (ADR-0008, 2026-11-03). With
+    /// <see cref="HighlightFocusRow"/> as well the two bands cross as Excel's Focus Cell does.</summary>
+    [Parameter] public bool HighlightFocusColumn { get; set; }
+
     /// <summary>Whether the row under the pointer is tinted (ADR-0029).</summary>
     [Parameter] public bool HighlightHoverRow { get; set; }
 
@@ -304,6 +308,16 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// same cells, or carrying the same key, share a colour the grid hands out; each range is outlined.
     /// </summary>
     [Parameter] public ScriptFunction? ReferencesIn { get; set; }
+
+    /// <summary>
+    /// The text a Reference is rewritten to when its Reference Outline is dragged (ADR-0480): the Consumer's own
+    /// script (ADR-0431), since the browser asks it as the drag reaches each cell. The function is called with the
+    /// Reference's text as it stands in the editor and the range it is to name, <c>{ topRow, leftColumn, rowCount,
+    /// columnCount }</c>, and answers the Reference naming that range written as the one given was: <c>$C$1</c> for
+    /// <c>$A$1</c> moved two columns. Given with <see cref="ReferencesIn"/>, every outline carries grips while an edit
+    /// is open: its edges move the Reference, and a square at each corner resizes it.
+    /// </summary>
+    [Parameter] public ScriptFunction? MoveReference { get; set; }
 
     /// <summary>
     /// Tells the Consumer the colour each key <see cref="ReferencesIn"/> answered was given (ADR-0057): each key once,
@@ -593,6 +607,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             yield return cycleReference;
         if (ReferencesIn is { } referencesIn)
             yield return referencesIn;
+        if (MoveReference is { } moveReference)
+            yield return moveReference;
         foreach (var script in PaintScripts())
             yield return script;
     }
@@ -1054,6 +1070,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteBoolean("rowKey", source.RowKey is not null);
         json.WriteBoolean("vouchesDistinctRows", source.VouchesDistinctRows);
         json.WriteBoolean("finds", source.CanFind);
+        json.WriteBoolean("findsAll", source.CanFind && source.CanFindAll);
         // Over Rows, OnSummarize answers in place of the source the grid made (ADR-0440).
         json.WriteBoolean("summarizes", source.CanSummarize && !(Rows is not null && OnSummarize is not null));
         json.WriteEndObject();
@@ -1114,6 +1131,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (_stripesSupplied)
             json.WriteBoolean("stripeRows", StripeRows);
         json.WriteBoolean("highlightFocusRow", HighlightFocusRow);
+        json.WriteBoolean("highlightFocusColumn", HighlightFocusColumn);
         if (_hoverSupplied)
             json.WriteBoolean("highlightHoverRow", HighlightHoverRow);
         if (CellMetrics is { } metrics)
@@ -1178,6 +1196,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             WriteScript(json, "referenceText", ReferenceText);
             WriteScript(json, "cycleReference", CycleReference);
             WriteScript(json, "referencesIn", ReferencesIn);
+            WriteScript(json, "moveReference", MoveReference);
             WriteSurfaceScripts(json);
             json.WriteEndObject();
         }
@@ -1813,6 +1832,65 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 cancelled.ThrowIfCancellationRequested();
             }
             return await FoundJsonAsync(found);
+        }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>The page of a Find All the browser numbered <paramref name="number"/> (ADR-0470), asked of the source's
+    /// <see cref="IGridSource{TRow}.FindAllAsync"/> in its turn among the events, as a Find step is: one asked of a
+    /// source since replaced, or under another order, is answered as moved, after what the source owes the browser.
+    /// <see cref="IGridSource{TRow}.CanFindAll"/> is read once for each source, as it is handed to the browser.</summary>
+    internal Task<string?> FindAllAsync(long number, int generation, JsonElement request)
+    {
+        var asked = new Finding.GridFindAllRequest
+        {
+            Text = ScriptJson.Text(request, "text"),
+            MatchCase = request.GetProperty("matchCase").GetBoolean(),
+            WholeCell = request.GetProperty("wholeCell").GetBoolean(),
+            Scope = ScriptJson.Present(request, "scope", out var scope) ? ScriptJson.Ranges(scope) : null,
+            Columns = ScriptJson.Texts(request.GetProperty("columns")),
+            RowSequenceVersion = request.GetProperty("rowSequenceVersion").GetInt32(),
+            Start = request.GetProperty("start").GetInt32(),
+            Count = request.GetProperty("count").GetInt32(),
+        };
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            Finding.GridFindAllPage? page = null;
+            if (SourceOf(generation) is { } source && source.RowSequenceVersion == asked.RowSequenceVersion)
+            {
+                if (!source.CanFindAll)
+                    throw new InvalidOperationException($"{source.GetType().Name} stopped answering Find All (CanFindAll is false) after the grid was told it "
+                        + "lists every match: ExGrid over the Script Core reads CanFindAll once for each source it is handed (ADR-0470).");
+                page = await source.FindAllAsync(asked, cancelled);
+                cancelled.ThrowIfCancellationRequested();
+            }
+            if (_attached)
+                await SendUpdateAsync();
+            return Json(json =>
+            {
+                json.WriteStartObject();
+                if (page is null)
+                {
+                    json.WriteBoolean("moved", true);
+                }
+                else
+                {
+                    json.WriteNumber("total", page.Total);
+                    json.WriteNumber("rowSequenceVersion", page.RowSequenceVersion);
+                    json.WriteStartArray("matches");
+                    foreach (var match in page.Matches)
+                    {
+                        json.WriteStartObject();
+                        json.WriteNumber("row", match.Row);
+                        json.WriteString("column", match.Column);
+                        json.WriteString("text", match.Text);
+                        if (match.RowLabel is { } label)
+                            json.WriteString("rowLabel", label);
+                        json.WriteEndObject();
+                    }
+                    json.WriteEndArray();
+                }
+                json.WriteEndObject();
+            });
         }), Answers: true, SendsState: false));
     }
 

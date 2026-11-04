@@ -144,6 +144,9 @@ on the wrong characters. That is SRV-7's failure (`…123456789` became `…1289
   - **The gesture is kept in view** in `docs/definition-of-done.md` §21.11 and in ticket 31 of
     `docs/specs/exsheet/issues/`, which holds what the eighth run saw of the squares. Whoever builds
     the gesture builds the squares with it.
+  - *(2026-11-03, decided with the user: the gesture and its squares are built, in
+    [ADR-0480](./0480-a-reference-outline-is-dragged-by-its-edge-to-move-its-reference-and-by-a-corner-square-to-resize-it.md).
+    The entry stays here as the record of why the squares waited.)*
 - **Telling Reference Outlines apart under forced colours.** Forced colours replace every colour
   with a system colour, so all the outlines, and all the coloured text, come out alike. The outlines
   still show which cells are read, but not which argument reads them. Line styles could tell three or

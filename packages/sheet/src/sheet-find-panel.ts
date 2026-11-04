@@ -25,8 +25,10 @@ export const sheetFindLabelIds = Object.freeze({
 export interface SheetFindPanelHost {
     /** Where the panel searches now. */
     readonly within: () => SheetFindWithin;
-    /** A choice of Within, made in the panel. */
-    readonly chooseWithin: (within: SheetFindWithin) => void;
+    /** A choice of Within, made in the panel: a Find All list standing goes with it (ADR-0470 §5). */
+    readonly chooseWithin: (within: SheetFindWithin, context: GridFindPanelSlotContext) => void;
+    /** Find All pressed (ADR-0470 §7): the grid's over the Sheet, the Sheet's own list over the Workbook. */
+    readonly findAll: (context: GridFindPanelSlotContext) => void;
     /** Replace All pressed: the grid's over the Sheet, the Sheet's own over the Workbook. */
     readonly replaceAll: (context: GridFindPanelSlotContext) => void;
     /** What the outcome line says now: the Sheet's own Replace All's outcome while it stands, else the grid's. */
@@ -91,7 +93,7 @@ export function sheetFindPanelSlot(host: SheetFindPanelHost): GridChromeSlot<Gri
             input.className = className;
             input.checked = host.within() === within;
             input.setAttribute('data-ex-claims', 'click');
-            input.addEventListener('change', () => { if (input.checked) host.chooseWithin(within); });
+            input.addEventListener('change', () => { if (input.checked) host.chooseWithin(within, context); });
             const element = doc.createElement('label');
             element.append(input, label(id));
             return element;
@@ -110,7 +112,9 @@ export function sheetFindPanelSlot(host: SheetFindPanelHost): GridChromeSlot<Gri
             radio('ex-sheet-find-within-workbook', sheetFindLabelIds.withinWorkbook, 'workbook'));
         const steps = doc.createElement('div');
         steps.className = 'ex-popover-actions';
-        steps.append(button('ex-find-previous', findPanelLabelIds.previous, context.previous), button('ex-find-next', findPanelLabelIds.next, context.next));
+        // Find All (ADR-0470 §1), before the two steps as in the grid's built-in panel, while the grid offers it.
+        const findAll = button('ex-find-all-button', findPanelLabelIds.findAll, () => { host.findAll(context); });
+        steps.append(findAll, button('ex-find-previous', findPanelLabelIds.previous, context.previous), button('ex-find-next', findPanelLabelIds.next, context.next));
         const outcome = doc.createElement('div');
         outcome.className = 'ex-find-outcome';
         outcome.setAttribute('role', 'status');
@@ -121,6 +125,7 @@ export function sheetFindPanelSlot(host: SheetFindPanelHost): GridChromeSlot<Gri
         let replace: { readonly field: HTMLInputElement; readonly actions: HTMLElement; readonly buttons: readonly HTMLButtonElement[] } | undefined;
         const paint = (): void => {
             view = context.view();
+            if (findAll.hidden === view.findAllShown) findAll.hidden = !view.findAllShown;
             if (matchCase.box.checked !== view.matchCase) matchCase.box.checked = view.matchCase;
             if (wholeCell.box.checked !== view.wholeCell) wholeCell.box.checked = view.wholeCell;
             if (view.replaceShown && replace === undefined) {

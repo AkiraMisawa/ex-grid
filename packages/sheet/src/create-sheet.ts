@@ -10,7 +10,7 @@
 import {
     createGrid, formulaBarHeight, gridCellMetrics, GridPresentationDefaults, type CellTextMetrics, gridChromeSlotNames, refusedCells, summaryFigureOrder, replacedCells, type CellPosition, type GridChrome, type GridDirection,
     type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
-    type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
+    type GridReplaceRequest, type GridReplaceResult, type GridFindRequest, type GridFindResult, type GridFindPanelSlotContext, type GridFindAllList, type FindOutcome, type FindPanelRefusedCell, type GridDeclaredKeyPress, findOutcomeText,
     type GridFillIntent, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize, type GridCommand, type GridContextMenuContext, type GridEditorReference, type ReferenceKeyColour, type GridPointArrow, type GridPointState, type EditorCompletion,
     type SelectionSummary, type SummaryFigure, builtInCommandLabel, reloadNoticeLabelIds,
@@ -25,8 +25,8 @@ import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-
 import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
 import { SheetHistory, type SheetOperationStepped } from './sheet-history';
-import { SheetRow } from './sheet-row';
-import { planSheetReplace, planWorkbookReplace, positionsOf, sheetCellMatches, sheetFindStep, sheetFindStepWorkbook } from './sheet-find';
+import { SheetRow, shownTextOf } from './sheet-row';
+import { planSheetReplace, planWorkbookReplace, positionsOf, sheetCellMatches, sheetFindStep, sheetFindStepWorkbook, SheetWorkbookMatches } from './sheet-find';
 import { sheetFindPanelSlot, type SheetFindWithin } from './sheet-find-panel';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
@@ -50,7 +50,7 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
-import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceTextOn } from './sheet-formula-aids';
+import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetMoveReference, sheetPointAt, sheetReferences, sheetReferenceTextOn } from './sheet-formula-aids';
 import { PointingScope, type LinkedColumnColour, type PointingSheet } from './pointing-scope';
 import type { PointingRefusal } from './pointing-refusal';
 
@@ -1142,6 +1142,7 @@ class SheetView {
     // and its views go with it, under a new Row Sequence Version, which drops the Selection and refuses what was aimed
     // at the old cells (ADR-0011, ADR-0142).
     #replaceWorkbook(opened: Workbook, fromFile: boolean): void {
+        this.#dropWorkbookFindAll();
         this.#fileOpened = fromFile;
         this.#workbook = opened;
         this.#history.clear();
@@ -1300,6 +1301,8 @@ class SheetView {
             // Formula is typed on, all of them; on another shown to point at its cells, those naming it (ADR-0331 §5).
             referencesIn: this.#referencesIn,
             onReferenceKeyColoursChanged: this.#onKeyColoursChanged,
+            // An outline dragged by its edge or a corner square rewrites its Reference in its own form (ADR-0480).
+            moveReference: this.#moveReference,
             // Point: the arrows and a press write a Reference where one can go, and F4 cycles its forms (ADR-0051).
             pointAt: sheetPointAt,
             referenceText: this.#referenceText,
@@ -1677,6 +1680,9 @@ class SheetView {
 
     // The Reference Point writes: bare on the Sheet the Formula is typed on, named with its Sheet on another (ADR-0331 §5).
     readonly #referenceText = (range: SelectionRange): string => sheetReferenceTextOn(range, this.#source.sheet, this.#editHome);
+
+    // A dragged Reference rewritten to name other cells of the Sheet shown, written as it was (ADR-0480).
+    readonly #moveReference = (reference: string, range: SelectionRange): string => sheetMoveReference(this.#source.sheet, reference, range);
 
     // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed (ADR-0331 §5): its
     // Formula is committed there, and the edit's end shows it again.
@@ -2399,6 +2405,8 @@ class SheetView {
 
     // Where the panel searches, as it last chose: kept across a close and a reopen, as the grid keeps the text.
     #findWithin: SheetFindWithin = 'sheet';
+    // The panel a Find All over the Workbook was listed in, while its list may stand (ADR-0470 §7).
+    #workbookFindAll: GridFindPanelSlotContext | undefined;
     // Every answer that changes what the panel says moves this on: a step asked, the grid's Replace Request, a choice
     // of Within. The Sheet's own Replace All's outcome is said while nothing has moved it since, and the panel has not
     // been mounted again.
@@ -2428,13 +2436,24 @@ class SheetView {
         within: () => this.#findWithin,
         // A choice of Within is a click taken in its place in the Input Order (ADR-0240): a step numbered before it
         // searches where the panel searched then, one numbered after it where it searches now.
-        chooseWithin: within => {
+        chooseWithin: (within, context) => {
             this.#findWithin = within;
             this.#findMoved();
+            context.dropFindAll();
+            this.#workbookFindAll = undefined;
+        },
+        // Over the Sheet, the grid's list; over the Workbook, the Sheet's own, which the grid draws (ADR-0470 §7).
+        findAll: context => {
+            if (this.#findWithin === 'workbook') context.listFindAll(() => this.#listWorkbook(context));
+            else context.findAll();
         },
         // Over the Sheet, the grid's Replace Request; over the Workbook, the Sheet's own.
         replaceAll: context => {
-            if (this.#findWithin === 'workbook') this.#replaceAllInWorkbook(context);
+            if (this.#findWithin === 'workbook') {
+                // Its writes may move what matches, as the grid's Replace All drops its list (ADR-0470 §6).
+                this.#dropWorkbookFindAll();
+                this.#replaceAllInWorkbook(context);
+            }
             else context.replaceAll();
         },
         outcome: context => {
@@ -2474,6 +2493,53 @@ class SheetView {
             throw new DOMException('The match is on another Sheet, now shown with it selected.', 'AbortError');
         });
     };
+
+    /**
+     * Find All over the Workbook (ADR-0470 §7), asked in the press's turn: every Sheet's matches, in tab order, each line
+     * named by its Sheet and address (`Sheet2!B12`) and showing its cell's text, for the grid to draw. The Sheet holds
+     * the cells, so it drops the list at any change to the Workbook.
+     */
+    #listWorkbook(context: GridFindPanelSlotContext): GridFindAllList {
+        const view = context.view();
+        const matches = new SheetWorkbookMatches(this.#workbook.sheets, { text: view.text, matchCase: view.matchCase, wholeCell: view.wholeCell });
+        this.#workbookFindAll = context;
+        return {
+            count: matches.count,
+            line: index => {
+                const { sheet, address } = matches.at(index);
+                return { where: referenceText(new CellRange(address), sheet.name), text: shownTextOf(sheet, address) };
+            },
+            choose: index => this.#chooseWorkbookMatch(matches.at(index)),
+        };
+    }
+
+    // A line of the Workbook's list chosen (ADR-0470 §4): a match on the Sheet shown is placed as a step's answer is;
+    // one on another Sheet shows that Sheet with the cell selected, as a step over the Workbook does. While an edit is
+    // open nothing moves, and the notice says why. Answers whether the Focus moved, so the list marks the line only then.
+    #chooseWorkbookMatch({ sheet, address }: { readonly sheet: Sheet; readonly address: CellAddress }): boolean {
+        if (this.#destroyed) return false;
+        if (this.#editing) {
+            this.#tell(this.#words.editIsOpen);
+            return false;
+        }
+        const cell = { row: address.row, column: address.column };
+        if (sheet === this.#source.sheet) {
+            const grid = this.#grid;
+            if (grid === undefined) throw new Error('Internal: the Workbook\'s Find All list was chosen from with no grid drawn.');
+            return grid.placeMatch(cell, this.#source.snapshot().rowSequenceVersion);
+        }
+        this.#clearNotice();
+        this.#showSheet(sheet, cell);
+        this.#raiseDocument();
+        return true;
+    }
+
+    // The Workbook's Find All list goes: the cells it was read from changed.
+    #dropWorkbookFindAll(): void {
+        const context = this.#workbookFindAll;
+        this.#workbookFindAll = undefined;
+        context?.dropFindAll();
+    }
 
     /**
      * Replace All over the Workbook (ADR-0332 §5), from the panel's button in its place in the Input Order: every
@@ -3066,6 +3132,7 @@ class SheetView {
      * the C# Sheet's does, since it changes Values and no format Format Cells read.
      */
     #changed(changes: readonly WorkbookChange[], raiseDocument = true, byUser = true): void {
+        this.#dropWorkbookFindAll();
         // Format Cells read the cells it was opened over: an operation under it, an undo or a Toolbar press, ends it,
         // so its OK never sets a draft read from formats or places that no longer stand (the spine's sixth rule).
         if (byUser) {

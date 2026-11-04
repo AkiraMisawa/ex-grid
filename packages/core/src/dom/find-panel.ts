@@ -8,6 +8,7 @@
 // The DOM is the C# core's built-in panel's, so ex-grid.css and layer 3 read both alike.
 
 import { findPanelLabelIds } from '../chrome/find-panel-labels';
+import type { GridFindAllList } from './find-all-list';
 
 /** What the find panel holds, kept by the grid across a close and a reopen (ADR-0055, ADR-0332 §4). */
 export interface FindHeld {
@@ -29,6 +30,12 @@ export interface FindPanelAnswers {
     readonly replaceOne: () => void;
     /** Replace All, asked of the Consumer. */
     readonly replaceAll: () => void;
+    /** Find All, its list asked of the Consumer (ADR-0470). */
+    readonly findAll: () => void;
+    /** Find All, its list a slot's contents' own (ADR-0470 §7), asked in its turn. */
+    readonly listFindAll: (list: () => GridFindAllList) => void;
+    /** An option of a slot's contents' own changed what a search means: the list standing goes (ADR-0470 §5). */
+    readonly dropFindAll: () => void;
     /** The text or an option changed: the Match Marks may move (ADR-0332 §4). */
     readonly heldChanged: () => void;
     /** An input reached the panel and was answered (ADR-0220). */
@@ -47,6 +54,10 @@ export interface FindPlace {
     showReplace(shown: boolean): void;
     /** Whether a Replace All is out with the Consumer: Replace and Replace All wait for its answer (ADR-0332 §3). */
     waitForReplace(waiting: boolean): void;
+    /** Offers Find All or takes it away (ADR-0470 §1): offered where the source lists every match. */
+    offerFindAll(offered: boolean): void;
+    /** Places a Find All's list under the contents, or takes it away (ADR-0470 §3). */
+    showFindAll(part: HTMLElement | undefined): void;
     /** What the last step or Replace came to, as the grid words it; empty for one that says nothing. */
     say(text: string): void;
     /** The find field takes the keyboard, its text selected, so what is typed next replaces it (FD-1). */
@@ -135,6 +146,8 @@ export class FindPanel implements FindPlace {
     #replace: ReplacePart | undefined;
     // Whether a Replace All is out with the Consumer.
     #waiting = false;
+    readonly #findAllButton: HTMLButtonElement;
+    #findAllPart: HTMLElement | undefined;
 
     constructor(doc: Document, held: FindHeld, words: (id: string) => string, answers: FindPanelAnswers) {
         this.#doc = doc;
@@ -151,7 +164,10 @@ export class FindPanel implements FindPlace {
         });
         const actions = doc.createElement('div');
         actions.className = 'ex-popover-actions';
+        this.#findAllButton = this.#button('ex-find-all-button', findPanelLabelIds.findAll, () => { answers.findAll(); });
+        this.#findAllButton.hidden = true;
         actions.append(
+            this.#findAllButton,
             this.#button('ex-find-previous', findPanelLabelIds.previous, () => { answers.step(true); }),
             this.#button('ex-find-next', findPanelLabelIds.next, () => { answers.step(false); }),
         );
@@ -216,6 +232,17 @@ export class FindPanel implements FindPlace {
 
     say(text: string): void {
         if (this.#outcome.textContent !== text) this.#outcome.textContent = text;
+    }
+
+    offerFindAll(offered: boolean): void {
+        this.#findAllButton.hidden = !offered;
+    }
+
+    showFindAll(part: HTMLElement | undefined): void {
+        if (part === this.#findAllPart) return;
+        this.#findAllPart?.remove();
+        this.#findAllPart = part;
+        if (part !== undefined) this.#outcome.after(part);
     }
 
     focusField(): void {

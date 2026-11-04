@@ -1,5 +1,6 @@
 // The Find and Replace requests a case writes, read for the "find", "replace" and "source" runners.
 import type { GridFindRequest } from '../src/finding/find';
+import type { GridFindAllRequest } from '../src/finding/find-all';
 import type { GridReplaceRequest } from '../src/finding/replace';
 import { readCell, readRanges, type CellText, type RangeText } from './cases';
 
@@ -11,6 +12,16 @@ export interface WrittenFind {
     readonly wholeCell?: boolean;
     readonly scope?: readonly RangeText[];
     readonly columns?: readonly string[];
+}
+
+export interface WrittenFindAll {
+    readonly text: string;
+    readonly matchCase?: boolean;
+    readonly wholeCell?: boolean;
+    readonly scope?: readonly RangeText[];
+    readonly columns?: readonly string[];
+    readonly start: number;
+    readonly count: number;
 }
 
 export interface WrittenReplace {
@@ -35,6 +46,21 @@ export function findRequestOf(written: WrittenFind, columns: readonly string[]):
         scope: written.scope === undefined ? undefined : readRanges(written.scope),
         columns: written.columns === undefined ? columns : written.columns,
         rowSequenceVersion: 0,
+    };
+}
+
+/** A Find All as a case writes it: a key left out is off, the file's columns, or none; the range is always written. */
+export function findAllRequestOf(written: WrittenFindAll, columns: readonly string[]): GridFindAllRequest {
+    if (typeof written.start !== 'number' || typeof written.count !== 'number') throw new Error('A Find All case writes its range: "start" and "count".');
+    return {
+        text: written.text,
+        matchCase: flag(written.matchCase, 'matchCase'),
+        wholeCell: flag(written.wholeCell, 'wholeCell'),
+        scope: written.scope === undefined ? undefined : readRanges(written.scope),
+        columns: written.columns === undefined ? columns : written.columns,
+        rowSequenceVersion: 0,
+        start: written.start,
+        count: written.count,
     };
 }
 

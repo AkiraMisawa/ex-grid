@@ -36,12 +36,42 @@ export function cycleReference(text, start, end) {
     return null;
 }
 
+const cellOrRange = /(\$?)([A-D])(\$?)([1-9][0-9]*)(?::(\$?)([A-D])(\$?)([1-9][0-9]*))?/g;
+
 /** The References in a Formula, each with the cells it names, which the grid outlines in their colours. */
 export function referencesIn(text) {
     if (!text.startsWith('=')) return null;
-    return [...text.matchAll(reference)].map(match => ({
-        start: match.index,
-        length: match[0].length,
-        range: { topRow: Number(match[4]) - 1, leftColumn: letters.indexOf(match[2]), rowCount: 1, columnCount: 1 },
-    }));
+    return [...text.matchAll(cellOrRange)].map(match => {
+        const top = Number(match[4]) - 1;
+        const left = letters.indexOf(match[2]);
+        const bottom = match[8] === undefined ? top : Number(match[8]) - 1;
+        const right = match[6] === undefined ? left : letters.indexOf(match[6]);
+        return {
+            start: match.index,
+            length: match[0].length,
+            range: {
+                topRow: Math.min(top, bottom), leftColumn: Math.min(left, right),
+                rowCount: Math.abs(bottom - top) + 1, columnCount: Math.abs(right - left) + 1,
+            },
+        };
+    });
+}
+
+/**
+ * A Reference dragged by its outline's edge or corner square, rewritten to name `range` as it was written: each end
+ * keeps its `$`, and a single cell made a range writes both ends in its form.
+ */
+export function moveReference(text, range) {
+    const match = new RegExp(`^${cellOrRange.source}$`).exec(text);
+    if (match === null) throw new RangeError(`'${text}' is not a Reference this Example reads.`);
+    // A single cell lends its own form to the end a resize gives it.
+    const [, column1$, , row1$, , column2$ = column1$, , row2$ = row1$] = match;
+    const name = (row, column, column$, row$) => {
+        if (column >= letters.length) throw new RangeError(`This Example's References name columns A to D, not column ${column + 1}.`);
+        return `${column$}${letters[column]}${row$}${row + 1}`;
+    };
+    const first = name(range.topRow, range.leftColumn, column1$, row1$);
+    return range.rowCount === 1 && range.columnCount === 1
+        ? first
+        : `${first}:${name(range.topRow + range.rowCount - 1, range.leftColumn + range.columnCount - 1, column2$, row2$)}`;
 }

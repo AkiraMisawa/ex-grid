@@ -1,0 +1,35 @@
+@using ExGrid.Docs.Examples.Data
+
+<div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 14px">
+    <label style="display: inline-flex; gap: 6px; align-items: center">
+        <input type="checkbox" checked="@_labelled" @onchange="Label" />
+        Name each row by its trade
+    </label>
+    <span>Press Ctrl+F in the grid, type "novak" and press Find All</span>
+</div>
+
+<ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    // GridSource.From answers Find All for you: every match over its rows, a page at a time, with the exact count.
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample(2_000));
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+    ];
+
+    private bool _labelled;
+
+    // The list names a row by its position in the order shown, "Row 12, Trader"; or by your own words for it. A Find
+    // All pressed after the change names rows the new way.
+    private void Label(ChangeEventArgs change)
+    {
+        _labelled = change.Value is true;
+        _source.FindAllRowLabel = _labelled ? t => $"Trade {t.Id}" : null;
+    }
+}

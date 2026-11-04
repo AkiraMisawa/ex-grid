@@ -25,6 +25,12 @@
     <MudCheckBox T="bool" @attributes="@ScriptSlotMarkup.ValueOnce(_wholeCellOpens)" Label="@Own(FindPanelLabelIds.WholeCell, View.Words.WholeCell)" Dense="true" Size="Size.Small"
                  Class="mud-ex-grid-find-whole-cell" UserAttributes="@Marked(ScriptSlotAttributes.FindOption, "wholeCell")" />
     <div class="mud-ex-grid-find-actions">
+        @if (View.FindAllShown)
+        {
+            @* Find All (ADR-0470): the core asks the list and draws it, with its count, under these contents. *@
+            <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.ManageSearch" Class="mud-ex-grid-find-all"
+                       UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "findAll")">@Own(FindPanelLabelIds.FindAll, View.Words.FindAll)</MudButton>
+        }
         <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp" Class="mud-ex-grid-find-previous"
                    UserAttributes="@Marked(ScriptSlotAttributes.FindStep, "previous")">@Own(FindPanelLabelIds.Previous, View.Words.Previous)</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"

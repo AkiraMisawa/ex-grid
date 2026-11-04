@@ -21,7 +21,7 @@ import { builtInCommandLabel } from '../chrome/command-labels';
 import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
 import { selectionLabelIds } from '../chrome/selection-words';
-import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
+import { findOutcomeText, findPanelLabelIds, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds, gridLabelIds, reloadNoticeLabelIds } from '../chrome/command-ids';
 import { filledWords } from '../chrome/filled-words';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
@@ -47,7 +47,8 @@ import { HeldTextCommit } from './held-text-commit';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { GridPresentationDefaults } from '../grid-presentation-defaults';
 import { CellTextMetrics } from '../columns/cell-text-metrics';
-import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
+import { inScope, matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
+import type { GridFindAllMatch, GridFindAllPage, GridFindAllRequest } from '../finding/find-all';
 import { columnHeaderId, findHeaders, groupHeaderId, matchingHeaders, sameHeaders, type FindHeader } from '../finding/header-find';
 import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-walk';
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
@@ -70,6 +71,7 @@ import { HeldSelection } from '../selection/held';
 import { bottomRow, boundingRange, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, selectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { GridFillIntent } from '../selection/fill-intent';
 import { fillExtensionFor, fillHandleCorner, fillHandleRange, planHandleFill, type FillHandleCorner } from '../selection/fill-rules';
+import { gripCursor, gripResizes, type ReferenceGripKind } from '../paint/selection-styles';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -78,6 +80,7 @@ import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summ
 import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type SummaryFigure } from '../summary/summary-accumulator';
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
+import { clamp } from '../viewport/checks';
 import { ViewportBox } from '../viewport/viewport-box';
 import { PageGeometry } from '../viewport/page-geometry';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
@@ -98,6 +101,7 @@ import {
 } from './grid-chrome';
 import { FilterPanel, type FilterPlace, type FilterUi } from './filter-panel';
 import { FindPanel, type FindHeld, type FindPlace } from './find-panel';
+import { FindAllList, findAllVisibleLines, type GridFindAllLine, type GridFindAllList } from './find-all-list';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
@@ -106,7 +110,7 @@ import {
     resolveColumns, type GridAction, type GridActionEvent, type GridColumn, type GridTemplate, type GridTemplateCell, type ResolvedColumn,
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
-import { selectionLayers, type FillPaint, type LayerPiece, type PointPaint } from './selection-layers';
+import { selectionLayers, type FillPaint, type GripPaint, type LayerGrip, type LayerPiece, type PointPaint } from './selection-layers';
 import { handle as paintedHandle, handleCell, handleCentrePx, type ReadableEdge } from '../paint/selection-styles';
 import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
@@ -315,6 +319,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     /** A band across the Focus's row, beneath the Selection's tints (ADR-0008), filled with
      * `--ex-focus-row-fill`. Off unless given. */
     readonly highlightFocusRow?: boolean;
+    /** A band down the Focus's column, beneath the Selection's tints (ADR-0008, 2026-11-03), filled with
+     * `--ex-focus-column-fill`, which is `--ex-focus-row-fill` unless set. It covers the column's cells and not its
+     * header, and with `highlightFocusRow` as well the two cross as Excel's Focus Cell does, the Focus's cell tinted
+     * once. Off unless given. */
+    readonly highlightFocusColumn?: boolean;
     /** A band across the row under the pointer, what every design system's table calls Hover (ADR-0029),
      * filled with `--ex-row-hover-background`. It is the overlay's, so no row learns anything and none is
      * painted again; it goes when the pointer leaves the grid or the rows move under it. Off unless given,
@@ -638,6 +647,16 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      */
     readonly outlinedColumns?: readonly GridOutlinedColumn[];
     /**
+     * The text a Reference is rewritten to when its Reference Outline is dragged (ADR-0480): `reference` as it stands
+     * in the editor's text, and the cells it is to name, answered as the Reference naming them written as `reference`
+     * was (`$A$1` moved two columns is `$C$1`). Declared beside `referencesIn`, every outline over this grid's cells
+     * carries grips while an edit is open: its edges, which move the Reference keeping its size, and a square at each
+     * corner, which resizes it from the opposite corner. The text is rewritten each time the range reached changes;
+     * the caret stays where it was, and Escape mid-drag puts the Reference back. A non-string or empty answer is
+     * refused by name. None, and no outline carries a grip.
+     */
+    readonly moveReference?: (reference: string, range: SelectionRange) => string;
+    /**
      * Whether, in this text with the caret here, a Reference can go at the caret (ADR-0051): after `=`, an operator,
      * `(` or `,` in a Formula. Asked synchronously on the editor's text and caret as each key or press finds them,
      * never on an earlier answer, so a fast typist is never pointed where the text no longer allows it. While it
@@ -936,6 +955,7 @@ interface Taken<Row> {
     readonly showFillHandle: boolean;
     readonly onFill: ((intent: GridFillIntent) => void | PromiseLike<void>) | undefined;
     readonly highlightFocusRow: boolean;
+    readonly highlightFocusColumn: boolean;
     readonly highlightHoverRow: boolean;
     readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>) | undefined;
     readonly declaredKeys: ReadonlySet<string>;
@@ -996,6 +1016,45 @@ interface Taken<Row> {
 // A column's menu stands under its column's header, followed by the column's name (ADR-0010).
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
 // A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
+/** How many entries of a Find All's list one page asks for (ADR-0470 §2). */
+const findAllPageSize = 100;
+
+// What a find panel slot's own Find All list must be (ADR-0470 §7): its count, its lines and its choice.
+function isFindAllList(value: unknown): value is GridFindAllList {
+    return typeof value === 'object' && value !== null && 'count' in value && typeof value.count === 'number'
+        && 'line' in value && typeof value.line === 'function' && 'choose' in value && typeof value.choose === 'function';
+}
+
+function isFindAllLine(value: unknown): value is GridFindAllLine {
+    return typeof value === 'object' && value !== null && 'where' in value && typeof value.where === 'string' && 'text' in value && typeof value.text === 'string';
+}
+
+/** The list of a Find All while it stands (ADR-0470): what it was asked under, and what has been read of it. */
+interface FindAllHeld<Row> {
+    readonly source: GridSource<Row>;
+    /** The grid's sequence it was read under: a list whose sequence has moved goes (ADR-0470 §5). */
+    readonly sequence: number;
+    readonly request: Omit<GridFindAllRequest, 'start' | 'count'>;
+    readonly columnCount: number;
+    /** The headers matched, listed before the rows (ADR-0333 §3). */
+    readonly headers: readonly FindHeader[];
+    /** How many rows' cells match, once the first page has answered. */
+    rowTotal: number | undefined;
+    readonly pages: Map<number, readonly GridFindAllMatch[]>;
+    readonly asking: Map<number, AbortController>;
+    /** The line of the current match, chosen or followed. */
+    active: number | undefined;
+    /** The current match `active` was read against: when a step or a write moves it, `active` follows (ADR-0470 §4). */
+    activeFor: object | undefined;
+    /** The lines in view, whose pages are asked one at a time (ADR-0470 §2). */
+    view: { readonly first: number; readonly last: number } | undefined;
+    /** Why the list went, while it shows only that. */
+    gone: 'orderChanged' | 'sourceChanged' | undefined;
+    part: FindAllList | undefined;
+    /** The list a find panel slot's contents hold themselves (ADR-0470 §7), which the grid only draws. */
+    readonly own: GridFindAllList | undefined;
+}
+
 type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPlace }
     | {
         readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object;
@@ -1240,6 +1299,51 @@ interface PointDashesAsked {
 function sameDashesAsked(was: PointDashesAsked, now: PointDashesAsked): boolean {
     return was.dashes === now.dashes && was.columns === now.columns && was.window === now.window && was.windowStart === now.windowStart
         && was.start === now.start && was.count === now.count && was.totalRows === now.totalRows;
+}
+
+/**
+ * A Reference Outline's grip drag (ADR-0480): the edit it was pressed in, the Reference's span in the text as it now
+ * stands and the text last written, the range drawn when it was pressed and the one reached since, what the drag
+ * holds still (the cell pressed, for a move; the opposite corner, for a resize), and the edit as it was, which Escape
+ * puts back.
+ */
+interface GripDrag {
+    readonly edit: object;
+    readonly resizes: boolean;
+    readonly from: SelectionRange;
+    readonly held: CellPosition;
+    readonly start: number;
+    length: number;
+    written: string;
+    reached: SelectionRange;
+    readonly before: GripBefore;
+}
+
+/** The edit as a grip drag found it (ADR-0480, section 6). */
+interface GripBefore {
+    readonly text: string;
+    readonly selectionStart: number;
+    readonly selectionEnd: number;
+    readonly mode: 'overwrite' | 'caret' | 'point';
+    readonly pointer: Selection | undefined;
+    readonly pointStart: number;
+    readonly pointLength: number;
+    readonly pointWritten: string | undefined;
+}
+
+// The corner of `range` across from the square `kind` names: what a resize holds still (ADR-0480).
+function oppositeCorner(range: SelectionRange, kind: ReferenceGripKind): CellPosition {
+    const top = kind === 'bottomLeft' || kind === 'bottomRight';
+    const left = kind === 'topRight' || kind === 'bottomRight';
+    return cellPosition(top ? range.topRow : bottomRow(range), left ? range.leftColumn : rightColumn(range));
+}
+
+// The cell of `range` nearest a press at `at` on the edge `kind` names: what a move holds (ADR-0480). Across the edge
+// it is the edge's own row or column, whatever `at` says there, as half the edge's strip lies outside the range.
+function edgeCellOf(range: SelectionRange, kind: ReferenceGripKind, at: CellPosition): CellPosition {
+    const row = kind === 'top' ? range.topRow : kind === 'bottom' ? bottomRow(range) : clamp(at.row, range.topRow, bottomRow(range));
+    const column = kind === 'left' ? range.leftColumn : kind === 'right' ? rightColumn(range) : clamp(at.column, range.leftColumn, rightColumn(range));
+    return cellPosition(row, column);
 }
 
 /** An open edit's Point as it stood before a write from outside: what taking the write back returns it to. */
@@ -1585,6 +1689,7 @@ export class GridView<Row> {
     #handlePointer: CellPosition | undefined;
     #handleOutline: SelectionRange | undefined;
     #highlightFocusRow = false;
+    #highlightFocusColumn = false;
     #highlightHoverRow = false;
     #stripeRows = false;
     // The pager (ADR-0015): the rows a page holds while one stands, and the page shown, transient view state as the
@@ -1868,6 +1973,8 @@ export class GridView<Row> {
     readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
     #findOutcome: FindOutcome = { kind: 'none' };
     #findStepping: AbortController | undefined;
+    // The list of the last Find All while it stands (ADR-0470).
+    #findAll: FindAllHeld<Row> | undefined;
     #replacing = 0;
     // A Pending Commit (ADR-0380 section 3), and the stamps given so far. `#input` is the last input the root heard
     // ahead of everything in it: while its dispatch is under way, it is the gesture a commit made in its handler
@@ -1927,7 +2034,9 @@ export class GridView<Row> {
     #topRowOwed: number | undefined;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     // The Reference Outline options (ADR-0057), and the colouring, columns and key colours they make.
-    #referenceOptions: ReferenceOutlineOptions = { referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined };
+    #referenceOptions: ReferenceOutlineOptions = {
+        referencesIn: undefined, onReferenceKeyColoursChanged: undefined, outlinedColumns: undefined, moveReference: undefined,
+    };
     readonly #referenceOutlines = new ReferenceOutlines();
     // Point (ADR-0051): the options, and the pointing outline as a Focus and an Extent of its own, a one-range
     // selection moved by the transitions the Selection's own use; the span of the text its Reference occupies, and
@@ -1941,6 +2050,10 @@ export class GridView<Row> {
     #pointLength = 0;
     #pointWritten: string | undefined;
     #pointDragging = false;
+    // A Reference Outline's grip drag (ADR-0480): what it was pressed on and against, and what it has reached. The
+    // grips as last drawn, each element with what it is, so a press on one is read without the layout.
+    #gripDrag: GripDrag | undefined;
+    readonly #gripElements = new WeakMap<Element, { readonly grip: LayerGrip; readonly pinned: boolean }>();
     // Whether what Point wrote was handed in from outside (ADR-0058): no outline stands over this grid's cells for
     // it, and F4 and the arrows change nothing while it stands. With it, the edit as it was before that write.
     #pointedFromOutside = false;
@@ -2569,9 +2682,14 @@ export class GridView<Row> {
         const { showFillHandle, onFill }: { readonly showFillHandle?: unknown; readonly onFill?: unknown } = options;
         if (showFillHandle !== undefined && typeof showFillHandle !== 'boolean') throw new TypeError('showFillHandle is true or false.');
         if (onFill !== undefined && typeof onFill !== 'function') throw new TypeError('onFill is a function of the fill\'s intent.');
-        const { highlightFocusRow, highlightHoverRow }: { readonly highlightFocusRow?: unknown; readonly highlightHoverRow?: unknown } = options;
+        const { highlightFocusRow, highlightFocusColumn, highlightHoverRow }: {
+            readonly highlightFocusRow?: unknown; readonly highlightFocusColumn?: unknown; readonly highlightHoverRow?: unknown;
+        } = options;
         if (highlightFocusRow !== undefined && typeof highlightFocusRow !== 'boolean') {
             throw new TypeError('highlightFocusRow is true or false.');
+        }
+        if (highlightFocusColumn !== undefined && typeof highlightFocusColumn !== 'boolean') {
+            throw new TypeError('highlightFocusColumn is true or false.');
         }
         if (highlightHoverRow !== undefined && typeof highlightHoverRow !== 'boolean') {
             throw new TypeError('highlightHoverRow is true or false.');
@@ -2766,6 +2884,7 @@ export class GridView<Row> {
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             showFillHandle: options.showFillHandle === true, onFill: options.onFill,
             highlightFocusRow: options.highlightFocusRow === true,
+            highlightFocusColumn: options.highlightFocusColumn === true,
             highlightHoverRow: (options.highlightHoverRow ?? options.presentationDefaults?.highlightHoverRow) === true,
             cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
             stripeRows: (options.stripeRows ?? options.presentationDefaults?.stripeRows) === true, pageSize: options.pageSize, rowKind: options.rowKind,
@@ -2982,6 +3101,7 @@ export class GridView<Row> {
         // no selection drag either.
         if (!taken.showFillHandle && this.#handleDrag !== undefined) this.#setDragging(false);
         this.#highlightFocusRow = taken.highlightFocusRow;
+        this.#highlightFocusColumn = taken.highlightFocusColumn;
         if (taken.highlightHoverRow !== this.#highlightHoverRow) {
             this.#highlightHoverRow = taken.highlightHoverRow;
             // Heard only while the band is on: off, a pointer crossing the grid costs nothing (ADR-0021's fifth
@@ -3706,6 +3826,11 @@ export class GridView<Row> {
             this.#taken(event);
             return;
         }
+        // A grip drag is the innermost layer Escape peels: the Reference goes back, and the edit stays (ADR-0480, section 6).
+        if (escape && !event.repeat && this.#gripDrag !== undefined && this.#cancelGripDrag()) {
+            this.#taken(event);
+            return;
+        }
         // Escape peels a popover before anything else, from inside it or from the grid (ADR-0012's layering,
         // ADR-0039); the keyboard comes back to the grid.
         if (popover !== undefined && escape && (onGrid || inPopover) && !innerPopupOpen(popover)) {
@@ -4313,16 +4438,27 @@ export class GridView<Row> {
         this.#secondaryPress = event.target === this.#viewport && (event.button === 2 || (event.button === 0 && event.ctrlKey))
             ? { at: this.#cellUnder(event), leftPx: event.offsetX - this.#scrollLeftPx, topPx: this.#viewportYOf(event) }
             : undefined;
-        // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
+        // A Reference Outline's grip (ADR-0480) takes the pointer of its own, for its cursor: where it was drawn says
+        // where on the rows the press is.
+        const grip = event.button === 0 && event.target instanceof Element ? this.#gripElements.get(event.target) : undefined;
+        // Otherwise only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
-        if (event.button !== 0 || event.target !== this.#viewport) return;
+        if (event.button !== 0 || (grip === undefined && event.target !== this.#viewport)) return;
+        const modified = event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+        if (grip !== undefined && !modified && this.#pressGrip(grip.grip, this.#cellAtGrip(event, grip, true))) {
+            this.#answered += 1;
+            event.preventDefault();
+            this.#invalidate();
+            return;
+        }
         // Read before anything below changes what is painted: the handle is grabbed where the user saw it
         // (ADR-0050, item 5).
-        const grabbed = event.shiftKey || event.ctrlKey || event.metaKey ? undefined : this.#fillHandleUnder(event);
+        const grabbed = grip !== undefined || event.shiftKey || event.ctrlKey || event.metaKey ? undefined : this.#fillHandleUnder(event);
         this.#reconcileSelection();
-        const at = this.#cellUnder(event);
+        // With a modifier, a press on a grip is the press on the cell beneath it (ADR-0480, section 3).
+        const at = grip === undefined ? this.#cellUnder(event) : this.#cellAtGrip(event, grip);
         if (at === undefined) return;
-        if (this.#inRowHeadings(event)) {
+        if (grip === undefined && this.#inRowHeadings(event)) {
             this.#pressRowHeading(event, at.row);
             return;
         }
@@ -4379,6 +4515,13 @@ export class GridView<Row> {
         if (event.target !== this.#viewport) return;
         const at = this.#cellUnder(event);
         if (at === undefined) return;
+        // A grip drag (ADR-0480) scrolls at the edge as a selecting drag does (section 7).
+        if (this.#gripDrag !== undefined) {
+            this.#moveGripDrag(at);
+            const gripY = this.#viewportYOf(event);
+            if (gripY !== undefined) this.#updateEdgeBand(event.offsetX - this.#scrollLeftPx, gripY);
+            return;
+        }
         if (this.#pointDragging) {
             this.#pointDrag(at);
             return;
@@ -4405,6 +4548,11 @@ export class GridView<Row> {
         // Where a Heading drag is released counts as a move: a fast release reaches another column without
         // a move between (ADR-0050, item 1; ADR-0012).
         if (this.#headingDrag && this.#headingHears(event)) this.#moveHeadingDrag(event);
+        // A grip drag's release counts as a move: a fast one reaches its cell with no move between (ADR-0480, section 8).
+        if (this.#gripDrag !== undefined && event.target === this.#viewport) {
+            const at = this.#cellUnder(event);
+            if (at !== undefined) this.#moveGripDrag(at);
+        }
         // A fill-handle drag is raised where it is released, and over no cell where it was last reached.
         if (this.#handleDrag !== undefined) {
             this.#finishHandleDrag(event.target === this.#viewport ? this.#cellUnder(event) : undefined);
@@ -6050,7 +6198,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         if (edit === undefined) return;
         this.#edit = undefined;
-        if (this.#endPointing()) this.#setDragging(false);
+        if (this.#endPointing() || this.#gripDrag !== undefined) this.#setDragging(false);
         // The list and the hint answer the edit, and go with it, as the outline does (ADR-0051).
         this.#closeCompletion();
         this.#completionSeen = undefined;
@@ -6303,6 +6451,182 @@ export class GridView<Row> {
         if (reached !== undefined && sameCell(reached, at)) return;
         this.#pointer = pointer.extendTo(at, this.#extent);
         this.#writePointedReference(edit, false);
+    }
+
+    // ---- Dragging a Reference Outline (ADR-0480) ---------------------------------------------------------------
+
+    // Whether the open edit's outlines carry grips: a Reference can be dragged while an edit is open whose References
+    // the Consumer answers and rewrites, its commit not waiting on a verdict, and pointed at from outside by no one.
+    #gripsShown(): boolean {
+        const { referencesIn, moveReference } = this.#referenceOptions;
+        return this.#edit !== undefined && referencesIn !== undefined && moveReference !== undefined && this.#pending === undefined
+            && !this.#pointedAtNow();
+    }
+
+    // The outlines that carry grips, by their place among the colouring's outlines, as they are drawn on the grid.
+    #gripPaint(colouring: ReferenceColouring, rowCount: number, columnCount: number): GripPaint | undefined {
+        const visible = this.#visible;
+        const geometry = this.#geometry;
+        if (visible === undefined || geometry === undefined) return undefined;
+        const outlines = colouring.outlines.flatMap(([range, colour], outline) => {
+            const drawn = withinExtent(range, { rowCount, columnCount });
+            return drawn === undefined ? [] : [{ outline, range: drawn, named: range, colour }];
+        });
+        if (outlines.length === 0) return undefined;
+        const readable = this.#readableEdge(visible, geometry);
+        return {
+            outlines, gripPx: this.#metrics.referenceGripPx, squarePx: this.#metrics.referenceHandleSizePx,
+            pinnedLeftPx: this.#styles.geometry.leadWidthPx, scrollableLeftPx: readable.leftPx,
+        };
+    }
+
+    // The cell under a press on a grip, from where the grip was drawn and the press's offset inside it: a pinned
+    // layer's coordinates are the Viewport's less the scroll offset, as it is held against the Viewport's left edge.
+    // `along` reads an edge's strip only along its edge: across it, half the strip lies outside the range, past the
+    // last row or column where the range ends there, and the drag holds the edge's own row or column (edgeCellOf),
+    // so the axis across is not read and is answered as 0.
+    #cellAtGrip(event: MouseEvent, drawn: { readonly grip: LayerGrip; readonly pinned: boolean }, along = false): CellPosition | undefined {
+        const geometry = this.#geometry;
+        const visible = this.#visible;
+        if (geometry === undefined || visible === undefined) return undefined;
+        const x = drawn.grip.leftPx + event.offsetX + (drawn.pinned ? this.#scrollLeftPx : 0);
+        const row = geometry.rowAt(drawn.grip.topPx + event.offsetY + geometry.offsetPxOf(visible.start));
+        const column = this.#styles.geometry.columnAt(x, this.#scrollLeftPx);
+        const { kind } = drawn.grip;
+        if (along && (kind === 'left' || kind === 'right')) return row === undefined ? undefined : cellPosition(row, 0);
+        if (along && (kind === 'top' || kind === 'bottom')) return column === undefined ? undefined : cellPosition(0, column);
+        return row === undefined || column === undefined ? undefined : cellPosition(row, column);
+    }
+
+    /**
+     * A press on a grip (ADR-0480, section 3): an edge holds the cell of the range nearest the press, a square the
+     * opposite corner, and the drag begins; the text is not touched until the range reached changes. Taken against
+     * the colouring the grips were drawn for: an outline gone, or text changed since, refuses the press, which does
+     * nothing. Whether the press was the grip's.
+     */
+    #pressGrip(grip: LayerGrip, at: CellPosition | undefined): boolean {
+        const edit = this.#edit;
+        const moveReference = this.#referenceOptions.moveReference;
+        if (edit === undefined || moveReference === undefined || !this.#gripsShown()) return false;
+        const text = this.#editorText(edit);
+        const colouring = this.#referenceOutlines.asked;
+        const named = colouring.references.filter(reference => reference.range !== undefined)[grip.outline];
+        // The range as the Reference names it, never cut to the grid's extent: a move or a resize of a Reference that
+        // reaches past the grid keeps what lies there (the spine's first rule).
+        const from = colouring.outlines[grip.outline]?.[0];
+        const resizes = gripResizes(grip.kind);
+        if (this.#referenceOutlines.askedFor !== text || named === undefined || from === undefined
+            || withinExtent(from, this.#extent) === undefined || (!resizes && at === undefined)) return true;
+        const surface = this.#surfaceOf(edit);
+        const held = resizes ? oppositeCorner(from, grip.kind) : edgeCellOf(from, grip.kind, defined(at, 'the cell an edge was pressed on'));
+        this.#gripDrag = {
+            edit, resizes, from, held, start: named.start, length: named.length, written: text, reached: from,
+            before: {
+                text, selectionStart: surface?.selectionStart ?? -1, selectionEnd: surface?.selectionEnd ?? -1, // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: a caret not known is put back as not known
+                mode: edit.mode, pointer: this.#pointer, pointStart: this.#pointStart, pointLength: this.#pointLength, pointWritten: this.#pointWritten,
+            },
+        };
+        this.#root.setAttribute('data-ex-reference-drag', gripCursor(grip.kind));
+        this.#setDragging(true);
+        // The keyboard stays in the edit, and comes back to its surface from a control it had gone to (ADR-0058, SH-35).
+        if (surface !== undefined && this.#root.ownerDocument.activeElement !== surface) surface.focus({ preventScroll: true });
+        return true;
+    }
+
+    /**
+     * The drag reached `at` (ADR-0480, section 3): a move takes the range by as many rows and columns as `at` lies
+     * from the cell held, kept inside the grid, or where it reached past the grid when pressed, no further past it
+     * than it was; a resize spans the held corner and `at`. Where the range reached
+     * changed, the Reference is rewritten in place by the Consumer's answer, the caret and Point's span moved with the
+     * text around them. Text changed meanwhile by anything but the drag ends it: the span it holds is no longer the
+     * Reference's. Whether anything changed.
+     */
+    #moveGripDrag(at: CellPosition): boolean {
+        const drag = this.#gripDrag;
+        const edit = this.#edit;
+        const moveReference = this.#referenceOptions.moveReference;
+        if (drag === undefined) return false;
+        if (edit === undefined || edit !== drag.edit || moveReference === undefined || this.#editorText(edit) !== drag.written) {
+            this.#setDragging(false);
+            return false;
+        }
+        const extent = this.#extent;
+        const { from, held } = drag;
+        const reached = drag.resizes ? fromCorners(held, at) : selectionRange(
+            clamp(from.topRow + at.row - held.row, 0, Math.max(extent.rowCount - from.rowCount, from.topRow)),
+            clamp(from.leftColumn + at.column - held.column, 0, Math.max(extent.columnCount - from.columnCount, from.leftColumn)),
+            from.rowCount, from.columnCount);
+        if (sameSelectionRange(reached, drag.reached)) return false;
+        const answer: unknown = moveReference(drag.written.slice(drag.start, drag.start + drag.length), reached);
+        if (typeof answer !== 'string' || answer === '') {
+            throw new TypeError('moveReference answered no text for a dragged Reference: a Reference is a non-empty string (ADR-0480).');
+        }
+        const [text] = replaceSpan(drag.written, drag.start, drag.length, answer);
+        const end = drag.start + drag.length;
+        const delta = answer.length - drag.length;
+        // Text after the Reference moves with it; a place inside it goes to its end (ADR-0480, section 3).
+        const moved = (place: number): number => (place < 0 || place <= drag.start ? place : place >= end ? place + delta : drag.start + answer.length);
+        const surface = this.#surfaceOf(edit);
+        const selectionStart = moved(surface?.selectionStart ?? -1); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: a caret not known stays not known
+        const selectionEnd = moved(surface?.selectionEnd ?? -1); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0480: as above
+        // Pointing goes on: over the moved range where it is the Reference Point writes, its span moved otherwise.
+        if (this.#pointWritten !== undefined && this.#pointingContinues(edit)) {
+            if (this.#pointStart === drag.start && this.#pointer !== undefined) {
+                this.#pointLength = answer.length;
+                this.#pointer = Selection.empty.click(cellPosition(reached.topRow, reached.leftColumn), extent)
+                    .extendTo(cellPosition(bottomRow(reached), rightColumn(reached)), extent);
+            } else if (this.#pointStart >= end) {
+                this.#pointStart += delta;
+            }
+            this.#pointWritten = text;
+        }
+        this.#writeEditorText(edit, text);
+        if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
+        if (surface !== undefined && selectionStart >= 0) surface.setSelectionRange(selectionStart, Math.max(selectionStart, selectionEnd));
+        drag.length = answer.length;
+        drag.written = text;
+        drag.reached = reached;
+        this.#closeCompletion();
+        this.#askReferences();
+        this.#tellPointState();
+        this.#invalidate();
+        return true;
+    }
+
+    // Escape mid-drag (ADR-0480, section 6): the edit as the press found it, its text, caret, mode and pointing, and
+    // the drag over. The edit stays open. Text typed since the drag last wrote has ended the drag already, as the
+    // next move would find (#moveGripDrag): the drag is over, nothing is put back, and the Escape is not the drag's.
+    // Whether the Escape was the drag's.
+    #cancelGripDrag(): boolean {
+        const drag = this.#gripDrag;
+        const edit = this.#edit;
+        this.#setDragging(false);
+        if (drag === undefined || edit === undefined || edit !== drag.edit || this.#editorText(edit) !== drag.written) return false;
+        const { before } = drag;
+        if (this.#editorText(edit) !== before.text) {
+            this.#writeEditorText(edit, before.text);
+            if (this.#formulaBarDeclared.shown) this.#bar.showText(before.text);
+            const surface = this.#surfaceOf(edit);
+            if (surface !== undefined && before.selectionStart >= 0) surface.setSelectionRange(before.selectionStart, before.selectionEnd);
+        }
+        edit.mode = before.mode;
+        if (before.pointWritten !== undefined) {
+            this.#pointer = before.pointer;
+            this.#pointStart = before.pointStart;
+            this.#pointLength = before.pointLength;
+            this.#pointWritten = before.pointWritten;
+        }
+        this.#askReferences();
+        this.#tellPointState();
+        this.#invalidate();
+        return true;
+    }
+
+    // The drag is over, wherever it reached: the root's cursor and the grips' pointer events come back.
+    #endGripDrag(): void {
+        if (this.#gripDrag === undefined) return;
+        this.#gripDrag = undefined;
+        this.#root.removeAttribute('data-ex-reference-drag');
     }
 
     // F2 moves between the states (ADR-0010), and where pointing is declared between Caret and Point: from Caret it
@@ -7782,6 +8106,7 @@ export class GridView<Row> {
         if (popover.kind === 'find') {
             this.#findStepping?.abort();
             this.#findStepping = undefined;
+            this.#dropFindAll();
         }
         const active = doc.activeElement;
         const ours = active === null || active === doc.body || active === doc.documentElement || this.#root.contains(active);
@@ -8156,7 +8481,13 @@ export class GridView<Row> {
             step: (backward: boolean) => { this.#findStep(backward); },
             replaceOne: () => { this.#replaceOne(); },
             replaceAll: () => { this.#replaceAll(); },
-            heldChanged: () => { this.#invalidate(); },
+            findAll: () => { this.#findAllStart(); },
+            listFindAll: (list: () => GridFindAllList) => { this.#findAllOwn(list); },
+            dropFindAll: () => { this.#dropFindAll(); },
+            heldChanged: () => {
+                this.#findAllHeldChanged();
+                this.#invalidate();
+            },
             answered: this.#answer,
         };
         const slot = this.#chrome?.findPanel;
@@ -8763,6 +9094,8 @@ export class GridView<Row> {
             return;
         }
         this.#askSummaryAgain();
+        // Its writes may move what matches: a list read before them goes (ADR-0470 §6).
+        this.#dropFindAll();
         this.#setFindOutcome({ kind: 'replaced', count: result.count });
     }
 
@@ -8770,6 +9103,402 @@ export class GridView<Row> {
     #refuseReplace(cells: readonly FindPanelRefusedCell[]): void {
         this.#setFindOutcome({ kind: 'replaceRefused', cells });
         this.#onRefused?.({ kind: 'find', reason: 'replaceRefused' });
+    }
+
+    // ---- Find All (ADR-0470) -----------------------------------------------------------------------------------
+
+    // Whether Find All can be asked (ADR-0470 §1): the source lists every match beside finding the next.
+    get #canFindAll(): boolean {
+        return this.#source.find !== undefined && this.#source.findAll !== undefined;
+    }
+
+    /**
+     * Find All (ADR-0470): the list of every match, asked of the source a page at a time under the version its
+     * positions are read in, with the headers the grid searches itself listed first (ADR-0333). Its first page is an
+     * answer out, as a step's is: the inputs made meanwhile wait for it, and an Escape cancels it (ADR-0451 section 3).
+     * The Focus does not move: the list is the whole set, and a line chosen from it moves the Focus there.
+     */
+    #findAllStart(): void {
+        if (this.#stepInTurn(() => { this.#findAllStart(); })) return;
+        const popover = this.#popover;
+        const source = this.#source;
+        if (popover?.kind !== 'find' || this.#findHeld.text === '' || !this.#canFindAll) return;
+        this.#dropFindAll();
+        this.#reconcileSelection();
+        const selection = this.#held.selection;
+        const scope = !selection.isEmpty && selection.cellCount > 1 ? selection.ranges : undefined;
+        const pattern = this.#findPattern();
+        // A Selection as the scope searches no header, as a step's does (ADR-0333 §3).
+        const headers = scope === undefined ? this.#findHeaders() : [];
+        const request: Omit<GridFindAllRequest, 'start' | 'count'> = Object.freeze({
+            ...pattern, scope, columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const list: FindAllHeld<Row> = {
+            source, sequence: this.#sequence(), request, columnCount: request.columns.length,
+            headers: matchingHeaders(headers, pattern).map(index => itemAt(headers, index)),
+            rowTotal: undefined, pages: new Map(), asking: new Map(), active: undefined, activeFor: undefined, view: undefined, gone: undefined,
+            part: undefined, own: undefined,
+        };
+        this.#showFindAll(popover.panel, list);
+        this.#askFindAllPage(list, 0, 'first');
+    }
+
+    /**
+     * Find All with a list the find panel slot's contents hold themselves (ADR-0470 §7), as ExSheet's over its
+     * Workbook: asked in its turn, drawn as the grid's own list is, its count and lines the contents', a choice taken in
+     * its turn and handed back to them. It goes when the text or an option changes or the panel closes, never with the
+     * order: what the contents list is theirs to drop.
+     */
+    #findAllOwn(made: () => GridFindAllList): void {
+        if (this.#stepInTurn(() => { this.#findAllOwn(made); })) return;
+        const popover = this.#popover;
+        if (popover?.kind !== 'find' || this.#findHeld.text === '') return;
+        this.#dropFindAll();
+        const listed: unknown = made();
+        if (!isFindAllList(listed)) throw new TypeError('listFindAll\'s function answers a list: { count, line, choose } (ADR-0470 §7).');
+        if (!Number.isInteger(listed.count) || listed.count < 0) {
+            throw new RangeError(`listFindAll's list holds ${String(listed.count)} lines: a count is a whole number from 0 (ADR-0470 §7).`);
+        }
+        const request: Omit<GridFindAllRequest, 'start' | 'count'> = Object.freeze({
+            ...this.#findPattern(), columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const list: FindAllHeld<Row> = {
+            source: this.#source, sequence: this.#sequence(), request, columnCount: request.columns.length, headers: [],
+            rowTotal: listed.count, pages: new Map(), asking: new Map(), active: undefined, activeFor: undefined, view: undefined, gone: undefined,
+            part: undefined, own: listed,
+        };
+        this.#showFindAll(popover.panel, list);
+        this.#invalidate();
+    }
+
+    // The list's part, made and placed under the panel's contents.
+    #showFindAll(panel: FindPlace, list: FindAllHeld<Row>): void {
+        this.#findAll = list;
+        const part = new FindAllList(this.#root.ownerDocument, {
+            count: () => this.#findAllCount(list),
+            line: index => this.#findAllLine(list, index),
+            active: () => list.active,
+            inView: (first, last) => { this.#findAllInView(list, first, last); },
+            choose: index => { this.#findAllChoose(list, index); },
+            answered: this.#answer,
+            label: this.#labelOf(findPanelLabelIds.findAllList),
+        }, this.#metrics.rowHeightPx);
+        list.part = part;
+        panel.showFindAll(part.element);
+        this.#sayFindAll(list);
+    }
+
+    // The lines the list holds: the headers matched and every row's match, none once it has gone, or `undefined`
+    // while the first page is out.
+    #findAllCount(list: FindAllHeld<Row>): number | undefined {
+        if (list.gone !== undefined) return 0;
+        if (list.own !== undefined) return list.own.count;
+        return list.rowTotal === undefined ? undefined : list.headers.length + list.rowTotal;
+    }
+
+    // Line `index` in the grid's words (ADR-0470 §3), or `undefined` while its page is not read.
+    #findAllLine(list: FindAllHeld<Row>, index: number): GridFindAllLine | undefined {
+        if (list.own !== undefined) {
+            const line: unknown = list.own.line(index);
+            if (!isFindAllLine(line)) throw new TypeError(`listFindAll's list answered line ${String(index)} as something other than { where, text } (ADR-0470 §7).`);
+            return line;
+        }
+        const header = list.headers[index];
+        if (header !== undefined) {
+            return { where: filledWords(this.#labelOf(findPanelLabelIds.findAllInHeader), { column: header.text }), text: header.text };
+        }
+        const match = this.#findAllMatchAt(list, index - list.headers.length);
+        if (match === undefined) return undefined;
+        const resolved = this.#columns.find(({ column }) => column.name === match.column);
+        const column = resolved === undefined ? match.column : headerOf(resolved);
+        const where = match.rowLabel === undefined
+            ? filledWords(this.#labelOf(findPanelLabelIds.findAllInRow), { row: String(match.row + 1), column })
+            : filledWords(this.#labelOf(findPanelLabelIds.findAllInLabelledRow), { row: match.rowLabel, column });
+        return { where, text: match.text };
+    }
+
+    // The row match at `at` among the rows' matches, where its page has been read.
+    #findAllMatchAt(list: FindAllHeld<Row>, at: number): GridFindAllMatch | undefined {
+        if (at < 0) return undefined;
+        return list.pages.get(Math.floor(at / findAllPageSize))?.[at % findAllPageSize];
+    }
+
+    // What the count line says (ADR-0470 §3, §5).
+    #sayFindAll(list: FindAllHeld<Row>): void {
+        const count = this.#findAllCount(list);
+        const text = list.gone !== undefined ? this.#labelOf(list.gone === 'orderChanged' ? findPanelLabelIds.orderChanged : findPanelLabelIds.sourceChanged)
+            : count === undefined ? ''
+                : count === 0 ? this.#labelOf(findPanelLabelIds.findAllNone)
+                    : count === 1 ? this.#labelOf(findPanelLabelIds.findAllFoundOne)
+                        : filledWords(this.#labelOf(findPanelLabelIds.findAllFound), { count: String(count) });
+        list.part?.say(text);
+    }
+
+    // The list's lines from `first` to `last` are in view: their pages are asked, and the next one ahead, one at a time
+    // (ADR-0470 §2): a page asked while another is out waits for it.
+    #findAllInView(list: FindAllHeld<Row>, first: number, last: number): void {
+        list.view = { first, last };
+        if (this.#findAll !== list || list.own !== undefined || list.gone !== undefined || list.rowTotal === undefined || list.asking.size > 0) return;
+        const rows = list.rowTotal;
+        const from = Math.max(0, first - list.headers.length);
+        const to = Math.min(rows - 1, last - list.headers.length + findAllVisibleLines);
+        for (let page = Math.floor(from / findAllPageSize); page <= Math.floor(to / findAllPageSize); page++) {
+            if (!list.pages.has(page)) {
+                this.#askFindAllPage(list, page, undefined);
+                return;
+            }
+        }
+    }
+
+    /**
+     * One page of the list asked of the source. The first, and one a choice waits on, is an answer out in the Input
+     * Order (ADR-0451 section 3): the inputs made meanwhile wait for it, and an Escape cancels it. `then` runs once it
+     * has landed, before those inputs.
+     */
+    #askFindAllPage(list: FindAllHeld<Row>, page: number, pended: 'first' | 'choice' | undefined, then?: () => void): void {
+        const { source } = list;
+        const controller = new AbortController();
+        list.asking.set(page, controller);
+        const request: GridFindAllRequest = Object.freeze({ ...list.request, start: page * findAllPageSize, count: findAllPageSize });
+        if (pended !== undefined) this.#invalidate();
+        const asked = Promise.resolve().then(() => {
+            if (source.findAll === undefined) throw new Error('Internal: a Find All page asked of a source that lists nothing.');
+            return source.findAll(request, controller.signal);
+        });
+        // The next page in view is asked once this one is in, while the list stands.
+        const next = (): void => {
+            const { view } = list;
+            if (this.#findAll === list && list.gone === undefined && view !== undefined) this.#findAllInView(list, view.first, view.last);
+        };
+        // oxlint-disable-next-line ex-grid/no-catch -- a page given up by whoever answers lists nothing and says nothing; any other failure is rethrown
+        const landed = asked.then(answer => {
+            if (this.#destroyed || list.asking.get(page) !== controller) return;
+            list.asking.delete(page);
+            if (pended !== undefined) this.#invalidate();
+            if (this.#findAll === list && list.gone === undefined) this.#findAllAnswered(list, page, request, answer);
+            then?.();
+            next();
+        }, (error: unknown) => {
+            if (this.#destroyed || list.asking.get(page) !== controller) return;
+            list.asking.delete(page);
+            if (pended !== undefined) this.#invalidate();
+            // Given up by whoever answers, who says why itself: the list claims nothing about cells nobody read.
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                if (pended === 'first' && this.#findAll === list) this.#dropFindAll();
+                else next();
+                return;
+            }
+            throw error;
+        });
+        if (pended === undefined) return;
+        // Cancelled by an Escape: no list is shown for a first page, and a choice waiting on its page moves nothing.
+        this.#pendStep(landed, controller, () => {
+            if (list.asking.get(page) !== controller) return;
+            list.asking.delete(page);
+            if (pended === 'first' && this.#findAll === list) this.#dropFindAll();
+            this.#invalidate();
+        });
+    }
+
+    // A page's answer, judged against what it was asked under (ADR-0470 §2).
+    #findAllAnswered(list: FindAllHeld<Row>, page: number, request: GridFindAllRequest, answer: GridFindAllPage): void {
+        // The shape first: a Consumer's defect is the same defect whether or not the rows moved meanwhile.
+        const given: unknown = answer;
+        if (typeof given !== 'object' || given === null || !Array.isArray((given as { readonly matches?: unknown }).matches)
+            || typeof (given as { readonly total?: unknown }).total !== 'number'
+            || typeof (given as { readonly rowSequenceVersion?: unknown }).rowSequenceVersion !== 'number') {
+            throw new TypeError('The source\'s findAll answered something other than a Find All page: { total, matches, rowSequenceVersion }, '
+                + 'as findAllPage makes one (ADR-0470).');
+        }
+        if (list.source !== this.#source) {
+            this.#findAllGone(list, 'sourceChanged');
+            return;
+        }
+        if (answer.rowSequenceVersion !== request.rowSequenceVersion || list.sequence !== this.#sequence()) {
+            this.#findAllGone(list, 'orderChanged');
+            return;
+        }
+        const { total, matches } = answer;
+        if (!Number.isInteger(total) || total < 0) throw new RangeError(`The Find All answer counts ${total} matches: a count is a whole number from 0 (ADR-0470).`);
+        // The count moved between two pages of one list: the matches changed under it, and its lines no longer agree.
+        if (list.rowTotal !== undefined && total !== list.rowTotal) {
+            this.#findAllGone(list, 'orderChanged');
+            return;
+        }
+        const owed = Math.max(0, Math.min(request.count, total - request.start));
+        if (matches.length !== owed) {
+            throw new RangeError(`The Find All answer holds ${matches.length} matches for the entries ${request.start} on of a list of ${total}: `
+                + `it owes ${owed} (ADR-0470 §2).`);
+        }
+        let before = -1;
+        for (const match of matches) {
+            const column = request.columns.indexOf(match.column);
+            const ordinal = match.row * list.columnCount + column;
+            if (column < 0 || !Number.isInteger(match.row) || match.row < 0 || match.row >= this.#totalRows || typeof match.text !== 'string'
+                || (match.rowLabel !== undefined && typeof match.rowLabel !== 'string')
+                || (request.scope !== undefined && !inScope(request.scope, match.row, column)) || ordinal <= before) {
+                throw new RangeError(`The Find All answer names row ${match.row}, column '${match.column}', outside the request or out of its order: `
+                    + `it asked about the columns [${request.columns.join(', ')}] of a result of ${this.#totalRows} rows, by rows (ADR-0470 §2).`);
+            }
+            before = ordinal;
+        }
+        list.rowTotal = total;
+        list.pages.set(page, matches);
+        this.#sayFindAll(list);
+        list.part?.refresh();
+    }
+
+    /**
+     * A line chosen from the list (ADR-0470 §4): the Focus moves to its cell and reveals it, as a step that found it
+     * does, or a header becomes the current match. Taken in its turn, against what the list was read under: under
+     * another version or source, the list goes and says so, and nothing moves. A line whose page is not yet read, as
+     * End's in a long list, waits for its page as an answer out, and is chosen once it is in.
+     */
+    #findAllChoose(list: FindAllHeld<Row>, index: number): void {
+        if (this.#stepInTurn(() => { this.#findAllChoose(list, index); })) return;
+        this.#findAllChooseNow(list, index, true);
+    }
+
+    #findAllChooseNow(list: FindAllHeld<Row>, index: number, mayAsk: boolean): void {
+        if (this.#findAll !== list || list.gone !== undefined) return;
+        if (list.own !== undefined) {
+            if (index < 0 || index >= list.own.count) return;
+            const moved: unknown = list.own.choose(index);
+            if (typeof moved !== 'boolean') throw new TypeError(`listFindAll's choose answers whether it moved, not ${typeof moved} (ADR-0470 §7).`);
+            // The contents may have taken the list away as they chose.
+            if (moved && this.#findAll === list) {
+                list.active = index;
+                list.activeFor = this.#findCurrent ?? this.#findCurrentHeader;
+            }
+            if (this.#findAll === list) list.part?.refresh();
+            this.#invalidate();
+            return;
+        }
+        if (list.source !== this.#source) {
+            this.#findAllGone(list, 'sourceChanged');
+            return;
+        }
+        if (list.sequence !== this.#sequence()) {
+            this.#findAllGone(list, 'orderChanged');
+            return;
+        }
+        const header = list.headers[index];
+        const match = header === undefined ? this.#findAllMatchAt(list, index - list.headers.length) : undefined;
+        if (header === undefined && match === undefined) {
+            const count = this.#findAllCount(list);
+            if (!mayAsk || count === undefined || index < list.headers.length || index >= count) return;
+            // The page is asked alone: a read-ahead still out is called off, and asked again once this one is in.
+            for (const controller of list.asking.values()) controller.abort();
+            list.asking.clear();
+            this.#askFindAllPage(list, Math.floor((index - list.headers.length) / findAllPageSize), 'choice', () => { this.#findAllChooseNow(list, index, false); });
+            return;
+        }
+        this.#findStepping?.abort();
+        this.#findStepping = undefined;
+        this.#reconcileSelection();
+        if (header !== undefined) {
+            const now = this.#findHeaders().find(({ id }) => id === header.id);
+            if (now === undefined) {
+                this.#findAllGone(list, 'orderChanged');
+                return;
+            }
+            list.active = index;
+            this.#landOnHeader(now);
+            list.activeFor = this.#findCurrentHeader;
+        } else if (match !== undefined) {
+            const column = this.#columns.findIndex(({ column: declared }) => declared.name === match.column);
+            if (column < 0) {
+                this.#findAllGone(list, 'orderChanged');
+                return;
+            }
+            list.active = index;
+            const found = cellPosition(match.row, column);
+            this.#findCurrent = { cell: found, version: this.#sequence() };
+            list.activeFor = this.#findCurrent;
+            this.#findCurrentHeader = undefined;
+            this.#setFindOutcome({ kind: 'found' });
+            // Within a selected scope the Selection stands and the Focus moves inside it, as a step's does.
+            const held = this.#held.selection;
+            this.#apply(list.request.scope !== undefined && held.cellCount > 1 && held.contains(found) ? held.focusOn(found) : held.click(found, this.#extent));
+            this.#revealOwed = { target: found, extending: undefined, rowStart: false, stepRows: 0 };
+            this.#revealHeaderOwed = undefined;
+            this.#followArmed = { focus: found, target: found };
+        }
+        list.part?.refresh();
+        this.#invalidate();
+    }
+
+    // In each pass: the list's current line follows the current match, which a step, a Replace or a placed match may
+    // have moved since the line was chosen (ADR-0470 §4): the line of the new one where its page is read, else none.
+    // A list of the Chrome's own keeps the line it chose: what its contents' current match is, the contents know.
+    #findAllFollowCurrent(): void {
+        const list = this.#findAll;
+        if (list === undefined || list.own !== undefined || list.gone !== undefined) return;
+        const current = this.#findCurrent ?? this.#findCurrentHeader;
+        if (current === list.activeFor) return;
+        list.activeFor = current;
+        list.active = this.#findAllLineOf(list);
+        list.part?.refresh();
+    }
+
+    // The line the current match stands on among what the list has read, or none.
+    #findAllLineOf(list: FindAllHeld<Row>): number | undefined {
+        const header = this.#findCurrentHeader;
+        if (header !== undefined) {
+            const at = list.headers.findIndex(({ id }) => id === header.id);
+            return at < 0 ? undefined : at;
+        }
+        const current = this.#findCurrent;
+        if (current === undefined || current.version !== list.sequence) return undefined;
+        const column = this.#columns[current.cell.column]?.column.name;
+        for (const [page, matches] of list.pages) {
+            const at = matches.findIndex(match => match.row === current.cell.row && match.column === column);
+            if (at >= 0) return list.headers.length + (page * findAllPageSize) + at;
+        }
+        return undefined;
+    }
+
+    // The list read under another order or from another source (ADR-0470 §5): its lines go, the count line says why,
+    // and nothing is asked again.
+    #findAllGone(list: FindAllHeld<Row>, reason: 'orderChanged' | 'sourceChanged'): void {
+        if (list.gone !== undefined) return;
+        list.gone = reason;
+        for (const controller of list.asking.values()) controller.abort();
+        list.asking.clear();
+        list.pages.clear();
+        list.active = undefined;
+        this.#sayFindAll(list);
+        list.part?.refresh();
+    }
+
+    // The list taken away (ADR-0470 §5): a new Find All, a new search, the panel closed, a Replace All.
+    #dropFindAll(): void {
+        const list = this.#findAll;
+        if (list === undefined) return;
+        this.#findAll = undefined;
+        for (const controller of list.asking.values()) controller.abort();
+        list.asking.clear();
+        const popover = this.#popover;
+        if (popover?.kind === 'find') popover.panel.showFindAll(undefined);
+        else list.part?.element.remove();
+    }
+
+    // In each pass: a list whose order or source has moved since it was read goes (ADR-0470 §5).
+    #forgetFindAllOffSequence(): void {
+        const list = this.#findAll;
+        if (list === undefined || list.own !== undefined || list.gone !== undefined) return;
+        if (list.source !== this.#source) this.#findAllGone(list, 'sourceChanged');
+        else if (list.sequence !== this.#sequence()) this.#findAllGone(list, 'orderChanged');
+    }
+
+    // The search the panel holds changed: a list of another search goes, so it never lists what the field no longer asks.
+    #findAllHeldChanged(): void {
+        const list = this.#findAll;
+        if (list === undefined) return;
+        const { text, matchCase, wholeCell } = this.#findHeld;
+        if (list.request.text !== text || list.request.matchCase !== matchCase || list.request.wholeCell !== wholeCell) this.#dropFindAll();
     }
 
     // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
@@ -9389,6 +10118,7 @@ export class GridView<Row> {
         if (!dragging) {
             this.#forgetHeadingDrag();
             this.#endHandleDrag();
+            this.#endGripDrag();
             this.#pointDragging = false;
             this.#pointedDrag = undefined;
         }
@@ -10117,7 +10847,8 @@ export class GridView<Row> {
         if (row !== undefined && column !== undefined) {
             const extent = this.#extent;
             const current = this.#held.selection;
-            changed = this.#handleDrag !== undefined ? this.#moveHandlePointer(cellPosition(row, column))
+            changed = this.#gripDrag !== undefined ? this.#moveGripDrag(cellPosition(row, column))
+                : this.#handleDrag !== undefined ? this.#moveHandlePointer(cellPosition(row, column))
                 : this.#apply(!this.#headingDrag ? current.extendTo(cellPosition(row, column), extent)
                     : this.#headingAxis === 'rows' ? current.extendToRow(row, extent, this.#firstVisibleColumn)
                         : current.extendToColumn(column, extent, this.#firstVisibleRow));
@@ -10418,11 +11149,14 @@ export class GridView<Row> {
             // A row the source has since taken away has no band; the next movement finds the row there now.
             hoverRow: this.#hoverRow !== undefined && this.#hoverRow < this.#totalRows ? this.#hoverRow : undefined,
             focusRow: this.#highlightFocusRow,
+            focusColumn: this.#highlightFocusColumn,
             // Each held, so a pass that changed neither text nor columns finds them the same.
             colouring: this.#colouring(), extentRows: this.#totalRows, extentColumns: this.#columns.length,
             pointer: this.#edit === undefined ? undefined : this.#pointer,
             outlinedColumns: this.#referenceOutlines.columns(this.#outlinedColumnsBoth(), this.#columnNames, this.#totalRows),
             pointDashes: this.#pointDashesRange(),
+            // The grips (ADR-0480): drawn while a Reference can be dragged, held at the edges of what covers them.
+            grips: this.#gripsShown(), pinnedWidthPx: this.#styles.geometry.pinnedWidthPx, leadWidthPx: this.#styles.geometry.leadWidthPx,
         };
         const was = this.#layerInputs;
         // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
@@ -10431,7 +11165,7 @@ export class GridView<Row> {
             const pieces = visible === undefined || geometry === undefined
                 ? { shade: undefined, pinned: [], scrollable: [] }
                 : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
-                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow },
+                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow, focusColumn: inputs.focusColumn, rowCount: inputs.extentRows },
                     this.#fillPaint(handle, readable), {
                         references: inputs.colouring.outlines.flatMap(([range, colour]) => {
                             const drawn = withinExtent(range, { rowCount: inputs.extentRows, columnCount: inputs.extentColumns });
@@ -10440,15 +11174,21 @@ export class GridView<Row> {
                         columns: inputs.outlinedColumns,
                         point: this.#pointPaint(inputs.pointer, inputs.colouring),
                         pointDashes: inputs.pointDashes,
+                        grips: inputs.grips ? this.#gripPaint(inputs.colouring, inputs.extentRows, inputs.extentColumns) : undefined,
                     });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
                 this.#paintedLayers = signature;
                 const fill = (layer: HTMLElement, held: readonly LayerPiece[]): void => {
-                    layer.replaceChildren(...held.map(({ className, style }) => {
+                    const pinned = layer !== this.#selectionLayer;
+                    layer.replaceChildren(...held.map(({ className, style, grip }) => {
                         const made = this.#root.ownerDocument.createElement('div');
                         made.className = className;
                         made.setAttribute('style', style);
+                        if (grip !== undefined) {
+                            made.setAttribute('data-ex-grip', grip.kind);
+                            this.#gripElements.set(made, { grip, pinned });
+                        }
                         return made;
                     }));
                 };
@@ -10588,6 +11328,9 @@ export class GridView<Row> {
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
         // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
         this.#forgetCurrentMatchOffFocus();
+        this.#forgetFindAllOffSequence();
+        this.#findAllFollowCurrent();
+        if (this.#popover?.kind === 'find') this.#popover.panel.offerFindAll(this.#canFindAll);
         this.#paintHeader();
         this.#paintViewport();
         this.#paintStatus();

@@ -203,6 +203,10 @@ What this section said before is quoted beside each change.
       versions are compared by SemVer precedence, so its site would replace a later version's.
     - The release's first job decides it, and says so. `docs.yml` refuses a call that comes anyway,
       and refuses too when it cannot read the repository's tags.
+    - *(Rewritten 2026-11-03, decided with the user, ADR-0205.)* **The site describes the newest version
+      tagged**: a version, a prerelease included, publishes it when no tag is above it by SemVer
+      precedence. A prerelease of the next version therefore publishes it over the latest stable
+      version's, and a patch to an older line still publishes none.
 - **Trusted Publishing, not a stored key.** The publish job exchanges GitHub's OIDC token for a
   nuget.org key that lives an hour (`NuGet/login`). The only standing configuration:
   - a policy on nuget.org naming this repository and `release.yml`;
@@ -369,9 +373,11 @@ said the release would do and `release.yml` had not yet done. What holds for NuG
   `NPM_TOKEN`, which is deleted once every package has its Trusted Publisher.
 - **A prerelease does not become what `npm install` takes.** npm installs the dist-tag `latest` when no version is
   named, and moves it to whatever is published without a tag. A prerelease and a release candidate are published
-  under `next`; a version without a suffix under `latest` when it is the latest stable line, which is when it
-  publishes the Docs Site (the admit job's `site`), and under `release-<major>.<minor>` when it is a patch to an
-  older line. One exception npm makes itself: a package's first version also takes `latest`, whatever its tag, and
+  under `next`; a version without a suffix under `latest` when it is the latest stable line, no stable tag above
+  it (the admit job's `latest`), and under `release-<major>.<minor>` when it is a patch to an older line.
+  *(2026-11-03: until then the admit job's `site` said it, the same question while only a stable version could
+  publish the Docs Site. Once a prerelease could, ADR-0205, the two came apart: `0.1.1` after `0.2.0-beta.3`
+  publishes no site and is still the latest stable line.)* One exception npm makes itself: a package's first version also takes `latest`, whatever its tag, and
   `latest` cannot be removed. So until 0.3.0 is published, `npm install @ex-grid/react` takes the first 0.3.0
   prerelease, and the Release Notes of that prerelease say so.
 - **npm goes second.** The npm job waits for the NuGet push, so a version refused there, or stopped by a reviewer of

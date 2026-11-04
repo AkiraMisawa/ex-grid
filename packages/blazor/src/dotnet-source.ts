@@ -6,7 +6,7 @@
 // Consumer's: it sorts, filters and answers in .NET, and the grid neither holds nor executes.
 
 import {
-    engineFilterOf, readGridQueryJson, RowMarkCounts, type DistinctValues, type GridFilter, type GridFindRequest, type GridFindResult, type GridSource,
+    engineFilterOf, readGridQueryJson, RowMarkCounts, type DistinctValues, type GridFilter, type GridFindAllPage, type GridFindAllRequest, type GridFindRequest, type GridFindResult, type GridSource,
     type GridSourceState, type GridSummaryRequest, type GridSummaryResult, type QueryColumn, type RowKey, type RowKeyOf, type RowRange, type SortSpec,
 } from '@ex-grid/core';
 import { LostCall } from './input-numbers';
@@ -61,12 +61,18 @@ export interface WireSourceTraits {
     readonly vouchesDistinctRows: boolean;
     /** Whether the source answers a Find step (`IGridSource.CanFind`, ADR-0055): where it does not, Ctrl+F is refused. */
     readonly finds: boolean;
+    /** Whether the source lists every match (`IGridSource.CanFindAll` beside `CanFind`, ADR-0470): where it does not,
+     * the find panel offers no Find All. */
+    readonly findsAll?: boolean;
     /** Whether the source answers a Selection Summary (`IGridSource.CanSummarize`, ADR-0130). */
     readonly summarizes?: boolean;
 }
 
 /** A Find step asked of .NET's source, the one numbered `generation` (ADR-0055). */
 export type FindOf = (generation: number, request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+
+/** A page of a Find All asked of .NET's source, the one numbered `generation` (ADR-0470). */
+export type FindAllOf = (generation: number, request: GridFindAllRequest, signal: AbortSignal) => Promise<GridFindAllPage>;
 
 /** A Selection Summary asked of .NET's source, the one numbered `generation`, or of the component's `OnSummarize` where
  * `generation` is undefined (ADR-0130). */
@@ -95,11 +101,13 @@ export class DotNetSource implements GridSource<BlazorRow> {
     readonly vouchesDistinctRows: boolean;
     /** A Find step, answered by .NET's source where it searches: the core refuses Ctrl+F where this is absent. */
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    /** A page of a Find All, answered by .NET's source where it lists every match (ADR-0470). */
+    readonly findAll?: (request: GridFindAllRequest, signal: AbortSignal) => Promise<GridFindAllPage>;
     /** A Selection Summary, answered by .NET's source where it summarises: none is asked where this is absent. */
     readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
     #markCounts: RowMarkCounts | undefined;
 
-    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits, find: FindOf, summarize?: SummarizeOf) {
+    constructor(dotnet: DotNetHandle, rows: RowSet, columns: ColumnSet, traits: WireSourceTraits, find: FindOf, summarize?: SummarizeOf, findAll?: FindAllOf) {
         this.#dotnet = dotnet;
         this.#rows = rows;
         this.#columns = columns;
@@ -107,6 +115,10 @@ export class DotNetSource implements GridSource<BlazorRow> {
         this.vouchesDistinctRows = traits.vouchesDistinctRows;
         if (traits.rowKey) this.rowKey = keyOf;
         if (traits.finds) this.find = (request, signal) => find(this.generation, request, signal);
+        if (traits.findsAll === true) {
+            if (!traits.finds || findAll === undefined) throw new TypeError('Internal: .NET said its source lists every match, and nothing here asks it, or it does not find.');
+            this.findAll = (request, signal) => findAll(this.generation, request, signal);
+        }
         if (traits.summarizes === true) {
             if (summarize === undefined) throw new TypeError('Internal: .NET said its source summarises, and nothing here asks it.');
             this.summarize = (request, signal) => summarize(this.generation, request, signal);

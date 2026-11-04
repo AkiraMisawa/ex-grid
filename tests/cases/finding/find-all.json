@@ -1,0 +1,90 @@
+{
+  "about": "The reference Find All (ADR-0470 §2): every cell a Find step would stop on, in the order a forward walk from the start meets them, a page at a time with the exact count. Rows are written as the texts their cells display, as in find.json.",
+  "kind": "findAll",
+  "columns": ["Book", "Trader", "Notional"],
+  "rows": [["Alpha", "Ishikawa", "1,000.00"], ["Beta", "Novak", "2,500.50"], ["Gamma", "novak", "30.00"], ["Alpha", "Osei", "1,000.00"]],
+  "cases": [
+    {
+      "name": "ADR-0470 §2: every match, by rows and across a row in column order, with the exact count",
+      "findAll": {"text": "a", "start": 0, "count": 100},
+      "total": 7,
+      "matches": [[0, "Book", "Alpha"], [0, "Trader", "Ishikawa"], [1, "Book", "Beta"], [1, "Trader", "Novak"], [2, "Book", "Gamma"], [2, "Trader", "novak"], [3, "Book", "Alpha"]]
+    },
+    {
+      "name": "ADR-0470 §2: a page is the range asked, and the count is the whole list's",
+      "findAll": {"text": "a", "start": 2, "count": 3},
+      "total": 7,
+      "matches": [[1, "Book", "Beta"], [1, "Trader", "Novak"], [2, "Book", "Gamma"]]
+    },
+    {
+      "name": "ADR-0470 §2: the last page holds what is left",
+      "findAll": {"text": "a", "start": 6, "count": 5},
+      "total": 7,
+      "matches": [[3, "Book", "Alpha"]]
+    },
+    {
+      "name": "ADR-0470 §2: a page past the end holds nothing, and still says the count",
+      "findAll": {"text": "a", "start": 7, "count": 5},
+      "total": 7,
+      "matches": []
+    },
+    {
+      "name": "ADR-0470 §2 / ADR-0055: the displayed text is matched and listed, never the raw value",
+      "findAll": {"text": "1,000", "start": 0, "count": 10},
+      "total": 2,
+      "matches": [[0, "Notional", "1,000.00"], [3, "Notional", "1,000.00"]]
+    },
+    {
+      "name": "ADR-0470 §2 / ADR-0023: case is ignored as OrdinalIgnoreCase ignores it, unless Match case",
+      "findAll": {"text": "novak", "matchCase": true, "start": 0, "count": 10},
+      "total": 1,
+      "matches": [[2, "Trader", "novak"]]
+    },
+    {
+      "name": "ADR-0470 §2 / ADR-0055: Whole cell lists only the cells equal to the text",
+      "findAll": {"text": "ALPHA", "wholeCell": true, "start": 0, "count": 10},
+      "total": 2,
+      "matches": [[0, "Book", "Alpha"], [3, "Book", "Alpha"]]
+    },
+    {
+      "name": "ADR-0470 §1: within a selected scope only its cells are listed, a cell two ranges cover once",
+      "findAll": {"text": "a", "scope": ["A2:B3", "B3"], "start": 0, "count": 10},
+      "total": 4,
+      "matches": [[1, "Book", "Beta"], [1, "Trader", "Novak"], [2, "Book", "Gamma"], [2, "Trader", "novak"]]
+    },
+    {
+      "name": "ADR-0470 §1: the columns are the request's, in its order",
+      "findAll": {"text": "a", "columns": ["Trader", "Book"], "start": 0, "count": 3},
+      "total": 7,
+      "matches": [[0, "Trader", "Ishikawa"], [0, "Book", "Alpha"], [1, "Trader", "Novak"]]
+    },
+    {
+      "name": "ADR-0470 §2 / ADR-0055: a column the source does not know has no text to search, and is skipped",
+      "findAll": {"text": "a", "columns": ["Book", "Desk"], "start": 0, "count": 10},
+      "total": 4,
+      "matches": [[0, "Book", "Alpha"], [1, "Book", "Beta"], [2, "Book", "Gamma"], [3, "Book", "Alpha"]]
+    },
+    {
+      "name": "ADR-0470 §2 / ADR-0055: an empty text lists nothing",
+      "findAll": {"text": "", "start": 0, "count": 10},
+      "total": 0,
+      "matches": []
+    },
+    {
+      "name": "ADR-0470 §2: nothing matching lists nothing, counted as 0",
+      "findAll": {"text": "zeta", "start": 0, "count": 10},
+      "total": 0,
+      "matches": []
+    },
+    {
+      "name": "ADR-0470 §2: a page starting before the first entry is refused",
+      "findAll": {"text": "a", "start": -1, "count": 10},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0470 §2: a page of no entries is refused",
+      "findAll": {"text": "a", "start": 0, "count": 0},
+      "throws": "outOfRange"
+    }
+  ]
+}

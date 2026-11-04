@@ -216,6 +216,14 @@
                 <code>--ex-match-mark-current-fill</code>.
             </li>
             <li>
+                <strong>Find All lists every match</strong> under the panel, with how many there are, as
+                <a href="exgrid/sorting-filtering#find-all">ExGrid's Find All</a> does: the column labels that match first,
+                then every cell of the report as shown, by rows, each line naming its row and column. ExPivot reads the
+                report to its end for it, in blocks by the report on screen, so the count is exact; a line chosen
+                moves the Focus there. A new report, from a layout change, a refresh or a live update, takes the list
+                away, and the panel says the order changed.
+            </li>
+            <li>
                 <strong>There is no Replace.</strong> A report is computed, not written, so nothing in it can be replaced:
                 <kbd>Ctrl+H</kbd> opens nothing, and the Pivot Toolbar says, in Excel's words, <em>Cannot change this
                 part of a PivotTable report.</em> (in Japanese under <code>PivotWords.Japanese</code>).
@@ -231,7 +239,8 @@
         <DocsExample Builtin="typeof(FindInReport)" Mud="typeof(FindInReportMud)" Files="@(["Examples/Pivot/Sales.cs"])">
             Click the report, press Ctrl+F and type "laptop": only Europe's rows are found and marked, because the other
             regions are collapsed. Then type a revenue figure as it is shown, with its thousands separator, and then
-            "partner", a column label: the step stops on its header, and the Focus stays where it was.
+            "partner", a column label: the step stops on its header, and the Focus stays where it was. Last, type
+            "laptop" again and press Find All: the list counts every laptop row of the report as shown.
         </DocsExample>
     </DocsSection>
 

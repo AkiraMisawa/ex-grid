@@ -28,6 +28,8 @@ public class TagVersionTests
     [InlineData("v01.0.0", "does not name a version")]
     [InlineData("v0.01.0", "does not name a version")]
     [InlineData("v0.1.0+build.5", "does not name a version")]
+    [InlineData("v0.2.0-beta.01", "does not name a version")]
+    [InlineData("v0.2.0-00", "does not name a version")]
     [InlineData("v0.1.0-", "does not name a version")]
     public void A_tag_that_names_no_version_is_refused(string tag, string why)
     {
@@ -74,4 +76,29 @@ public class TagVersionTests
     [InlineData("v12345678901234567890.0.0", "v9.0.0", 1)]
     public void Stable_versions_are_ordered_by_their_numbers(string a, string b, int order) =>
         Assert.Equal(order, TagVersion.CompareNumbers(a, b));
+
+    [Theory] // ADR-0205: the Docs Site compares every version by SemVer 2's whole precedence, a suffix included
+    [InlineData("v0.2.0-beta.3", "v0.1.0", 1)]
+    [InlineData("v0.1.1-rc.1", "v0.2.0-beta.3", -1)]
+    [InlineData("v0.2.0", "v0.2.0-rc.1", 1)]
+    [InlineData("v0.2.0-rc.1", "v0.2.0-beta.3", 1)]
+    [InlineData("v0.2.0-beta.10", "v0.2.0-beta.9", 1)]
+    [InlineData("v0.2.0-beta", "v0.2.0-beta.1", -1)]
+    [InlineData("v0.2.0-1", "v0.2.0-alpha", -1)]
+    [InlineData("v0.2.0-beta.3", "v0.2.0-beta.3", 0)]
+    [InlineData("v0.1.0", "v0.1.0", 0)]
+    [InlineData("v0.2.0-beta.12345678901234567890", "v0.2.0-beta.9", 1)]
+    public void Versions_are_ordered_by_SemVer_precedence(string a, string b, int order)
+    {
+        Assert.Equal(order, TagVersion.ComparePrecedence(a, b));
+        Assert.Equal(-order, TagVersion.ComparePrecedence(b, a));
+    }
+
+    [Theory] // ADR-0205: only a tag that names a version is compared
+    [InlineData("v0.2.0-beta.3", true)]
+    [InlineData("v0.1.0", true)]
+    [InlineData("verified/2026-10-12", false)]
+    [InlineData("v0.1", false)]
+    public void A_version_tag_names_a_version(string tag, bool version) =>
+        Assert.Equal(version, TagVersion.IsVersionTag(tag));
 }
