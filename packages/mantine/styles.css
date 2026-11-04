@@ -23,6 +23,9 @@
        and everything drawn with it is the primary filled. */
     --ex-selection-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, transparent);
     --ex-focus-row-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 8%, transparent);
+    /* The hover band is an overlay drawn above the cells' text, as the Focus band is (ADR-0029), so it is
+       translucent: the text's colour thinned until it lays the shade Mantine's Table hovers in over the body. An
+       opaque shade there hid every value in the row under the pointer. */
     --ex-row-hover-background: var(--mantine-ex-hover);
     /* Row Stripes (ADR-0038): Mantine's own striped colour. */
     --ex-row-stripe-background: var(--mantine-ex-stripe);
@@ -78,7 +81,8 @@
 /* The colours Mantine's Table and Tooltip take per scheme, named once here so the tokens above read one variable. */
 :where([data-mantine-color-scheme='light']) .mantine-ex-grid {
     --mantine-ex-rule: var(--mantine-color-gray-3);
-    --mantine-ex-hover: var(--mantine-color-gray-1);
+    /* gray-1 over the white body. */
+    --mantine-ex-hover: color-mix(in srgb, var(--mantine-color-text) 5%, transparent);
     --mantine-ex-stripe: var(--mantine-color-gray-0);
     --mantine-ex-tooltip-background: var(--mantine-color-gray-9);
     --mantine-ex-tooltip-color: var(--mantine-color-white);
@@ -89,7 +93,8 @@
 }
 :where([data-mantine-color-scheme='dark']) .mantine-ex-grid {
     --mantine-ex-rule: var(--mantine-color-dark-4);
-    --mantine-ex-hover: var(--mantine-color-dark-5);
+    /* dark-5 over the dark-7 body. */
+    --mantine-ex-hover: color-mix(in srgb, var(--mantine-color-text) 14%, transparent);
     --mantine-ex-stripe: var(--mantine-color-dark-6);
     --mantine-ex-tooltip-background: var(--mantine-color-gray-2);
     --mantine-ex-tooltip-color: var(--mantine-color-black);
