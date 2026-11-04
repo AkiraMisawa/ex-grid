@@ -1,6 +1,7 @@
 // The typing aids over the text of a Formula being typed (C#'s FormulaEntry.cs; ADR-0051, ADR-0057, ADR-0058).
 import { CellAddress } from './cell-address';
 import { CellRange } from './cell-range';
+import { SheetSize } from './sheet-size';
 import { parseFormulaNumber } from './constant-parser';
 import { Culture } from './culture';
 import { DeclaredFunction } from './declared-function';
@@ -284,6 +285,60 @@ export function referenceText(range: CellRange, sheet?: string): string {
     if (sheet === undefined) return range.toString();
     if (sheet.length === 0) throw new RangeError('The Sheet name is empty.');
     return `${quoteSheetName(sheet)}!${range.toString()}`;
+}
+
+/**
+ * The Reference `reference` rewritten to name `range`, written as `reference` was (ADR-0480, section 1): what a
+ * Reference Outline dragged by its edge or its corner square leaves in the Formula. Each part keeps its `$`; a
+ * Sheet qualifier is kept as typed; a one-cell Reference made a range writes both ends in its form, and a range
+ * made one cell writes it once, in its first end's form. Whole columns (rows) that still span every row (column) of
+ * `size` stay whole columns (rows), each end keeping its `$`; resized so that they no longer do, they are written as
+ * the cells they name, the columns' (rows') `$` kept. Column letters are written in upper case. Throws a RangeError
+ * when `reference` is not one Reference over the whole of it, or `range` does not lie inside `size`.
+ *
+ * @param reference - The Reference's text as it stands in the Formula: `$A$1`, `Sheet1!B2:C3`, `A:A`.
+ * @param range - The cells it is to name.
+ * @param size - The Sheet's size (ADR-0460), against which "every row" and "every column" are read.
+ */
+export function moveReference(reference: string, range: CellRange, size: SheetSize = SheetSize.excel): string {
+    const match = reference.length === 0 ? undefined : matchReference(reference, 0);
+    if (match?.index !== 0 || match.length !== reference.length) {
+        throw new RangeError(`'${reference}' is not one Reference over the whole of it.`);
+    }
+    if (!size.contains(range.last)) throw new RangeError(`${range.toString()} does not lie inside the Sheet's ${String(size.rows)} rows by ${String(size.columns)} columns.`);
+    const group = (name: string): ReferenceMatchPart | undefined => match.groups[name];
+    const absolute = (name: string): boolean => group(name)?.value.startsWith('$') === true;
+    const firstPart = group('c1') ?? group('cc1') ?? group('rr1');
+    if (firstPart === undefined) throw new Error('Internal: a Reference matched without a column or a row.');
+    const qualifier = reference.slice(0, firstPart.index);
+    const everyRow = range.first.row === 0 && range.last.row === size.rows - 1;
+    const everyColumn = range.first.column === 0 && range.last.column === size.columns - 1;
+    if (group('cc1') !== undefined && everyRow) {
+        return `${qualifier}${columnPart(range.first.column, absolute('cc1'))}:${columnPart(range.last.column, absolute('cc2'))}`;
+    }
+    if (group('rr1') !== undefined && everyColumn) {
+        return `${qualifier}${rowPart(range.first.row, absolute('rr1'))}:${rowPart(range.last.row, absolute('rr2'))}`;
+    }
+    // Each end's form: a cell's from its own parts; whole columns lend their columns' `$`, whole rows their rows'.
+    const [first, second] = group('cc1') !== undefined
+        ? [{ column: absolute('cc1'), row: false }, { column: absolute('cc2'), row: false }]
+        : group('rr1') !== undefined
+            ? [{ column: false, row: absolute('rr1') }, { column: false, row: absolute('rr2') }]
+            : [{ column: absolute('c1'), row: absolute('r1') }, group('c2') === undefined
+                ? { column: absolute('c1'), row: absolute('r1') } : { column: absolute('c2'), row: absolute('r2') }];
+    const start = columnPart(range.first.column, first.column) + rowPart(range.first.row, first.row);
+    if (range.cellCount === 1) return qualifier + start;
+    return `${qualifier}${start}:${columnPart(range.last.column, second.column)}${rowPart(range.last.row, second.row)}`;
+}
+
+/** A column part as a Reference writes it: its letters, after `$` where it is absolute. */
+function columnPart(index: number, absolute: boolean): string {
+    return (absolute ? '$' : '') + CellAddress.columnName(index);
+}
+
+/** A row part as a Reference writes it: its number, after `$` where it is absolute. */
+function rowPart(index: number, absolute: boolean): string {
+    return `${absolute ? '$' : ''}${String(index + 1)}`;
 }
 
 /**

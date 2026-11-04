@@ -31,6 +31,8 @@ ExGrid.Chrome.GridFindView.FindAllShown.get -> bool
 ExGrid.Chrome.GridFindView.FindAllShown.init -> void
 ExGrid.Chrome.GridFindWords.FindAll.get -> string!
 ExGrid.Chrome.GridFindWords.FindAll.init -> void
+ExGrid.Components.ExGrid<TRow>.MoveReference.get -> ExGrid.Data.ScriptFunction?
+ExGrid.Components.ExGrid<TRow>.MoveReference.set -> void
 ExGrid.Components.ExGrid<TRow>.HighlightFocusColumn.get -> bool
 ExGrid.Components.ExGrid<TRow>.HighlightFocusColumn.set -> void
 ExGrid.FetchingGridSource<TRow>.CanFindAll.get -> bool

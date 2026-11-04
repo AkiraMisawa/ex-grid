@@ -19,9 +19,11 @@ async function open(page) {
 
 test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot move them (UX-2) @behaviour', async ({ page }) => {
     await open(page);
-    const before = await grid(page).locator('.ex-row').first()
-        .evaluate((el) => getComputedStyle(el).height);
-    expect(before).toBe('24px');
+    // Read as an assertion that waits, never once: on the first boot the first row can be painted
+    // again between the locator's finding it and the read, and a row no longer in the document has
+    // no computed height (ADR-0220).
+    const firstRow = grid(page).locator('.ex-row').first();
+    await expect(firstRow).toHaveCSS('height', '24px');
 
     // On body and in the head, which outlive the page: alterPage takes both off as the test
     // ends (ADR-0056).
@@ -40,9 +42,8 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
         };
     });
 
-    const after = await grid(page).locator('.ex-row').first()
-        .evaluate((el) => getComputedStyle(el).height);
-    expect(after, 'the inline declaration wins; painted row height is unchanged').toBe('24px');
+    // The inline declaration wins; the painted row height is unchanged.
+    await expect(firstRow).toHaveCSS('height', '24px');
 });
 
 // A density change on /density (ADR-0028): each preset's resolved Grid Metrics, from
@@ -664,6 +665,9 @@ const INTERNAL_CLASSES = [
     // A Blazor Chrome's Razor fragment, moved into its slot (ADR-0410), and a paste waiting for its answer (ADR-0240
     // section 12), both entered in ADR-0029.
     'ex-razor-slot', 'ex-pasting',
+    // A Reference Outline's grips (ADR-0480, entered in ADR-0029): each edge's strip and corner's square.
+    'ex-reference-grip', 'ex-reference-square',
+    ...['top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'].map((kind) => `ex-reference-grip-${kind}`),
     // The Focus column band (ADR-0008 of 2026-11-03, entered in ADR-0029).
     'ex-focus-column',
 ];
@@ -874,7 +878,7 @@ test('every class under the root is one ADR-0029 names, stable or internal (UX-4
         'ex-row-group', 'ex-row-total', 'ex-row-stripe', 'ex-tone-negative', 'ex-tone-positive', 'ex-status', 'ex-range', 'ex-focus', 'ex-focus-among-ranges', 'ex-editor', 'ex-editing', 'ex-action', 'ex-action-chosen',
         'ex-mark', 'ex-mark-all', 'ex-resize-guide', 'ex-drop-indicator', 'ex-row-heading', 'ex-headings-corner',
         'ex-formula-bar', 'ex-name-box', 'ex-fill-handle', 'ex-popover', ...(clipboardWatched ? ['ex-copied-range'] : []),
-        'ex-completion', 'ex-reference-outline',
+        'ex-completion', 'ex-reference-outline', 'ex-reference-grip', 'ex-reference-square',
         'ex-heading-mark', 'ex-heading-mark-column', 'ex-heading-mark-row', 'ex-heading-marks-pinned', 'ex-heading-marks-rows',
         'ex-heading-marked', 'ex-heading-whole', 'ex-heading-state', 'ex-headings-corner-marked'];
     expect(reached.filter((name) => !worn.has(name)), 'states the walk set out to reach and did not').toEqual([]);

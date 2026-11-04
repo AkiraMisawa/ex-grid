@@ -50,7 +50,7 @@ import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes
 import { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
-import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetPointAt, sheetReferences, sheetReferenceTextOn } from './sheet-formula-aids';
+import { linkedColumnsOf, sameLinkedColumns, sheetCompletion, sheetCycleReference, sheetMoveReference, sheetPointAt, sheetReferences, sheetReferenceTextOn } from './sheet-formula-aids';
 import { PointingScope, type LinkedColumnColour, type PointingSheet } from './pointing-scope';
 import type { PointingRefusal } from './pointing-refusal';
 
@@ -1301,6 +1301,8 @@ class SheetView {
             // Formula is typed on, all of them; on another shown to point at its cells, those naming it (ADR-0331 §5).
             referencesIn: this.#referencesIn,
             onReferenceKeyColoursChanged: this.#onKeyColoursChanged,
+            // An outline dragged by its edge or a corner square rewrites its Reference in its own form (ADR-0480).
+            moveReference: this.#moveReference,
             // Point: the arrows and a press write a Reference where one can go, and F4 cycles its forms (ADR-0051).
             pointAt: sheetPointAt,
             referenceText: this.#referenceText,
@@ -1678,6 +1680,9 @@ class SheetView {
 
     // The Reference Point writes: bare on the Sheet the Formula is typed on, named with its Sheet on another (ADR-0331 §5).
     readonly #referenceText = (range: SelectionRange): string => sheetReferenceTextOn(range, this.#source.sheet, this.#editHome);
+
+    // A dragged Reference rewritten to name other cells of the Sheet shown, written as it was (ADR-0480).
+    readonly #moveReference = (reference: string, range: SelectionRange): string => sheetMoveReference(this.#source.sheet, reference, range);
 
     // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed (ADR-0331 §5): its
     // Formula is committed there, and the edit's end shows it again.

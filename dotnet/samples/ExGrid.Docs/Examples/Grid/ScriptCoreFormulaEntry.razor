@@ -3,9 +3,11 @@
 @using ExGrid.Data
 
 @* Type = in a Formula cell, then an arrow: the grid points, and writes what the page's own script calls the cell. F4
-   cycles the Reference at the caret, and each Reference is outlined in its colour while the edit is open. *@
+   cycles the Reference at the caret, and each Reference is outlined in its colour while the edit is open: drag an
+   outline's edge to move it, or a corner square to resize it, and the page's script writes the new Reference. *@
 <ExGrid.Components.ExGrid TRow="Line" Rows="_lines" Columns="Columns" OnEdit="Edit" ShowFormulaBar
                       PointAt="PointAt" ReferenceText="ReferenceText" CycleReference="CycleReference" ReferencesIn="ReferencesIn"
+                      MoveReference="MoveReference"
                       ViewportHeight="220" ViewportWidth="ViewportSize.Stretch" />
 
 @code {
@@ -13,6 +15,7 @@
     private static readonly ScriptFunction ReferenceText = ScriptFunction.Of("./js/formula-entry.js", "referenceText");
     private static readonly ScriptFunction CycleReference = ScriptFunction.Of("./js/formula-entry.js", "cycleReference");
     private static readonly ScriptFunction ReferencesIn = ScriptFunction.Of("./js/formula-entry.js", "referencesIn");
+    private static readonly ScriptFunction MoveReference = ScriptFunction.Of("./js/formula-entry.js", "moveReference");
 
     private sealed record Line(int A, int B, int C, string Formula);
 

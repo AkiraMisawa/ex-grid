@@ -1496,6 +1496,51 @@ test('DC-46: a Reference across the pinned boundary is drawn whole in each layer
     await expect(editor(grid)).toHaveCount(0);
 });
 
+// Dragging a Reference Outline (DC-67, SH-69; ADR-0480): what only a browser shows is that its grips take the pointer
+// with the stylesheet's cursor while the overlay beneath takes none, and that the drag's moves then reach the rows.
+// The arithmetic of a move and a resize, Escape and the caret are layer 2's.
+test('DC-67: an outline\'s edge moves its Reference and its corner square resizes it, under the browser\'s own cursor @behaviour', async ({ page }) => {
+    const grid = sheet(page);
+    await clickCell(grid, 'F2');
+    await page.keyboard.type('=$B$2+C3:D4');
+    await expect(editor(grid)).toHaveValue('=$B$2+C3:D4');
+    // Four squares to an outline, each drawn by the browser as what stands at its own middle, with its cursor.
+    await expect(grid.locator('.ex-reference-square')).toHaveCount(8);
+    const edge = grid.locator('.ex-selection .ex-reference-grip.ex-reference-1[data-ex-grip=top]');
+    const square = grid.locator('.ex-selection .ex-reference-grip.ex-reference-2[data-ex-grip=bottomRight]');
+    const cursorAtMiddle = (locator) => locator.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const top = document.elementFromPoint(box.x + (box.width / 2), box.y + (box.height / 2));
+        return top === element ? getComputedStyle(element).cursor : `covered by ${top?.className ?? 'nothing'}`;
+    });
+    expect(await cursorAtMiddle(edge)).toBe('move');
+    expect(await cursorAtMiddle(square)).toBe('nwse-resize');
+
+    // B2's top edge, pressed over B2 and carried three rows down: the Reference keeps its form.
+    const from = await boxOf(edge);
+    const to = await boxOf(cell(grid, 'B5'));
+    await page.mouse.move(from.x + (from.width / 2), from.y + (from.height / 2));
+    await page.mouse.down();
+    await page.mouse.move(to.x + (to.width / 2), to.y + (to.height / 2), { steps: 6 });
+    await expect(editor(grid)).toHaveValue('=$B$5+C3:D4');
+    await page.mouse.up();
+    await expectCovers(grid.locator('.ex-selection .ex-reference-outline.ex-reference-1'), grid, 'B5', 'B5');
+
+    // C3:D4's bottom-right square, carried to E6: resized from C3.
+    const corner = await boxOf(square);
+    const far = await boxOf(cell(grid, 'E6'));
+    await page.mouse.move(corner.x + (corner.width / 2), corner.y + (corner.height / 2));
+    await page.mouse.down();
+    await page.mouse.move(far.x + (far.width / 2), far.y + (far.height / 2), { steps: 6 });
+    await page.mouse.up();
+    await expect(editor(grid)).toHaveValue('=$B$5+C3:E6');
+    await expectCovers(grid.locator('.ex-selection .ex-reference-outline.ex-reference-2'), grid, 'C3', 'E6');
+    // The keyboard never left the edit.
+    await expect(editor(grid)).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(editor(grid)).toHaveCount(0);
+});
+
 test('DC-46: =A1+A1 outlines A1 once per Reference, in one colour (the eighth Windows run) @behaviour', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
