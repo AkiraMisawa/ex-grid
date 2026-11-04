@@ -5,7 +5,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.7% | 84.8% | 88.2% | 78.2% |
+| ExGrid | 93.6% | 84.8% | 88.2% | 78.2% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82.1% | 86.1% | 82% |
 | ExChart | 92.3% | 83% | 91.1% | 84.9% |
@@ -29,7 +29,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/sheet-mantine` | ExSheet | 81.5% | 75.6% | 168 |
 | `packages/sheet-mui` | ExSheet | 83.8% | 74% | 180 |
 | `packages/sheet-blazor` | ExSheet | 86.1% | 65.4% | 664 |
-| `packages/pivot` | ExPivot | 94.3% | 81% | 3210 |
+| `packages/pivot` | ExPivot | 94.3% | 81% | 3219 |
 | `packages/pivot-engine` | ExPivot | 93.8% | 84.2% | 6944 |
 | `packages/pivot-react` | ExPivot | 94.1% | 76.6% | 86 |
 | `packages/pivot-mantine` | ExPivot | 87.2% | 74.6% | 94 |
@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/04/2026 - 07:05:08 |
+| Generated on: | 11/04/2026 - 08:52:26 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1119 |
 | Files: | 499 |
-| **Line coverage:** | 86.9% (60656 of 69742) |
-| Covered lines: | 60656 |
-| Uncovered lines: | 9086 |
+| **Line coverage:** | 86.9% (60655 of 69742) |
+| Covered lines: | 60655 |
+| Uncovered lines: | 9087 |
 | Coverable lines: | 69742 |
 | Total lines: | 106264 |
-| **Branch coverage:** | 82.8% (36530 of 44107) |
-| Covered branches: | 36530 |
+| **Branch coverage:** | 82.8% (36527 of 44107) |
+| Covered branches: | 36527 |
 | Total branches: | 44107 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -144,7 +144,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.2%**|**73.5%**|
+|**ExChart**|**84.2%**|**73.4%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -158,7 +158,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.Components.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Components.ChartWire|81%|75%|
 |ExChart.Components.DrawingState|100%||
-|ExChart.Components.ExChart|88%|87.3%|
+|ExChart.Components.ExChart|88%|86.6%|
 |ExChart.Components.ExChartStylesheet|0%||
 |ExChart.Components.ExSurface|79%|62.9%|
 |ExChart.Components.RowKeys|77.5%|71.6%|
@@ -636,7 +636,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
