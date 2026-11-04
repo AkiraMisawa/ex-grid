@@ -6,7 +6,7 @@
 // match: a search never changes the report's shape. The cells outside the Window are read from the report source
 // by the Report Version on screen, as Copy reads them, in blocks, so a step that finds early stops reading.
 
-import { findMatches, type GridFindRequest, type GridFindResult } from '@ex-grid/core';
+import { findAllPage, findMatches, type GridFindAllPage, type GridFindAllRequest, type GridFindRequest, type GridFindResult } from '@ex-grid/core';
 import type { PivotReportCopyBlock, PivotReportMetadata, PivotReportRefusal, PivotReportSource } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
 
@@ -28,8 +28,8 @@ export type ReportFindRead =
 export type ReportFindGivenUp = Exclude<ReportFindRead, { readonly kind: 'answered' }>;
 
 const notFound: ReportFindRead = Object.freeze({ kind: 'answered', answer: Object.freeze({ found: false }) });
-const notHeld: ReportFindRead = Object.freeze({ kind: 'notHeld' });
-const invalid: ReportFindRead = Object.freeze({ kind: 'invalid' });
+const notHeld: ReportFindGivenUp = Object.freeze({ kind: 'notHeld' });
+const invalid: ReportFindGivenUp = Object.freeze({ kind: 'invalid' });
 
 /**
  * One Find step over the report `metadata` describes, in ADR-0055's order: row by row, across a row in the
@@ -115,4 +115,98 @@ export async function findInReport(
         }
     }
     return notFound;
+}
+
+/** Every match of one Find All over one Report Version (ADR-0470 §7): each cell's ordinal in row-major order among the
+ * request's columns, and the text it is shown with, found once and read a page at a time. */
+export class ReportFindAllMatches {
+    readonly #columns: readonly string[];
+    readonly #ordinals: readonly number[];
+    readonly #texts: readonly string[];
+
+    constructor(columns: readonly string[], ordinals: readonly number[], texts: readonly string[]) {
+        this.#columns = columns;
+        this.#ordinals = ordinals;
+        this.#texts = texts;
+    }
+
+    /** How many cells match. */
+    get total(): number {
+        return this.#ordinals.length;
+    }
+
+    /** The entries from `start`, `count` of them or every one left, under `rowSequenceVersion`. */
+    page(start: number, count: number, rowSequenceVersion: number): GridFindAllPage {
+        if (!Number.isInteger(start) || start < 0) throw new RangeError(`A Find All page starts at an entry at or after 0, not ${String(start)}.`);
+        if (!Number.isInteger(count) || count < 1) throw new RangeError(`A Find All page asks for 1 entry or more, not ${String(count)}.`);
+        const columns = this.#columns.length;
+        const matches = this.#ordinals.slice(start, start + count).map((ordinal, i) => ({
+            row: Math.floor(ordinal / columns),
+            column: elementAt(this.#columns, ordinal % columns),
+            text: elementAt(this.#texts, start + i),
+        }));
+        return findAllPage(this.total, matches, rowSequenceVersion);
+    }
+}
+
+/** What one Find All over one Report Version came to: its matches, or why it cannot be given. */
+export type ReportFindAllRead = { readonly kind: 'answered'; readonly matches: ReportFindAllMatches } | ReportFindGivenUp;
+
+/**
+ * Every cell a Find step over the report would stop on (ADR-0470 §7), in a forward walk's order from the first cell:
+ * row by row, across a row in the request's column order, within the scope when there is one. The report is read from
+ * its source in blocks by the Report Version on screen, as a step reads it, but to its end: the count is exact.
+ */
+export async function findAllInReport(
+    source: PivotReportSource, metadata: PivotReportMetadata, request: Omit<GridFindAllRequest, 'start' | 'count'>, signal: AbortSignal,
+): Promise<ReportFindAllRead> {
+    const rows = metadata.rowCount;
+    const known = new Set([...metadata.labelColumns.map(column => column.name), ...metadata.valueColumns.map(column => column.name)]);
+    const read = request.columns.flatMap((name, position) => (known.has(name) ? [{ name, position }] : []));
+    const columns = request.columns.length;
+    const ordinals: number[] = [];
+    const texts: string[] = [];
+    const done = (): ReportFindAllRead => Object.freeze({ kind: 'answered', matches: new ReportFindAllMatches(Object.freeze([...request.columns]), ordinals, texts) });
+    if (request.text === '' || rows === 0 || read.length === 0) return done();
+    const { scope } = request;
+    const names = Object.freeze(read.map(column => column.name));
+    const blockRows = Math.max(1, Math.floor(findBlockCells / names.length));
+    let first = scope === undefined ? 0 : rows - 1;
+    let last = scope === undefined ? rows - 1 : 0;
+    if (scope !== undefined) {
+        for (const range of scope) {
+            first = Math.min(first, Math.max(0, range.topRow));
+            last = Math.max(last, Math.min(rows - 1, range.topRow + range.rowCount - 1));
+        }
+    }
+    for (let top = first; top <= last; top += blockRows) {
+        signal.throwIfAborted();
+        const bottom = Math.min(last, top + blockRows - 1);
+        const answer = await source.copy(Object.freeze({
+            version: metadata.version,
+            columns: names,
+            ranges: Object.freeze([Object.freeze({ top, left: 0, bottom, right: names.length - 1 })]),
+            maxCells: (bottom - top + 1) * names.length,
+        }), signal);
+        signal.throwIfAborted();
+        if (answer.refusal?.kind === 'reportVersionNotHeld') return notHeld;
+        if (answer.refusal !== undefined) return Object.freeze({ kind: 'refused', refusal: answer.refusal });
+        const block = answer.blocks[0];
+        if (answer.version !== metadata.version || answer.blocks.length !== 1 || block === undefined || block.rows.length !== bottom - top + 1
+            || block.rows.some(cells => cells.length !== names.length)) {
+            return invalid;
+        }
+        for (let row = top; row <= bottom; row++) {
+            const cells = elementAt(block.rows, row - top);
+            read.forEach(({ position }, index) => {
+                if (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount
+                    && position >= range.leftColumn && position < range.leftColumn + range.columnCount)) return;
+                const { text } = elementAt(cells, index);
+                if (!findMatches(text, request)) return;
+                ordinals.push((row * columns) + position);
+                texts.push(text);
+            });
+        }
+    }
+    return done();
 }

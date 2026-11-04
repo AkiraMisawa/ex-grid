@@ -7,9 +7,9 @@
 import {
     createGrid, EditorCompletion, EditorHint, gridInputRoot, type AggregateResult, type CellAppearance, type CellPosition, type CompletionCandidate, type CellState, type EditVerdict,
     type GridChromeStylesheet, type GridColumn, type GridCommand, type GridContextMenuContext, type GridCopyAnswer, type GridCopyRequest, type GridDeclaredKeyPress, type GridDirection, type GridErrorCount, type GridErrorCountRequest, type GridErrorStepRequest, type GridEditorReference,
-    type GridEditorRewrite, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
+    type GridEditorRewrite, type GridFindAllMatch, type GridFindAllPage, type GridFindAllRequest, type GridFindPattern, type GridFindResult, type GridHandle, type GridOptions, type GridPointedAt, type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
     type GridSelection, type GridSummaryRequest, type GridSummaryResult, type RowKind, type RowMarkCounts, type RowMarkIntent, type RowMarks, type SelectionRange, type SelectionSummary,
-    type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findMatches, textOf,
+    type SummaryFigure, type TemporalLike, type GridPopoverContext, type GridTurn, type GridViewRead, type ViewPlace, findAllPage, findMatches, textOf,
 } from '@ex-grid/core';
 import {
     awaitPointingScope, crossingCalls, describeAnswer, HeldMessages, isGridRazorSlotName, keyOf, ScriptFunctionError, scriptFunctionName, ScriptModules,
@@ -266,7 +266,7 @@ const heldGridCalls: ReadonlySet<string> = new Set([
 
 /** The calls that carry an input of the user's that .NET carries out or answers, numbered as they cross (ADR-0240
  * section 11). A write crosses as a numbered `Heard`, and a Validate on its own, since each tells the user itself. */
-const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
+const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindAll', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
 
 /** What a call lost on the way to .NET is to a step that would otherwise wait on it: given up, as the core reads an
  * `AbortError`, and said by {@link InputNumbers}' owner instead (ADR-0240 section 11). */
@@ -370,7 +370,8 @@ export function attach(
         return summaryResultOf(answer);
     });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
-        const taken = new DotNetSource(numbered, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize);
+        const taken = new DotNetSource(numbered, rows, columns, traits, (generation, request, signal) => askedFind('Find', generation, request, signal), summarize,
+            (generation, request, signal) => askedFindAll(generation, request, signal));
         taken.take(state);
         return taken;
     };
@@ -429,6 +430,23 @@ export function attach(
             return { found: false };
         });
     const findError: FindErrorOf = (request, signal) => askedFind('FindError', source.generation, request, signal);
+    // A page of a Find All (ADR-0470), asked as a step is. One .NET answers as moved was asked under a source or an order
+    // it no longer holds: once what it sent meanwhile is taken in, the core holds the newer one and drops the list, so
+    // the page is given up here and claims nothing.
+    const askedFindAll = (generation: number, request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage> =>
+        asking(signal, async number => {
+            const askedOf = source;
+            const answer = await numbered.invokeMethodAsync('FindAll', number, generation, request);
+            signal.throwIfAborted();
+            givenUp(answer);
+            const listed = findAllPageOf(answer);
+            if (listed !== 'moved') return listed;
+            await gate.released();
+            if (source === askedOf && source.snapshot().rowSequenceVersion === request.rowSequenceVersion) {
+                throw new Error('Internal: .NET answered the Find All as moved, and sent no other source or order.');
+            }
+            throw new DOMException('The rows moved while the Find All was asked.', 'AbortError');
+        });
     // The Error Count, asked of the source the grid holds now (ADR-0381 section 3's note of 2026-11-01). One .NET answers
     // as moved was asked under a source or an order it no longer holds: once what it sent meanwhile is taken in, the core
     // holds the newer one and asks again, which lets this question go. Nothing is shown for it meanwhile.
@@ -818,6 +836,27 @@ function findResultOf(answer: unknown): GridFindResult | 'moved' {
     if (found.found === false) return { found: false };
     if (found.found === true && typeof found.row === 'number' && typeof found.column === 'string') return { found: true, row: found.row, column: found.column };
     throw new TypeError(`Internal: .NET answered the error step with ${JSON.stringify(found)}.`);
+}
+
+/** .NET's answer to a page of a Find All, as `ExGrid.Components` writes it, or `moved` where .NET did not ask the source,
+ * since what the page was asked under is gone there. A page .NET did not answer, its component gone, is given up. */
+function findAllPageOf(answer: unknown): GridFindAllPage | 'moved' {
+    if (answer === null) throw new DOMException('.NET gave the Find All no answer: the component is gone.', 'AbortError');
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered the Find All with something other than JSON text.');
+    const page = parsed<{ readonly moved?: unknown; readonly total?: unknown; readonly rowSequenceVersion?: unknown; readonly matches?: unknown }>(answer);
+    if (page.moved === true) return 'moved';
+    if (typeof page.total !== 'number' || typeof page.rowSequenceVersion !== 'number' || !Array.isArray(page.matches)) {
+        throw new TypeError(`Internal: .NET answered the Find All with ${answer}.`);
+    }
+    const matches = page.matches.map((match: unknown): GridFindAllMatch => {
+        if (typeof match !== 'object' || match === null) throw new TypeError(`Internal: .NET answered a Find All match with ${JSON.stringify(match)}.`);
+        const { row, column, text, rowLabel } = match as { readonly row?: unknown; readonly column?: unknown; readonly text?: unknown; readonly rowLabel?: unknown };
+        if (typeof row !== 'number' || typeof column !== 'string' || typeof text !== 'string' || (rowLabel !== undefined && typeof rowLabel !== 'string')) {
+            throw new TypeError(`Internal: .NET answered a Find All match with ${JSON.stringify(match)}.`);
+        }
+        return rowLabel === undefined ? { row, column, text } : { row, column, text, rowLabel };
+    });
+    return findAllPage(page.total, matches, page.rowSequenceVersion);
 }
 
 /** .NET's answer to the Error Count, as `ExGrid.Components` writes it, or `moved` where .NET did not ask the Consumer,

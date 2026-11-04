@@ -423,6 +423,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     static fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    readonly findAll?: (request: GridFindAllRequest, signal: AbortSignal) => Promise<GridFindAllPage>;
     get gatherInterval(): number;
     set gatherInterval(milliseconds: number);
     get marks(): FetchingRowMarks<Row> | undefined;
@@ -477,6 +478,7 @@ export interface FetchingSourceOptions<Row> {
     readonly clock?: GridClock;
     readonly distinctValues?: (column: string, filter: GridFilter | undefined, signal: AbortSignal) => Promise<DistinctValues>;
     readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
+    readonly findAll?: (request: GridFindAllRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindAllPage>;
     readonly marks?: RowMarkAdapter<Row>;
     readonly onFetchFailed?: (event: FetchFailedEvent) => void;
     readonly readAheadRows?: number;
@@ -591,6 +593,19 @@ export interface FilterSpec {
 export type FilterUi = 'condition' | 'valueList' | 'both';
 
 // @public
+export function findAll<Row>(rows: readonly Row[], rowSequenceVersion: number, request: GridFindAllRequest, textOf: (column: string) => ((row: Row) => string) | undefined): GridFindAllPage;
+
+// @public
+export class FindAllMatches<Row> {
+    static of<Row>(rows: readonly Row[], request: Omit<GridFindAllRequest, 'start' | 'count' | 'rowSequenceVersion'>, textOf: (column: string) => ((row: Row) => string) | undefined, rowLabel?: (row: Row) => string): FindAllMatches<Row>;
+    page(start: number, count: number, rowSequenceVersion: number): GridFindAllPage;
+    get total(): number;
+}
+
+// @public
+export function findAllPage(total: number, matches: readonly GridFindAllMatch[], rowSequenceVersion: number): GridFindAllPage;
+
+// @public
 export function findMatches(displayedText: string, pattern: GridFindPattern): boolean;
 
 // @public
@@ -639,6 +654,14 @@ export const findPanelLabelIds: Readonly<{
     readonly replaceRefusedCell: 'find-replace-refused-cell';
     readonly replaceRefusedMore: 'find-replace-refused-more';
     readonly notEditable: 'find-not-editable';
+    readonly findAll: 'find-all';
+    readonly findAllList: 'find-all-list';
+    readonly findAllFound: 'find-all-found';
+    readonly findAllFoundOne: 'find-all-found-one';
+    readonly findAllNone: 'find-all-none';
+    readonly findAllInRow: 'find-all-in-row';
+    readonly findAllInLabelledRow: 'find-all-in-labelled-row';
+    readonly findAllInHeader: 'find-all-in-header';
 }>;
 
 // @public
@@ -650,6 +673,7 @@ export interface FindPanelRefusedCell {
 
 // @public
 export interface FindPanelView {
+    readonly findAllShown: boolean;
     readonly matchCase: boolean;
     readonly outcome: string;
     readonly replaceShown: boolean;
@@ -1032,11 +1056,51 @@ export interface GridFilterPanelSlotContext {
 }
 
 // @public
+export interface GridFindAllLine {
+    readonly text: string;
+    readonly where: string;
+}
+
+// @public
+export interface GridFindAllList {
+    readonly choose: (index: number) => boolean;
+    readonly count: number;
+    readonly line: (index: number) => GridFindAllLine;
+}
+
+// @public
+export interface GridFindAllMatch {
+    readonly column: string;
+    readonly row: number;
+    readonly rowLabel?: string | undefined;
+    readonly text: string;
+}
+
+// @public
+export interface GridFindAllPage {
+    readonly matches: readonly GridFindAllMatch[];
+    readonly rowSequenceVersion: number;
+    readonly total: number;
+}
+
+// @public
+export interface GridFindAllRequest extends GridFindPattern {
+    readonly columns: readonly string[];
+    readonly count: number;
+    readonly rowSequenceVersion: number;
+    readonly scope?: readonly SelectionRange[] | undefined;
+    readonly start: number;
+}
+
+// @public
 export interface GridFindPanelSlotContext {
     readonly close: () => void;
+    readonly dropFindAll: () => void;
+    readonly findAll: () => void;
     readonly focusRequest: number;
     readonly innerPopupChanged: (open: boolean) => void;
     readonly label: (id: string) => string;
+    readonly listFindAll: (list: () => GridFindAllList) => void;
     readonly next: () => void;
     readonly previous: () => void;
     readonly replace: () => void;
@@ -1585,6 +1649,7 @@ export interface GridSelectionSummarySlotContext {
 export interface GridSource<Row> {
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    findAll?(request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage>;
     holdKey?(key: RowKey | undefined): void;
     readonly marks?: RowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
@@ -1753,6 +1818,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     set changeTimesKeptFor(milliseconds: number);
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    findAll(request: GridFindAllRequest, signal: AbortSignal): Promise<GridFindAllPage>;
     static from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row>;
     get gatherInterval(): number;
     set gatherInterval(milliseconds: number);
@@ -1792,6 +1858,7 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
 // @public
 export interface InMemorySourceOptions<Row> {
     readonly clock?: GridClock;
+    readonly findAllRowLabel?: (row: Row) => string;
     readonly rowKey?: RowKeyOf<Row>;
 }
 

@@ -77,6 +77,14 @@ public static class BuiltInCommandLabels
             + FindPanelLabelIds.ReasonPlaceholder + ".",
         FindPanelLabelIds.ReplaceRefusedMore => "And " + FindPanelLabelIds.CountPlaceholder + " more.",
         FindPanelLabelIds.NotEditable => "this column cannot be edited",
+        FindPanelLabelIds.FindAll => "Find All",
+        FindPanelLabelIds.FindAllList => "Matches",
+        FindPanelLabelIds.FindAllFound => FindPanelLabelIds.CountPlaceholder + " cells found",
+        FindPanelLabelIds.FindAllFoundOne => "1 cell found",
+        FindPanelLabelIds.FindAllNone => "No cells found",
+        FindPanelLabelIds.FindAllInRow => "Row " + FindPanelLabelIds.RowPlaceholder + ", " + FindPanelLabelIds.ColumnPlaceholder,
+        FindPanelLabelIds.FindAllInLabelledRow => FindPanelLabelIds.RowPlaceholder + ", " + FindPanelLabelIds.ColumnPlaceholder,
+        FindPanelLabelIds.FindAllInHeader => "Header " + FindPanelLabelIds.ColumnPlaceholder,
         // ADR-0203: a paste, a fill and Delete go through one gate (ADR-0035), so a reason any of
         // them can meet is worded for all three; one only a paste or a fill meets says which.
         RefusalLabelIds.PasteEmptySelection => "Nothing was changed: no cell is selected. Select the cells first.",

@@ -150,7 +150,10 @@ internal static class RazorSlot
             json.GetProperty("replaceWaiting").GetBoolean(),
             ScriptJson.Text(json, "outcome"),
             new GridFindWords(Word("field"), Word("matchCase"), Word("wholeCell"), Word("next"), Word("previous"),
-                Word("replaceField"), Word("replace"), Word("replaceAll")));
+                Word("replaceField"), Word("replace"), Word("replaceAll")) { FindAll = Word("findAll") })
+        {
+            FindAllShown = json.GetProperty("findAllShown").GetBoolean(),
+        };
     }
 
     private static GridFilterConditionView ConditionOf(JsonElement json) => new(

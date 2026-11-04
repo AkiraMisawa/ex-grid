@@ -67,6 +67,7 @@ function PlainFindPanel({ context }: { readonly context: GridFindPanelSlotContex
         createElement('label', null, createElement('input', {
             type: 'checkbox', checked: view.matchCase, onChange: event => { context.setMatchCase(event.target.checked); },
         }), context.label('find-match-case')),
+        ...(view.findAllShown ? [plainButton(context.label('find-all'), context.findAll)] : []),
         plainButton(context.label('find-previous'), context.previous),
         plainButton(context.label('find-next'), context.next),
         ...(view.replaceShown ? [

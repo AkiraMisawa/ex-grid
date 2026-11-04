@@ -407,4 +407,34 @@ public class ScriptGridAnswerTests : BunitContext
         await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
         Assert.Equal("""{"moved":true}""", await cut.InvokeAsync(() => Bridge().Find(2, 1, FindStep("gam", version))));
     }
+
+    private static JsonElement FindAllAsk(string text, int rowSequenceVersion, int start, int count) => Payload(
+        $$"""{"text":"{{text}}","matchCase":false,"wholeCell":false,"columns":["Book"],"rowSequenceVersion":{{rowSequenceVersion}},"start":{{start}},"count":{{count}}}""");
+
+    [Fact] // ADR-0470 section 2: a Find All page is answered by the source in .NET, by the browser's number, and said of the source as it attaches
+    public async Task ADR0470_a_find_all_page_is_answered_by_the_source_in_dotnet()
+    {
+        var source = GridSource.From(_rows);
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns(new("Book", ColumnType.Text, r => r.Book))));
+        Assert.True(Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("source").GetProperty("findsAll").GetBoolean());
+
+        var answer = Parsed(await cut.InvokeAsync(() => Bridge().FindAll(1, 1, FindAllAsk("gam", source.RowSequenceVersion, 0, 1))));
+        var expected = _rows.Select((row, at) => (row, at)).Where(r => r.row.Book.Contains("gam", StringComparison.OrdinalIgnoreCase)).ToArray();
+        Assert.Equal(expected.Length, answer.GetProperty("total").GetInt32());
+        Assert.Equal(source.RowSequenceVersion, answer.GetProperty("rowSequenceVersion").GetInt32());
+        var match = Assert.Single(answer.GetProperty("matches").EnumerateArray());
+        Assert.Equal((expected[0].at, "Book", expected[0].row.Book),
+            (match.GetProperty("row").GetInt32(), match.GetProperty("column").GetString(), match.GetProperty("text").GetString()));
+
+        // Numbered among the inputs, as the browser sends it when an input is out (ADR-0240), it is made the same way.
+        var numbered = await cut.InvokeAsync(() => Bridge().Call(1, "FindAll", Payload($$"""[2,1,{{FindAllAsk("gam", source.RowSequenceVersion, 0, 1).GetRawText()}}]""")));
+        Assert.Equal(expected.Length, Parsed(numbered).GetProperty("total").GetInt32());
+
+        // Under an order the source has left, no page is read, and the browser is answered that the rows moved.
+        var version = source.RowSequenceVersion;
+        await cut.InvokeAsync(() => source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]));
+        Assert.Equal("""{"moved":true}""", await cut.InvokeAsync(() => Bridge().FindAll(3, 1, FindAllAsk("gam", version, 0, 1))));
+    }
 }

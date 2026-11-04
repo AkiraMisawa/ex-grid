@@ -517,3 +517,36 @@ test('a grid with nothing to replace takes Ctrl+H and opens nothing (ADR-0332) @
     await page.keyboard.press('ArrowDown');
     await expect.poll(() => cells.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
 });
+
+// ADR-0470: what only a browser shows of Find All — real keys in the list move the Focus to a row far outside the
+// Window, which the grid scrolls to, and the list scrolls its own box to keep the chosen line in view, while the
+// keyboard stays on the list. The paging, the count and every rule of the list are layer 2's (grid-find-all.test.ts).
+test('Find All lists every match, and End in the list moves the Focus to the last, both scrolled into view (FD-14/FD-15, ADR-0470) @behaviour', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await grid(page).locator("[id$='r0c0']").click({ force: true });
+    await page.keyboard.press('ControlOrMeta+f');
+    await page.keyboard.type('novak');
+    const panel = grid(page).locator('.ex-popover-find');
+    await panel.getByRole('button', { name: 'Find All' }).click();
+    await expect(panel.locator('.ex-find-all-count')).toHaveText('100 cells found');
+    const list = panel.getByRole('listbox');
+
+    await list.getByRole('option').first().click();
+    await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
+    await expect(list).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(() => focusedCell(page)).toMatch(/r4c1$/);
+    await page.keyboard.press('End');
+    await expect.poll(() => focusedCell(page)).toMatch(/r399c1$/);
+    await settled(grid(page));
+
+    // Only the lines in view stand in the list, however many matched, and the last is among them, inside its box.
+    expect(await list.getByRole('option').count()).toBeLessThanOrEqual(9);
+    const [line, box] = await Promise.all([list.getByRole('option', { name: /^Row 400\b/ }).boundingBox(), list.boundingBox()]);
+    expect(line.y).toBeGreaterThanOrEqual(box.y - 0.5);
+    expect(line.y + line.height).toBeLessThanOrEqual(box.y + box.height + 0.5);
+    // The row far below the Window was scrolled to, and the keyboard is still the list's.
+    await expect(grid(page).locator("[id$='r399c1']")).toBeInViewport();
+    await expect(list).toBeFocused();
+});

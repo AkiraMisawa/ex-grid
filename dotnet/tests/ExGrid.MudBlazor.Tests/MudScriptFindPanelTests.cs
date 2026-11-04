@@ -14,10 +14,10 @@ namespace ExGrid.MudBlazor.Tests;
 public class MudScriptFindPanelTests : MudTestContext
 {
     private static readonly GridFindWords Words = new("Find what", "Match case", "Match entire cell contents", "Find next", "Find previous",
-        "Replace with", "Replace", "Replace All");
+        "Replace with", "Replace", "Replace All") { FindAll = "Find All" };
 
-    private static GridFindView Find(string text, bool replaceShown = false, string replaceText = "", bool waiting = false, string outcome = "")
-        => new(text, true, false, replaceShown, replaceText, waiting, outcome, Words);
+    private static GridFindView Find(string text, bool replaceShown = false, string replaceText = "", bool waiting = false, string outcome = "", bool findAllShown = false)
+        => new(text, true, false, replaceShown, replaceText, waiting, outcome, Words) { FindAllShown = findAllShown };
 
     private IRenderedComponent<MudExGridScriptFindPanel> Panel(GridFindView view) => Render<MudExGridScriptFindPanel>(ps => ps
         .Add(p => p.View, view)
@@ -35,6 +35,18 @@ public class MudScriptFindPanelTests : MudTestContext
         Assert.All(cut.FindAll("button"), button => Assert.NotEqual("submit", button.GetAttribute("type")));
         Assert.Empty(cut.FindAll("form"));
         Assert.Equal("No match", cut.Find("[role=status]").TextContent);
+    }
+
+    [Fact] // ADR-0470 section 1: Find All is drawn, marked for the script, only where the source lists its matches
+    public void ADR0470_find_all_is_drawn_only_where_the_source_lists()
+    {
+        Assert.Equal(["previous", "next"], Panel(Find("Osei")).FindAll($"button[{ScriptSlotAttributes.FindStep}]").Select(b => b.GetAttribute(ScriptSlotAttributes.FindStep)));
+
+        var listing = Panel(Find("Osei", findAllShown: true));
+
+        var findAll = listing.Find($"button[{ScriptSlotAttributes.FindStep}='findAll']");
+        Assert.Contains("Find All", findAll.TextContent);
+        Assert.NotEqual("submit", findAll.GetAttribute("type"));
     }
 
     [Fact] // ADR-0332 section 2: Replace's field and writes are drawn while it is offered, unavailable while a Replace All is out

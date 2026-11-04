@@ -1087,6 +1087,36 @@
    keeps its height when empty, so the panel does not jump when a step says "no match". */
 .ex-popover-find-body { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
 .ex-find-outcome { min-height: 1.2em; }
+/* Find All's list (ADR-0470 §3): the count line, then a listbox of a fixed number of lines, each a row's height,
+   placed by the core from the Grid Metrics so nothing is measured; only the lines in view stand in it. The
+   active line is painted as the completion list's chosen candidate is, from the selection's token. */
+.ex-find-all { display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+.ex-find-all-count { min-height: 1.2em; }
+.ex-find-all-list {
+    position: relative;
+    overflow-y: auto;
+    /* Never shrunk below its lines: the core reveals the active line by the count it shows, so in a short grid
+       the panel scrolls rather than the list hiding lines the core counts as shown. */
+    flex-shrink: 0;
+    outline-offset: -1px;
+    border: 1px solid var(--ex-header-rule-color, rgba(0, 0, 0, 0.12));
+}
+.ex-find-all-spacer { position: relative; }
+.ex-find-all-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    display: flex;
+    gap: var(--ex-cell-padding-x, 8px);
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    cursor: default;
+}
+.ex-find-all-where { flex: 0 0 auto; }
+.ex-find-all-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.ex-find-all-active { background: var(--ex-selection-fill, rgba(60, 120, 216, 0.18)); }
 /* The Cell Editor (ADR-0010): one input floated over the focused cell, never inside a
    row. Its box is the cell's exactly (ADR-0028); font and line height come from the
    same tokens the cells read, so the text does not jump when editing starts. The coloured

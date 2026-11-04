@@ -1,9 +1,9 @@
 // Layer 1 (ADR-0350 section 13): ExSheet's Find step and Replace plan (ADR-0055, ADR-0332 §2), the counterpart of C#'s
 // SheetFind. A step finds by the text a cell is shown with; a Replace matches the Entry, a Formula's text.
 import { describe, expect, it } from 'vitest';
-import type { GridFindRequest } from '@ex-grid/core';
+import type { GridFindAllRequest, GridFindRequest } from '@ex-grid/core';
 import { CellAddress, Culture, SheetEdit, Workbook, type Sheet } from '@ex-grid/sheet-engine';
-import { planSheetReplace, planWorkbookReplace, positionsOf, sheetFindStep, sheetFindStepWorkbook } from '../src/sheet-find';
+import { planSheetReplace, planWorkbookReplace, positionsOf, sheetFindAll, sheetFindStep, sheetFindStepWorkbook, SheetWorkbookMatches } from '../src/sheet-find';
 import { SheetWords } from '../src/sheet-words';
 import { SheetSource } from '../src/sheet-source';
 
@@ -68,6 +68,41 @@ function where(found: ReturnType<typeof sheetFindStepWorkbook>): string | undefi
     return found === undefined ? undefined : `${found.sheet.name}!${String(found.row)}:${String(found.position)}`;
 }
 
+function listing(text: string, init: Partial<GridFindAllRequest> = {}): GridFindAllRequest {
+    return { text, matchCase: false, wholeCell: false, columns, rowSequenceVersion: 0, start: 0, count: 100, ...init };
+}
+
+describe('sheetFindAll (ADR-0470 §7)', () => {
+    it('ADR-0470 §2 / §7: every cell a step stops on, by rows across the request\'s columns, as shown, a page at a time with the exact count', () => {
+        const sheet = sheetOf({ C1: 'x', A1: 'x', B2: '=1+1', B3: 'X', A3: 'none' });
+        const all = sheetFindAll(sheet, listing('x'), 4);
+        expect(all.total).toBe(3);
+        expect(all.matches.map(({ row, column, text }) => `${String(row)}${column}=${text}`)).toEqual(['0A=x', '0C=x', '2B=X']);
+        expect(all.rowSequenceVersion).toBe(4);
+        expect(sheetFindAll(sheet, listing('2'), 0).matches).toEqual([{ row: 1, column: 'B', text: '2' }]);
+        const page = sheetFindAll(sheet, listing('x', { start: 1, count: 1 }), 0);
+        expect([page.total, page.matches.map(match => match.column)]).toEqual([3, ['C']]);
+        // In the request's column order, and inside the scope.
+        expect(sheetFindAll(sheet, listing('x', { columns: ['C', 'B', 'A'] }), 0).matches.map(match => match.column)).toEqual(['C', 'A', 'B']);
+        const scope = [{ topRow: 1, leftColumn: 0, rowCount: 3, columnCount: 3 }];
+        expect(sheetFindAll(sheet, listing('x', { scope }), 0).matches.map(match => match.row)).toEqual([2]);
+        expect(() => sheetFindAll(sheet, listing('x', { count: 0 }), 0)).toThrow(RangeError);
+    });
+});
+
+describe('SheetWorkbookMatches (ADR-0470 §7)', () => {
+    it('ADR-0470 §7: every Sheet\'s matches in tab order, each Sheet by rows from column A', () => {
+        const sheets = workbookOf({ One: { C1: 'x', A1: 'x' }, Two: {}, Three: { B2: 'X' } });
+        const matches = new SheetWorkbookMatches(sheets, { text: 'x', matchCase: false, wholeCell: false });
+        expect(matches.count).toBe(3);
+        expect([0, 1, 2].map(index => { const { sheet, address } = matches.at(index); return `${sheet.name}!${address.toString()}`; }))
+            .toEqual(['One!A1', 'One!C1', 'Three!B2']);
+        expect(new SheetWorkbookMatches(sheets, { text: 'x', matchCase: true, wholeCell: false }).count).toBe(2);
+        expect(new SheetWorkbookMatches(sheets, { text: '', matchCase: false, wholeCell: false }).count).toBe(0);
+        expect(() => matches.at(3)).toThrow(RangeError);
+    });
+});
+
 describe('sheetFindStepWorkbook (ADR-0332 §5)', () => {
     it('ADR-0332 §5: past the Focus on the Sheet shown, then each other Sheet whole in tab order, wrapping, then the Sheet shown up to the Focus; backward the reverse', () => {
         const sheets = workbookOf({ One: { A1: 'x', A3: 'x' }, Two: { B2: 'x' }, Three: { C1: 'x' } });
@@ -109,5 +144,17 @@ describe('SheetSource.find (ADR-0055)', () => {
         await expect(source.find(request('there', { rowSequenceVersion: 1 }), signal)).resolves.toEqual({ found: true, row: 1, column: 'B' });
         source.show(first);
         await expect(source.find(request('here', { rowSequenceVersion: 0 }), signal)).rejects.toMatchObject({ name: 'AbortError' });
+    });
+
+    it('ADR-0470 §7: a Find All page is answered from the Sheet its version names, and given up under an older one', async () => {
+        const first = sheetOf({ A1: 'here' });
+        const second = sheetOf({ B2: 'here' });
+        const source = new SheetSource(first, () => SheetWords.english);
+        const signal = new AbortController().signal;
+        source.show(second);
+        await expect(source.findAll(listing('here', { rowSequenceVersion: 0 }), signal)).resolves.toMatchObject({ total: 1, matches: [{ row: 0, column: 'A' }], rowSequenceVersion: 0 });
+        await expect(source.findAll(listing('here', { rowSequenceVersion: 1 }), signal)).resolves.toMatchObject({ total: 1, matches: [{ row: 1, column: 'B' }], rowSequenceVersion: 1 });
+        source.show(first);
+        await expect(source.findAll(listing('here', { rowSequenceVersion: 0 }), signal)).rejects.toMatchObject({ name: 'AbortError' });
     });
 });

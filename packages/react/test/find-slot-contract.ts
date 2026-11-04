@@ -64,7 +64,7 @@ function panelOf(root: Element): HTMLElement {
  * Registers the contract's tests against a Wrapper's Chrome: `chrome` names it, and must fill the find panel's slot.
  * `replaceAll` is the words of its Replace All.
  */
-export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, replaceAll = 'Replace All', host: ContractHost = {}): void {
+export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown>, replaceAll = 'Replace All', host: ContractHost = {}, findAll = 'Find All'): void {
     describe(`${name}: the find panel slot's contract (ADR-0390 section 7)`, () => {
         afterEach(() => { cleanup(); });
 
@@ -99,6 +99,28 @@ export function findPanelSlotContract(name: string, chrome: ExGridChrome<unknown
             button.click();
             await settled();
             expect([root.querySelectorAll('.ex-popover').length, panelOf(root).textContent.includes('Replaced 12 cells.')]).toEqual([1, true]);
+        });
+
+        it('ADR-0470 §3 / §4: the contents draw Find All, the core draws its list under them, and a line chosen moves the Focus', async () => {
+            const { root, selections } = mounted(chrome, host);
+            await settled();
+            root.focus();
+            key(root, 'f', { ctrlKey: true });
+            await settled();
+            const field = active();
+            if (!(field instanceof HTMLInputElement)) throw new Error('The find field does not hold the keyboard.');
+            act(() => { typeText(field, 'novak'); });
+            await settled();
+            const button = [...panelOf(root).querySelectorAll('button')].find(each => each.textContent.trim() === findAll);
+            if (button === undefined) throw new Error(`No button reads ${findAll}.`);
+            act(() => { button.click(); });
+            await settled();
+            expect(panelOf(root).querySelector('.ex-find-all-count')?.textContent).toBe('10 cells found');
+            const line = panelOf(root).querySelector<HTMLElement>('.ex-find-all-line[data-ex-index="3"]');
+            if (line === null) throw new Error('The list drew no fourth line.');
+            act(() => { line.click(); });
+            await settled();
+            expect(selections.at(-1)?.focus).toEqual({ row: 15, column: 0 });
         });
     });
 }

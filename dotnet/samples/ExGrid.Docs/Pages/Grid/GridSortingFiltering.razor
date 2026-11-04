@@ -109,6 +109,56 @@
                      Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Find All">
+        <p>
+            <strong>The find panel's Find All lists every cell a step would stop on</strong>, under the panel, with how
+            many there are: "214 cells found". It searches what a step searches: the text and both options, the
+            selection when more than one cell is selected, the visible columns in their order, and, outside a
+            selection, the headers, which come first. A click on a line, or <kbd>Enter</kbd> on it, moves the Focus
+            there as a step that found it would, and makes it the current match, so Find next goes on from it;
+            <kbd>↑</kbd>, <kbd>↓</kbd>, <kbd>Home</kbd> and <kbd>End</kbd> move through the list and the Focus with
+            it.
+        </p>
+        <ul>
+            <li>
+                <strong>You answer it a page at a time, with the exact count.</strong> The grid asks a
+                <code>GridFindAllRequest</code>: Find's pattern, the scope, the columns, the
+                <code>RowSequenceVersion</code>, and the range of the list it shows (<code>Start</code> and
+                <code>Count</code>). You answer a <code>GridFindAllPage</code>: how many cells match, never capped
+                and never an estimate, and the matches of that range, each a row, a column and the text it shows.
+                The grid asks again as the list is scrolled, so a list of a million matches never crosses at once.
+            </li>
+            <li>
+                <strong><code>GridSource.From</code> answers it for you</strong>, finding the matches once for a
+                search and reading its pages from them. <code>GridFindAll.Matches</code> is that reference, for a
+                server that answers itself through <code>GridSource.Fetch</code>'s <code>findAll</code> delegate,
+                which is refused without <code>find</code>. An <code>IGridSource</code> of your own answers
+                <code>CanFindAll</code> and <code>FindAllAsync</code>. Where nothing lists, the button is not drawn.
+                In ExGrid for React they are <code>findAll</code> beside <code>find</code>, and
+                <code>FindAllMatches</code>.
+            </li>
+            <li>
+                <strong>A line names its row by its position</strong> in the order shown, "Row 12, Trader", unless
+                you name rows yourself: <code>FindAllRowLabel</code> on <code>GridSource.From</code>'s source
+                (<code>findAllRowLabel</code> in React), or a <code>RowLabel</code> on each match you answer.
+            </li>
+            <li>
+                <strong>The list goes when it would be wrong.</strong> A sort, a filter, a column moved or rows
+                added move the version, and the list goes and says the order changed; it is not run again by
+                itself. It also goes when the text or an option changes, when the panel closes, and after a Replace
+                All. A value that changes leaves the lines already shown as they were found.
+            </li>
+            <li>
+                The list is the grid's, under every Chrome: <code>ExGrid.MudBlazor</code>, Mantine and MUI draw the
+                button in their own components, and the lines are drawn by the grid at the row height, only those
+                in view. Its choices take their place in the order of input with the grid's keys, as Find's steps
+                do.
+            </li>
+        </ul>
+        <DocsExample Title="Find All" Builtin="typeof(FindAll)" Mud="typeof(FindAllMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="Replace">
         <p>
             <strong>Press <kbd>Ctrl</kbd>+<kbd>H</kbd></strong> for the find panel with Replace, as Excel's dialog
