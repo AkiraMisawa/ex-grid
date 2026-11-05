@@ -126,8 +126,9 @@ export const PRESSED_DISABLED = /^layer 3: a press landed on a disabled control/
 /** Takes the disconnect `page` would send as it hides, if it runs a circuit whose disconnect is still to go: the
  * disconnect's address and form, or null if none was to go. Blazor's own `disconnect` is called, and the beacon it sends is
  * held back and said not to be queued, so Blazor still takes its circuit as standing and goes on dispatching to it; the
- * beacon it sends as the page hides is held back too, and the page is closed straight after (leaveCircuits). A page closed
- * meanwhile has none; any other failure to read the page is thrown. */
+ * beacon it sends as the page hides is held back too, so the page is to be closed straight after, never navigated or
+ * reloaded, whose disconnect would go nowhere (leaveCircuits, closePage). A page closed meanwhile has none; any other
+ * failure to read the page is thrown. */
 export const heldDisconnect = (page) => page.evaluate(() => {
     const disconnect = window.Blazor?.disconnect;
     if (typeof disconnect !== 'function') {
@@ -166,27 +167,43 @@ export const heldDisconnect = (page) => page.evaluate(() => {
 });
 
 /** Sends a disconnect `heldDisconnect` took to the Server host's own port, past the latency proxy, and answers once the
- * host has answered it; an answer that is not a success is thrown. */
+ * host has answered it; an answer that is not a success, or none within 10 s, is thrown. */
 async function sendDisconnect({ url, fields }) {
     const form = new FormData();
     for (const [name, value] of fields) {
         form.append(name, value);
     }
-    const response = await fetch(new URL(url, `http://localhost:${HOST_PORT}`), { method: 'POST', body: form });
+    const address = new URL(url, `http://localhost:${HOST_PORT}`);
+    const response = await fetch(address, { method: 'POST', body: form, signal: AbortSignal.timeout(10_000) }).catch((error) => {
+        throw new Error(`the Server host did not answer a page's disconnect at ${address} within 10 s: ${error.message}`);
+    });
     if (!response.ok) {
         throw new Error(`the Server host answered a page's disconnect ${response.status}: ${(await response.text()).trim()}`);
     }
 }
 
-/** Closes every page in `pages`, and leaves the circuit of each that ran one: its disconnect is sent once it is closed,
- * and this answers once the host has answered each. */
+/** On the Server host, closes every page in `pages` and leaves the circuit of each that ran one: its disconnect is sent
+ * once it is closed, and this answers once the host has answered each. Every page is left whatever another's leaving
+ * says, and what failed is thrown after; a page left standing would send its own beacon as its context closes, and have
+ * it cut (CON-6). Off the Server host there is no circuit to leave. */
 async function leaveCircuits(pages) {
-    for (const page of pages.filter((each) => !each.isClosed())) {
-        const disconnect = SERVER ? await heldDisconnect(page) : null;
-        await page.close();
-        if (disconnect !== null) {
-            await sendDisconnect(disconnect);
+    if (!SERVER) {
+        return;
+    }
+    const left = await Promise.allSettled(pages.filter((each) => !each.isClosed()).map(async (page) => {
+        try {
+            return await heldDisconnect(page);
+        } finally {
+            await page.close();
         }
+    }));
+    const sent = await Promise.allSettled(left.flatMap((each) => (each.status === 'fulfilled' && each.value !== null ? [sendDisconnect(each.value)] : [])));
+    const failed = [...left, ...sent].filter((each) => each.status === 'rejected').map((each) => each.reason);
+    if (failed.length === 1) {
+        throw failed[0];
+    }
+    if (failed.length > 1) {
+        throw new AggregateError(failed, `${failed.length} pages' circuits were not left: ${failed.map((error) => error.message).join('; ')}`);
     }
 }
 
@@ -396,7 +413,8 @@ function hostLogFrom(offset) {
 // page holding several attaches them in no set order, and on the Server host the second grid of
 // /cells?second=1 stood alone on the page first, so a test's first grid was that one, and the
 // press it made never reached the grid it then read (KB-23, CI's Chrome, PR #500).
-async function ready(page) {
+/** Answers once `page` is interactive and no grid on it is Prerendered or still mounting. */
+export async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
     await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy], [data-ex-mounting]'));
     // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
