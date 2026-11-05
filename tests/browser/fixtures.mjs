@@ -114,33 +114,41 @@ export const PRESSED_DISABLED = /^layer 3: a press landed on a disabled control/
 // an unhandled exception in whatever test ran then (CON-6). The Server DemoHost says such a cut as an error; it fell in
 // the test that closed the context, five times in the Hunt of 2026-11-05 (a file's first test, or one asking for other
 // context options). So every context the harness makes, and every one a spec makes (ownContext), sends each page's beacon
-// itself before it closes, through Blazor's own `disconnect`, and closes once the host has read each one, known by a
+// itself before it closes, through Blazor's own `disconnect` once the page's connection is closed, and closes once the host has read each one, known by a
 // token the beacon carries: the beacon, not a time. A page closed alone leaves its beacon running, since the browser
 // keeps it past the page, but its context may close straight after, so it goes the same way (closePage).
 
 /** Sends `page`'s disconnect beacon now, if it runs a circuit whose beacon is still to go, carrying a token of its own
  * that the host keeps once it has read it (DisconnectsRead.cs): the token, or null if none went. A page closed meanwhile
- * sends none; any other failure to read the page is thrown. */
-const sendDisconnect = (page) => page.evaluate((field) => {
-    const disconnect = window.Blazor?.disconnect;
+ * sends none; any other failure to read the page is thrown.
+ *
+ * The page's connection is closed before the beacon goes. Sent while the connection stood, the beacon disposed the
+ * circuit under a page still talking to it, and the host answered the page's next message with "Circuit has been shut
+ * down due to error.", a console error heard by the next test (PR #534's first CI run, three tests on Edge). So Blazor's
+ * own `disconnect` is called with the beacon held back: Blazor takes it as sent and stops reconnecting, the connection
+ * is closed and awaited, and only then does the beacon go, with the token. */
+const sendDisconnect = (page) => page.evaluate(async (field) => {
+    const blazor = window.Blazor;
+    const disconnect = blazor?.disconnect;
     if (typeof disconnect !== 'function') {
         return null;
     }
-    // Blazor sends the beacon once, and says nothing of whether it did: the call is heard on its way out, and given the
-    // token. The stand-in is the instance's own, over Navigator's, and goes in the same task.
-    const native = navigator.sendBeacon;
-    const token = crypto.randomUUID();
-    // Put over whatever stands there, and put back as it stood.
+    const closeConnection = blazor._internal?.forceCloseConnection;
+    if (typeof closeConnection !== 'function') {
+        throw new Error('Blazor has disconnect but no _internal.forceCloseConnection: the harness closes a page\'s connection '
+            + 'before its beacon goes (fixtures.mjs, sendDisconnect), and this version of blazor.web.js names it otherwise');
+    }
+    // Blazor sends the beacon once, and says nothing of whether it did: the call is heard on its way out and held back.
+    // The stand-in is the instance's own, over whatever stands there, and is put back as it stood in the same task.
     const own = Object.getOwnPropertyDescriptor(navigator, 'sendBeacon');
-    let sent = false;
+    const native = navigator.sendBeacon;
+    let held = null;
     navigator.sendBeacon = function (url, data) {
-        const ours = String(url).endsWith('_blazor/disconnect') && data instanceof FormData;
-        if (ours) {
-            data.append(field, token);
+        if (String(url).endsWith('_blazor/disconnect') && data instanceof FormData) {
+            held = { url, data };
+            return true;
         }
-        const queued = native.call(this, url, data);
-        sent ||= ours && queued;
-        return queued;
+        return native.call(this, url, data);
     };
     try {
         disconnect();
@@ -151,7 +159,16 @@ const sendDisconnect = (page) => page.evaluate((field) => {
             Object.defineProperty(navigator, 'sendBeacon', own);
         }
     }
-    return sent ? token : null;
+    if (held === null) {
+        return null;
+    }
+    await closeConnection();
+    const token = crypto.randomUUID();
+    held.data.append(field, token);
+    if (!navigator.sendBeacon(held.url, held.data)) {
+        throw new Error('the browser would not queue a page\'s disconnect beacon');
+    }
+    return token;
 }, 'layer3').catch((error) => {
     // A page closed meanwhile has no circuit left to leave; any other failure is the harness's to hear.
     if (page.isClosed()) {

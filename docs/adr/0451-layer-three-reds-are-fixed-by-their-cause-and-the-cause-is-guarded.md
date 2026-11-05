@@ -148,7 +148,9 @@ from two causes:
    pages still have out; a beacon sent as the page hid had not reached the host over the round trip, the host answered
    it 499, and its circuit stayed. The proxy's fix of the night before took the cut that came with a connection's
    end, not this one. Now every context the harness makes, and every one a spec makes through `ownContext`, sends each
-   page's beacon itself, through Blazor's own `disconnect`, with a token of the harness's; the Server DemoHost keeps
+   page's beacon itself, through Blazor's own `disconnect`, with a token of the harness's, once the page's connection
+   is closed (sent while it stood, the beacon disposed the circuit under a page still talking to it, and the host
+   answered with "Circuit has been shut down due to error.", a console error in the next test); the Server DemoHost keeps
    the tokens of the beacons it has read, and the context closes once each one is read: the beacon, not a time. A
    page closed alone goes the same way. The spec lint refuses `browser.newContext` in a spec (`OwnContext`), and the
    host's error for a cut beacon stands.
