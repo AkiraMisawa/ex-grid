@@ -1,12 +1,13 @@
 # ExGrid
 
 [![CI](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@ex-grid/react/next?label=npm)](https://www.npmjs.com/package/@ex-grid/react)
 [![NuGet](https://img.shields.io/nuget/vpre/ExGrid)](https://www.nuget.org/packages/ExGrid)
 [![Docs](https://img.shields.io/badge/docs-live%20examples-1b6ac9)](https://akiramisawa.github.io/ex-grid/)
 [![TypeScript coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-ts.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![.NET coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-dotnet.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 
-**Excel-like grids for Blazor, built for reading money and risk numbers.**
+**Excel-like grids for React and Blazor, built for reading money and risk numbers.**
 
 A spreadsheet user's selection, keyboard and clipboard, virtualised on both axes so a million rows
 keep the same DOM, and a grid that refuses rather than guesses: a number that does not fit shows
@@ -16,7 +17,7 @@ keep the same DOM, and a grid that refuses rather than guesses: a number that do
 
 [![A trade blotter in ExGrid: prices tick and the changed cells flash, a desk is chosen, and a rectangle of P&L is selected with the mouse and extended with the keyboard](docs/readme/blotter-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/blotter)
 
-One repository, five products, each a separate package:
+One repository, five products, each shipped as packages of its own:
 
 | | |
 |---|---|
@@ -26,8 +27,18 @@ One repository, five products, each a separate package:
 | **ExChart** | Charts of the data the grids show, or your application hands over, drawn as SVG — charted from a selection in a click |
 | **ExBoard** | A Board: grids, pivots and charts laid out over typed inputs, composed once as JSON (by an AI, say) and run again without it |
 
-The first four each have a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`,
-`ExChart.MudBlazor`); ExBoard takes their Chromes as they are.
+Every product is written once, in TypeScript, and runs under React or Blazor
+([ADR-0370](docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)): each one's
+Script Core owns the grid's DOM and decides what every key and gesture means, and a thin Framework Adapter
+mounts it. The same keys, the same refusals and the same stylesheet under either framework.
+
+| | React (npm) | Blazor (NuGet) |
+|---|---|---|
+| The products | `@ex-grid/react`, `@ex-grid/sheet-react`, `@ex-grid/pivot-react`, `@ex-grid/chart-react`, `@ex-grid/board-react` | `ExGrid`, `ExSheet`, `ExPivot`, `ExChart`, `ExBoard` |
+| Design-system Wrappers | Mantine: `@ex-grid/mantine`, `@ex-grid/sheet-mantine`, `@ex-grid/pivot-mantine`, `@ex-grid/chart-mantine`<br>MUI: `@ex-grid/mui`, `@ex-grid/sheet-mui`, `@ex-grid/pivot-mui`, `@ex-grid/chart-mui` | MudBlazor: `ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`, `ExChart.MudBlazor` |
+| Without a UI | `@ex-grid/data`, `@ex-grid/sheet-engine`, `@ex-grid/pivot-engine`, `@ex-grid/data-xlsx`, `@ex-grid/sheet-xlsx` | `ExGrid.Data`, `ExSheet.Engine`, `ExPivot.Engine`, `ExChart.Engine`, `ExGrid.Data.Arrow`, `ExGrid.Data.Xlsx`, `ExSheet.Xlsx` |
+
+ExBoard has no Wrapper of its own: it takes the other products' Chromes as they are, a Wrapper's included.
 
 ## Features
 
@@ -150,10 +161,11 @@ The parts of a pivot, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 
 ### ExChart
 
-Line, step, point, candle, scatter and 3D surface charts of the family's data, drawn as SVG by Blazor.
+Line, step, point, candle, scatter and 3D surface charts of the family's data, drawn as SVG.
 Chart a grid's selection from its context menu, or hand ExChart a definition in your data's terms.
-Three packages: `ExChart.Engine` (the definitions and the arithmetic, no UI), `ExChart` (the
-components) and `ExChart.MudBlazor` (the Chart Dock, a toolbar and menus in MudBlazor's controls).
+Under React it is `@ex-grid/chart-react`, with the Chart Dock, a toolbar and menus in Mantine's or MUI's controls
+from `@ex-grid/chart-mantine` or `@ex-grid/chart-mui`; under Blazor it is `ExChart`, with `ExChart.MudBlazor`'s,
+and `ExChart.Engine` holds the definitions on a server.
 
 - **Every series says what it is** — a level is a line, a rate over an interval a step, an amount
   per period is drawn per period, a price range a candle, an observation an unjoined mark; a
@@ -180,21 +192,6 @@ The parts of a chart, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 
 <!-- figure chart-anatomy -->
 [![An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered](dotnet/samples/ExGrid.Docs/wwwroot/figures/chart-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
-
-### ExBoard
-
-A Board is JSON composed once, by an AI from a request in words or by hand, and run again every day
-without it: rows of ExGrid, ExPivot and ExChart views over typed Board Inputs.
-
-- **Checked before it is drawn** — each input declares its columns and kinds, and a source that
-  answers otherwise is refused by name, before a row is read
-- **Linked by value** — a selection in one view narrows the views it links to, on the fields it names
-- **Outputs on a confirm** — what the user hands on is a value condition and the version of the
-  source it was taken against, never a list of row numbers
-- **The user's changes kept apart** — a Board Diff holds what the user changed, laid over the Board
-  the next time, and what no longer fits is dropped and said
-- **A tool for an AI** — `draw_board` takes a Board and the handles of its data, and answers with
-  the Board as read, or the refusal and where
 
 1. **Chart Filters**: the series shown and the range, raised to your application, which holds them
 2. **Export**: the CSV, SVG and PNG of what the chart draws, each saved on one click
@@ -252,7 +249,90 @@ an Example for each of these, and six Showcases put them in a desk's screens:
 [equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index) and
 [binomial lattice](https://akiramisawa.github.io/ex-grid/showcase/binomial-lattice).
 
+### ExBoard
+
+A Board is JSON composed once, by an AI from a request in words or by hand, and run again every day
+without it: rows of ExGrid, ExPivot and ExChart views over typed Board Inputs.
+
+- **Checked before it is drawn** — each input declares its columns and kinds, and a source that
+  answers otherwise is refused by name, before a row is read
+- **Linked by value** — a selection in one view narrows the views it links to, on the fields it names
+- **Outputs on a confirm** — what the user hands on is a value condition and the version of the
+  source it was taken against, never a list of row numbers
+- **The user's changes kept apart** — a Board Diff holds what the user changed, laid over the Board
+  the next time, and what no longer fits is dropped and said
+- **A tool for an AI** — `draw_board` takes a Board and the handles of its data, and answers with
+  the Board as read, or the refusal and where
+
 ## Quick start
+
+The family is published to npm under `@ex-grid` and to NuGet at one shared version. Each version ships first as
+betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`, and its version without a suffix waits for its
+sign-off ([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+NuGet's first stable version is `0.1.0`, Blazor only; npm's packages begin with `0.2.0`'s prereleases. Each package
+depends on exactly the versions of the others it was built with, so upgrade them together.
+
+### React
+
+```sh
+npm install @ex-grid/core@next @ex-grid/react@next react react-dom
+```
+
+A prerelease is published under npm's `next` tag, so take one by `@next` or by its version. Until the first version
+without a suffix is out, npm's `latest` names the first prerelease, as npm does for any package's first version, so
+a bare `npm install` takes an old beta. React 19 is a peer dependency. Import the grid's stylesheet once, in the module that starts the application, and hand the grid a
+source and its columns, made once outside the component:
+
+```tsx
+import '@ex-grid/core/styles.css';
+import { GridSource, type GridColumn } from '@ex-grid/core';
+import { ExGrid } from '@ex-grid/react';
+
+interface Trade { readonly book: string; readonly instrument: string; readonly notional: number }
+
+// Made once: a new source or column list on every render would render every row again.
+const source = GridSource.from<Trade>([
+    { book: 'Rates', instrument: 'IRS 5Y', notional: 25_000_000 },
+    { book: 'Credit', instrument: 'CDS 5Y', notional: 10_000_000 },
+]);
+
+const columns: readonly GridColumn<Trade>[] = [
+    { name: 'Book', type: 'text', value: t => t.book },
+    { name: 'Instrument', type: 'text', value: t => t.instrument },
+    { name: 'Notional', type: 'number', value: t => t.notional },
+];
+
+export function Trades() {
+    return <ExGrid source={source} columns={columns} viewportHeight={320} />;
+}
+```
+
+A date column's filter makes the dates typed into it with a Temporal you hand the grid as `temporal`: the
+browser's own, or a polyfill such as `temporal-polyfill`. The other products and the Wrappers:
+
+```sh
+npm install @ex-grid/sheet-react@next   # the sheet; @ex-grid/sheet-engine alone computes, on a server too
+npm install @ex-grid/pivot-react@next   # the pivot table; @ex-grid/pivot-engine alone aggregates
+npm install @ex-grid/chart-react@next   # charts
+npm install @ex-grid/board-react@next   # a Board of grids, pivots and charts
+npm install @ex-grid/sheet-xlsx@next    # a Workbook opened from and saved to .xlsx
+
+# In a Mantine application (@mantine/core and @mantine/hooks), each product's Wrapper as well
+npm install @ex-grid/mantine@next @ex-grid/sheet-mantine@next @ex-grid/pivot-mantine@next @ex-grid/chart-mantine@next
+
+# In a MUI application (@mui/material, @emotion/react and @emotion/styled), each product's Wrapper as well
+npm install @ex-grid/mui@next @ex-grid/sheet-mui@next @ex-grid/pivot-mui@next @ex-grid/chart-mui@next
+```
+
+Each product that draws carries its stylesheet (`@ex-grid/sheet/styles.css`, `@ex-grid/pivot/styles.css`,
+`@ex-grid/chart/styles.css`; a Board reads the pivot's and the chart's), and each Wrapper its own, imported after the
+product's. Under Mantine or MUI, set the design system up as usual, under its `MantineProvider` or `ThemeProvider`
+(MUI's theme made with `createTheme({ cssVariables: true })`, whose CSS variables the Wrapper reads), and put the
+grid in `MantineExGrid` or `MuiExGrid` in place of `ExGrid`: the menus, filter panel, find panel and Cell Editor
+become the design system's controls and follow its theme, and the grid's behaviour does not change. [Installation for React](https://akiramisawa.github.io/ex-grid/getting-started/react)
+says the rest, and [`packages/`](packages/README.md) lists every npm package.
+
+### Blazor
 
 ```sh
 dotnet add package ExGrid --prerelease
@@ -283,11 +363,7 @@ builder.RootComponents.Add<ExGrid.Components.ExGridStylesheet>("head::after");
 }
 ```
 
-The whole family is published to NuGet at one shared version. `0.1.0` is the first stable version; each version
-after it ships first as betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`
-([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
-Each package depends on exactly the versions of the others it was built with, so upgrade them
-together. A MudBlazor application adds each product's Wrapper:
+The other products, and each one's Wrapper in a MudBlazor application:
 
 ```sh
 dotnet add package ExGrid.MudBlazor --prerelease    # for a MudBlazor application
@@ -302,7 +378,8 @@ dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
 dotnet add package ExSheet.Xlsx --prerelease        # ExSheet opens and saves .xlsx; ExGrid.Data.Xlsx alone reads and writes the format
 ```
 
-Each package's own readme takes it from there:
+Each product's NuGet package carries the same Script Core the npm packages do, bundled, so a Blazor application
+needs no Node. Each package's own readme takes it from there:
 
 | Product | Readmes |
 |---|---|
@@ -313,24 +390,30 @@ Each package's own readme takes it from there:
 | ExBoard | [`ExBoard`](dotnet/src/ExBoard/README.md) |
 | Data | [`ExGrid.Data`](dotnet/src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](dotnet/src/ExGrid.Data.Arrow/README.md), [`ExGrid.Data.Xlsx`](dotnet/src/ExGrid.Data.Xlsx/README.md) |
 
-**Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
-verified under WebAssembly; every browser test also runs under Blazor Server.
+### Requirements
+
+- **Chrome or Edge**, under either framework. Safari and Firefox are out of scope.
+- **React:** React 19 (the Wrappers 19.2 or later), and a bundler that imports a package's stylesheet, as Vite
+  does. The Wrappers take Mantine 9.7 or a later 9.x, or MUI 9.5 or a later 9.x.
+- **Blazor:** .NET 10 or newer, and an interactive render mode. ExGrid is verified under WebAssembly; every browser
+  test also runs under Blazor Server.
 
 ## See it running
 
 Every component runs live on the **[Docs Site](https://akiramisawa.github.io/ex-grid/)**: each
 page has Examples you can drive with the mouse and the keyboard, the code each one runs, and the
-API. A switch at the top runs every Example under the built-in Chrome or MudBlazor's. The
-Showcases are whole applications:
+API. One switch at the top reads the site for React or for Blazor (read for React, each page says what
+it shows for React, and runs the Examples written for it), and another runs every Example under the
+built-in Chrome or a design system's: Mantine's or MUI's under React, MudBlazor's under Blazor. The Showcases are whole applications:
 [a trade blotter](https://akiramisawa.github.io/ex-grid/showcase/blotter),
 [a budget sheet](https://akiramisawa.github.io/ex-grid/showcase/budget),
-[a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales), and ExChart's five, from
+[a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales), and ExChart's six, from
 [an exposure profile](https://akiramisawa.github.io/ex-grid/showcase/exposure) to
-[an equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index)
+[a binomial lattice](https://akiramisawa.github.io/ex-grid/showcase/binomial-lattice)
 (all of them on [the Showcases page](https://akiramisawa.github.io/ex-grid/showcases)).
 
-To run the site locally, clone the repository (the .NET 10 SDK is all it needs; see
-[CONTRIBUTING](CONTRIBUTING.md) for Nix) and open <http://localhost:5310>:
+To run the site locally, clone the repository (it needs the .NET 10 SDK and Node, whose packages the
+first build installs with `npm ci`; see [CONTRIBUTING](CONTRIBUTING.md) for Nix) and open <http://localhost:5310>:
 
 ```sh
 cd dotnet
@@ -344,10 +427,13 @@ dotnet run --project samples/ExGrid.Docs --urls http://localhost:5310
   that does not fit becomes `####`.
 - **The grid neither holds nor executes.** The data, sorting, filtering and edits belong to your
   application. The grid displays what it is given and tells you what the user asked for — or
-  you hand it `GridSource.From` and let the bundled source do it.
+  you hand it `GridSource.from` (`GridSource.From` in C#) and let the bundled source do it.
 - **Chrome renders; the core decides.** A design system replaces how the menus and editors look,
   never what they mean.
-- **JavaScript only where Blazor cannot do the job**, on an allowlist.
+- **One core, thin adapters.** Each product's TypeScript Script Core decides what every input means;
+  React and Blazor only mount it, so the two frameworks cannot drift apart.
+- **The grid never measures.** No layout is read on the way to a paint: the browser tells the grid
+  what changed, and nothing per cell is bound to a listener.
 
 Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the vocabulary in
 [`CONTEXT.md`](CONTEXT.md).
