@@ -98,10 +98,105 @@ export function isClipboardKey(event: Event): boolean {
     return (primary && event.key === 'Insert') || (event.shiftKey && !primary && (event.key === 'Insert' || event.key === 'Delete'));
 }
 
-/** Replaces a field's selected text, as typing or pasting it would, and tells the field's listeners. */
+/**
+ * Whether the browser's own editing reaches `field`: it edits only the element that holds the keyboard. An edit made
+ * through it joins the field's own undo history as the same input typed does, run for run (consecutive characters, and
+ * consecutive deletions, are undone together), and the browser sends the field's `change` itself when it is left or
+ * Enter is typed there. An edit put in from script with `setRangeText` joins no history, so a Ctrl+Z taken after held
+ * typing undid nothing, or what came before it, where the same keys typed one at a time undid them (the Hunt of
+ * 2026-11-05, ExGrid's differential seed 1165771808 on the Server host: "7.5Bravo 2" stood where Ctrl+Z had taken
+ * typing back to "7").
+ */
+export function editsAsTyped(field: HTMLInputElement | HTMLTextAreaElement): boolean {
+    const doc = field.ownerDocument;
+    const root = field.getRootNode();
+    const active = root === doc ? doc.activeElement : root instanceof ShadowRoot ? root.activeElement : null;
+    return active === field && typeof doc.execCommand === 'function';
+}
+
+/** The input types that are a step of their own in a field's undo history, as the browser's paste, drop and cut are; any
+ * other joins the typing run beside it. */
+const ownSteps: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromDrop', 'deleteByCut', 'deleteByDrag']);
+
+/**
+ * Runs one of the browser's editing commands on `field`, which holds the keyboard, as the input of `inputType`. A paste,
+ * a drop or a cut is a step of its own in the field's history, as the browser makes it, so the typing run open before it
+ * is closed, and the one it opens is closed after it: a selection put elsewhere and back is what closes one. The
+ * command's own `input` event names the command's type, `insertText` for a paste; where that is not `inputType`, the
+ * field's listeners hear the type the input had instead, as they did when the edit was put in from script. Throws where
+ * the browser refuses the command, which an editable field that holds the keyboard does not.
+ */
+function runCommand(field: HTMLInputElement | HTMLTextAreaElement, command: 'insertText' | 'delete' | 'forwardDelete', text: string, inputType: string): void {
+    const doc = field.ownerDocument;
+    const own = ownSteps.has(inputType);
+    if (own) closeTypingRun(field);
+    const commandType = command === 'insertText' ? 'insertText' : command === 'delete' ? 'deleteContentBackward' : 'deleteContentForward';
+    const view = doc.defaultView;
+    const renamed = commandType !== inputType && view !== null;
+    // The command's input event, stopped before anything hears it, ahead of every listener on its path. Only for the
+    // call below, and only that field's.
+    const stop = (event: Event): void => {
+        if (event.target === field) event.stopImmediatePropagation();
+    };
+    if (renamed) view.addEventListener('input', stop, true);
+    let done: boolean;
+    try {
+        done = doc.execCommand(command, false, text);
+    } finally {
+        if (renamed) view.removeEventListener('input', stop, true);
+    }
+    if (!done) throw new Error(`The browser refused to ${command} in a text field that holds the keyboard.`);
+    if (renamed) field.dispatchEvent(new InputEvent('input', { bubbles: true, data: text === '' ? null : text, inputType }));
+    if (own) closeTypingRun(field);
+}
+
+// The browser closes the typing run open in a field when its selection is moved: put elsewhere and back, the selection
+// is where it was and the next edit starts a run of its own. An empty field has nowhere else to put it, and no text a
+// run could join.
+function closeTypingRun(field: HTMLInputElement | HTMLTextAreaElement): void {
+    const start = selectionOf(field, 'start');
+    const end = selectionOf(field, 'end');
+    const direction = field.selectionDirection;
+    if (direction === null) throw new Error('A text field that takes text has a selection, and this one has none.');
+    const elsewhere = start === 0 && end === 0 ? field.value.length : 0;
+    if (elsewhere === start && elsewhere === end) return;
+    field.setSelectionRange(elsewhere, elsewhere);
+    field.setSelectionRange(start, end, direction);
+}
+
+/**
+ * Replaces a field's selected text, as typing or pasting it would, and tells the field's listeners. Through the
+ * browser's own editing where the field holds the keyboard, so the edit is in the field's undo history (editsAsTyped);
+ * a field that does not hold it, which no typing could reach either, is written from script. A deletion of nothing is
+ * no edit.
+ */
 export function typeText(field: HTMLInputElement | HTMLTextAreaElement, text: string, inputType: string): void {
-    field.setRangeText(text, selectionOf(field, 'start'), selectionOf(field, 'end'), 'end');
+    const start = selectionOf(field, 'start');
+    const end = selectionOf(field, 'end');
+    if (text === '' && start === end) return;
+    if (editsAsTyped(field)) {
+        runCommand(field, text === '' ? 'delete' : 'insertText', text, inputType);
+        return;
+    }
+    // oxlint-disable-next-line ex-grid/no-script-edit -- the field does not hold the keyboard, so the browser's editing cannot reach it
+    field.setRangeText(text, start, end, 'end');
     field.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType }));
+}
+
+/**
+ * Deletes `from`..`to`, the character before the caret (`backward`, Backspace) or after it (Delete), a word or the line,
+ * as the key does. A character goes through the browser's own deletion where the field holds the keyboard, which finds
+ * the character's extent itself and joins consecutive deletions into one undo step as the key does; selecting it first
+ * would make each deletion a step of its own.
+ */
+function deleteText(field: HTMLInputElement | HTMLTextAreaElement, from: number, to: number, inputType: string, character: 'backward' | 'forward' | undefined): void {
+    if (from === to) return;
+    if (character !== undefined && editsAsTyped(field)) {
+        runCommand(field, character === 'backward' ? 'delete' : 'forwardDelete', '', inputType);
+        return;
+    }
+    if (selectionOf(field, 'start') !== from || selectionOf(field, 'end') !== to) field.setSelectionRange(from, to);
+    typeText(field, '', inputType);
 }
 
 /**
@@ -154,11 +249,8 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
         showCaret(field, to);
         return 'done';
     };
-    const remove = (from: number, to: number, inputType: string): KeyDefault => {
-        if (from !== to) {
-            field.setRangeText('', from, to, 'end');
-            field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
-        }
+    const remove = (from: number, to: number, inputType: string, character?: 'backward' | 'forward'): KeyDefault => {
+        deleteText(field, from, to, inputType, character);
         return 'done';
     };
     if (primary && !key.altKey && (key.key === 'a' || key.key === 'A')) {
@@ -175,11 +267,11 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
         case 'Backspace':
             if (start !== end) return remove(start, end, 'deleteContentBackward');
             if (word || line) return remove(line ? 0 : wordStart(value, start), start, 'deleteWordBackward');
-            return plain || key.shiftKey ? remove(stepBack(value, start), start, 'deleteContentBackward') : 'none';
+            return plain || key.shiftKey ? remove(stepBack(value, start), start, 'deleteContentBackward', 'backward') : 'none';
         case 'Delete':
             if (start !== end) return remove(start, end, 'deleteContentForward');
             if (word) return remove(end, wordEnd(value, end, metaIsPrimary), 'deleteWordForward');
-            return plain ? remove(end, stepOn(value, end), 'deleteContentForward') : 'none';
+            return plain ? remove(end, stepOn(value, end), 'deleteContentForward', 'forward') : 'none';
         case 'ArrowLeft':
             if (line) return reach(0);
             if (word) return reach(wordStart(value, moving));

@@ -129,6 +129,30 @@ failed five tests in four jobs, from four causes:
    such a press and makes no click. The harness now says any press that lands on a disabled control as a console
    error, so the next one names itself; the two tests that press one on purpose name the error.
 
+## The second widened night, 2026-11-05
+
+Every test ran ten times green on the WebAssembly and React hosts; on the Server host, twenty-seven runs of five tests failed in eight jobs,
+from two causes:
+
+1. **A held key's text was put in from script, outside the field's undo history** (`differential.spec.mjs`, ExGrid,
+   seed 1165771808, ten runs of ten on each browser and once each widened; it reproduced locally at once). Keys
+   typed while a commit's answer was out are taken again after it, and what their default would have done was done
+   with `setRangeText`, which joins no undo history: the `Ctrl+Z` that followed undid nothing, and `7.5Bravo 2` stood
+   where the same keys typed one at a time were undone to `7`. A product race, fixed in the product:
+   [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)'s note of
+   2026-11-05. The workspace's lint refuses `setRangeText` outside the one place that edits through the browser
+   (`ex-grid/no-script-edit`), and the seed joins the fixed ones.
+2. **The harness closed a browser context with a page's disconnect beacon on its way** (CON-6, through the guard of
+   the night before: `navigation.spec.mjs`'s RI-1 on both browsers, and the first test after a context closed in
+   `circuit.spec.mjs`, `grid-live.spec.mjs` and `shipped-files.spec.mjs`). Closing a context ends every request its
+   pages still have out; a beacon sent as the page hid had not reached the host over the round trip, the host answered
+   it 499, and its circuit stayed. The proxy's fix of the night before took the cut that came with a connection's
+   end, not this one. Now every context the harness makes, and every one a spec makes through `ownContext`, sends each
+   page's beacon itself, through Blazor's own `disconnect`, with a token of the harness's; the Server DemoHost keeps
+   the tokens of the beacons it has read, and the context closes once each one is read: the beacon, not a time. A
+   page closed alone goes the same way. The spec lint refuses `browser.newContext` in a spec (`OwnContext`), and the
+   host's error for a cut beacon stands.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs

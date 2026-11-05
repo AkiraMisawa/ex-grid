@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitBack, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, alterPage, circuitBack, ownContext, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -490,7 +490,7 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
     test.use({ expectedHostLog: [/ErrorBoundary: .*ADR-0018/] });
 
     test('a store change reaches both, a sort reaches one, and a shared source is refused @blazor', async ({ page, browser }) => {
-        const other = await browser.newContext();
+        const other = await ownContext(browser);
         const second = await other.newPage();
         try {
             await page.goto('/shared');

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, ownContext } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
 // Changing a row from its inspector while the store changes underneath it, on
@@ -182,7 +182,7 @@ test('RI-23: on the Server host, an approval in another tab raises the banner in
     await open(page);
     const mine = await inspect(page, 1);
 
-    const other = await browser.newContext();
+    const other = await ownContext(browser);
     try {
         const theirs = await other.newPage();
         await theirs.goto('/inspector-edits');

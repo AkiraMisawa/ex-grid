@@ -13,6 +13,8 @@
     "ex-grid/no-catch": "error",
     "ex-grid/no-stand-in-default": "error",
     "ex-grid/disable-states-why": "error",
+    // A user's edit goes through the browser's editing, so it is in the field's undo history.
+    "ex-grid/no-script-edit": "error",
     "eslint/no-empty": ["error", { "allowEmptyCatch": false }],
     "eslint/no-empty-function": "error",
     "eslint/no-useless-catch": "error",
@@ -77,7 +79,9 @@
         // A case's name is its title, read from the case file; every case asks for an assertion at run
         // time (`expect.hasAssertions()`), which no static check of a runner can see.
         "vitest/valid-title": "off",
-        "vitest/expect-expect": "off"
+        "vitest/expect-expect": "off",
+        // A test stands where the browser does, and types into a field the way the browser's own editing would.
+        "ex-grid/no-script-edit": "off"
       }
     }
   ],

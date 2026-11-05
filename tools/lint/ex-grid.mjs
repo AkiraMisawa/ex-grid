@@ -108,6 +108,34 @@ const noStandInDefault = {
     },
 };
 
+// A text field written from script with setRangeText keeps none of what the browser keeps of an edit typed: the edit
+// joins no undo history, so a Ctrl+Z after it walks a history the typing never made, and the field sends no `change`
+// when it is left. Held input taken again wrote its text so, and a Ctrl+Z after held typing undid nothing where the same
+// keys typed one at a time were undone (the Hunt of 2026-11-05, differential seed 1165771808). Every edit the grid makes
+// for a user's input goes through pending-commit.ts's typeText, which edits through the browser's own command where the
+// field holds the keyboard.
+const noScriptEdit = {
+    meta: {
+        type: 'problem',
+        docs: { description: 'A user\'s edit is made through the browser\'s editing, not written from script.' },
+        messages: {
+            setRangeText: '`setRangeText` writes a field outside its undo history: a Ctrl+Z after it undoes something else than the same input typed would. Edit through `typeText` (pending-commit.ts), which uses the browser\'s own editing where the field holds the keyboard; where the text is not a user\'s edit, disable this rule on the line with `-- <why>`.',
+        },
+        schema: [],
+    },
+    create(context) {
+        return {
+            CallExpression(node) {
+                const callee = node.callee;
+                if (callee.type === 'MemberExpression' && !callee.computed && callee.property.type === 'Identifier'
+                    && callee.property.name === 'setRangeText') {
+                    context.report({ node: callee.property, messageId: 'setRangeText' });
+                }
+            },
+        };
+    },
+};
+
 const directive = /^\s*(?:oxlint|eslint)-disable(?:-next-line|-line)?\b/;
 
 const disableStatesWhy = {
@@ -145,5 +173,6 @@ export default {
         'no-catch': noCatch,
         'no-stand-in-default': noStandInDefault,
         'disable-states-why': disableStatesWhy,
+        'no-script-edit': noScriptEdit,
     },
 };

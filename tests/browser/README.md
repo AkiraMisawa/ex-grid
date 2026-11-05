@@ -300,7 +300,7 @@ acknowledges every render batch once it has applied it, so by then the last one 
 
 ## The spec lint
 
-A layer-2 test reads every spec here and refuses four things (ADR-0220 §6, ADR-0451;
+A layer-2 test reads every spec here and refuses five things (ADR-0220 §6, ADR-0451;
 `dotnet/tests/ExGrid.Components/SpecLintTests.cs`, the lint itself in `Support/SpecLint.cs`):
 
 - **A fixed wait**: `waitForTimeout`, a `setTimeout` waited on, or a `sleep`. Wait for the state the
@@ -321,6 +321,13 @@ A layer-2 test reads every spec here and refuses four things (ADR-0220 §6, ADR-
   them go before reading. A record attached to the report but not asserted is not refused.
 - **A drag Playwright emulates**: `locator.dragTo` or `page.dragAndDrop`, which no comment lets
   through. Drag with `drag.mjs` instead (below, "Drags").
+- **A browser context made past the fixtures**: `browser.newContext` or `browser.newPage`, which no
+  comment lets through, in a spec or a helper module. Closing such a context ends its pages' disconnect
+  beacons wherever they have got to, and on the Server host a circuit whose beacon was cut stays
+  standing, and its calls in flight fail a minute later in another test (CON-6). Make it with
+  `ownContext(browser, options)` from `fixtures.mjs`: its `close`, like every context and page the
+  harness closes, first sends each page's beacon with a token and waits until the host has read it
+  (ADR-0451, the second widened night).
 
 It reads statements, not lines, so a call over several lines is one statement, and each test, hook
 or function starts owing nothing. Apart from the third rule, it does not judge what a test asserts, and it does not see an input
