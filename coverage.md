@@ -5,7 +5,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.6% | 84.8% | 88.2% | 78.2% |
+| ExGrid | 93.7% | 84.8% | 88.2% | 78.2% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82.1% | 86.1% | 82% |
 | ExChart | 92.3% | 83% | 91.1% | 84.9% |
@@ -17,7 +17,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Package | Product | Line | Branch | Lines |
 |---|---|---|---|---|
-| `packages/core` | ExGrid | 94.9% | 86.6% | 14595 |
+| `packages/core` | ExGrid | 94.9% | 86.6% | 14639 |
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.1% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.4% | 104 |
@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/05/2026 - 07:21:50 |
+| Generated on: | 11/05/2026 - 08:22:09 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1119 |
@@ -63,8 +63,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | Uncovered lines: | 9087 |
 | Coverable lines: | 69742 |
 | Total lines: | 106264 |
-| **Branch coverage:** | 82.8% (36529 of 44107) |
-| Covered branches: | 36529 |
+| **Branch coverage:** | 82.8% (36528 of 44107) |
+| Covered branches: | 36528 |
 | Total branches: | 44107 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
