@@ -74,8 +74,10 @@ nix develop -c bash -c 'cd dotnet && dotnet run --project samples/ExGrid.DemoApi
 
 ### Option B — without Nix
 
-Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) yourself;
-`dotnet/global.json` accepts any 10.0.x SDK at feature band 100 or later. Then the usual, in `dotnet/`:
+Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and Node (the version
+`.node-version` names) yourself; `dotnet/global.json` accepts any 10.0.x SDK at feature band 100 or later.
+Building ExGrid bundles the Script Core from `packages/`, so its first build runs `npm ci` at the repository's
+root. Then the usual, in `dotnet/`:
 
 ```sh
 cd dotnet
@@ -83,7 +85,7 @@ dotnet build
 dotnet test
 ```
 
-For the browser test layer and the render spike you additionally need **Node.js** and a
+For the browser test layer and the render spike you additionally need a
 **Chromium-based browser** (Chromium browsers are the only target — 
 [ADR-0017](docs/adr/0017-target-chromium-browsers-only.md)).
 
