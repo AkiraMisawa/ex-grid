@@ -136,6 +136,33 @@ public class SpecLintTests
         Assert.DoesNotContain(Rule.EmulatedDrag, Rules(InTest(body)));
     }
 
+    [Theory] // ADR-0451's note of 2026-11-05: a context made past the fixtures cuts its pages' disconnects as it closes
+    [InlineData("    const other = await browser.newContext();")]
+    [InlineData("    const other = await browser.newContext({ locale: 'de-DE' });")]
+    [InlineData("    const alone = await browser.newPage();")]
+    [InlineData("    // spec-lint: early-read: a second user of its own\n    const other = await browser.newContext();")]
+    public void A_context_made_past_the_fixtures_is_refused(string line)
+    {
+        Assert.Contains(Rule.OwnContext, Rules(InTest(line)));
+    }
+
+    [Fact] // ADR-0451's note of 2026-11-05: a helper module makes no context past the fixtures either
+    public void No_helper_module_makes_a_context_past_the_fixtures()
+    {
+        var helpers = Directory.EnumerateFiles(Specs, "*.mjs")
+            .Where((file) => !file.EndsWith(".spec.mjs", StringComparison.Ordinal) && Path.GetFileName(file) != "fixtures.mjs")
+            .Where((file) => NewContext.IsMatch(File.ReadAllText(file)))
+            .Select(Path.GetFileName)
+            .Order(StringComparer.Ordinal);
+        Assert.Empty(helpers);
+    }
+
+    [Fact] // ADR-0451's note of 2026-11-05: ownContext's close lets the host read the disconnects first
+    public void A_context_made_with_ownContext_is_let_through()
+    {
+        Assert.DoesNotContain(Rule.OwnContext, Rules(InTest("    const other = await ownContext(browser);\n    await other.close();")));
+    }
+
     [Theory] // ADR-0220 §6: a fixed wait, however it is spelled
     [InlineData("    await page.waitForTimeout(500);")]
     [InlineData("    await grid.page().waitForTimeout(PACE_MS);")]

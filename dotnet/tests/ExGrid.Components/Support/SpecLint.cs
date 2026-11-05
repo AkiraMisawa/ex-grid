@@ -30,9 +30,10 @@ public static class SpecLint
     /// <summary>
     /// What a finding refuses: a fixed wait, an early read, a key whose landing is recorded under a round
     /// trip with the host's answers flowing, an allowance that names no reason, or a drag Playwright emulates
-    /// (ADR-0451), which no allowance lets through.
+    /// (ADR-0451), which no allowance lets through, or a browser context made past the fixtures, whose close would cut
+    /// its pages' disconnect beacons (ADR-0451's note of 2026-11-05), which no allowance lets through either.
     /// </summary>
-    public enum Rule { FixedWait, EarlyRead, RoundTrip, Allowance, EmulatedDrag }
+    public enum Rule { FixedWait, EarlyRead, RoundTrip, Allowance, EmulatedDrag, OwnContext }
 
     /// <summary>One finding: its rule, the line its statement starts on, the statement, and why.</summary>
     public sealed record Finding(Rule Rule, int Line, string Statement, string Why);
@@ -77,6 +78,11 @@ public static class SpecLint
     // Playwright's own drag and drop, which its Chromium mouse emulates and can lose (ADR-0451): drag.mjs drives
     // every drag instead.
     private static readonly Regex EmulatedDrag = new(@"\.(?:dragTo|dragAndDrop)\(", RegexOptions.CultureInvariant);
+
+    // A browser context made with Playwright's own call, whose close ends its pages' disconnect beacons wherever they have
+    // got to (fixtures.mjs, leaveCircuits): ownContext makes one whose close lets the host read them first. The
+    // browser's newPage makes a context of its own too, which goes with the page.
+    public static readonly Regex NewContext = new(@"\.newContext\(|\bbrowser\.newPage\(", RegexOptions.CultureInvariant);
 
     private static readonly Regex FixedWait = new(
         @"\.waitForTimeout\(|(?<![\w$.])setTimeout\(|\bwindow\.setTimeout\(|(?<![\w$.])sleep\(",
@@ -168,6 +174,11 @@ public static class SpecLint
             {
                 findings.Add(new(Rule.EmulatedDrag, statement.FirstLine, s,
                     "Playwright emulates this drag and can lose it, leaving the browser holding a drag the page never hears the end of: drag with startDrag or dragAndDrop from drag.mjs (ADR-0451)"));
+            }
+            if (NewContext.IsMatch(s))
+            {
+                findings.Add(new(Rule.OwnContext, statement.FirstLine, s,
+                    "closing a context Playwright made ends its pages' disconnect beacons wherever they have got to, and a circuit the host never heard go stays standing (CON-6): make it with ownContext from fixtures.mjs, whose close lets the host read them first"));
             }
             if (FixedWait.IsMatch(s) && !Allowed(statement, "fixed-wait", lines, comments))
             {

@@ -40,7 +40,7 @@ import { changeHighlightShowingUntil } from '../cells/change-highlight';
 import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import {
-    cancelsPending, elementDefault, eventAgain, heldEventTypes, heldInputOf, inputDefault, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
+    cancelsPending, editsAsTyped, elementDefault, eventAgain, heldEventTypes, heldInputOf, inputDefault, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
     type HeldInput,
 } from './pending-commit';
 import { HeldTextCommit } from './held-text-commit';
@@ -5272,8 +5272,10 @@ export class GridView<Row> {
         const own = put === this.#keyField || (edit !== undefined && edit.slot === undefined && put === this.#editorField(edit));
         const field = own ? undefined : typedField(put);
         const before = field?.value;
+        // Text put into the field that holds the keyboard goes through the browser's own editing, which commits it itself.
+        const byBrowser = field !== undefined && editsAsTyped(field);
         const taken = this.#takeOne(input);
-        if (field !== undefined && before !== undefined && field.isConnected && field.value !== before) this.#heldText.typed(field, before);
+        if (field !== undefined && before !== undefined && field.isConnected && field.value !== before) this.#heldText.typed(field, before, byBrowser);
         return taken;
     }
 
@@ -10063,6 +10065,7 @@ export class GridView<Row> {
                 this.#writeEditorText(edit, this.#editorText(edit) + text);
             } else {
                 const start = editor.selectionStart ?? editor.value.length;
+                // oxlint-disable-next-line ex-grid/no-script-edit -- the Keyboard Field holds the keyboard here, not the editor, so the browser's editing cannot reach it
                 if (text !== '') editor.setRangeText(text, start, editor.selectionEnd ?? start, 'end');
                 // Typed by the core, with no input event: a field drawn anew is handed it too.
                 if (edit.slot !== undefined) edit.slot.text = editor.value;

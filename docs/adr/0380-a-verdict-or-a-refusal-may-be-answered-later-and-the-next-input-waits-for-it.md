@@ -88,6 +88,12 @@ source as ADR-0050 item 5 has it. On Blazor it crosses as a paste's answer does 
   what the answer left. Typed fast or slow, `150` Enter `200` Enter therefore ends with the same cells,
   whatever the answer and however late it comes (spine rule 6). Under a Reject, the Enter that followed
   is taken in the still-open editor and asks again, as it would have done after an immediate Reject.
+  *Note of 2026-11-05:* what a held key's default would have done in a field (a character typed, a deletion, a paste,
+  a composition's text) is done through the browser's own editing command where the field holds the keyboard, so it
+  joins the field's undo history as the same input typed does, run for run, and the field sends its `change` when it
+  is left. It was done with `setRangeText`, which joins no history, and a `Ctrl+Z` after held typing undid nothing where
+  the keys typed one at a time were undone (ADR-0451, the second widened night). A field that does not hold the
+  keyboard, which no typing reaches either, is still written from script.
 - **An answer is judged against what the commit was taken against.** A row that left, a Source
   replaced, or an order that moved while the answer was out refuses the commit with ADR-0142's reasons.
   The verdict is not consulted again.

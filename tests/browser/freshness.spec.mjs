@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, ownContext } from './fixtures.mjs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -196,7 +196,7 @@ test('ERR-9 / ADR-0123: a deploy over GitHub Pages\' headers is met with the new
     fs.rmSync(live, { recursive: true, force: true });
     copy(first.wwwroot, live);
     const host = await servePagesLike(live);
-    const context = await browser.newContext();
+    const context = await ownContext(browser);
     const page = await context.newPage();
     const errors = [];
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });

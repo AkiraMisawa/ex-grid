@@ -79,3 +79,7 @@ export function excused(name: string | undefined): string {
 }
 
 export const noop = (): void => {}; // expect: eslint(no-empty-function)
+
+export function written(field: HTMLInputElement): void {
+    field.setRangeText('typed', 0, 0, 'end'); // expect: ex-grid(no-script-edit)
+}
