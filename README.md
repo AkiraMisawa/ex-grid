@@ -1,7 +1,7 @@
 # ExGrid
 
 [![CI](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/%40ex-grid%2Freact/next?label=npm)](https://www.npmjs.com/package/@ex-grid/react)
+[![npm](https://img.shields.io/npm/v/@ex-grid/react/next?label=npm)](https://www.npmjs.com/package/@ex-grid/react)
 [![NuGet](https://img.shields.io/nuget/vpre/ExGrid)](https://www.nuget.org/packages/ExGrid)
 [![Docs](https://img.shields.io/badge/docs-live%20examples-1b6ac9)](https://akiramisawa.github.io/ex-grid/)
 [![TypeScript coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-ts.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
@@ -266,19 +266,21 @@ without it: rows of ExGrid, ExPivot and ExChart views over typed Board Inputs.
 
 ## Quick start
 
-The family is published to npm under `@ex-grid` and to NuGet at one shared version. `0.1.0` is the first stable
-version; each version after it ships first as betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`
-([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)). Each
-package depends on exactly the versions of the others it was built with, so upgrade them together.
+The family is published to npm under `@ex-grid` and to NuGet at one shared version. Each version ships first as
+betas, `x.y.z-beta.N`, and release candidates, `x.y.z-rc.N`, and its version without a suffix waits for its
+sign-off ([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+NuGet's first stable version is `0.1.0`, Blazor only; npm's packages begin with `0.2.0`'s prereleases. Each package
+depends on exactly the versions of the others it was built with, so upgrade them together.
 
 ### React
 
 ```sh
-npm install @ex-grid/react@next react react-dom
+npm install @ex-grid/core@next @ex-grid/react@next react react-dom
 ```
 
-A prerelease is published under npm's `next` tag, so take one by `@next` or by its version; `npm install` without
-either takes the `latest` tag. React 19 is a peer dependency. Import the grid's stylesheet once, in the module that starts the application, and hand the grid a
+A prerelease is published under npm's `next` tag, so take one by `@next` or by its version. Until the first version
+without a suffix is out, npm's `latest` names the first prerelease, as npm does for any package's first version, so
+a bare `npm install` takes an old beta. React 19 is a peer dependency. Import the grid's stylesheet once, in the module that starts the application, and hand the grid a
 source and its columns, made once outside the component:
 
 ```tsx
@@ -315,18 +317,19 @@ npm install @ex-grid/chart-react@next   # charts
 npm install @ex-grid/board-react@next   # a Board of grids, pivots and charts
 npm install @ex-grid/sheet-xlsx@next    # a Workbook opened from and saved to .xlsx
 
-# In a Mantine application, each product's Wrapper as well
+# In a Mantine application (@mantine/core and @mantine/hooks), each product's Wrapper as well
 npm install @ex-grid/mantine@next @ex-grid/sheet-mantine@next @ex-grid/pivot-mantine@next @ex-grid/chart-mantine@next
 
-# In a MUI application, each product's Wrapper as well
+# In a MUI application (@mui/material, @emotion/react and @emotion/styled), each product's Wrapper as well
 npm install @ex-grid/mui@next @ex-grid/sheet-mui@next @ex-grid/pivot-mui@next @ex-grid/chart-mui@next
 ```
 
 Each product that draws carries its stylesheet (`@ex-grid/sheet/styles.css`, `@ex-grid/pivot/styles.css`,
-`@ex-grid/chart/styles.css`), and each Wrapper its own, imported after the product's. Under Mantine or MUI, put the
+`@ex-grid/chart/styles.css`; a Board reads the pivot's and the chart's), and each Wrapper its own, imported after the
+product's. Under Mantine or MUI, set the design system up as usual, under its `MantineProvider` or `ThemeProvider`
+(MUI's theme made with `createTheme({ cssVariables: true })`, whose CSS variables the Wrapper reads), and put the
 grid in `MantineExGrid` or `MuiExGrid` in place of `ExGrid`: the menus, filter panel, find panel and Cell Editor
-become the design system's controls and follow its theme, and the grid's behaviour does not change. MUI's theme is
-made with `createTheme({ cssVariables: true })`. [Installation for React](https://akiramisawa.github.io/ex-grid/getting-started/react)
+become the design system's controls and follow its theme, and the grid's behaviour does not change. [Installation for React](https://akiramisawa.github.io/ex-grid/getting-started/react)
 says the rest, and [`packages/`](packages/README.md) lists every npm package.
 
 ### Blazor
@@ -375,8 +378,8 @@ dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
 dotnet add package ExSheet.Xlsx --prerelease        # ExSheet opens and saves .xlsx; ExGrid.Data.Xlsx alone reads and writes the format
 ```
 
-The ExGrid NuGet package carries the same Script Core the npm packages do, bundled, so a Blazor application needs
-no Node. Each package's own readme takes it from there:
+Each product's NuGet package carries the same Script Core the npm packages do, bundled, so a Blazor application
+needs no Node. Each package's own readme takes it from there:
 
 | Product | Readmes |
 |---|---|
@@ -399,14 +402,14 @@ no Node. Each package's own readme takes it from there:
 
 Every component runs live on the **[Docs Site](https://akiramisawa.github.io/ex-grid/)**: each
 page has Examples you can drive with the mouse and the keyboard, the code each one runs, and the
-API. One switch at the top reads the whole site for React or for Blazor, and another runs every
-Example under the built-in Chrome or a design system's: Mantine's or MUI's under React, MudBlazor's
-under Blazor. The Showcases are whole applications:
+API. One switch at the top reads the site for React or for Blazor (read for React, each page says what
+it shows for React, and runs the Examples written for it), and another runs every Example under the
+built-in Chrome or a design system's: Mantine's or MUI's under React, MudBlazor's under Blazor. The Showcases are whole applications:
 [a trade blotter](https://akiramisawa.github.io/ex-grid/showcase/blotter),
 [a budget sheet](https://akiramisawa.github.io/ex-grid/showcase/budget),
 [a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales), and ExChart's six, from
 [an exposure profile](https://akiramisawa.github.io/ex-grid/showcase/exposure) to
-[an equity index](https://akiramisawa.github.io/ex-grid/showcase/equity-index)
+[a binomial lattice](https://akiramisawa.github.io/ex-grid/showcase/binomial-lattice)
 (all of them on [the Showcases page](https://akiramisawa.github.io/ex-grid/showcases)).
 
 To run the site locally, clone the repository (it needs the .NET 10 SDK and Node, whose packages the
