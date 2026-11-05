@@ -147,13 +147,23 @@ from two causes:
    `circuit.spec.mjs`, `grid-live.spec.mjs` and `shipped-files.spec.mjs`). Closing a context ends every request its
    pages still have out; a beacon sent as the page hid had not reached the host over the round trip, the host answered
    it 499, and its circuit stayed. The proxy's fix of the night before took the cut that came with a connection's
-   end, not this one. Now every context the harness makes, and every one a spec makes through `ownContext`, sends each
-   page's beacon itself, through Blazor's own `disconnect`, with a token of the harness's, once the page's connection
-   is closed (sent while it stood, the beacon disposed the circuit under a page still talking to it, and the host
-   answered with "Circuit has been shut down due to error.", a console error in the next test); the Server DemoHost keeps
-   the tokens of the beacons it has read, and the context closes once each one is read: the beacon, not a time. A
-   page closed alone goes the same way. The spec lint refuses `browser.newContext` in a spec (`OwnContext`), and the
-   host's error for a cut beacon stands.
+   end, not this one. Now every context the harness makes, and every one a spec makes through `ownContext`, closes each
+   page before its circuit is left, and then sends the page's disconnect itself, to the host's own port, going on once
+   the host has answered it: the answer, not a time. The disconnect is Blazor's own, taken by calling its `disconnect`
+   with the beacon held back and said not to be queued, so the page goes on talking to its circuit until it closes, and
+   the beacon of its own pagehide is held back too. A page closed alone goes the same way. The spec lint refuses
+   `browser.newContext` in a spec (`OwnContext`), and the host's error for a cut beacon stands.
+
+   The leaving was replaced twice the same day, and both first readings were wrong in the same way: each left a page
+   standing that its circuit no longer answered. Sent while the page's connection stood, the beacon disposed the circuit
+   under a page still talking to it, and the host answered with "Circuit has been shut down due to error." (PR #534's
+   first CI run, a console error in the next test). Sent once the connection was closed, through a beacon Blazor took as
+   queued, Blazor then took its circuit as disposed and refused every later call the page made to .NET, "The circuit
+   associated with this dispatcher is no longer available." (main's CI after #534, `popovers.spec.mjs` under the
+   MudBlazor Chrome, an uncaught error heard by the next test, because what a closing app says is the next test's).
+   That version also had the host keep a token of each beacon read; the host's answer to the harness's own request
+   says the same, and the token went. `harness.spec.mjs` now leaves a page's circuit and drives the page before it
+   closes, and fails by that error if the page is left unable to talk to its circuit.
 
 ## Still open
 

@@ -326,8 +326,8 @@ A layer-2 test reads every spec here and refuses five things (ADR-0220 §6, ADR-
   beacons wherever they have got to, and on the Server host a circuit whose beacon was cut stays
   standing, and its calls in flight fail a minute later in another test (CON-6). Make it with
   `ownContext(browser, options)` from `fixtures.mjs`: its `close`, like every context and page the
-  harness closes, first sends each page's beacon with a token and waits until the host has read it
-  (ADR-0451, the second widened night).
+  harness closes, closes each page first and then sends the page's disconnect itself, going on once the
+  host has answered it (ADR-0451, the second widened night).
 
 It reads statements, not lines, so a call over several lines is one statement, and each test, hook
 or function starts owing nothing. Apart from the third rule, it does not judge what a test asserts, and it does not see an input
