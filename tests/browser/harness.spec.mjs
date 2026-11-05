@@ -1,4 +1,4 @@
-import { test, expect, alterPage, roundTrip, setRoundTrip, watchNextKey } from './fixtures.mjs';
+import { test, expect, alterPage, roundTrip, setRoundTrip, watchNextKey, heldDisconnect, closePage, ready } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
 // The harness itself (ADR-0056): a spec file boots the app once, each test mounts its page
@@ -246,6 +246,31 @@ test('CON-8 / ADR-0005: a console.info under an ExGrid category fails the test @
 test('CON-8 / ADR-0005: a console.log that names no ExGrid code is not the grid\'s, and passes @blazor', async ({ page }) => {
     await openFeatures(page);
     await page.evaluate(() => console.log('harness.spec: the page\'s own line'));
+});
+
+// The harness leaves a Server page's circuit as the page goes, and the page stays the circuit's own until it has gone.
+// Taken as disconnected by the page itself, Blazor refused every later call the page made to .NET, "The circuit
+// associated with this dispatcher is no longer available.", as an uncaught error heard by the next test (main's CI
+// after #534, popovers.spec on the MudBlazor Chrome).
+test('a page whose circuit the harness leaves still talks to it until it closes (CON-2, ADR-0451) @blazor', async ({ context }) => {
+    test.skip(!SERVER, 'only the Server host runs a circuit to leave');
+    const other = await context.newPage();
+    const errors = [];
+    other.on('pageerror', (error) => errors.push(String(error)));
+    await other.goto('/features?chrome=mud');
+    await ready(other);
+
+    expect(await heldDisconnect(other)).not.toBeNull();
+    // A press, and a column menu opened and closed, each told to .NET. Cells take no pointer: the press goes through
+    // to the Viewport, as a user's does (popovers.spec's clickCell).
+    await grid(other).locator("[id$='r1c0']").click({ force: true });
+    await other.keyboard.press('Alt+ArrowDown');
+    await expect(grid(other).locator('.ex-popover')).toHaveCount(1);
+    await other.keyboard.press('Escape');
+    await expect(grid(other).locator('.ex-popover')).toHaveCount(0);
+
+    await closePage(other);
+    expect(errors).toEqual([]);
 });
 
 test.describe(() => {

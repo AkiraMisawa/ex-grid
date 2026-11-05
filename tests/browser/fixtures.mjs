@@ -113,63 +113,52 @@ export const PRESSED_DISABLED = /^layer 3: a press landed on a disabled control/
 // and kept the circuit, and a call to the browser in flight was called off by the circuit's timeout a minute later, as
 // an unhandled exception in whatever test ran then (CON-6). The Server DemoHost says such a cut as an error; it fell in
 // the test that closed the context, five times in the Hunt of 2026-11-05 (a file's first test, or one asking for other
-// context options). So every context the harness makes, and every one a spec makes (ownContext), sends each page's beacon
-// itself before it closes, through Blazor's own `disconnect` once the page's connection is closed, and closes once the host has read each one, known by a
-// token the beacon carries: the beacon, not a time. A page closed alone leaves its beacon running, since the browser
-// keeps it past the page, but its context may close straight after, so it goes the same way (closePage).
+// context options). So every context the harness makes, and every one a spec makes (ownContext), leaves each page's
+// circuit itself before it closes: the page is closed first, and the disconnect it would have sent is then sent by the
+// harness, which has the host's answer before it goes on: the answer, not a time (leaveCircuits).
+//
+// The page goes before its circuit, and stays the circuit's own until it goes. Disposed under a page still connected,
+// the circuit answered the page's next message with "Circuit has been shut down due to error." (PR #534's first CI run,
+// three tests on Edge). Taken as disconnected by the page itself, the page's next answer to .NET threw "The circuit
+// associated with this dispatcher is no longer available." (main's CI after #534, popovers.spec on the MudBlazor Chrome,
+// heard by the next test): Blazor takes its disconnect as gone, and refuses to dispatch, once its beacon is queued.
 
-/** Sends `page`'s disconnect beacon now, if it runs a circuit whose beacon is still to go, carrying a token of its own
- * that the host keeps once it has read it (DisconnectsRead.cs): the token, or null if none went. A page closed meanwhile
- * sends none; any other failure to read the page is thrown.
- *
- * The page's connection is closed before the beacon goes. Sent while the connection stood, the beacon disposed the
- * circuit under a page still talking to it, and the host answered the page's next message with "Circuit has been shut
- * down due to error.", a console error heard by the next test (PR #534's first CI run, three tests on Edge). So Blazor's
- * own `disconnect` is called with the beacon held back: Blazor takes it as sent and stops reconnecting, the connection
- * is closed and awaited, and only then does the beacon go, with the token. */
-const sendDisconnect = (page) => page.evaluate(async (field) => {
-    const blazor = window.Blazor;
-    const disconnect = blazor?.disconnect;
+/** Takes the disconnect `page` would send as it hides, if it runs a circuit whose disconnect is still to go: the
+ * disconnect's address and form, or null if none was to go. Blazor's own `disconnect` is called, and the beacon it sends is
+ * held back and said not to be queued, so Blazor still takes its circuit as standing and goes on dispatching to it; the
+ * beacon it sends as the page hides is held back too, so the page is to be closed straight after, never navigated or
+ * reloaded, whose disconnect would go nowhere (leaveCircuits, closePage). A page closed meanwhile has none; any other
+ * failure to read the page is thrown. */
+export const heldDisconnect = (page) => page.evaluate(() => {
+    const disconnect = window.Blazor?.disconnect;
     if (typeof disconnect !== 'function') {
         return null;
     }
-    const closeConnection = blazor._internal?.forceCloseConnection;
-    if (typeof closeConnection !== 'function') {
-        throw new Error('Blazor has disconnect but no _internal.forceCloseConnection: the harness closes a page\'s connection '
-            + 'before its beacon goes (fixtures.mjs, sendDisconnect), and this version of blazor.web.js names it otherwise');
-    }
-    // Blazor sends the beacon once, and says nothing of whether it did: the call is heard on its way out and held back.
-    // The stand-in is the instance's own, over whatever stands there, and is put back as it stood in the same task.
-    const own = Object.getOwnPropertyDescriptor(navigator, 'sendBeacon');
+    // Blazor says nothing of whether it sent its beacon: the call is heard on its way out. The stand-in stays, as the
+    // page is closed straight after, so the beacon of the page's own pagehide goes nowhere either.
     const native = navigator.sendBeacon;
     let held = null;
     navigator.sendBeacon = function (url, data) {
         if (String(url).endsWith('_blazor/disconnect') && data instanceof FormData) {
-            held = { url, data };
-            return true;
+            if (held === null) {
+                held = { url: new URL(url, document.baseURI).pathname, fields: [...data.entries()] };
+            }
+            // Not queued, as far as Blazor knows: it marks its circuit disposed only on a beacon the browser took.
+            return false;
         }
         return native.call(this, url, data);
     };
-    try {
-        disconnect();
-    } finally {
-        if (own === undefined) {
-            delete navigator.sendBeacon;
-        } else {
-            Object.defineProperty(navigator, 'sendBeacon', own);
-        }
-    }
+    disconnect();
     if (held === null) {
         return null;
     }
-    await closeConnection();
-    const token = crypto.randomUUID();
-    held.data.append(field, token);
-    if (!navigator.sendBeacon(held.url, held.data)) {
-        throw new Error('the browser would not queue a page\'s disconnect beacon');
+    for (const [name, value] of held.fields) {
+        if (typeof value !== 'string') {
+            throw new Error(`a page's disconnect carries a file in ${name}, which the harness cannot send on its behalf`);
+        }
     }
-    return token;
-}, 'layer3').catch((error) => {
+    return held;
+}).catch((error) => {
     // A page closed meanwhile has no circuit left to leave; any other failure is the harness's to hear.
     if (page.isClosed()) {
         return null;
@@ -177,41 +166,49 @@ const sendDisconnect = (page) => page.evaluate(async (field) => {
     throw error;
 });
 
-/** Answers once the Server host has read the disconnect carrying `token`, and throws if it has not within 10 s. */
-async function disconnectRead(token) {
-    const url = new URL('/_layer3/disconnects', `http://localhost:${HOST_PORT}`);
-    url.searchParams.set('token', token);
-    url.searchParams.set('within', '10000');
-    const response = await fetch(url);
-    const answer = (await response.text()).trim();
-    if (response.status === 404) {
-        throw new Error(`the Server host at ${HOST_PORT} does not say which disconnects it read (/_layer3/disconnects): it `
-            + 'was started from an older checkout, or without EXGRID_HOST_LOG, so stop it and run again');
+/** Sends a disconnect `heldDisconnect` took to the Server host's own port, past the latency proxy, and answers once the
+ * host has answered it; an answer that is not a success, or none within 10 s, is thrown. */
+async function sendDisconnect({ url, fields }) {
+    const form = new FormData();
+    for (const [name, value] of fields) {
+        form.append(name, value);
     }
+    const address = new URL(url, `http://localhost:${HOST_PORT}`);
+    const response = await fetch(address, { method: 'POST', body: form, signal: AbortSignal.timeout(10_000) }).catch((error) => {
+        throw new Error(`the Server host did not answer a page's disconnect at ${address} within 10 s: ${error.message}`);
+    });
     if (!response.ok) {
-        throw new Error(`a page's disconnect was not read by the Server host before its page or context closed: ${answer}`);
+        throw new Error(`the Server host answered a page's disconnect ${response.status}: ${(await response.text()).trim()}`);
     }
 }
 
-/** Sends the disconnect of every page in `pages` that runs a circuit, and answers once the host has read each one. */
+/** On the Server host, closes every page in `pages` and leaves the circuit of each that ran one: its disconnect is sent
+ * once it is closed, and this answers once the host has answered each. Every page is left whatever another's leaving
+ * says, and what failed is thrown after; a page left standing would send its own beacon as its context closes, and have
+ * it cut (CON-6). Off the Server host there is no circuit to leave. */
 async function leaveCircuits(pages) {
     if (!SERVER) {
         return;
     }
-    const tokens = [];
-    for (const page of pages.filter((each) => !each.isClosed())) {
-        const token = await sendDisconnect(page);
-        if (token !== null) {
-            tokens.push(token);
+    const left = await Promise.allSettled(pages.filter((each) => !each.isClosed()).map(async (page) => {
+        try {
+            return await heldDisconnect(page);
+        } finally {
+            await page.close();
         }
+    }));
+    const sent = await Promise.allSettled(left.flatMap((each) => (each.status === 'fulfilled' && each.value !== null ? [sendDisconnect(each.value)] : [])));
+    const failed = [...left, ...sent].filter((each) => each.status === 'rejected').map((each) => each.reason);
+    if (failed.length === 1) {
+        throw failed[0];
     }
-    for (const token of tokens) {
-        await disconnectRead(token);
+    if (failed.length > 1) {
+        throw new AggregateError(failed, `${failed.length} pages' circuits were not left: ${failed.map((error) => error.message).join('; ')}`);
     }
 }
 
-/** Closes a page once the host has read its disconnect; it closes whatever the reading says, and the reading's failure
- * is heard. */
+/** Closes a page and leaves its circuit (leaveCircuits); it closes whatever the leaving says, and the leaving's failure is
+ * heard. */
 export async function closePage(page) {
     try {
         await leaveCircuits([page]);
@@ -235,8 +232,8 @@ function leavesCircuits(context) {
 }
 
 /**
- * A browser context of a spec's own, beside the file's: the browser's, with the given options, whose `close` sends its
- * pages' disconnects and waits until the host has read them, so no circuit outlives its page (CON-6). A spec makes its
+ * A browser context of a spec's own, beside the file's: the browser's, with the given options, whose `close` closes its
+ * pages and leaves their circuits, answered by the host, so no circuit outlives its page (CON-6). A spec makes its
  * contexts with this, not `browser.newContext` (the spec lint).
  */
 export async function ownContext(browser, options) {
@@ -416,7 +413,8 @@ function hostLogFrom(offset) {
 // page holding several attaches them in no set order, and on the Server host the second grid of
 // /cells?second=1 stood alone on the page first, so a test's first grid was that one, and the
 // press it made never reached the grid it then read (KB-23, CI's Chrome, PR #500).
-async function ready(page) {
+/** Answers once `page` is interactive and no grid on it is Prerendered or still mounting. */
+export async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
     await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy], .ex-chart[aria-busy], [data-ex-mounting]'));
     // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
