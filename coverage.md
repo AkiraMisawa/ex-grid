@@ -5,9 +5,9 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.7% | 84.8% | 88.2% | 78.2% |
+| ExGrid | 93.7% | 84.8% | 88.2% | 78.4% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
-| ExPivot | 93.1% | 82.1% | 86.1% | 82% |
+| ExPivot | 93.1% | 82.1% | 86.1% | 82.1% |
 | ExChart | 92.3% | 83% | 91.1% | 84.9% |
 | ExBoard | 93.2% | 75.8% | 67.3% | 59.6% |
 | Data | 94.3% | 83.6% | 94.5% | 89.9% |
@@ -29,7 +29,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/sheet-mantine` | ExSheet | 81.5% | 75.6% | 168 |
 | `packages/sheet-mui` | ExSheet | 83.8% | 74% | 180 |
 | `packages/sheet-blazor` | ExSheet | 86.1% | 65.4% | 664 |
-| `packages/pivot` | ExPivot | 94.4% | 81% | 3233 |
+| `packages/pivot` | ExPivot | 94.3% | 81% | 3238 |
 | `packages/pivot-engine` | ExPivot | 93.8% | 84.2% | 6944 |
 | `packages/pivot-react` | ExPivot | 94.1% | 76.6% | 86 |
 | `packages/pivot-mantine` | ExPivot | 87.2% | 74.6% | 94 |
@@ -53,19 +53,19 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/06/2026 - 23:04:42 |
+| Generated on: | 11/06/2026 - 23:55:44 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
 | Files: | 500 |
-| **Line coverage:** | 86.9% (60684 of 69776) |
-| Covered lines: | 60684 |
-| Uncovered lines: | 9092 |
-| Coverable lines: | 69776 |
-| Total lines: | 106332 |
-| **Branch coverage:** | 82.8% (36543 of 44127) |
-| Covered branches: | 36543 |
-| Total branches: | 44127 |
+| **Line coverage:** | 86.9% (60692 of 69778) |
+| Covered lines: | 60692 |
+| Uncovered lines: | 9086 |
+| Coverable lines: | 69778 |
+| Total lines: | 106335 |
+| **Branch coverage:** | 82.8% (36565 of 44135) |
+| Covered branches: | 36565 |
+| Total branches: | 44135 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -144,7 +144,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.2%**|**73.5%**|
+|**ExChart**|**84.2%**|**73.4%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -158,7 +158,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.Components.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Components.ChartWire|81%|75%|
 |ExChart.Components.DrawingState|100%||
-|ExChart.Components.ExChart|88%|87.3%|
+|ExChart.Components.ExChart|88%|86.6%|
 |ExChart.Components.ExChartStylesheet|0%||
 |ExChart.Components.ExSurface|79%|62.9%|
 |ExChart.Components.RowKeys|77.5%|71.6%|
@@ -637,7 +637,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -764,11 +764,11 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Xlsx.XString|100%|97%|
 
 </details>
-<details><summary>ExGrid.MudBlazor - 88.9%</summary>
+<details><summary>ExGrid.MudBlazor - 89.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.MudBlazor**|**88.9%**|**56.2%**|
+|**ExGrid.MudBlazor**|**89.3%**|**61.1%**|
 |ExGrid.MudBlazor.MudExGridFont|100%||
 |ExGrid.MudBlazor.MudExGridPaper|100%|96.8%|
 |ExGrid.MudBlazor.MudExGridPresentation|100%|100%|
@@ -777,7 +777,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.MudBlazor.MudExGridScriptFindPanel|100%|90%|
 |ExGrid.MudBlazor.MudExGridScriptMenu|100%|100%|
 |ExGrid.MudBlazor.MudExGridStylesheet|100%||
-|ExGrid.MudBlazor.MudExGridWords|35.5%|33.3%|
+|ExGrid.MudBlazor.MudExGridWords|44%|44.6%|
 |ExGrid.MudBlazor.MudGridChrome|40.1%|46.1%|
 |ExGrid.MudBlazor.RobotoGlyphTable|100%||
 |ExGrid.MudBlazor.ScriptSlotMarkup|100%|100%|
@@ -787,7 +787,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**50.2%**|**46.1%**|
+|**ExPivot**|**50.2%**|**46.5%**|
 |ExGrid.Components.ClosingCircuit|0%|0%|
 |ExGrid.Components.CrossedText|52%|38.8%|
 |ExGrid.Components.HeldCalls|74.2%|62.5%|
@@ -820,7 +820,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Chrome.PivotStaleReportView|0%||
 |ExPivot.Chrome.PivotToolbarView|0%||
 |ExPivot.Chrome.PivotValueFieldSettingsView|0%||
-|ExPivot.Components.ExPivot|62%|51.2%|
+|ExPivot.Components.ExPivot|62.1%|52.3%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotRazorSlot|0%|0%|
 |ExPivot.Components.ScriptBridge|42.4%|19.4%|
@@ -989,8 +989,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.3%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
