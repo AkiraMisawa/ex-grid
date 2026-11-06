@@ -37,6 +37,13 @@ function holding(): {
     };
 }
 
+function pointer(root: HTMLElement, name: string, x: number, y: number, init: MouseEventInit = {}): void {
+    const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, ...init });
+    Object.defineProperty(event, 'offsetX', { value: x });
+    Object.defineProperty(event, 'offsetY', { value: y });
+    q(root, '.ex-viewport').dispatchEvent(event);
+}
+
 function select(view: ReturnType<typeof mount<Trade>>['view'], range: SelectionRange, focusRow = range.topRow, focusColumn = range.leftColumn): void {
     expect(view.placeSelection(range, cell(focusRow, focusColumn), view.readView().rowSequenceVersion)).toBe(true);
 }
@@ -103,6 +110,25 @@ describe('The Selection Summary', () => {
         expect(figures(root)).toEqual(['Average: 1000', 'Count: 3', 'Sum: 3000']);
         expect(heard.map(summary => summary.status)).toEqual(['pending', 'pending', 'answered']);
         expect(heard[2]?.result).toMatchObject({ kind: 'answered' });
+    });
+
+    it('SM-1 / ADR-0130: a question carries the selected ranges, the columns in the grid\'s order, the Row Sequence Version, the figures shown and the Focus, and nothing else', async () => {
+        const { asked, onSummarize } = holding();
+        const { root, view } = mount({ columns, rows: trades(10), rowHeight: 24, onSummarize });
+        await painted();
+        select(view, selectionRange(0, 1, 2, 1));
+        await painted();
+        // A second range, added with Ctrl, as Excel adds one.
+        pointer(root, 'mousedown', 10, (5 * 24) + 5, { ctrlKey: true });
+        pointer(root, 'mouseup', 10, (5 * 24) + 5, { ctrlKey: true });
+        await painted();
+        expect(asked.at(-1)?.request).toEqual({
+            ranges: [selectionRange(0, 1, 2, 1), selectionRange(5, 0, 1, 1)],
+            columns: ['Book', 'Notional'],
+            rowSequenceVersion: view.readView().rowSequenceVersion,
+            figures: ['average', 'count', 'sum'],
+            focus: cell(5, 0),
+        });
     });
 
     it('SM-4 / ADR-0130: a declined question shows its reason in place of the figures, and no figure with it', async () => {

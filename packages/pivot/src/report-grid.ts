@@ -6,13 +6,14 @@
 import {
     GridSource, findMatches, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridHeaderGroup, type GridTextOptions,
     type GridFindAllPage, type GridFindAllRequest, type GridFindPattern, type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
+    type RowKind,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import {
     PivotRowKey, type PivotDisplayRow, type PivotFieldItem, type PivotLabelColumn, type PivotLayout, type PivotReportMetadata, type PivotReportSettings, type PivotReportSource,
     type PivotReportState, type PivotToggle, type PivotValue,
 } from '@ex-grid/pivot-engine';
-import { elementAt } from './must';
+import { elementAt, unreachable } from './must';
 import { findAllInReport, findInReport, type ReportFindAllMatches, type ReportFindGivenUp } from './report-find';
 import { summarizeReport } from './report-summary';
 import type { PivotScreenWords } from './words';
@@ -55,6 +56,22 @@ export function reportMatch(row: PivotDisplayRow, column: GridColumn<PivotDispla
     if (value instanceof ReportCellValue) return findMatches(value.text, pattern);
     if (typeof value === 'string') return findMatches(value, pattern);
     throw new TypeError(`Internal: the report column '${column.name}' holds neither a label nor a value.`);
+}
+
+/**
+ * The Row Kind a report row is painted as (ADR-0024, ADR-0059): an Item's row is a detail row, a group row a group,
+ * and a subtotal or the grand total a total, as Excel sets them apart. A Pending Row has no label and no value and is
+ * never painted, since a Window that reaches one asks again (ADR-0370 section 3): it is no group and no total, so it
+ * is read as what it would be painted as, a detail row. One function for every pivot: its identity reaches the grid
+ * (ADR-0003).
+ */
+export function reportRowKind(row: PivotDisplayRow): RowKind {
+    switch (row.role) {
+        case 'item': case 'pending': return 'detail';
+        case 'group': return 'group';
+        case 'subtotal': case 'grandTotal': return 'total';
+        default: return unreachable(row.role);
+    }
 }
 
 // Each display row's key, made at its first read and held while the row is: the grid reads the painted rows' keys on

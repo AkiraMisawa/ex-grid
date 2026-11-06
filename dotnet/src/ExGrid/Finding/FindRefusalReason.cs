@@ -6,8 +6,8 @@ namespace ExGrid.Finding;
 /// </summary>
 public enum FindRefusalReason
 {
-    /// <summary>Ctrl+F on a grid where nothing can search: no Grid Source that finds and no
-    /// <c>OnFind</c>. The key is still taken, because the browser's own find sees only the
+    /// <summary>Ctrl+F on a grid where nothing can search: no Grid Source that finds. The key is
+    /// still taken, because the browser's own find sees only the
     /// painted rows and would look complete without being so.</summary>
     Unavailable,
 

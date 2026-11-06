@@ -42,7 +42,7 @@ import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { checkedName, PartElements, swap, type PartRefs } from './parts';
-import { cellItems, ReportColumns, reportMatch, reportRows, ReportToggles, type PivotCellItems } from './report-grid';
+import { cellItems, ReportColumns, reportMatch, reportRowKind, reportRows, ReportToggles, type PivotCellItems } from './report-grid';
 import type { ReportFindGivenUp } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
 import { layoutChoiceId, PivotScreenWords } from './words';
@@ -1553,6 +1553,10 @@ export class PivotView {
             // Item order and Hidden Items are the Pivot Layout's, and a report is computed: no column menu, no
             // sort, no filter, and every write refused by the grid's own gate, since nobody hears one (ADR-0059).
             hideColumnMenu: true,
+            // A press on a header selects its column, as on Excel's PivotTable (PV-2).
+            headerClickSelects: true,
+            // Group rows and totals are set apart as Excel sets them (ADR-0024, PV-2).
+            rowKind: reportRowKind,
             onColumnWidthChanged: change => { this.#widthChanged(change); },
             onCellDoubleClick: cell => { this.#doubleClicked(cell); },
             onSelectionChanged: selection => { this.#selectionChanged(selection); },

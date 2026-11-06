@@ -304,6 +304,18 @@ describe('ExPivot\'s report', () => {
         expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
     });
 
+    it('PV-2 / ADR-0024: a press on a report header selects its column, and group rows and totals are painted as Group and Total', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'], subtotalsAtTop: false }) });
+        await settled();
+        const { source, rowKind, headerClickSelects } = grid.current;
+        if (source === undefined || rowKind === undefined) throw new Error('The grid was handed a source and the rows\' kinds.');
+        expect(headerClickSelects).toBe(true);
+        const rows = await source.rows({ start: 0, count: 100 }, new AbortController().signal);
+        const kinds = { item: 'detail', pending: 'detail', group: 'group', subtotal: 'total', grandTotal: 'total' } as const;
+        expect(rows.map(row => [row.role, rowKind(row)])).toEqual(rows.map(row => [row.role, kinds[row.role]]));
+        expect(new Set(rows.map(row => rowKind(row)))).toEqual(new Set(['detail', 'group', 'total']));
+    });
+
     it('ADR-0240 section 6: the report\'s grid is made standing in the pivot\'s box, so it hears the pivot\'s parts in its order', async () => {
         const { root, grid } = mount({ source: local(), layout: byRegion });
         await settled();

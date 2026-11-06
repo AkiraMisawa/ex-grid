@@ -77,6 +77,24 @@ public class MudScriptFilterPanelTests : MudTestContext
         Assert.Equal(["and", "or"], cut.FindAll($"input[{ScriptSlotAttributes.FilterJoin}]").Select(r => r.GetAttribute(ScriptSlotAttributes.FilterJoin)));
     }
 
+    [Theory] // WR-2 / ADR-0410 section 3's note of 2026-10-28: whatever the column's type, a condition's value is a MudTextField the core reads as that type, and nothing opens a list or a calendar of MudBlazor's
+    [InlineData(ColumnType.Text)]
+    [InlineData(ColumnType.Number)]
+    [InlineData(ColumnType.Date)]
+    [InlineData(ColumnType.Boolean)]
+    public void WR2_a_conditions_value_is_a_text_field_for_every_type(ColumnType type)
+    {
+        var view = Conditions("5");
+        var cut = Panel(view with { Type = type });
+
+        var field = cut.Find($"input[{ScriptSlotAttributes.FilterOperand}='first']");
+        Assert.NotNull(field.Closest(".mud-ex-grid-filter-operand"));
+        Assert.NotNull(field.Closest(".mud-input-control"));
+        Assert.Equal("text", field.GetAttribute("type"));
+        Assert.Empty(cut.FindAll(".mud-picker, .mud-select"));
+        Assert.Single(cut.FindAll($"select[{ScriptSlotAttributes.FilterOperator}='first']"));
+    }
+
     [Fact] // SRV-7 / ADR-0410 section 3: a value field opens with the core's operand, and a view drawn later never writes it again
     public void SRV7_a_value_field_is_not_written_from_a_later_view()
     {
