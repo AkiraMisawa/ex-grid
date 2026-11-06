@@ -40,7 +40,8 @@ interface Step {
     readonly markPositions?: readonly RowRange[];
     readonly version?: number;
     readonly rowKind?: { readonly column: string; readonly kinds: Readonly<Record<string, RowKind>> };
-    readonly with?: readonly unknown[] | 'itself';
+    /** New values, the row itself, or `{"held": place}`, the object held at another place. */
+    readonly with?: readonly unknown[] | 'itself' | { readonly held: number };
     readonly apply?: Batch;
     readonly replaceAll?: readonly Entry[];
     readonly gatherInterval?: number;
@@ -325,7 +326,8 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     } else if (step.replaceRow !== undefined) {
                         const target = named(step.replaceRow);
                         const written = defined(step.with, `the replacement of "${c.name}"`);
-                        const replacement = written === 'itself' ? target : rowOf(target.position, written);
+                        const replacement = written === 'itself' ? target
+                            : 'held' in written ? elementAt(held, written.held) : rowOf(target.position, written);
                         source.replaceRow(target, replacement);
                         if (target.position >= 0) held[target.position] = replacement;
                         hand(replacement);

@@ -42,7 +42,7 @@ import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { checkedName, PartElements, swap, type PartRefs } from './parts';
-import { cellItems, ReportColumns, reportMatch, reportRows, type PivotCellItems } from './report-grid';
+import { cellItems, ReportColumns, reportMatch, reportRows, ReportToggles, type PivotCellItems } from './report-grid';
 import type { ReportFindGivenUp } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
 import { layoutChoiceId, PivotScreenWords } from './words';
@@ -473,6 +473,8 @@ export class PivotView {
     readonly #sheet: HTMLElement;
     readonly #empty: HTMLElement;
     readonly #gridRoot: HTMLElement;
+    // The expand / collapse buttons the label cells paint, heard on the grid's root (PF-2).
+    readonly #toggles = new ReportToggles();
     readonly #dropRemove: HTMLElement;
     readonly #fieldListBox: HTMLElement;
     readonly #fieldListScroll: HTMLElement;
@@ -730,6 +732,7 @@ export class PivotView {
         const gestured = (): void => { this.#gestures++; };
         this.#gridRoot.addEventListener('pointerdown', gestured, { capture: true, ...listening });
         this.#gridRoot.addEventListener('wheel', gestured, { capture: true, passive: true, ...listening });
+        this.#toggles.listen(this.#gridRoot, this.#listening.signal, (toggle, row) => { this.#toggled(toggle, row); });
         this.#gridRoot.addEventListener('keydown', event => {
             if (!event.isComposing && !inertKeys.has(event.key)) gestured();
         }, { capture: true, ...listening });
@@ -991,7 +994,7 @@ export class PivotView {
         return new ReportColumns(Object.freeze({
             indentPx: this.#indentPx,
             toggleName: (toggle: PivotToggle) => words.fill(toggle.isCollapsed ? 'expand-item' : 'collapse-item', toggle.itemLabel),
-            toggled: (toggle: PivotToggle, row: PivotDisplayRow) => { this.#toggled(toggle, row); },
+            toggles: this.#toggles,
         }), textOf(options));
     }
 

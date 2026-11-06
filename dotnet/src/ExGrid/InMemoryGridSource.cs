@@ -63,7 +63,10 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     internal InMemoryGridSource(IReadOnlyList<TRow> rows)
     {
         // Snapshot: the base stays immutable even if the Consumer mutates the list it
-        // passed in, so the Window and the version diff baseline cannot drift silently.
+        // passed in, so the Window and the version diff baseline cannot drift silently. A row is told from
+        // every other by its instance, so a null row, or one instance handed twice, is refused here, and no
+        // Window this source hands over holds a row twice (ADR-0003, ADR-0141).
+        DistinctRows.Refuse(rows, nameof(rows));
         _rows = rows.ToArray();
         Window = _rows;
         Marks = new Rows.InMemoryRowMarks<TRow>(this, _rows);
@@ -95,10 +98,10 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// pairs a row's next version with the one it painted by it.</summary>
     public Func<TRow, object>? RowKey => _key;
 
-    /// <summary>True under a Row Key: the source refuses a repeated or null key, at construction
-    /// and in every change, so no Window it hands over holds a row twice, and the grid need not
-    /// check (ADR-0141).</summary>
-    public bool VouchesDistinctRows => _key is not null;
+    /// <summary>True: the source refuses a repeated or null key, or without one a null row or an
+    /// instance handed twice, at construction and in every change, so no Window it hands over holds a
+    /// row twice, and the grid need not check (ADR-0003, ADR-0141).</summary>
+    public bool VouchesDistinctRows => true;
 
     /// <summary>
     /// The Change Highlight of this source (ADR-0141, on ADR-0067's rules), to hand to the grid's
@@ -274,6 +277,11 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             throw new ArgumentException(
                 "The row is not in this source. An Edit Intent carries the instance the grid painted; a " +
                 "different or stale instance cannot be resolved onto the base (ADR-0007).", nameof(row));
+        }
+        for (var i = 0; i < _rows.Length; i++)
+        {
+            if (ReferenceEquals(_rows[i], replacement))
+                throw DistinctRows.Repeated(i, index, nameof(replacement));
         }
         RequireColumns();
 
@@ -588,6 +596,12 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                     nameof(changes));
             }
         }
+        // Checked before anything is written: a replacement that is another row the source still holds would stand
+        // twice (ADR-0003).
+        var staged = (TRow[])_rows.Clone();
+        for (var i = 0; i < changes.Count; i++)
+            staged[at[i]] = changes[i].After;
+        DistinctRows.Refuse(staged, nameof(changes));
         // What each new instance stands for, so the sequence compares as one edit per row.
         var stoodFor = new Dictionary<object, object>(changes.Count, ReferenceEqualityComparer.Instance);
         for (var i = 0; i < changes.Count; i++)

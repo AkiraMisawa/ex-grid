@@ -35,6 +35,30 @@ public class ScriptGridWindowTests : BunitContext
         return document.RootElement.Clone();
     }
 
+    [Fact] // FN-22, ADR-0003: the same Columns list changed in place is read as it was handed until it is handed again
+    public async Task FN22_a_columns_list_changed_in_place_is_a_new_list_once_handed_again_and_not_before()
+    {
+        var columns = new List<GridColumn<TestRow>>(TestRows.Columns());
+        var cut = Render<global::ExGrid.Components.ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Rows, TestRows.Many(10_000))
+            .Add(g => g.Columns, columns));
+        var bridge = Assert.IsType<DotNetObjectReference<global::ExGrid.Components.ScriptBridge<TestRow>>>(
+            Assert.Single(_module.Invocations["attach"]).Arguments[1]);
+        var version = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options").GetProperty("columnsVersion").GetInt32();
+
+        columns.RemoveAt(columns.Count - 1);
+        // A pass of the grid's own writes its rows by the columns as they were handed, four of them.
+        await cut.InvokeAsync(() => bridge.Value.NeedRange(1, 5_000, 20));
+        var asked = Parsed(_grid.Invocations["state"][^1].Arguments[0]);
+        Assert.Equal(version, asked.GetProperty("cv").GetInt32());
+        Assert.Equal(4, asked.GetProperty("window")[0].GetProperty("c").GetArrayLength());
+
+        cut.Render(ps => ps.Add(g => g.Columns, columns));
+        var options = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("options");
+        Assert.NotEqual(version, options.GetProperty("columnsVersion").GetInt32());
+        Assert.Equal(3, options.GetProperty("columns").GetArrayLength());
+    }
+
     [Fact] // ADR-0004: before the grid asks, the first screens cross, and the count says how many rows there are
     public void ADR0350_the_attach_sends_the_first_rows_and_the_whole_count()
     {

@@ -19,6 +19,11 @@
             <strong>Change row height through the parameter, never in CSS.</strong> Virtualisation, the selection
             overlay and the editor's position are all computed from it; a height set only in a stylesheet paints
             rows that the arithmetic no longer matches, slightly at first and more the further you scroll.
+            Another row height or Density keeps the first row in view at the top, on the page shown under a pager,
+            rather than the pixel offset, which would show other rows. A browser cannot scroll past 33,554,428&nbsp;px,
+            so a result whose rows and header band together would be taller than that is refused by name, naming the
+            row count and the height — a million rows at 28&nbsp;px is fine, at 40&nbsp;px it is refused — rather than
+            leave its last rows unreachable: choose a shorter row, or page the result.
         </p>
         <p>
             <code>StripeRows</code> paints every second row, counted from the start of the whole result, so a stripe

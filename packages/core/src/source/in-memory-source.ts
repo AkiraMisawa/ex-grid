@@ -35,6 +35,7 @@ import { KeyedRows } from './keyed-rows';
 import { summaryOf, type GridSummaryRequest, type GridSummaryResult } from '../summary/grid-summary';
 import { liveRequery, type LiveRequeryOutcome, type RowChange } from './live-requery';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
+import { distinctKeyOf, refuseRepeatedRow, refuseRepeatedRows } from './distinct-rows';
 
 /** Past this many distinct values the answer is too many (ADR-0009), and the panel offers a condition,
  * Excel's own shape for a large domain. */
@@ -114,7 +115,10 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         let window: readonly Row[];
         if (rowKey === undefined) {
             // A copy: the Consumer changing the list it passed cannot move the Window under the grid, nor the
-            // order the next sequence is compared with.
+            // order the next sequence is compared with. A row is told from every other by its identity, so a null
+            // row, or one object handed twice, is refused here, and no Window this source hands over holds a row
+            // twice (ADR-0003, ADR-0141).
+            refuseRepeatedRows(rows, 0, undefined);
             this.#rows = Object.freeze([...rows]);
             this.#live = undefined;
             window = this.#rows;
@@ -160,10 +164,11 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         return this.#rowKey;
     }
 
-    /** True under a Row Key: the source refuses a repeated key, when it is made and in every change, so no
-     * Window it hands over holds a row twice, and the grid need not check (ADR-0141). */
+    /** True: the source refuses a repeated Row Key, or without one a null row or an object handed twice, when it is
+     * made and in every change, so no Window it hands over holds a row twice, and the grid need not check
+     * (ADR-0003, ADR-0141). */
     get vouchesDistinctRows(): boolean {
-        return this.#rowKey !== undefined;
+        return true;
     }
 
     /**
@@ -272,6 +277,9 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             throw new TypeError('The row is not in this source. An Edit Intent carries the object the grid painted; '
                 + 'another, or an earlier version, cannot be found in it (ADR-0007).');
         }
+        distinctKeyOf(replacement, index, undefined);
+        const other = this.#rows.indexOf(replacement);
+        if (other >= 0) refuseRepeatedRow(other, index, replacement, false);
         const columns = this.#requireColumns();
         const rows = this.#rows.with(index, replacement);
         const next = applyQuery(rows, columns, this.#state.filter, this.#state.sorts);
@@ -495,6 +503,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             rows[itemAt(places, i)] = after;
             stoodFor.set(after, before);
         });
+        refuseRepeatedRows(rows, 0, undefined);
         // Requeried before anything is taken in, as replaceRow is: a value the Query in force refuses
         // leaves the rows and their marks as they were.
         const next = applyQuery(rows, columns, this.#state.filter, this.#state.sorts);

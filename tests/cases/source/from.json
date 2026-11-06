@@ -302,6 +302,17 @@
       ]
     },
     {
+      "name": "ADR-0003 / ERR-4: another row the source holds as a replacement is refused, naming both positions",
+      "rows": [
+        ["Alpha", 3],
+        ["Beta", 4]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"replaceRow": 0, "with": {"held": 1}, "throws": "argument", "saying": "positions 1 and 0 are the same object"}
+      ]
+    },
+    {
       "name": "ADR-0007: a row the source does not hold is refused, though its values equal one it does",
       "rows": [
         ["Alpha", 3]

@@ -196,6 +196,81 @@ describe('createGrid', () => {
         expect(after.every((cells, i) => cells.every((cell, j) => cell !== before[i]?.[j]))).toBe(true);
     });
 
+    it('FN-22 / ADR-0003: the same columns array changed in place is a new list once it is handed again, and not before', async () => {
+        const rows = trades(100);
+        const declared = [...columns];
+        const { root, view } = mount({ columns: declared, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        const headers = (): string[] => [...root.querySelectorAll('.ex-header-cell')].map(cell => cell.textContent);
+        const before = headers();
+        const moved = declared.shift();
+        if (moved === undefined) throw new Error('The harness declares no columns.');
+        declared.push(moved);
+        // A pass of the grid's own, a scroll, draws from the copy it took, not from the changed array.
+        await scrollTo(root, 240);
+        expect(headers()).toEqual(before);
+        view.update({ columns: declared, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        expect(headers()).toEqual([...before.slice(1), before[0]]);
+    });
+
+    it('VZ-11 / ADR-0028: another row height keeps the first row shown at the top, not the pixel offset', async () => {
+        const rows = trades(1000);
+        const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        await scrollTo(root, 100 * 24);
+        view.update({ columns, rows, rowHeight: 32, viewportHeight: 480 });
+        await painted();
+        // Row 100's offset at the new height: the pixel offset kept would show row 75.
+        expect(q(root, '.ex-scroller').scrollTop).toBe(100 * 32);
+    });
+
+    it('VZ-13 / ADR-0015 / ADR-0028: under a pager, another row height keeps the first row shown at the top of its page', async () => {
+        const rows = trades(1000);
+        const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480, pageSize: 500, showSelectionSummary: false });
+        await painted();
+        q(root, '.ex-pager button:last-child').click();
+        await painted();
+        await scrollTo(root, 40 * 24);
+        view.update({ columns, rows, rowHeight: 32, viewportHeight: 480, pageSize: 500, showSelectionSummary: false });
+        await painted();
+        // Row 540, the 41st of the second page, at its page-local offset.
+        expect(q(root, '.ex-scroller').scrollTop).toBe(40 * 32);
+    });
+
+    it('VZ-8 / ADR-0013 / ADR-0053: a result past the scale-one Layout Ceiling is refused by name, header band included', () => {
+        const million = trades(1_000_000);
+        expect(() => mount({ columns, rows: million, rowHeight: 28, viewportHeight: 480 })).not.toThrow();
+        expect(() => mount({ columns, rows: million, rowHeight: 40, viewportHeight: 480 }))
+            .toThrow(/1000000 rows at 40px need a scrollable area of 40000000px.*33554428px/);
+        // 33,554,400px of rows fit under the ceiling alone; the header band above them does not.
+        expect(() => mount({ columns, rows: trades(1_048_575), rowHeight: 32, viewportHeight: 480 }))
+            .toThrow(/1048575 rows at 32px need a scrollable area of 33554400px under a \d+px header band, past the 33554428px/);
+    });
+
+    it('RR-2 / ADR-0028: a row-height-only change paints no surviving row again, and adds or drops only the rows that entered or left', async () => {
+        const rows = trades(1000);
+        const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        const before = rowsOf(root);
+        const written: string[] = [];
+        const observer = new MutationObserver(records => {
+            for (const record of records) {
+                const inRow = record.target instanceof Element && record.target.closest('.ex-row') !== null;
+                if (inRow) written.push(record.attributeName === null ? record.type : `${record.type} ${record.attributeName}`);
+            }
+        });
+        observer.observe(root, { subtree: true, childList: true, attributes: true, characterData: true });
+        view.update({ columns, rows, rowHeight: 32, viewportHeight: 480 });
+        await painted();
+        observer.disconnect();
+        const after = rowsOf(root);
+        // Fewer rows fit at 32px: those that stay are the same elements, written nowhere inside.
+        expect(after.length).toBeLessThan(before.length);
+        expect(after).toEqual(before.slice(0, after.length));
+        expect(written).toEqual([]);
+    });
+
     it('ADR-0003: a pass with nothing changed writes nothing', async () => {
         const rows = trades(100);
         const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480 });

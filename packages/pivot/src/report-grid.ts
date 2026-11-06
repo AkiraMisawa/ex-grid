@@ -57,9 +57,57 @@ export function reportMatch(row: PivotDisplayRow, column: GridColumn<PivotDispla
     throw new TypeError(`Internal: the report column '${column.name}' holds neither a label nor a value.`);
 }
 
-/** A display row's identity across Windows and reports: its role, its Value Field and its Items. */
+// Each display row's key, made at its first read and held while the row is: the grid reads the painted rows' keys on
+// every pass, and a read after the first makes nothing (PV-43, ADR-0140).
+const rowKeys = new WeakMap<PivotDisplayRow, string>();
+
+/** A display row's identity across Windows and reports: its role, its Value Field and its Items. Made once for each
+ * row: reading it again allocates nothing. */
 export function reportRowKey(row: PivotDisplayRow): string {
-    return new PivotRowKey(row.role, row.valueField, row.items).toString();
+    const held = rowKeys.get(row);
+    if (held !== undefined) return held;
+    const key = new PivotRowKey(row.role, row.valueField, row.items).toString();
+    rowKeys.set(row, key);
+    return key;
+}
+
+/**
+ * The expand / collapse buttons the label cells paint, each with the Item and the row it toggles. Nothing is bound to
+ * a button: one listener for each of its three events stands on the report grid's root for the pivot's life, and
+ * finds the button pressed here (ADR-0350 section 6: nothing per cell is bound to a listener; PF-2).
+ */
+export class ReportToggles {
+    readonly #buttons = new WeakMap<Element, { readonly toggle: PivotToggle; readonly row: PivotDisplayRow }>();
+
+    /** A button painted for `toggle` on `row`. */
+    painted(button: HTMLButtonElement, toggle: PivotToggle, row: PivotDisplayRow): void {
+        this.#buttons.set(button, { toggle, row });
+    }
+
+    /** A button taken away with its cell. */
+    removed(button: HTMLButtonElement): void {
+        this.#buttons.delete(button);
+    }
+
+    /**
+     * Listens on `root`, the report grid's own, until `signal`: a press on a button keeps the keyboard where it was,
+     * as the grid's own buttons do; a click on one toggles its Item on its row; and a double click on one stops
+     * there, since its offsets are the button's (ADR-0063). Taken in the capture phase, before the grid hears the
+     * event, as a listener on the button was.
+     */
+    listen(root: HTMLElement, signal: AbortSignal, toggled: (toggle: PivotToggle, row: PivotDisplayRow) => void): void {
+        const pressed = (event: Event): { readonly toggle: PivotToggle; readonly row: PivotDisplayRow } | undefined => {
+            const { target } = event;
+            const button = target instanceof Element ? target.closest('.ex-pivot-toggle') : null;
+            return button === null ? undefined : this.#buttons.get(button);
+        };
+        root.addEventListener('mousedown', event => { if (pressed(event) !== undefined) event.preventDefault(); }, { capture: true, signal });
+        root.addEventListener('click', event => {
+            const on = pressed(event);
+            if (on !== undefined) toggled(on.toggle, on.row);
+        }, { capture: true, signal });
+        root.addEventListener('dblclick', event => { if (pressed(event) !== undefined) event.stopPropagation(); }, { capture: true, signal });
+    }
 }
 
 /** What a label cell paints beside its text: a level's indent, and the expand / collapse button's name and press. */
@@ -68,15 +116,14 @@ export interface LabelPainter {
     readonly indentPx: number;
     /** The button's accessible name: "Expand East", "Collapse East". */
     readonly toggleName: (toggle: PivotToggle) => string;
-    /** The button pressed on `row`: the Item is to be collapsed or expanded. */
-    readonly toggled: (toggle: PivotToggle, row: PivotDisplayRow) => void;
+    /** The buttons painted, which a press on one is found among. */
+    readonly toggles: ReportToggles;
 }
 
 /**
  * One label column's cells (ADR-0059), the Razor component's markup: the indent, the expand / collapse button
  * of an outer Item, and the label. The button is pressed, never reached by Tab, and takes the keyboard when
- * Space asks the cell to (ADR-0037); a press on it keeps the keyboard where it was, as the grid's own buttons
- * do, and a double click on it stops there, since its offsets are the button's (ADR-0063).
+ * Space asks the cell to (ADR-0037); what a press on it does is {@link ReportToggles}'s, heard on the grid's root.
  */
 function labelTemplate(index: number, painter: LabelPainter): GridTemplate<PivotDisplayRow> {
     // A button pressed by Enter or Space asks the report again, and is painted anew: the grid takes back the
@@ -87,7 +134,6 @@ function labelTemplate(index: number, painter: LabelPainter): GridTemplate<Pivot
         const box = document.createElement('span');
         box.className = 'ex-pivot-label';
         if (label.indent > 0) box.style.paddingLeft = `${label.indent * painter.indentPx}px`;
-        const listening = new AbortController();
         const { toggle } = label;
         let button: HTMLButtonElement | undefined;
         if (toggle !== undefined) {
@@ -99,10 +145,7 @@ function labelTemplate(index: number, painter: LabelPainter): GridTemplate<Pivot
             made.setAttribute('aria-expanded', toggle.isCollapsed ? 'false' : 'true');
             made.setAttribute('aria-label', painter.toggleName(toggle));
             made.textContent = toggle.isCollapsed ? '+' : '\u2212';
-            const { signal } = listening;
-            made.addEventListener('mousedown', event => { event.preventDefault(); }, { signal });
-            made.addEventListener('click', () => { painter.toggled(toggle, cell.row); }, { signal });
-            made.addEventListener('dblclick', event => { event.stopPropagation(); }, { signal });
+            painter.toggles.painted(made, toggle, cell.row);
             box.append(made);
             button = made;
         }
@@ -115,7 +158,7 @@ function labelTemplate(index: number, painter: LabelPainter): GridTemplate<Pivot
         slot.append(box);
         if (button !== undefined && cell.focusRequest !== 0) cell.takeKeyboard(button);
         return () => {
-            listening.abort();
+            if (button !== undefined) painter.toggles.removed(button);
             box.remove();
         };
     };

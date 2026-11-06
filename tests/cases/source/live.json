@@ -204,7 +204,7 @@
       "steps": []
     },
     {
-      "name": "ADR-0141: without a key the source takes no live data, says so by name, gathers nothing, and vouches for nothing",
+      "name": "ADR-0141 / ADR-0003: without a key the source takes no live data, says so by name, and gathers nothing; it still vouches, having refused an object handed twice",
       "rows": [
         ["A", "Rates", 3],
         ["B", "Credit", 1],
@@ -216,7 +216,7 @@
         {"apply": {"removedKeys": ["A"]}, "throws": "invalidOperation", "saying": "Row Key"},
         {"replaceAll": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "throws": "invalidOperation", "saying": "Row Key"},
         {"gatherInterval": 0, "throws": "invalidOperation", "saying": "Row Key"},
-        {"expect": {"vouches": false}},
+        {"expect": {"vouches": true}},
         {"publishGathered": true},
         {"expect": {"windowKept": true, "heard": 0, "version": 0}}
       ]

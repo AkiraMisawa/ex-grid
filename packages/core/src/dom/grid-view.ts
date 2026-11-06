@@ -78,7 +78,8 @@ import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type SummaryFigure } from '../summary/summary-accumulator';
-import { keyOf, type RowKey } from '../source/row-key';
+import { distinctKeyOf, refuseRepeatedRow, refuseRepeatedRows } from '../source/distinct-rows';
+import { keyOf, type RowKey, type RowKeyOf } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import { clamp } from '../viewport/checks';
 import { ViewportBox } from '../viewport/viewport-box';
@@ -172,6 +173,26 @@ export interface ViewPlace {
     readonly range: SelectionRange;
     /** The Focus, inside `range`. */
     readonly focus: CellPosition;
+}
+
+// The source's state, its Window checked for a row that stands twice, a null row or a null key, unless the source
+// vouches that it holds none (ADR-0141): a new Window is walked whole, once, and a Window the grid already checked is not.
+function checkedState<Row>(source: GridSource<Row>, previous: GridSourceState<Row> | undefined): GridSourceState<Row> {
+    const state = source.snapshot();
+    if (source.vouchesDistinctRows !== true && state.window !== previous?.window) {
+        refuseRepeatedRows(state.window, state.windowStart, source.rowKey);
+    }
+    return state;
+}
+
+// The key a painted row is kept by, its Row Key or without one the row itself. The painted rows are checked whether
+// the Window was vouched for or not, so a broken promise is refused by name as soon as it reaches the screen
+// (ADR-0141's note of 2026-10-07, LV-10): a null row, a null key, or a key one of this pass's rows already holds.
+function paintedKey<Row>(row: Row, index: number, rowKey: RowKeyOf<Row> | undefined, painted: ReadonlyMap<unknown, { readonly index: number }>): unknown {
+    const key = distinctKeyOf(row, index, rowKey);
+    const first = painted.get(key);
+    if (first !== undefined) refuseRepeatedRow(first.index, index, key, rowKey !== undefined);
+    return key;
 }
 
 // A place a Consumer hands is refused by name where it holds no cell, or its Focus lies outside it.
@@ -2123,7 +2144,7 @@ export class GridView<Row> {
         const taken = this.#take(options);
         this.#prepare(taken, undefined);
         this.#source = taken.source;
-        this.#state = taken.source.snapshot();
+        this.#state = checkedState(taken.source, undefined);
 
         // The root's own attributes (ADR-0033): `dir` so a grid on an RTL page is an LTR island, and the
         // root the tab stop the keys are heard on (ADR-0018).
@@ -2615,6 +2636,8 @@ export class GridView<Row> {
         let autoWidths = this.#autoWidths;
         // A new array holding the same column objects is the same columns: a Framework Adapter hands a new
         // array on every render, and nothing about them changed (ADR-0003).
+        // The list is compared with the copy taken when it was last handed, never with the Consumer's own array: the
+        // same array changed in place and handed again is another list (FN-22, ADR-0003's note of 2026-10-13).
         // A ▾ that comes or goes changes what a header needs, so every Auto width is measured afresh (ADR-0016).
         const menusChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu;
         const columnsChanged = metricsChanged || menusChanged || !sameItems(options.columns, this.#declared);
@@ -2877,7 +2900,7 @@ export class GridView<Row> {
                 + `${metrics.headerHeightPx}px = ${bandPx}px — plus one row of ${metrics.rowHeightPx}px (ADR-0032).`);
         }
         return {
-            source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
+            source, own, rows: options.rows, metrics, declared: Object.freeze([...options.columns]), columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
             onSelectionChanged: options.onSelectionChanged, copyCellCap, copyAnswer: options.copyAnswer, copyAnswerAsync: options.copyAnswerAsync, onRefused: options.onRefused, onAction: options.onAction,
             marks,
@@ -3038,7 +3061,7 @@ export class GridView<Row> {
             this.#source = source;
             this.#unsubscribe = source.subscribe(this.#onSource);
             const { window, windowStart } = this.#state;
-            this.#state = source.snapshot();
+            this.#state = checkedState(source, undefined);
             this.#sequenceOffset = shown === undefined ? 0 : shown + 1 - this.#state.rowSequenceVersion;
             this.#lastRaised = undefined;
             this.#userWritesTakenIn(window, windowStart);
@@ -3051,6 +3074,12 @@ export class GridView<Row> {
             this.#measuredWindow = undefined;
         }
         this.#declared = taken.declared;
+        // Another row height, a Density or a RowHeight, keeps the first row shown at the top, never the pixel offset,
+        // which would show other rows (VZ-11, ADR-0028); under a pager the row is placed within its page (VZ-13).
+        if (taken.metrics.rowHeightPx !== this.#metrics.rowHeightPx && this.#visible !== undefined && taken.pageSize === this.#pageSize) {
+            this.#topRowOwed = this.#visible.start;
+            this.#viewScrollUnclamped = true;
+        }
         this.#metrics = taken.metrics;
         this.#width = taken.width;
         this.#height = taken.height;
@@ -3236,7 +3265,7 @@ export class GridView<Row> {
     readonly #onSource = (): void => {
         const previous = this.#state;
         const { window, windowStart } = previous;
-        this.#state = this.#source.snapshot();
+        this.#state = checkedState(this.#source, previous);
         this.#noteRowsLeft();
         this.#noteRowsForSummary(previous);
         this.#userWritesTakenIn(window, windowStart);
@@ -3451,6 +3480,7 @@ export class GridView<Row> {
             viewportHeightPx: visibleHeightPx - band,
             totalRowCount: size === undefined ? total : Math.min(Math.max(total - firstRow, 0), size),
             scrollRoomPx: Math.max(1, (this.#ceilingPx ?? ViewportGeometry.maxScrollHeightPx) - band),
+            headerBandPx: band,
         };
         const geometry = size === undefined ? new ViewportGeometry(rows) : new PageGeometry(firstRow, rows);
         this.#geometry = geometry;
@@ -5336,9 +5366,10 @@ export class GridView<Row> {
             const done = field === undefined ? 'none' : keyDefault(field, event, this.#metaIsPrimary);
             return (done === 'none' ? elementDefault(holder, event) : done) !== 'lost';
         }
-        // A press lands where it was made. A pass may have painted that control anew since: it lands then on what stands
-        // at the same point, and on nothing where nothing of the grid's does.
-        let target = event.target;
+        // A press lands where it was made. A pass may have painted that control anew since: it lands then on nothing, as
+        // a press taken on what is no longer there does. Asking what stands at that point now would be a measurement, and
+        // would answer with what moved under the pointer, which is the defect itself (ADR-0021, "Rejected").
+        const target = event.target;
         const letThrough = this.#letThrough.get(event);
         if (letThrough !== undefined) {
             this.#pressesWaiting.splice(this.#pressesWaiting.indexOf(letThrough), 1);
@@ -5347,12 +5378,7 @@ export class GridView<Row> {
             // since.
             if (!(target instanceof Element) || !target.isConnected) return true;
         }
-        if (!(target instanceof Element) || !target.isConnected) {
-            const doc = this.#root.ownerDocument;
-            const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
-            target = under !== null && this.#inputRoot.contains(under) ? under : null;
-        }
-        if (!(target instanceof Element)) return false;
+        if (!(target instanceof Element) || !target.isConnected) return false;
         target.dispatchEvent(again);
         if (event.type !== 'mousedown' || again.defaultPrevented) return true;
         if (letThrough === undefined) {
@@ -12209,7 +12235,7 @@ export class GridView<Row> {
                     continue;
                 }
                 const row = itemAt(window, slice);
-                const key: unknown = rowKey === undefined ? row : rowKey(row);
+                const key: unknown = paintedKey(row, index, rowKey, next);
                 const was = this.#painted.get(key);
                 const scrollable = this.#placeholderMode ? undefined : this.#scrollable;
                 const current = marks === undefined || found?.cell.row !== index ? -1 : found.cell.column;
@@ -12224,7 +12250,7 @@ export class GridView<Row> {
                 const stripe = this.#stripeAt(index);
                 const headingStyle = this.#rowHeadingStyle;
                 const heading = headingStyle === undefined ? undefined : this.#headingAt(index);
-                if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
+                if (was !== undefined && was.row === row && was.index === index && was.styles === this.#styles
                     && was.rowKind === this.#rowKind && was.stripe === stripe && was.heading === heading && was.headingStyle === headingStyle
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
                     && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen && was.marked === marked
@@ -12253,15 +12279,12 @@ export class GridView<Row> {
                 const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint, stripe);
                 ended(rowPaint.highlightEnd);
                 repainted = true;
-                // A key met twice in one Window is painted, never paired: which of the two a later row
-                // continues cannot be told (ADR-0140).
-                if (!next.has(key)) {
-                    next.set(key, {
-                        element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
-                        marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked, rowKind: this.#rowKind, stripe,
-                        heading, headingStyle, highlightEnd: rowPaint.highlightEnd,
-                    });
-                }
+                // A key met twice in one pass was refused above (`paintedKey`), so each painted row is kept by its own.
+                next.set(key, {
+                    element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
+                    marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked, rowKind: this.#rowKind, stripe,
+                    heading, headingStyle, highlightEnd: rowPaint.highlightEnd,
+                });
                 rows.push(element);
                 headingState(index);
             }

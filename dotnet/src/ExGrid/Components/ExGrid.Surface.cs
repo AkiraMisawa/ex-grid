@@ -575,7 +575,7 @@ public sealed partial class ExGrid<TRow>
     // has yet to hand back may still differ from Columns'.
     private Func<object, string>? FocusFormat(GridSummaryRequest asked)
         => asked.Focus is { } cell && cell.Column < asked.Columns.Count
-            && Columns.FirstOrDefault(column => column.Name == asked.Columns[cell.Column]) is { Type: ColumnType.Number, Format: { } format }
+            && TakenColumns.FirstOrDefault(column => column.Name == asked.Columns[cell.Column]) is { Type: ColumnType.Number, Format: { } format }
             ? format
             : null;
 
