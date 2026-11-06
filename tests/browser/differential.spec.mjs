@@ -16,7 +16,10 @@ import { scenarios } from './differential-products.mjs';
 // nothing may scroll or reorder what is under it: the moves are bounded to the rows and columns in
 // view, and nothing sorts or filters. A Tab
 // typed straight after an Escape is left out: whether the grid has let Tab go yet is said aloud when
-// it has not (ADR-0230 §1 (b)), and a Tab's move is the browser's, which script cannot make for it.
+// it has not (ADR-0230 §1 (b)), and a Tab's move is the browser's, which script cannot make for it. An
+// Escape is typed only once no commit can be waiting for its verdict: one that is waiting is what an
+// Escape cancels (ADR-0380 §3), so a grid's steps settle, `(settled)`, before an Escape drawn after a
+// step that may have committed (differential-products.mjs).
 
 function differential(product, scenario, makeSteps, fixedSeeds) {
     for (const seed of seedsOf(fixedSeeds)) {
@@ -34,5 +37,5 @@ function differential(product, scenario, makeSteps, fixedSeeds) {
 }
 
 for (const [product, { scenario, steps }] of Object.entries(scenarios)) {
-    differential(product, scenario, steps, [1, 2, 3, 987654321, 201108955, 1165771808]);
+    differential(product, scenario, steps, [1, 2, 3, 987654321, 201108955, 1165771808, 1360432973]);
 }

@@ -165,9 +165,41 @@ from two causes:
    says the same, and the token went. `harness.spec.mjs` now leaves a page's circuit and drives the page before it
    closes, and fails by that error if the page is left unable to talk to its circuit.
 
+## The third widened night, 2026-11-06
+
+The React host ran green, ten times and widened. Twenty-four runs of three tests failed in six jobs, from three causes:
+
+1. **The differential test typed an Escape while a commit made six inputs earlier still waited for its verdict**
+   (`differential.spec.mjs`, ExGrid, seed 1360432973, the night's own seed: ten runs of ten on each browser on the
+   Server host, and once each widened; it reproduced locally at once). The sequence committed an edit with an
+   ArrowLeft and typed an Escape after six more inputs, meant for the edit typed just before it. Sent one at a time,
+   the commit had landed and the Escape closed that edit. Sent at machine speed, every input after the commit was held
+   behind its verdict, so the Escape's keydown still saw the commit pending and cancelled it, as
+   [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md) section 3
+   decides, by what the keydown sees. Not a product race: the one input that acts ahead of its turn
+   ([ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md) section 12) was drawn where its outcome
+   depends on the speed. The steps kept an Escape away only from the step straight after a commit; a commit's wait at
+   machine speed lasts until its answer, however many inputs follow. A grid's steps now settle before an Escape drawn
+   after any step that may have committed an open edit, and the differential test throws by name when an Escape is
+   about to be typed against a grid that shows a Pending Commit (`data-ex-pending-commit`), so a sequence that forgets
+   the settle fails as that, not as a difference between the runs. The seed joins the fixed ones.
+2. **A press on a page's Undo that the page greyed out under it** (`script-sheet.spec.mjs`, Server host, widened):
+   the first widened night's cause 4, now named by its guard, `PRESSED_DISABLED`. The page greys its commands out
+   from ExSheet's `EditingChanged`, a round trip after the editor opens and closes; the test pressed Undo as soon as
+   the editor was gone, Playwright found it enabled, and the render that greyed it out landed before the press. The
+   test's helper that types an entry (`enter` in `sheet-helpers.mjs`) now answers once the circuit is quiet, so every
+   test that presses a command after an entry aims at what the host has said.
+3. **The WebAssembly runtime stopped with `memory access out of bounds`** (`navigation.spec.mjs`'s RI-3, WebAssembly
+   on Chrome, one run of 660, at a quarter of the CPU), inside the runtime's own code, after which .NET had exited and
+   the page answered nothing. Not explained. It is not the runtime running out of memory: six passes over every page
+   in one document, at a quarter of the CPU, grew the WebAssembly memory to 687 MB in the second and not after. Its
+   trace was kept on CI only. The morning reader watches for it.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs
   of its seed on the WebAssembly host, 15 of them at a quarter of the CPU. Its trace was not kept. The seed
   joins the fixed ones once it reproduces and is fixed (`differential.spec.mjs`); until then the morning
   reader watches for it.
+- **The third widened night's cause 3**, the WebAssembly runtime's `memory access out of bounds`: one run, not
+  reproduced, its cause not known.

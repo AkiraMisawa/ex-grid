@@ -254,7 +254,11 @@ export async function expectCommandsOffered(page) {
 
 /**
  * Types an Entry into a cell and commits it with Enter. The cell is pressed first so the grid
- * holds the keyboard.
+ * holds the keyboard. Answers once the host has heard the edit open and close: on the Server host a
+ * page greys its commands out from ExSheet's `EditingChanged` a round trip after the editor opened
+ * and offers them again a round trip after it closed, so a command pressed as soon as the editor was
+ * gone was aimed at a button the page then greyed out under the press, and nothing ran (script-sheet's
+ * Undo, the Hunt of 2026-11-06; the harness says such a press, PRESSED_DISABLED).
  */
 export async function enter(page, grid, address, typed) {
     await clickCell(grid, address);
@@ -263,6 +267,7 @@ export async function enter(page, grid, address, typed) {
     await expect(editor(grid)).toHaveValue(typed);
     await page.keyboard.press('Enter');
     await expect(editor(grid)).toHaveCount(0);
+    await circuitQuiet();
 }
 
 /** A Column Heading of the Sheet by its letters. */

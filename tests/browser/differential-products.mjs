@@ -13,6 +13,9 @@ import { pick } from './differential.mjs';
 /** The steps of gridSteps that may commit an open edit. */
 const MAY_COMMIT = ['press', 'Enter', 'Shift+Enter', 'Tab', 'Shift+Tab', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight',
     'Shift+ArrowDown', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Shift+ArrowRight'];
+/** Those, and Home, which commits an edit typed over a cell as the arrows do (Excel's Enter mode, editing-keys.ts). Home
+ * is kept out of MAY_COMMIT, which decides what is drawn, so the fixed seeds draw the inputs they were added for. */
+const COMMITS_IF_OPEN = [...MAY_COMMIT, 'Home'];
 
 /**
  * The steps for a grid of `rows` × `columns` in view: a press on `first`, so the run starts from a known
@@ -26,13 +29,22 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
     let rows = [Number(start[1]), Number(start[1])];
     let columns = [Number(start[2]), Number(start[2])];
     let previous = null;
-    while (steps.length < count) {
+    // Whether an edit may be open: typed text, F2 and Backspace open one, and an Escape closes it. A commit is not
+    // taken to close it, since a refused one leaves it open and the steps cannot tell which. And whether a step since
+    // the last settle may have committed one, whose verdict may still be out.
+    let editMayBeOpen = false;
+    let mayHaveCommitted = false;
+    // A settle is no input, so it is not counted: a seed draws the same inputs with or without one.
+    let inputs = 1;
+    while (inputs < count) {
+        inputs += 1;
         const roll = next();
         if (roll < 0.2) {
             const row = Math.floor(next() * ROWS);
             const column = Math.floor(next() * COLUMNS);
             const shift = next() < 0.25;
             steps.push({ kind: 'press', target: `r${row}c${column}`, shift });
+            mayHaveCommitted ||= editMayBeOpen;
             if (!shift) {
                 rows = [row, row];
                 columns = [column, column];
@@ -42,13 +54,20 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
         }
         if (roll < 0.4) {
             steps.push({ kind: 'type', text: pick(next, texts) });
+            editMayBeOpen = true;
             previous = null;
             continue;
         }
-        // An Escape straight after a step that may commit an open edit is not drawn: while the commit
-        // waits for its verdict, an Escape cancels it, the one kind of input that acts ahead of its turn
-        // and is decided by when it is typed (ADR-0240 section 12, ADR-0380 section 3). On Blazor every
-        // verdict is an answer from .NET, so every commit waits for one.
+        // An Escape is typed only against a grid with no commit waiting for its verdict: while one waits, an
+        // Escape whose keydown sees it cancels it, the one kind of input that acts ahead of its turn and is
+        // decided by what the keydown sees (ADR-0240 section 12, ADR-0380 section 3), which at machine speed is
+        // not what it sees one input at a time. On Blazor every verdict is an answer from .NET, so every commit
+        // waits for one, and at machine speed it is still waiting however many inputs follow it: every one of them
+        // is held behind it. So an Escape drawn after a step that may have committed an open edit, since the last
+        // settle, settles first, as a user who means to cancel acts on what the page shows (the Hunt of 2026-11-06,
+        // seed 1360432973: an ArrowLeft's commit was still out six inputs later, where the Escape meant for the
+        // next edit cancelled it). Straight after such a step an Escape is not drawn at all, as it never was, so
+        // every seed draws the inputs it drew before; seed 2 is the one of the fixed seeds that gains settles.
         const keys = MAY_COMMIT.includes(previous) ? [] : ['Escape'];
         keys.push('F2', 'Delete', 'Backspace', 'Home', 'ControlOrMeta+z');
         if (rows[1] < ROWS - 1) keys.push('ArrowDown', 'Shift+ArrowDown', 'Enter');
@@ -58,6 +77,13 @@ function gridSteps(next, { rows: ROWS, columns: COLUMNS, first, texts, count = 2
         if (columns[0] > 0 && previous !== 'Escape') keys.push('ArrowLeft', 'Shift+ArrowLeft', 'Shift+Tab');
         else if (columns[0] > 0) keys.push('ArrowLeft', 'Shift+ArrowLeft');
         const key = pick(next, keys);
+        if (key === 'Escape' && mayHaveCommitted) {
+            steps.push({ kind: 'settle' });
+            mayHaveCommitted = false;
+        }
+        if (COMMITS_IF_OPEN.includes(key)) mayHaveCommitted ||= editMayBeOpen;
+        if (key === 'Escape') editMayBeOpen = false;
+        if (['F2', 'Backspace'].includes(key)) editMayBeOpen = true;
         if (['ArrowDown', 'Shift+ArrowDown', 'Enter'].includes(key)) rows = [rows[0], rows[1] + 1];
         if (['ArrowUp', 'Shift+ArrowUp', 'Shift+Enter'].includes(key)) rows = [rows[0] - 1, rows[1]];
         if (['ArrowRight', 'Shift+ArrowRight', 'Tab'].includes(key)) columns = [columns[0], columns[1] + 1];
@@ -165,7 +191,7 @@ const gridScenario = {
         await holdGridInPlace(page, featuresGrid(page));
     },
     places: (page) => cellPlaces(featuresGrid(page), FEATURE_ROWS, FEATURE_COLUMNS),
-    act: actOnPage,
+    act: actOnGrid(featuresGrid),
     settle: (page) => settleGrid(featuresGrid(page)),
     async read(page) {
         return {
@@ -185,7 +211,7 @@ const sheetScenario = {
         await holdGridInPlace(page, sheet(page));
     },
     places: (page) => cellPlaces(sheet(page), SHEET_ROWS, SHEET_COLUMNS),
-    act: actOnPage,
+    act: actOnGrid(sheet),
     settle: (page) => settleGrid(sheet(page)),
     async read(page) {
         const grid = sheet(page);
@@ -211,6 +237,27 @@ async function actOnPage(page, step, places) {
         await page.mouse.click(place.x, place.y);
         if (step.shift) await page.keyboard.up('Shift');
     }
+}
+
+/**
+ * How a grid's scenario sends a step of gridSteps to the grid `gridOf` finds: a settle settles it, and an Escape is
+ * typed only once the grid is found to hold no Pending Commit. Such an Escape would cancel the commit in one run and
+ * not in the other (ADR-0380 section 3), so the steps must settle before it (gridSteps). The grid is read before the
+ * key, at machine speed too, so a sequence that forgets the settle fails by name, not as a difference between the runs.
+ */
+function actOnGrid(gridOf) {
+    return async (page, step, places) => {
+        if (step.kind === 'settle') {
+            await settleGrid(gridOf(page));
+            return;
+        }
+        if (step.kind === 'key' && step.key === 'Escape'
+            && await gridOf(page).evaluate((root) => root.hasAttribute('data-ex-pending-commit'))) {
+            throw new Error('the steps type an Escape while a commit waits for its verdict, which the Escape would cancel '
+                + 'only when typed fast enough (ADR-0380 section 3): settle the steps before it');
+        }
+        await actOnPage(page, step, places);
+    };
 }
 
 /** Where the keyboard is, said as a reader would: the element, its role or ex- classes, and its name. */
