@@ -8,7 +8,7 @@ import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 // holds the console rules (WR-9: CON-1/2/3/6, enforced in fixtures.mjs for every page a
 // test drives). The Wrapper's filter panel draws its operator as a native select (ADR-0410, note
 // of 2026-10-28), so the Inner Popup clauses — FN-21, KB-35 and WR-7's dialog — are held by a
-// Consumer popover that holds a MudSelect, opened through OpenPopoverAsync (ADR-0441 section 4).
+// Consumer popover that holds a MudSelect and a MudDatePicker, opened through OpenPopoverAsync (ADR-0441 section 4).
 
 const positions = (page) => page.locator('#positions-paper .ex-grid');
 const orders = (page) => page.locator('#orders-paper .ex-grid');
@@ -523,39 +523,66 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     expect(seen.filter((index) => !present.has(index)), 'rows on screen that went away').toEqual([]);
 });
 
-// The Consumer's popover on a grid, its MudSelect, and the list MudBlazor draws for it in its
-// provider, outside the grid's root: the Inner Popup (ADR-0039, ADR-0441 section 4).
+// The Consumer's popover on a grid, its MudSelect and its MudDatePicker, and the list or calendar MudBlazor draws for
+// each in its provider, outside the grid's root: the Inner Popups (ADR-0039, ADR-0441 section 4).
 const bookPopover = (grid) => grid.locator('.ex-popover-consumer');
 const bookSelect = (grid) => bookPopover(grid).locator('.demo-book-select .mud-select').first();
 const bookList = (page) => page.locator('.mud-popover-open .mud-list-item');
+// FN-21 names both controls: a list is pressed open on its box, a calendar on its field.
+const innerPopups = [
+    { name: 'MudSelect', control: bookSelect, popup: bookList },
+    {
+        name: 'MudDatePicker',
+        control: (grid) => bookPopover(grid).locator('.demo-settle-picker input').first(),
+        popup: (page) => page.locator('.mud-popover-open .mud-picker-calendar-header'),
+    },
+];
 
-test("FN-21 / ADR-0441: in a Consumer popover, Escape closes its MudSelect's list first and the next Escape the popover, and the arrows are the grid's again @blazor", async ({ page }) => {
-    await open(page);
-    await clickCell(positions(page), 2, 1);
-    await page.locator('#open-book').click();
-    await expect(bookPopover(positions(page))).toHaveAttribute('aria-label', 'Choose a book');
-    await bookSelect(positions(page)).click();
-    await expect(bookList(page)).not.toHaveCount(0);
+for (const inner of innerPopups) {
+    test(`FN-21 / ADR-0441: in a Consumer popover, Escape closes its ${inner.name}'s popup first and the next Escape the popover, and the arrows are the grid's again @blazor`, async ({ page }) => {
+        await open(page);
+        await clickCell(positions(page), 2, 1);
+        await page.locator('#open-book').click();
+        await expect(bookPopover(positions(page))).toHaveAttribute('aria-label', 'Choose a book');
+        await inner.control(positions(page)).click();
+        await expect(inner.popup(page)).not.toHaveCount(0);
 
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('ArrowDown');
-    await expect(bookList(page)).toHaveCount(0);
-    await expect(bookPopover(positions(page))).toHaveCount(0);
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
-});
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('ArrowDown');
+        await expect(inner.popup(page)).toHaveCount(0);
+        await expect(bookPopover(positions(page))).toHaveCount(0);
+        await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+    });
 
-test('FN-21 / ADR-0441: a press on the rows while a Consumer popover\'s list is open closes both and places the Focus @blazor', async ({ page }) => {
-    await open(page);
-    await page.locator('#open-book').click();
-    await bookSelect(positions(page)).click();
-    await expect(bookList(page)).not.toHaveCount(0);
+    test(`FN-21 / ADR-0441: a press on the rows while a Consumer popover's ${inner.name} popup is open closes both and places the Focus @blazor`, async ({ page }) => {
+        await open(page);
+        await page.locator('#open-book').click();
+        await inner.control(positions(page)).click();
+        await expect(inner.popup(page)).not.toHaveCount(0);
 
-    await clickCell(positions(page), 4, 2);
-    await expect(bookPopover(positions(page))).toHaveCount(0);
-    await expect(bookList(page)).toHaveCount(0);
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
-});
+        await clickCell(positions(page), 4, 2);
+        await expect(bookPopover(positions(page))).toHaveCount(0);
+        await expect(inner.popup(page)).toHaveCount(0);
+        await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
+    });
+
+    // Under ModalOverlay = true the design system's overlay takes the press: the grid acts on what reaches it, and
+    // nothing does (ADR-0039).
+    test(`FN-21 / ADR-0039: under a modal overlay, a press on the rows while a Consumer popover's ${inner.name} popup is open closes only that popup @blazor`, async ({ page }) => {
+        await open(page);
+        await clickCell(positions(page), 2, 1);
+        await page.locator('#open-book-modal').click();
+        await inner.control(positions(page)).click();
+        await expect(inner.popup(page)).not.toHaveCount(0);
+
+        await clickCell(positions(page), 4, 2);
+        await expect(inner.popup(page)).toHaveCount(0);
+        await circuitQuiet();
+        await expect(bookPopover(positions(page))).toBeVisible();
+        await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+    });
+}
 
 test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popover reaches the grid OK left, with OK's choice taken @blazor", async ({ page }) => {
     await open(page);
@@ -574,17 +601,21 @@ test("ADR-0441 / ADR-0240: an arrow typed straight after OK in a Consumer popove
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
 });
 
-test("KB-35 / ADR-0441: an Escape straight after a Consumer popover's MudSelect opens its list is the list's, and the popover stands, over a 150 ms round trip @blazor", async ({ page }) => {
-    await setRoundTrip(150);
-    await open(page);
-    await page.locator('#open-book').click();
-    await bookSelect(positions(page)).click();
-    await page.keyboard.press('Escape');
+// Whether the control closes its popup on that Escape is its design system's (KB-35): the list does; the popover
+// stands under either.
+for (const inner of innerPopups) {
+    test(`KB-35 / ADR-0441: an Escape straight after a Consumer popover's ${inner.name} opens its popup is the control's, and the popover stands, over a 150 ms round trip @blazor`, async ({ page }) => {
+        await setRoundTrip(150);
+        await open(page);
+        await page.locator('#open-book').click();
+        await inner.control(positions(page)).click();
+        await page.keyboard.press('Escape');
 
-    await circuitQuiet();
-    await expect(bookList(page)).toHaveCount(0);
-    await expect(bookPopover(positions(page))).toBeVisible();
-});
+        await circuitQuiet();
+        if (inner.name === 'MudSelect') await expect(inner.popup(page)).toHaveCount(0);
+        await expect(bookPopover(positions(page))).toBeVisible();
+    });
+}
 
 test("WR-7 / ADR-0441: in a grid in a MudDialog, a Consumer popover's MudSelect draws its list above the dialog, and its choice reaches OK @blazor", async ({ page }) => {
     await open(page);

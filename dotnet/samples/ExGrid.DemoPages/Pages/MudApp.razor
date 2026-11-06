@@ -82,6 +82,7 @@
                     <MudText Typo="Typo.h6" Class="mud-ex-grid-title">Positions</MudText>
                     <MudSpacer />
                     <MudButton id="open-book" Variant="Variant.Text" Color="Color.Primary" OnClick="() => ChooseBookAsync(_positionsGrid)">Book</MudButton>
+                    <MudButton id="open-book-modal" Variant="Variant.Text" Color="Color.Primary" OnClick="() => ChooseBookAsync(_positionsGrid, modal: true)">Book (modal)</MudButton>
                     <MudButton id="open-dialog" Variant="Variant.Text" Color="Color.Primary" OnClick="OpenDialog">Open orders</MudButton>
                 </ToolBarContent>
                 <ChildContent>
@@ -175,25 +176,35 @@
     </DialogActions>
 </MudDialog>
 
-@* The Consumer's own popover (ADR-0050 item 16, ADR-0441 section 4): a MudSelect whose list MudBlazor draws in its
-   provider, outside the grid's root, is an Inner Popup, reported through the context as it opens and closes (FN-21,
-   KB-35, WR-7). The select's box claims the press, the click and the key that open, work and close its list, and OK
+@* The Consumer's own popover (ADR-0050 item 16, ADR-0441 section 4): a MudSelect whose list, and a MudDatePicker
+   whose calendar, MudBlazor draws in its provider, outside the grid's root, are Inner Popups, each reported through
+   the context as it opens and closes (FN-21, KB-35, WR-7). The select's box claims the press, the click and the key that open, work and close its list, and OK
    claims its click: each handler hands its work to the context's InOrder, so a key typed straight after waits for what
-   the select or OK did (ADR-0240 section 6). *@
+   the select or OK did (ADR-0240 section 6). Opened as modal, the two controls take MudBlazor's modal overlay, as a
+   Consumer's global ModalOverlay = true would give them: a press elsewhere then closes only the Inner Popup. *@
 @code {
-    private RenderFragment BookPopover(GridPopoverContext context) =>
+    private RenderFragment<GridPopoverContext> BookPopover(bool modal) => context =>
         @<div class="demo-book-popover pa-3">
             <div class="demo-book-select" data-ex-claims="mousedown click keydown"
                  @onmousedown="() => InOrder(context, GridInputKind.Press)"
                  @onclick="() => InOrder(context, GridInputKind.Click)"
                  @onkeydown="() => InOrder(context, GridInputKind.KeyDown)">
                 <MudSelect T="string" @bind-Value="_bookDraft" Label="Book" Dense="true" Margin="Margin.Dense"
-                           Variant="Variant.Outlined" OpenChanged="context.InnerPopupChanged">
+                           Variant="Variant.Outlined" Modal="modal" OpenChanged="context.InnerPopupChanged">
                     @foreach (var book in _books)
                     {
                         <MudSelectItem Value="@book">@book</MudSelectItem>
                     }
                 </MudSelect>
+            </div>
+            <div class="demo-settle-picker mt-2" data-ex-claims="mousedown click keydown"
+                 @onmousedown="() => InOrder(context, GridInputKind.Press)"
+                 @onclick="() => InOrder(context, GridInputKind.Click)"
+                 @onkeydown="() => InOrder(context, GridInputKind.KeyDown)">
+                <MudDatePicker @bind-Date="_settleDraft" Label="Settles" PickerVariant="PickerVariant.Inline"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Modal="modal"
+                               PickerOpened="() => context.InnerPopupChanged(true)"
+                               PickerClosed="() => context.InnerPopupChanged(false)" />
             </div>
             <div class="d-flex justify-end mt-2">
                 <MudButton id="book-cancel" data-ex-claims="click" Size="Size.Small"
@@ -226,6 +237,7 @@
     private string[] _books = [];
     private string _book = "none chosen";
     private string _bookDraft = "";
+    private DateTime? _settleDraft = new DateTime(2026, 11, 6);
 
     private bool _drawerOpen = true;
     private bool _dark;
@@ -301,8 +313,8 @@
     private static CellTone Sign(object value)
         => (decimal)value < 0 ? CellTone.Negative : CellTone.None;
 
-    private Task ChooseBookAsync(ExGrid<DemoBlotterTrade>? grid)
-        => (grid ?? throw new InvalidOperationException("The grid is not rendered yet.")).OpenPopoverAsync(BookPopover, "Choose a book");
+    private Task ChooseBookAsync(ExGrid<DemoBlotterTrade>? grid, bool modal = false)
+        => (grid ?? throw new InvalidOperationException("The grid is not rendered yet.")).OpenPopoverAsync(BookPopover(modal), "Choose a book");
 
     // The context's seam, which the grid's context always carries.
     private static Task InOrder(GridPopoverContext context, GridInputKind kind, Func<Task> work)
