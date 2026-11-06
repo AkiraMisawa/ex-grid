@@ -144,6 +144,12 @@ under both `ModalOverlay` settings, with two grids on the page and with one insi
 If a row of the table above turns out wrong in a real browser, it is corrected here, as the
 prediction it replaces was.
 
+*(2026-11-06: the Script grid's filter panel draws its operator and values natively, with no Inner Popup (ADR-0410,
+note of 2026-10-28), so layer 3 exercises them through a Consumer popover opened with `OpenPopoverAsync` (ADR-0441)
+that holds a `MudSelect` and a `MudDatePicker`, by pointer and by key, on both Blazor hosts, with two grids on the page
+and one inside a `MudDialog`. `ModalOverlay = true` is exercised by the same popover with both controls set modal: the
+press on the rows closes only the Inner Popup, as the table says.)*
+
 *(Refined 2026-09-25, when CI first ran layer 3 against the Blazor Server host.)* Two things the
 table promises were being lost on a circuit. Neither prediction had considered it; both were
 found in a real browser and fixed as follows.
