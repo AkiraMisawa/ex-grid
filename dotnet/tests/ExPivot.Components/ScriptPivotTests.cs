@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Bunit;
 using ExGrid.Selection;
@@ -17,18 +18,28 @@ namespace ExPivot.Components.Tests;
 /// </summary>
 public class ScriptPivotTests : BunitContext
 {
-    private static readonly string[] LabelIds = ["row-labels", "grand-total", "copy"];
+    private static readonly string[] LabelIds = ["row-labels", "grand-total", "copy", "caption-max", "summarize-by"];
 
     private readonly BunitJSModuleInterop _module;
     private readonly BunitJSModuleInterop _pivot;
 
+    // The words that cross depend on the UI culture (PV-33): every test runs under en-US unless it says otherwise.
+    private readonly CultureInfo _uiCulture = CultureInfo.CurrentUICulture;
+
     public ScriptPivotTests()
     {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
         _module = JSInterop.SetupModule(invocation => invocation.Identifier == "import");
         _module.Setup<string?>("stamp").SetResult(global::ExPivot.Components.ScriptCoreAsset.Stamp);
         _module.Setup<string[]>("labelIds").SetResult(LabelIds);
         _pivot = _module.SetupModule("attach", _ => true);
         _pivot.SetupVoid("update", _ => true).SetVoidResult();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        CultureInfo.CurrentUICulture = _uiCulture;
+        base.Dispose(disposing);
     }
 
     private IRenderedComponent<global::ExPivot.Components.ExPivot> Pivot(PivotSource source, Action<ComponentParameterCollectionBuilder<global::ExPivot.Components.ExPivot>>? more = null)
@@ -85,6 +96,31 @@ public class ScriptPivotTests : BunitContext
 
         var words = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("words");
         Assert.Equal([("row-labels", "行ラベル")], words.EnumerateObject().Select(word => (word.Name, word.Value.GetString())));
+    }
+
+    [Fact] // PV-33 / ADR-0060's note of 2026-10-14: under an en-GB UI culture the English is the United Kingdom edition's where it differs, the Consumer's word still wins, and under another UI culture nothing crosses
+    public void PV33_an_en_GB_UI_culture_paints_the_United_Kingdom_editions_words()
+    {
+        var before = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-GB");
+            Pivot(SalesData.Bundled());
+            Pivot(SalesData.Bundled(), ps => ps.Add(p => p.Label, id => id == "caption-max" ? "Highest {0}" : null));
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
+            Pivot(SalesData.Bundled());
+
+            var words = _module.Invocations["attach"].Select(attach => Parsed(attach.Arguments[2]).GetProperty("words")).ToList();
+            Assert.Equal([("caption-max", "Max. of {0}"), ("summarize-by", "Summarise value field by")], Words(words[0]));
+            Assert.Equal([("caption-max", "Highest {0}"), ("summarize-by", "Summarise value field by")], Words(words[1]));
+            Assert.Equal(JsonValueKind.Null, words[2].ValueKind);
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = before;
+        }
+
+        static (string, string?)[] Words(JsonElement words) => [.. words.EnumerateObject().Select(word => (word.Name, word.Value.GetString()))];
     }
 
     [Fact] // ADR-0016, ADR-0030: the report's Cell Metrics and a Wrapper's cascaded widths cross to the browser, where its grids and label columns are sized by them

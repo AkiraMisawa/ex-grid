@@ -537,10 +537,13 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         => (chrome?.ScriptSlots ?? PivotScriptSlots.None, gridChrome?.ScriptSlots ?? ScriptSlots.None);
 
     // Each word the Consumer gives, asked here, since a .NET function cannot cross (ADR-0370 section 10); null keeps
-    // the English.
+    // the English. Under an en-GB UI culture the English is the English (United Kingdom) edition's where it differs,
+    // as Excel's follows its display language, and the Consumer's word still wins (ADR-0060's note of 2026-10-14).
     private string WordsJson() => Json(json =>
     {
-        if (Label is not { } label)
+        var label = Label;
+        var unitedKingdom = CultureInfo.CurrentUICulture.Name == "en-GB";
+        if (label is null && !unitedKingdom)
         {
             json.WriteNullValue();
             return;
@@ -548,7 +551,7 @@ public sealed class ExPivot : ComponentBase, IAsyncDisposable
         json.WriteStartObject();
         foreach (var id in _labelIds)
         {
-            if (label(id) is { } word)
+            if ((label?.Invoke(id) ?? (unitedKingdom ? PivotWords.EnglishUnitedKingdomFor(id) : null)) is { } word)
                 json.WriteString(id, word);
         }
         json.WriteEndObject();
