@@ -52,7 +52,8 @@ export function seedsOf(fixed) {
  * before has settled, and `fast`, every input sent at machine speed and read once. Each run opens the
  * product afresh, takes the places its presses aim at from that page before the first input (a press is
  * aimed where it was made), and reads what the scenario reads. A step a scenario acts on by settling
- * (the pivot's `settle`) settles the fast run there too.
+ * (a `settle`: the pivot's after its Layout menu, a grid's before an Escape that a commit could be waiting
+ * for) settles the fast run there too.
  */
 export async function bothWays(page, scenario, steps) {
     const run = async (eachSettled) => {
