@@ -25,6 +25,18 @@
       "throws": "invalidOperation"
     },
     {
+      "name": "ADR-0053 / VZ-8: the header band counts towards the ceiling: rows and band exactly at it are accepted",
+      "create": {"rowHeightPx": 1, "totalRowCount": 33554400, "scrollRoomPx": "Infinity", "headerBandPx": 28},
+      "expect": [
+        {"get": "isCompressed", "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0053 / VZ-8: rows that fit under the ceiling are refused when the header band takes them past it",
+      "create": {"rowHeightPx": 1, "totalRowCount": 33554400, "scrollRoomPx": "Infinity", "headerBandPx": 29},
+      "throws": "invalidOperation"
+    },
+    {
       "name": "ADR-0053 / VZ-8: what is refused does not depend on the room the machine leaves",
       "create": {"rowHeightPx": 1, "totalRowCount": 33554429, "scrollRoomPx": 100000000},
       "throws": "invalidOperation"

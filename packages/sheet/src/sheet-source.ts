@@ -15,6 +15,9 @@ import type { SheetWords } from './sheet-words';
 
 /** A Grid Source over the Sheet shown. */
 export class SheetSource implements GridSource<SheetRow> {
+    /** True: every Window is of rows made for it, one `SheetRow` for each place, so none stands twice and the grid need
+     * not walk it (ADR-0141). */
+    readonly vouchesDistinctRows = true;
     readonly #listeners = new Set<() => void>();
     #sheet: Sheet;
     #version = 0;

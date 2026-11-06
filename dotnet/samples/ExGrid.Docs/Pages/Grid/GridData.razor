@@ -130,7 +130,9 @@
             Window. When your Windows cannot repeat a key — cut, as here, from a list whose ids are unique — the
             source says so with <code>VouchesDistinctRows</code>, as <code>GridSource.Fetch</code> does when it is
             given a key. The grid then reads only the keys of the rows it paints, which matters for a large Window. A
-            repeat that breaks the promise is still refused the moment it reaches the screen.
+            repeat that breaks the promise is still refused the moment it reaches the screen. Without a key, a row is
+            told from every other by its instance, so a null row, or one object at two places, is refused by name in
+            the same way, naming the positions; <code>GridSource.From</code> refuses such a list as it is made.
         </p>
         <p>
             The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.

@@ -547,12 +547,15 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             _renderOwed |= _slots.Any;
         }
         TakeSurface(source);
+        // One copy of the list as handed, never the Consumer's list itself: the same list changed in place and handed
+        // again is another, and before it is handed again nothing of it is drawn (FN-22).
+        IReadOnlyList<GridColumn<TRow>> taken = [.. Columns];
         // The source sorts and filters by the columns' values, read in .NET (ADR-0001): a new source is told the columns
         // as it is taken, and every source each declaration after.
         if (!SameColumns(_toldColumns, Columns))
         {
-            source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
-            _toldColumns = Columns;
+            source.OnColumnsChanged([.. taken.Select(column => column.Info)]);
+            _toldColumns = taken;
         }
         var culture = CultureInfo.CurrentCulture.Name;
         var sameColumns = SameColumns(_numberedColumns, Columns);
@@ -562,13 +565,13 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             // the browser holds were read by the one before (ADR-0006). A new source reading the same columns is not:
             // a row the browser holds reads the same by them (ADR-0350 section 15's note of 2026-10-30).
             _columnsVersion += 1;
-            _declared[_columnsVersion] = Columns;
+            _declared[_columnsVersion] = taken;
             _declared.Remove(_columnsVersion - DeclarationsKept);
             _columnsChanged = _toldCulture is not null;
             _toldCulture = culture;
             if (!sameColumns)
             {
-                _numberedColumns = Columns;
+                _numberedColumns = taken;
                 // A Template cell standing is drawn by the fragment its column now declares: the core mounts it again
                 // only for another row (ADR-0020).
                 _renderOwed |= _slots.Any;
@@ -921,7 +924,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         var request = cell.Drawn ? 0 : cell.FocusRequest;
         cell.Drawn = true;
-        foreach (var column in Columns)
+        foreach (var column in TakenColumns)
         {
             if (column.Name == cell.Column)
                 return column.Template is { } template ? template(new TemplateCellContext<TRow>(_rows.RowOf(cell.Row), request)) : null;
@@ -1089,7 +1092,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cv", _columnsVersion);
             json.WriteStartArray("window");
             for (var at = from; at < to; at++)
-                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
+                _rows.Write(json, window[at - source.WindowStart], TakenColumns, source.RowKey, Paint, _pointedAt?.TableRow);
             json.WriteEndArray();
             WriteBeyond(json, source, window, from, to);
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
@@ -1110,7 +1113,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     {
         json.WriteStartObject();
         json.WritePropertyName("columns");
-        ScriptColumns.Write(json, Columns, _formats, _toldCulture ?? throw new InvalidOperationException("Internal: options written before the parameters were set."));
+        ScriptColumns.Write(json, TakenColumns, _formats, _toldCulture ?? throw new InvalidOperationException("Internal: options written before the parameters were set."));
         json.WriteNumber("columnsVersion", _columnsVersion);
         // The culture the component reads (ADR-0370 section 10).
         var culture = CultureInfo.CurrentCulture.Name;
@@ -1402,7 +1405,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         json.WriteStartObject();
         json.WriteNumber("at", at);
         json.WritePropertyName("row");
-        _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, Paint, _pointedAt?.TableRow);
+        _rows.Write(json, window[at - source.WindowStart], TakenColumns, source.RowKey, Paint, _pointedAt?.TableRow);
         json.WriteEndObject();
         json.WriteEndArray();
     }
@@ -1490,7 +1493,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteStartArray("rows");
                 foreach (var row in rows)
                     // Read for a copy or a find, never painted: what a row paints is not asked.
-                    _rows.Write(json, row, Columns, source.RowKey, paint: null, _pointedAt?.TableRow);
+                    _rows.Write(json, row, TakenColumns, source.RowKey, paint: null, _pointedAt?.TableRow);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }));
@@ -1564,7 +1567,12 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         }
     }
 
-    private GridColumn<TRow>? Declared(string column) => Columns.FirstOrDefault(each => each.Name == column);
+    private GridColumn<TRow>? Declared(string column) => TakenColumns.FirstOrDefault(each => each.Name == column);
+
+    // The columns as they were when last handed, copied then: a render of the grid's own reads these, never the
+    // Consumer's list, which may have changed in place since (FN-22).
+    private IReadOnlyList<GridColumn<TRow>> TakenColumns
+        => _numberedColumns ?? throw new InvalidOperationException("Internal: the columns were read before the parameters were set.");
 
     private string Gone() => Json(json =>
     {

@@ -270,7 +270,9 @@ public class SourceCaseTests
                 var written = step.GetProperty("with");
                 var replacement = written.ValueKind == JsonValueKind.String && written.GetString() == "itself"
                     ? row
-                    : RowOf(row.Position, written);
+                    : written.ValueKind == JsonValueKind.Object && written.TryGetProperty("held", out var place)
+                        ? held[place.GetInt32()]
+                        : RowOf(row.Position, written);
                 source.ReplaceRow(row, replacement);
                 if (row.Position >= 0)
                     held[row.Position] = replacement;

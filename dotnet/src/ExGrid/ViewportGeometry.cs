@@ -34,6 +34,14 @@ internal readonly record struct ViewportGeometry
     /// fits is used as it is; one that does not is compressed (ADR-0053). A true height
     /// past <see cref="MaxScrollHeightPx"/> is refused whatever the room.</summary>
     public ViewportGeometry(double rowHeightPx, double viewportHeightPx, int totalRowCount, double scrollRoomPx)
+        : this(rowHeightPx, viewportHeightPx, totalRowCount, scrollRoomPx, 0)
+    {
+    }
+
+    /// <summary>As the constructor without <paramref name="headerBandPx"/>, where the header band of
+    /// <paramref name="headerBandPx"/> stands in the same scroll content above the rows: a true height
+    /// whose rows and band together pass <see cref="MaxScrollHeightPx"/> is refused (VZ-8).</summary>
+    public ViewportGeometry(double rowHeightPx, double viewportHeightPx, int totalRowCount, double scrollRoomPx, double headerBandPx)
     {
         if (!double.IsFinite(rowHeightPx) || rowHeightPx <= 0)
             throw new ArgumentOutOfRangeException(nameof(rowHeightPx), rowHeightPx,
@@ -45,10 +53,14 @@ internal readonly record struct ViewportGeometry
         if (double.IsNaN(scrollRoomPx) || scrollRoomPx <= 0)
             throw new ArgumentOutOfRangeException(nameof(scrollRoomPx), scrollRoomPx,
                 "The room under the Layout Ceiling is a positive number of pixels, or unbounded (ADR-0053).");
-        if (totalRowCount * rowHeightPx > MaxScrollHeightPx)
+        if (!double.IsFinite(headerBandPx) || headerBandPx < 0)
+            throw new ArgumentOutOfRangeException(nameof(headerBandPx), headerBandPx,
+                "The header band is a finite number of pixels, not negative (ADR-0013).");
+        if (totalRowCount * rowHeightPx + headerBandPx > MaxScrollHeightPx)
         {
             throw new InvalidOperationException(
-                $"{totalRowCount} rows at {rowHeightPx}px need a scrollable area of {totalRowCount * rowHeightPx}px, " +
+                $"{totalRowCount} rows at {rowHeightPx}px need a scrollable area of {totalRowCount * rowHeightPx}px" +
+                (headerBandPx == 0 ? ", " : $" under a {headerBandPx}px header band, ") +
                 $"past the {MaxScrollHeightPx}px a browser can scroll: the rows beyond it could never be reached. " +
                 "Use a shorter row height, or page the result (ADR-0015).");
         }

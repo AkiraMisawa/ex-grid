@@ -60,13 +60,15 @@ export class ViewportGeometry {
      * where the rows' part of the scroll content may be laid out at most `scrollRoomPx` tall: the Layout
      * Ceiling the browser told, less whatever else stands in the same content. Unbounded when not given.
      * A true height that fits is used as it is; one that does not is compressed (ADR-0053). A true height
-     * past {@link ViewportGeometry.maxScrollHeightPx} is refused whatever the room.
+     * past {@link ViewportGeometry.maxScrollHeightPx} is refused whatever the room, counted with `headerBandPx`,
+     * the header band that stands in the same scroll content above the rows (VZ-8).
      */
-    constructor({ rowHeightPx, viewportHeightPx, totalRowCount, scrollRoomPx = Number.POSITIVE_INFINITY }: {
+    constructor({ rowHeightPx, viewportHeightPx, totalRowCount, scrollRoomPx = Number.POSITIVE_INFINITY, headerBandPx = 0 }: {
         readonly rowHeightPx: number;
         readonly viewportHeightPx: number;
         readonly totalRowCount: number;
         readonly scrollRoomPx?: number;
+        readonly headerBandPx?: number;
     }) {
         finitePositive(rowHeightPx, 'rowHeightPx', 'RowHeight is a finite, positive number of pixels (ADR-0013).');
         finitePositive(viewportHeightPx, 'viewportHeightPx', 'ViewportHeight is a finite, positive number of pixels (ADR-0013).');
@@ -75,10 +77,14 @@ export class ViewportGeometry {
             throw new RangeError(
                 `The room under the Layout Ceiling is a positive number of pixels, or unbounded (ADR-0053). (scrollRoomPx: ${scrollRoomPx})`);
         }
+        if (!(headerBandPx >= 0) || !Number.isFinite(headerBandPx)) {
+            throw new RangeError(`The header band is a finite number of pixels, not negative (ADR-0013). (headerBandPx: ${headerBandPx})`);
+        }
         const contentHeightPx = totalRowCount * rowHeightPx;
-        if (contentHeightPx > ViewportGeometry.maxScrollHeightPx) {
+        if (contentHeightPx + headerBandPx > ViewportGeometry.maxScrollHeightPx) {
             throw new Error(
-                `${totalRowCount} rows at ${rowHeightPx}px need a scrollable area of ${contentHeightPx}px, past the `
+                `${totalRowCount} rows at ${rowHeightPx}px need a scrollable area of ${contentHeightPx}px`
+                + `${headerBandPx === 0 ? '' : ` under a ${headerBandPx}px header band`}, past the `
                 + `${ViewportGeometry.maxScrollHeightPx}px a browser can scroll: the rows beyond it could never be reached. `
                 + 'Use a shorter row height, or page the result (ADR-0015).');
         }

@@ -8,7 +8,7 @@ import type {
     CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, GridSummaryResult, SelectionRange, SummaryFigure,
 } from '@ex-grid/core';
 import {
-    FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
+    FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotRowKey, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
     type PivotReportSource, type PivotSlicing,
     type PivotServerNotice, type PivotSource,
@@ -196,8 +196,9 @@ class GridStandIn {
         if (source === undefined || template === undefined) throw new Error('The cell has no template.');
         const [shown] = await source.rows({ start: row, count: 1 }, new AbortController().signal);
         if (shown === undefined) throw new Error(`The report has no row ${row}.`);
+        // A slot stands in the grid's root, as the real grid's cells do: a press on a button there reaches the root.
         const slot = document.createElement('div');
-        document.body.append(slot);
+        defined(this.element, 'the element the report grid was mounted into').append(slot);
         const into = (request: number): PaintedCell => {
             const handed: HTMLElement[] = [];
             const dispose = template(slot, { row: shown, column: columns[column]?.name ?? '', focusRequest: request, takeKeyboard: control => { handed.push(control); } }); // oxlint-disable-line ex-grid/no-stand-in-default -- the column was read above
@@ -384,6 +385,39 @@ describe('ExPivot\'s report', () => {
         expect(root.style.getPropertyValue('--ex-pivot-indent')).toBe('14px');
         outer.dispose();
         expect(outer.slot.childElementCount).toBe(0);
+    });
+
+    it('PV-43 / ADR-0140: a report row\'s key is made once: reading every painted row\'s key again makes no key', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        const source = defined(grid.current.source, 'the report\'s rows');
+        const rowKey = defined(source.rowKey, 'the report\'s Row Key');
+        const rows = await source.rows({ start: 0, count: 7 }, new AbortController().signal);
+        const first = rows.map(rowKey);
+        const made = vi.spyOn(PivotRowKey.prototype, 'toString');
+        try {
+            expect(rows.map(rowKey)).toEqual(first);
+            expect(made).not.toHaveBeenCalled();
+        } finally {
+            made.mockRestore();
+        }
+    });
+
+    it('PF-2 / ADR-0350 section 6: a label cell binds no listener; its button is heard on the grid\'s root', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        // The prototype the document's elements take addEventListener from, which may not be the global EventTarget's.
+        let owner: object | null = document.createElement('button');
+        while (owner !== null && !Object.prototype.hasOwnProperty.call(owner, 'addEventListener')) owner = Object.getPrototypeOf(owner) as object | null;
+        if (owner === null) throw new Error('No prototype of an element has addEventListener.');
+        const bound = vi.spyOn(owner as EventTarget, 'addEventListener');
+        try {
+            const outer = await grid.paint(0, 0);
+            expect(outer.slot.querySelector('button.ex-pivot-toggle')).not.toBeNull();
+            expect(bound.mock.contexts.filter(target => target instanceof Node && outer.slot.contains(target))).toEqual([]);
+        } finally {
+            bound.mockRestore();
+        }
     });
 
     it('ADR-0063: the button beside an outer Item collapses it, and expands it once collapsed', async () => {

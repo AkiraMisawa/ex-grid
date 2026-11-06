@@ -233,19 +233,15 @@
       ]
     },
     {
-      "name": "ADR-0043, ADR-0003: an object handed over twice is one row by identity, counted once and listed once, and a replacement at one place takes the mark with it",
+      "name": "ADR-0003 / ERR-4: an object handed over twice is refused by name, naming both positions, since identity could not tell the two apart",
       "rows": [
         ["Twice", 5],
         ["Once", 1],
         {"sameAs": 0}
       ],
-      "steps": [
-        {"setColumns": true},
-        {"markRow": 0, "marked": true},
-        {"expect": {"marked": [0, 2], "markCounts": [1, 2, 0], "markedRows": [["Twice", 5]]}},
-        {"replaceRow": 0, "with": ["Twice", 6]},
-        {"expect": {"window": [0, 1, 0], "marked": [0, 2], "markCounts": [2, 3, 0], "markedRows": [["Twice", 6], ["Twice", 5]]}}
-      ]
+      "fromThrows": "argument",
+      "fromSaying": "The rows at positions 0 and 2 are the same object",
+      "steps": []
     }
   ]
 }
