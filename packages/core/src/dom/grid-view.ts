@@ -5366,10 +5366,9 @@ export class GridView<Row> {
             const done = field === undefined ? 'none' : keyDefault(field, event, this.#metaIsPrimary);
             return (done === 'none' ? elementDefault(holder, event) : done) !== 'lost';
         }
-        // A press lands where it was made. A pass may have painted that control anew since: it lands then on nothing, as
-        // a press taken on what is no longer there does. Asking what stands at that point now would be a measurement, and
-        // would answer with what moved under the pointer, which is the defect itself (ADR-0021, "Rejected").
-        const target = event.target;
+        // A press lands where it was made. A pass may have painted that control anew since: it lands then on what stands
+        // at the same point, and on nothing where nothing of the grid's does.
+        let target = event.target;
         const letThrough = this.#letThrough.get(event);
         if (letThrough !== undefined) {
             this.#pressesWaiting.splice(this.#pressesWaiting.indexOf(letThrough), 1);
@@ -5378,7 +5377,12 @@ export class GridView<Row> {
             // since.
             if (!(target instanceof Element) || !target.isConnected) return true;
         }
-        if (!(target instanceof Element) || !target.isConnected) return false;
+        if (!(target instanceof Element) || !target.isConnected) {
+            const doc = this.#root.ownerDocument;
+            const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
+            target = under !== null && this.#inputRoot.contains(under) ? under : null;
+        }
+        if (!(target instanceof Element)) return false;
         target.dispatchEvent(again);
         if (event.type !== 'mousedown' || again.defaultPrevented) return true;
         if (letThrough === undefined) {
