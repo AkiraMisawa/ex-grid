@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/05/2026 - 10:48:34 |
+| Generated on: | 11/06/2026 - 08:34:44 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1119 |
 | Files: | 499 |
-| **Line coverage:** | 86.9% (60655 of 69742) |
-| Covered lines: | 60655 |
-| Uncovered lines: | 9087 |
+| **Line coverage:** | 86.9% (60656 of 69742) |
+| Covered lines: | 60656 |
+| Uncovered lines: | 9086 |
 | Coverable lines: | 69742 |
 | Total lines: | 106264 |
-| **Branch coverage:** | 82.8% (36528 of 44107) |
-| Covered branches: | 36528 |
+| **Branch coverage:** | 82.8% (36529 of 44107) |
+| Covered branches: | 36529 |
 | Total branches: | 44107 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -636,7 +636,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
