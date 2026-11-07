@@ -195,6 +195,37 @@ The React host ran green, ten times and widened. Twenty-four runs of three tests
    in one document, at a quarter of the CPU, grew the WebAssembly memory to 687 MB in the second and not after. Its
    trace was kept on CI only. The morning reader watches for it.
 
+## The fourth widened night, 2026-11-07
+
+Every test ran ten times green on all three hosts. One run of one test failed widened, and main's CI on the
+release candidate's commit (b3c0adb9, the evening before) failed one test, from two causes:
+
+1. **The browser's own undo history in a field depends on when the page repaints** (`differential.spec.mjs`, ExGrid,
+   seed 1165771808, on the WebAssembly host in main's CI; the seed the second widened night fixed on the Server
+   host). An edit opened on `7`, then `.5` and `Bravo 2` typed and `Ctrl+Z`: one key at a time it undid to `7`, at
+   machine speed to `7.5`. It reproduced locally once the commit before the edit was answered 1 to 3 ms late. The
+   browser closes a field's typing run whenever anything else in the document is removed or has its text changed
+   (measured in Chromium: a `div` removed, or its text changed, between two keys ends the run; one appended does
+   not), and the cells the earlier commit cleared repainted between the `5` and the `B`. Held keys were not the
+   cause: they joined the run as typed keys do. A product race, fixed in the product: an open edit keeps its own
+   history, [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)'s note
+   of 2026-11-07, and `Ctrl+Z` never asks the field's. The guard is the seed, now deterministic, and the layer-2 test
+   that types beside a page changing its text and asks the edit's `Ctrl+Z`.
+2. **A row Action clicked while the circuit was down was not said lost** (`circuit.spec.mjs`, the Server host on
+   Chrome, widened, one run). The key typed after the reconnection was answered, so the grid let go of it, but the
+   live region stayed empty for a minute. Not explained, and not reproduced in twenty local runs at a quarter of the
+   CPU behind a 150 ms round trip. The host's log shows one reconnection on the same page, no reload. Its record was
+   empty: the input journal the harness prints for a failed test was kept by the C# core's script, and nothing has
+   kept one since the C# core was removed. The Blazor adapter now keeps the journal of its numbered calls, their
+   answers, how far the numbers were told and which were lost, so the next such run says whether the click was ever
+   numbered; a layer-1 test holds that the root carries it. A targeted local run then failed the same test another
+   way: Blazor raised no refused send, so the click had crossed before Blazor heard the connection close. The test
+   cut the connection and made its input at once, while the cut was still reaching the browser, so its input took
+   either path, a send Blazor refuses or one written to a socket the browser had not yet seen closed. Both tests that
+   make an input while the circuit is down now make it once Blazor's own reconnection display shows, which Blazor
+   adds as it hears the close: the path their names state. Whether that path is the night's failure is not known;
+   the journal says next time.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs
@@ -203,3 +234,5 @@ The React host ran green, ten times and widened. Twenty-four runs of three tests
   reader watches for it.
 - **The third widened night's cause 3**, the WebAssembly runtime's `memory access out of bounds`: one run, not
   reproduced, its cause not known.
+- **The fourth widened night's cause 2**, a lost row Action that was not said: one run, not reproduced. Its test now
+  makes its input on one path only, and the input journal names its numbers next time.

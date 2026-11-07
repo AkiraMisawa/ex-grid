@@ -264,6 +264,9 @@ const heldGridCalls: ReadonlySet<string> = new Set([
     'Call', 'Heard', 'Complete', 'Release', 'MountSlot', 'UpdateSlot', 'Summarize',
 ]);
 
+/** Where a grid's root keeps its input journal, which a failed layer-3 test reads and prints (ADR-0451). */
+const inputJournal = Symbol.for('ex-grid.input-journal');
+
 /** The calls that carry an input of the user's that .NET carries out or answers, numbered as they cross (ADR-0240
  * section 11). A write crosses as a numbered `Heard`, and a Validate on its own, since each tells the user itself. */
 const numberedGridCalls: ReadonlySet<string> = new Set(['Find', 'FindAll', 'FindError', 'ContextCommands', 'RunContextCommand', 'Copy', 'SetSorts', 'SetFilter']);
@@ -298,6 +301,8 @@ export function attach(
     // loss is found by the next number .NET receives, and the user is told (ADR-0240 section 11).
     const numbers = new InputNumbers(dotnet);
     const numbered = numbers.calls(numberedGridCalls, dotnet);
+    // The numbers' journal, read from the root by a layer-3 test that fails (tests/browser/fixtures.mjs, ADR-0451).
+    Object.defineProperty(root, inputJournal, { configurable: true, value: () => numbers.journal() });
     // Each answer .NET is asked to give later is numbered, so the user's cancel calls that one off there (ADR-0380).
     let answers = 0;
     const asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>): Promise<T> => {
@@ -658,6 +663,7 @@ export function attach(
         dispose: () => {
             stopped = true;
             hearSent(false);
+            Reflect.deleteProperty(root, inputJournal);
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();
             rows.stop();

@@ -18,6 +18,14 @@ async function clickCell(page, row, column) {
     await grid(page).locator(`[id$='r${row}c${column}']`).click({ force: true });
 }
 
+// Returns once Blazor has heard its connection close: its reconnection display, which its client adds to the body as
+// it hears the close, and while it shows, a send to .NET is refused inside Blazor rather than written to a socket the
+// browser has not yet seen closed. The proxy's cut reaches the browser a moment after dropCircuit returns, so an input
+// made before this may take either path (ADR-0451, the fourth widened night's cause 2).
+async function circuitDownHeard(page) {
+    await expect(page.locator('#components-reconnect-modal .components-reconnect-overlay.components-reconnect-visible')).toBeAttached();
+}
+
 async function openFeatures(page) {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
@@ -91,6 +99,7 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         // page: no actionability wait can defer this input until the circuit comes back.
         // Its registration, numbered Begin and dispatch end are all lost.
         await dropCircuit(true, ownConnections);
+        await circuitDownHeard(page);
         await action.dispatchEvent('click');
         await dropCircuit(false);
         await circuitBack();
@@ -116,6 +125,7 @@ test.describe('input made while the circuit is down is refused aloud, and the gr
         // The keys the browser carries out alone, arrows and typing, never wait on the host; the commit does, and
         // its write never reaches the host, nor does Blazor ever end the call.
         await dropCircuit(true, ownConnections);
+        await circuitDownHeard(page);
         await page.keyboard.press('Enter');
         await dropCircuit(false);
         await circuitBack();

@@ -136,6 +136,36 @@ const noScriptEdit = {
     },
 };
 
+// The command a call's argument names outright, if it does.
+const namedCommand = (expression) => (expression.type === 'Literal' && typeof expression.value === 'string' ? [expression.value] : []);
+
+const noFieldHistory = {
+    meta: {
+        type: 'problem',
+        docs: { description: 'An open edit\'s undo and redo walk its own history, never the field\'s.' },
+        messages: {
+            history: '`execCommand(\'{{command}}\')` walks a field\'s own undo history, whose runs the browser ends whenever anything else on the page repaints, so where it stops depends on timing (ADR-0380 section 3\'s note of 2026-11-07). An open edit walks its `EditHistory` (edit-history.ts); where the field holds no edit of the grid\'s, disable this rule on the line with `-- <why>`.',
+        },
+        schema: [],
+    },
+    create(context) {
+        return {
+            CallExpression(node) {
+                const callee = node.callee;
+                const [command] = node.arguments;
+                if (callee.type === 'MemberExpression' && !callee.computed && callee.property.type === 'Identifier'
+                    && callee.property.name === 'execCommand' && command !== undefined) {
+                    // A command named outright, or by a choice between two named outright; one passed through a typed
+                    // parameter is that parameter's type to hold.
+                    const names = command.type === 'ConditionalExpression' ? [...namedCommand(command.consequent), ...namedCommand(command.alternate)] : namedCommand(command);
+                    const history = names.find(name => name === 'undo' || name === 'redo');
+                    if (history !== undefined) context.report({ node: callee.property, messageId: 'history', data: { command: history } });
+                }
+            },
+        };
+    },
+};
+
 const directive = /^\s*(?:oxlint|eslint)-disable(?:-next-line|-line)?\b/;
 
 const disableStatesWhy = {
@@ -174,5 +204,6 @@ export default {
         'no-stand-in-default': noStandInDefault,
         'disable-states-why': disableStatesWhy,
         'no-script-edit': noScriptEdit,
+        'no-field-history': noFieldHistory,
     },
 };

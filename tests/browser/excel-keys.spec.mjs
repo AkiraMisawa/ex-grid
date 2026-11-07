@@ -48,7 +48,7 @@ test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken 
     await expect(trader).toHaveText('Undone');
 });
 
-test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0007, ED-25) @behaviour', async ({ page }) => {
+test('inside the editor Ctrl+Z, Delete and Backspace are the edit\'s own (ADR-0007, ED-25, ADR-0380) @behaviour', async ({ page }) => {
     const before = await cell(page, 0, 1).textContent();
     await clickCell(page, 0, 1);
     await page.keyboard.press('F2'); // Caret: the value stays, with the caret at its end
@@ -60,7 +60,17 @@ test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0
     await page.keyboard.press('Delete');
     await expect(editor).toHaveValue(before.slice(1, -1));
 
+    // The edit's own history, step by step: the Delete, then the Backspace before the caret moved. Redone with both
+    // of its keys, after an undo that left the browser's own history nothing to redo (ADR-0380 section 3's note of
+    // 2026-11-07).
     await page.keyboard.press('ControlOrMeta+z');
+    await expect(editor).toHaveValue(before.slice(0, -1));
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(editor).toHaveValue(before);
+    await page.keyboard.press('ControlOrMeta+y');
+    await expect(editor).toHaveValue(before.slice(0, -1));
+    await page.keyboard.press('ControlOrMeta+Shift+Z');
+    await expect(editor).toHaveValue(before.slice(1, -1));
     await expect(editor).toHaveCount(1);
     await expect(page.locator('#history-status')).toContainText('—');
 });
