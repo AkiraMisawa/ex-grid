@@ -265,6 +265,18 @@ async function settled(): Promise<void> {
     await new Promise(resolve => { setTimeout(resolve, 0); });
 }
 
+// A drop of Desk into Rows past a cap of three, refused: the notice says why.
+async function refusedDrop(root: HTMLElement): Promise<HTMLElement> {
+    drag(field(root, 'Desk'), 'dragstart');
+    drag(area(root, 'rows'), 'dragenter');
+    drag(area(root, 'rows'), 'drop');
+    await settled();
+    const notice = root.querySelector<HTMLElement>('.ex-pivot-refusal-notice');
+    if (notice === null) throw new Error('No refusal notice.');
+    expect(notice.hidden).toBe(false);
+    return notice;
+}
+
 const byRegion: PivotLayout = createPivotLayout({ rows: ['Region'], values: ['Amount'] });
 
 function field(root: HTMLElement, name: string): HTMLElement {
@@ -1217,18 +1229,29 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         const options: PivotViewOptions = { source: server(), layout: byRegion, maxLeaves: 3 };
         const { root, view } = mount(options);
         await settled();
-        drag(field(root, 'Desk'), 'dragstart');
-        drag(area(root, 'rows'), 'dragenter');
-        drag(area(root, 'rows'), 'drop');
-        await settled();
-        const notice = root.querySelector<HTMLElement>('.ex-pivot-refusal-notice');
-        expect(notice?.hidden).toBe(false);
+        const notice = await refusedDrop(root);
         const handed = createPivotLayout({ columns: ['Region'], values: ['Amount'] });
         view.update({ ...options, layout: handed });
         await settled();
         expect(view.shownLayout).toBe(handed);
-        expect(notice?.hidden).toBe(true);
-        expect(notice?.textContent).toBe('');
+        expect(notice.hidden).toBe(true);
+        expect(notice.textContent).toBe('');
+    });
+
+    it('ADR-0370 section 3: a refusal\'s sentence goes when the report is asked again under another cap or of another source', async () => {
+        const options: PivotViewOptions = { source: server(), layout: byRegion, maxLeaves: 3 };
+        const { root, view } = mount(options);
+        await settled();
+        const notice = await refusedDrop(root);
+        view.update({ ...options, maxLeaves: 200_000 });
+        await settled();
+        expect(notice.hidden).toBe(true);
+        const raised = { ...options, maxLeaves: 3 };
+        view.update(raised);
+        await refusedDrop(root);
+        view.update({ ...raised, source: server() });
+        await settled();
+        expect(notice.hidden).toBe(true);
     });
 
     it('ADR-0370 section 3: a drop past the cap is refused naming the field, its count and the cap, and the pane goes back to the report\'s layout', async () => {
