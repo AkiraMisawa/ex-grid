@@ -1147,6 +1147,30 @@ describe('the open edit\'s own undo history (ADR-0380 section 3\'s note of 2026-
         expect(editor(root).value).toBe('abc');
     });
 
+    it('ADR-0380: a caret moved by a key between two deletions makes them two steps', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        key('a');
+        await painted();
+        typeAtCaret(root, 'bcd');
+        const field = editor(root);
+        const deleted = (value: string, caret: number, inputType: string): void => {
+            field.value = value;
+            field.setSelectionRange(caret, caret);
+            field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType }));
+        };
+        deleted('abc', 3, 'deleteContentBackward');
+        // ArrowLeft, which the field carries out alone: heard as its key comes up.
+        field.setSelectionRange(2, 2);
+        field.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft', bubbles: true }));
+        deleted('ab', 2, 'deleteContentForward');
+        key('z', { ctrlKey: true });
+        expect([field.value, field.selectionStart]).toEqual(['abc', 2]);
+        key('z', { ctrlKey: true });
+        expect(field.value).toBe('abcd');
+    });
+
     it('ADR-0380: Ctrl+Z and Ctrl+Y typed in the editor walk its history, where the browser would ask for no redo', async () => {
         const root = await grid(heard());
         press(root, book, rowY(1));

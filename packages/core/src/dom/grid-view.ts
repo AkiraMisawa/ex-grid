@@ -828,6 +828,11 @@ const defaultViewportHeightPx = 600;
  * a Selection before it is announced (ADR-0033). */
 const settleDelayMs = 150;
 
+// What the writes of one pointing join in the edit's undo history: the References written as the outline moves, by
+// press, drag or key, are one step, as is text written from outside and taken back (ADR-0380 section 3's note of
+// 2026-11-07).
+const pointingWrites: object = Object.freeze({});
+
 /** How long the Focus must stand on a cell, or the pointer rest over it, before its message opens (ADR-0034): the
  * intent to read, which is not the stillness the settle measures, so a number of its own. */
 const popoverDelayMs = 300;
@@ -2251,6 +2256,7 @@ export class GridView<Row> {
         // heard on the band whichever field stands in it.
         this.#bar.band.addEventListener('keyup', this.#onBarCaret);
         this.#bar.band.addEventListener('mouseup', this.#onBarCaret);
+        this.#bar.band.addEventListener('compositionend', this.#onEditComposed);
         this.#hearSurface(this.#bar.band);
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
@@ -4907,6 +4913,8 @@ export class GridView<Row> {
         // Chrome's field too.
         element.addEventListener('keyup', this.#onEditorCaret);
         element.addEventListener('mouseup', this.#onEditorCaret);
+        // A composition ended in either surface is a step of the edit's history of its own.
+        element.addEventListener('compositionend', this.#onEditComposed);
         // The coloured text is laid over the core's own field only, whose text it is measured to match (ADR-0057).
         if (slot === undefined) this.#hearSurface(builtInEditor(element));
         const rowKey = this.#source.rowKey;
@@ -4983,11 +4991,9 @@ export class GridView<Row> {
         // 2026-11-07). Taken here, not left for the browser to ask through beforeinput: the browser asks only while its
         // own history has a step, and after an undo of the grid's its redo has none.
         const step = resolveKey(press).kind;
-        const walk = (step === 'undo' || step === 'redo') && (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-            ? this.#historyOf(event.target) : undefined;
-        if (walk !== undefined) {
+        if (step === 'undo' || step === 'redo') {
             this.#taken(event);
-            walk(step === 'redo');
+            this.#walkHistory(edit, step === 'redo');
             return;
         }
         // A list for another text or caret than the field's is asked again before the key is decided against it.
@@ -6305,7 +6311,7 @@ export class GridView<Row> {
 
     // Writes the edit's text into both surfaces and places the selection in the one typed in (ADR-0051): no input
     // event is fired, so it is not typing.
-    #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number, fromHistory = false): void {
+    #writeEditText(edit: OpenEdit<Row>, text: string, start: number, end: number, join?: object | 'history'): void {
         this.#writeEditorText(edit, text);
         if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
         const surface = this.#surfaceOf(edit);
@@ -6313,8 +6319,9 @@ export class GridView<Row> {
             surface.setSelectionRange(start, end);
             showCaret(surface, end);
         }
-        // Written by the grid, a step of the edit's own; one its history asked for is that history's.
-        if (!fromHistory) edit.history.written({ text, start, end });
+        // Written by the grid, a step of the edit's own, or of the gesture it joins; one its history asked for is that
+        // history's.
+        if (join !== 'history') edit.history.written({ text, start, end }, join);
     }
 
     // The edit as its history keeps it now: its text, and the selection in the surface it is typed in, `from` where
@@ -6333,7 +6340,7 @@ export class GridView<Row> {
     #walkHistory(edit: OpenEdit<Row>, redo: boolean): void {
         const state = redo ? edit.history.redo() : edit.history.undo();
         if (state === undefined) return;
-        this.#writeEditText(edit, state.text, state.start, state.end, true);
+        this.#writeEditText(edit, state.text, state.start, state.end, 'history');
         const surface = this.#surfaceOf(edit);
         // Told as typing is, so whatever hears the field, a Chrome's contents among them, hears the text it shows.
         if (surface === undefined) this.#afterTyping(edit);
@@ -6346,6 +6353,13 @@ export class GridView<Row> {
         if (edit === undefined || (field !== this.#editorField(edit) && field !== this.#bar.text)) return undefined;
         return redo => { this.#walkHistory(edit, redo); };
     }
+
+    // A composition ended in one of the edit's surfaces: the next is a step of its own (ADR-0380 section 3's note of
+    // 2026-11-07).
+    readonly #onEditComposed = (event: Event): void => {
+        const edit = this.#edit;
+        if (edit !== undefined && (this.#inEditor(edit, event.target) || event.target === this.#bar.text)) edit.history.compositionEnded();
+    };
 
     // An input about to be made in the cell's editor: an undo or a redo there is the edit's history's.
     readonly #onEditorInputAsked = (event: Event): void => {
@@ -6413,12 +6427,14 @@ export class GridView<Row> {
     // The field's own keys or a press inside its text may have moved its caret.
     // A caret moved in the bar's text field, heard on its band: the Name Box beside it is no surface of the edit.
     readonly #onBarCaret = (event: Event): void => {
-        if (event.target === this.#bar.text) this.#onEditorCaret();
+        if (event.target === this.#bar.text) this.#onEditorCaret(event);
     };
 
-    readonly #onEditorCaret = (): void => {
+    readonly #onEditorCaret = (event: Event): void => {
         const edit = this.#edit;
         if (edit === undefined) return;
+        // A caret moved between two inputs ends the run of the edit's history open before it.
+        edit.history.moved(this.#editState(edit, event.target));
         this.#settlePointCaret(edit);
         // Completion acts at the caret where it now stands (ADR-0051's second round).
         if (this.#completeEditorText !== undefined && this.#completionMoved(edit)) this.#requestCompletion(edit);
@@ -6682,7 +6698,8 @@ export class GridView<Row> {
         this.#writeEditorText(edit, text);
         if (this.#formulaBarDeclared.shown) this.#bar.showText(text);
         if (surface !== undefined && selectionStart >= 0) surface.setSelectionRange(selectionStart, Math.max(selectionStart, selectionEnd));
-        edit.history.written(this.#editState(edit));
+        // The drag, press to release, is one step of the edit's history.
+        edit.history.written(this.#editState(edit), drag);
         drag.length = answer.length;
         drag.written = text;
         drag.reached = reached;
@@ -6708,7 +6725,8 @@ export class GridView<Row> {
             if (this.#formulaBarDeclared.shown) this.#bar.showText(before.text);
             const surface = this.#surfaceOf(edit);
             if (surface !== undefined && before.selectionStart >= 0) surface.setSelectionRange(before.selectionStart, before.selectionEnd);
-            edit.history.written(this.#editState(edit));
+            // The drag's step taken back with it: nothing is left to undo of a drag cancelled.
+            edit.history.written(this.#editState(edit), drag);
         }
         edit.mode = before.mode;
         if (before.pointWritten !== undefined) {
@@ -6762,7 +6780,7 @@ export class GridView<Row> {
         }
         const [text, caret] = replaceSpan(this.#editorText(edit), this.#pointStart, this.#pointLength, reference);
         this.#pointLength = reference.length;
-        this.#writeEditText(edit, text, caret, caret);
+        this.#writeEditText(edit, text, caret, caret, pointingWrites);
         this.#pointWritten = text;
         edit.mode = 'point';
         this.#pointAside = false;
@@ -6845,7 +6863,7 @@ export class GridView<Row> {
         this.#pointer = undefined;
         this.#setDragging(false);
         this.#pointLength = text.length;
-        this.#writeEditText(edit, written, caret, caret);
+        this.#writeEditText(edit, written, caret, caret, pointingWrites);
         this.#pointWritten = written;
         this.#pointedFromOutside = true;
         this.#pointBefore = before;
@@ -6867,7 +6885,7 @@ export class GridView<Row> {
         this.#setDragging(false);
         // A write is taken only where a caret stood (#currentPointState), so the one before it is known.
         if (before.caret < 0) throw new Error('A text written from outside was taken where no caret stood (ADR-0058).');
-        this.#writeEditText(edit, before.text, before.caret, before.caret);
+        this.#writeEditText(edit, before.text, before.caret, before.caret, pointingWrites);
         edit.mode = before.mode;
         this.#pointer = before.pointer;
         this.#pointStart = before.start;

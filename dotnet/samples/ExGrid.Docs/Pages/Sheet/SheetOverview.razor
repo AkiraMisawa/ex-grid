@@ -323,7 +323,9 @@
 
     <DocsSection Title="Undo, and commands of your own">
         <p>
-            Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
+            Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; while a cell is being
+            edited they undo and redo its typing instead, from the edit's own history, and reach the stack again once
+            the edit ends. <code>UndoAsync</code>
             and <code>RedoAsync</code> do the same from your buttons. A command you give —
             <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
             place in the order, so the user can undo it like anything they typed. <code>CanUndo</code> and

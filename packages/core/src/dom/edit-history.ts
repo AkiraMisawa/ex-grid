@@ -13,7 +13,7 @@ export interface EditState {
 }
 
 /** What kind of change an input made: typing joins typing and deleting joins deleting, a composition joins itself until
- * it ends, and anything else is a step of its own. */
+ * it ends (compositionEnded), and anything else is a step of its own. */
 type ChangeKind = 'insert' | 'delete' | 'compose' | 'own';
 
 /** One undoable step: the state before it and after it. */
@@ -22,9 +22,13 @@ interface Step {
     after: EditState;
 }
 
-/** The input types that are a step of their own, as the browser makes a paste, a drop and a cut. */
-const ownSteps: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromPasteAsQuotation', 'insertFromDrop', 'insertReplacementText',
-    'insertFromYank', 'deleteByCut', 'deleteByDrag']);
+/** The input types that are a step of their own, as the browser makes a paste, a drop and a cut: in the edit's
+ * history, and in a field's own, which a held key's typing must close around (pending-commit.ts). */
+export const ownStepInputs: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromPasteAsQuotation', 'insertFromDrop',
+    'insertReplacementText', 'insertFromYank', 'deleteByCut', 'deleteByDrag']);
+
+/** The input types a composition makes: Chrome's one, and the two WebKit adds as it commits one. */
+const compositionInputs: ReadonlySet<string> = new Set(['insertCompositionText', 'deleteCompositionText', 'insertFromComposition']);
 
 /** Whether a field's input of `inputType` is the history's own, an undo or a redo. */
 export function isHistoryInput(inputType: string): boolean {
@@ -44,6 +48,9 @@ export class EditHistory {
     // The state the history last saw, and the kind of the run its last step is, while that run may take more.
     #now: EditState;
     #run: ChangeKind | undefined;
+    // The gesture the last writes joined, while nothing else has happened since, and the step they made, none while
+    // they have left the text as they found it (written).
+    #joining: { readonly join: object; step: Step | undefined } | undefined;
 
     /** The history of an edit that opened on `opened`, with nothing to undo. */
     constructor(opened: EditState) {
@@ -70,7 +77,10 @@ export class EditHistory {
         const before = this.#now;
         if (before.text === after.text) {
             // The selection alone moved, or nothing did: no step, but a run does not go on past a caret moved.
-            if (before.start !== after.start || before.end !== after.end) this.#run = undefined;
+            if (before.start !== after.start || before.end !== after.end) {
+                this.#run = undefined;
+                this.#joining = undefined;
+            }
             this.#now = after;
             return;
         }
@@ -83,27 +93,58 @@ export class EditHistory {
         }
         this.#redo.length = 0;
         this.#run = kind === 'own' ? undefined : kind;
+        this.#joining = undefined;
         this.#now = after;
     }
 
-    /** The edit's text was written by the grid itself, a Reference pointed at or a completion taken: a step of its own.
-     * The same text written again is no step. */
-    written(after: EditState): void {
+    /**
+     * The edit's text was written by the grid itself, a Reference pointed at or a completion taken: a step of its own.
+     * The same text written again is no step. Writes that say they `join` the same gesture, one pointing or one drag of
+     * a Reference's grip, with nothing typed, moved or undone between them, are one step, and a gesture that writes
+     * the text back as it found it, a drag cancelled, leaves none.
+     */
+    written(after: EditState, join?: object): void {
+        const joining = join !== undefined && this.#joining?.join === join ? this.#joining : undefined;
+        this.#run = undefined;
+        const step = joining?.step;
+        if (joining !== undefined && step !== undefined && this.#undo.at(-1) === step) {
+            step.after = after;
+            if (step.before.text === after.text) {
+                this.#undo.pop();
+                joining.step = undefined;
+            }
+            this.#now = after;
+            return;
+        }
+        this.#joining = join === undefined ? undefined : { join, step: undefined };
         if (after.text === this.#now.text) {
             this.#now = after;
             return;
         }
-        this.#undo.push({ before: this.#now, after });
+        const made: Step = { before: this.#now, after };
+        this.#undo.push(made);
         this.#redo.length = 0;
-        this.#run = undefined;
+        if (this.#joining !== undefined) this.#joining.step = made;
         this.#now = after;
     }
 
     /** The selection moved with the text unchanged, by a key or a press: the open run takes no more. */
     moved(after: EditState): void {
         if (after.text !== this.#now.text) throw new Error('Internal: the edit\'s text changed where only its caret was said to move.');
-        if (after.start !== this.#now.start || after.end !== this.#now.end) this.#run = undefined;
+        if (after.start !== this.#now.start || after.end !== this.#now.end) {
+            this.#run = undefined;
+            this.#joining = undefined;
+        }
         this.#now = after;
+    }
+
+    /** A composition ended, committed or cancelled: the next starts a step of its own, and one that left the text as it
+     * found it is no step. */
+    compositionEnded(): void {
+        if (this.#run !== 'compose') return;
+        this.#run = undefined;
+        const last = this.#undo.at(-1);
+        if (last !== undefined && last.before.text === last.after.text) this.#undo.pop();
     }
 
     /** Takes the last step back, and answers the state the edit is to show, or none where there is nothing to undo. */
@@ -112,6 +153,7 @@ export class EditHistory {
         if (step === undefined) return undefined;
         this.#redo.push(step);
         this.#run = undefined;
+        this.#joining = undefined;
         this.#now = step.before;
         return step.before;
     }
@@ -122,6 +164,7 @@ export class EditHistory {
         if (step === undefined) return undefined;
         this.#undo.push(step);
         this.#run = undefined;
+        this.#joining = undefined;
         this.#now = step.after;
         return step.after;
     }
@@ -130,10 +173,11 @@ export class EditHistory {
 // What an input of `inputType` did to the text: typed text added with nothing taken, a deletion taken with nothing added,
 // a composition's text, or another change.
 function changeKind(inputType: string, before: EditState, after: EditState): ChangeKind {
-    if (ownSteps.has(inputType)) return 'own';
-    if (inputType === 'insertCompositionText') return 'compose';
+    if (ownStepInputs.has(inputType)) return 'own';
+    if (compositionInputs.has(inputType)) return 'compose';
     const { removed, added } = changed(before.text, after.text, after.start);
-    if (inputType.startsWith('insert') && removed === 0 && added > 0) return 'insert';
+    // Typed over a selection, the text it replaced goes with the typing after it: one step, as in a field.
+    if (inputType.startsWith('insert') && added > 0) return 'insert';
     if (inputType.startsWith('delete') && added === 0 && removed > 0) return 'delete';
     return 'own';
 }

@@ -131,6 +131,77 @@ describe('ADR-0380 §3 (note of 2026-11-07): an open edit keeps its own undo his
         expect(history.undo()).toEqual(at(''));
     });
 
+    it('ADR-0380: typed over a selection, the characters typed after it are the same step', () => {
+        const history = new EditHistory(at('abc', 0, 3));
+        history.typed('insertText', at('x'));
+        type(history, at('x'), 'yz');
+        expect(history.undo()).toEqual(at('abc', 0, 3));
+        expect(history.canUndo).toBe(false);
+    });
+
+    it('ADR-0380: a composition ended is a step of its own, and one cancelled is none', () => {
+        const history = new EditHistory(at(''));
+        history.typed('insertCompositionText', at('か'));
+        history.typed('insertCompositionText', at('かな'));
+        history.compositionEnded();
+        history.typed('insertCompositionText', at('かなか'));
+        history.typed('insertCompositionText', at('かな漢字'));
+        history.compositionEnded();
+        // Composed, then cancelled with Escape: the text as it was.
+        history.typed('insertCompositionText', at('かな漢字x'));
+        history.typed('insertCompositionText', at('かな漢字'));
+        history.compositionEnded();
+        expect(history.undo()).toEqual(at('かな'));
+        expect(history.undo()).toEqual(at(''));
+        expect(history.canUndo).toBe(false);
+    });
+
+    it('ADR-0380: a composition WebKit commits by taking its text and putting it back is one step', () => {
+        const history = new EditHistory(at('a'));
+        history.typed('insertCompositionText', at('aかな'));
+        history.typed('deleteCompositionText', at('a'));
+        history.typed('insertFromComposition', at('a仮名'));
+        history.compositionEnded();
+        expect(history.undo()).toEqual(at('a'));
+        expect(history.canUndo).toBe(false);
+    });
+
+    it('ADR-0380: the writes of one gesture are one step, and a gesture that puts the text back leaves none', () => {
+        const pointing = {};
+        const history = new EditHistory(at(''));
+        type(history, at(''), '=');
+        // Pointed from A1 across to C3, then the drag of another Reference's grip cancelled.
+        history.written(at('=A1'), pointing);
+        history.written(at('=A1:B2'), pointing);
+        history.written(at('=A1:C3'), pointing);
+        const drag = {};
+        history.written(at('=D4'), drag);
+        history.written(at('=A1:C3'), drag);
+        expect(history.undo()).toEqual(at('='));
+        expect(history.undo()).toEqual(at(''));
+    });
+
+    it('ADR-0380: a gesture whose first write changed nothing never joins the step before it', () => {
+        const pointing = {};
+        const history = new EditHistory(at(''));
+        type(history, at(''), '=A1');
+        history.written(at('=A1'), pointing);
+        history.written(at('=B2'), pointing);
+        expect(history.undo()).toEqual(at('=A1'));
+        expect(history.undo()).toEqual(at(''));
+    });
+
+    it('ADR-0380: typing between two writes of a gesture splits it', () => {
+        const pointing = {};
+        const history = new EditHistory(at('='));
+        history.written(at('=A1'), pointing);
+        type(history, at('=A1'), '+');
+        history.written(at('=A1+B2'), pointing);
+        expect(history.undo()).toEqual(at('=A1+'));
+        expect(history.undo()).toEqual(at('=A1'));
+        expect(history.undo()).toEqual(at('='));
+    });
+
     it('ADR-0380: the history refuses to hear its own undo as typing', () => {
         const history = new EditHistory(at(''));
         expect(() => history.typed('historyUndo', at('x'))).toThrow(/its own historyUndo/);
