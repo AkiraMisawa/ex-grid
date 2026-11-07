@@ -21,7 +21,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.1% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.4% | 104 |
-| `packages/blazor` | ExGrid | 83.9% | 66.8% | 1496 |
+| `packages/blazor` | ExGrid | 83.9% | 66.9% | 1496 |
 | `packages/sheet` | ExSheet | 88.9% | 78% | 4095 |
 | `packages/sheet-engine` | ExSheet | 96.6% | 89.7% | 9269 |
 | `packages/sheet-xlsx` | ExSheet | 95.4% | 86.8% | 1348 |
@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/07/2026 - 08:36:17 |
+| Generated on: | 11/07/2026 - 08:46:35 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
@@ -63,8 +63,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | Uncovered lines: | 9087 |
 | Coverable lines: | 69778 |
 | Total lines: | 106335 |
-| **Branch coverage:** | 82.8% (36566 of 44135) |
-| Covered branches: | 36566 |
+| **Branch coverage:** | 82.8% (36565 of 44135) |
+| Covered branches: | 36565 |
 | Total branches: | 44135 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
