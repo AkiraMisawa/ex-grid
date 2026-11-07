@@ -144,6 +144,43 @@
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Font, Fill and Borders per cell">
+        <p>
+            A Visual Token colours every cell of its kind. A colour that belongs to one cell, a breach in red or a
+            value someone changed, is the cell's <strong>appearance</strong>: <code>CellAppearance</code>, asked for
+            by (row, column) through the delegate of the same name, as a <code>CellState</code> is. It holds a Font
+            (<code>FontColour</code>, <code>Bold</code>, <code>Italic</code>, <code>Underline</code>,
+            <code>Strikethrough</code>), a <code>Fill</code> and a Border on each side, and each is painted as Excel
+            paints it. Its colours are <code>RgbColour</code> values you record, not tokens, so they do not follow the
+            colour scheme by themselves: answer with the scheme in force and hand over a new delegate when it changes.
+            Keep the delegate in a field and keep it to a lookup. In ExGrid for React it is
+            <code>cellAppearance</code>, with each colour as <code>0xRRGGBB</code>.
+        </p>
+        <p>
+            A Fill covers the gridlines at the cell's edges. A Font gives way on a Stale or Error cell, whose state
+            must not be the one that disappears. A bold cell is judged by the bold widths, so a bold number that fits
+            only at the regular widths becomes <code>####</code>. No field changes a cell's height or width.
+        </p>
+        <p>
+            <strong>A Split Fill</strong> paints two colours, divided by the cell's diagonal from its top-right corner
+            to its bottom-left one. <code>Fill</code> paints the half above and left of it, and
+            <code>LowerRightFill</code> (<code>lowerRightFill</code> in React) the half below and right. The diagonal
+            joins the corners at whatever width the column has; it is not drawn at 45°. Each edge's gridline takes
+            the colour of the half that meets it, and the Cell Editor opens on the same two halves.
+            <code>LowerRightFill</code> without <code>Fill</code> is refused by name, because half a cell left
+            unpainted would read as a one-colour mark you did not ask for. Two equal colours paint as a plain Fill.
+            Below, two drafts start from the same rows: a cell the first draft changed is blue, one the second changed
+            is amber, and one both changed is split. The colour is never the only signal, so the cell's message says
+            the same in words: rest the pointer on a coloured cell.
+        </p>
+        <p>
+            Copying reads values, never appearance, so neither kind of Fill reaches the clipboard. ExSheet's Fill
+            stays one solid colour, because Excel's has no split and a Sheet Document could not record one.
+        </p>
+        <DocsExample Title="Two drafts against one original" Builtin="typeof(DraftFills)" Mud="typeof(DraftFillsMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="Dark scheme">
         <p>
             Untouched, the built-in grid paints with the system colours <code>Canvas</code> and <code>CanvasText</code>,

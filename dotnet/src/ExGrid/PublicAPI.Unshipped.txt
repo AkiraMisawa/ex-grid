@@ -7,6 +7,8 @@ const ExGrid.Chrome.FindPanelLabelIds.FindAllInLabelledRow = "find-all-in-labell
 const ExGrid.Chrome.FindPanelLabelIds.FindAllInRow = "find-all-in-row" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.FindAllList = "find-all-list" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.FindAllNone = "find-all-none" -> string!
+ExGrid.Cells.CellAppearance.LowerRightFill.get -> ExGrid.Cells.RgbColour?
+ExGrid.Cells.CellAppearance.LowerRightFill.init -> void
 override ExGrid.Finding.GridFindAllMatch.Equals(object? obj) -> bool
 override ExGrid.Finding.GridFindAllMatch.GetHashCode() -> int
 override ExGrid.Finding.GridFindAllMatch.ToString() -> string!

@@ -2,8 +2,9 @@
 
 *Proposed on 2026-11-07 in the project thread "Polish the XVA workspace page" of quant-workspace, which draws its
 grids with `@ex-grid/mantine`. The user asked for the split the same day and agreed to this direction ("OK"), after
-asking why ExGrid does not let a Consumer style a cell and refuse a style that would harm virtualisation. The details
-below are for the user's review.*
+asking why ExGrid does not let a Consumer style a cell and refuse a style that would harm virtualisation. Accepted
+the same day, when the user, asked to review the details below, answered that the recommendation stands
+("おすすめでいいよ").*
 
 ## Context
 

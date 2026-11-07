@@ -175,8 +175,11 @@ export class RowAppearances<Row> {
             // the upper (left) cell's (the fourteenth Windows run, case 16), else this cell's own.
             const top: Share = reachesPast(topLine.style) ? share(topLine) : noShare;
             const leftShare: Share = reachesPast(leftLine.style) ? share(leftLine) : noShare;
-            const bottomCover = cellBelow.fill !== cell.fill ? cellBelow.fill : undefined;
-            const rightCover = right.fill !== cell.fill ? right.fill : undefined;
+            // A Split Fill meets its bottom and right edges in its lower-right colour, and its neighbours' top and left
+            // edges in its upper-left one, the Fill it names first (ADR-0490).
+            const ownEdge = lowerRightOf(cell);
+            const bottomCover = cellBelow.fill !== ownEdge ? cellBelow.fill : undefined;
+            const rightCover = right.fill !== ownEdge ? right.fill : undefined;
             const name = this.styles.classFor(cell, top, share(rightLine), share(bottomLine), leftShare, rightCover, bottomCover);
             classes.push(name);
             bold.push(cell.bold === true);
@@ -217,6 +220,9 @@ export class RowAppearances<Row> {
     }
 }
 
+/** The colour a cell's Fill shows at its bottom and right edges: a Split Fill's lower-right colour, else the Fill. */
+const lowerRightOf = (cell: CellAppearance): number | undefined => cell.lowerRightFill ?? cell.fill;
+
 const share = (line: CellBorder): Share => lineShare(line.style, line.style === 'none' ? 0 : colourOf(line));
 
 // oxlint-disable-next-line ex-grid/no-stand-in-default -- ADR-0071: a line with no colour chosen is Excel's black
@@ -238,8 +244,11 @@ const styles: ReadonlySet<string> = new Set(['none', 'hair', 'thin', 'medium', '
 export function checkedAppearance(appearance: CellAppearance): CellAppearance {
     const given: unknown = appearance;
     if (typeof given !== 'object' || given === null) throw new TypeError('cellAppearance answers an appearance object (ADR-0050, item 15).');
-    if (!rgbOk(appearance.fontColour) || !rgbOk(appearance.fill)) {
+    if (!rgbOk(appearance.fontColour) || !rgbOk(appearance.fill) || !rgbOk(appearance.lowerRightFill)) {
         throw new RangeError('A Font colour and a Fill are RGB numbers, 0x000000 to 0xFFFFFF (ADR-0050, item 15).');
+    }
+    if (appearance.lowerRightFill !== undefined && appearance.fill === undefined) {
+        throw new RangeError('A Split Fill names both halves: lowerRightFill is given only with fill (ADR-0490).');
     }
     for (const side of [appearance.top, appearance.right, appearance.bottom, appearance.left]) {
         if (side !== undefined) checkedBorder(side);
