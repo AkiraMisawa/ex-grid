@@ -94,6 +94,20 @@ source as ADR-0050 item 5 has it. On Blazor it crosses as a paste's answer does 
   is left. It was done with `setRangeText`, which joins no history, and a `Ctrl+Z` after held typing undid nothing where
   the keys typed one at a time were undone (ADR-0451, the second widened night). A field that does not hold the
   keyboard, which no typing reaches either, is still written from script.
+  *Note of 2026-11-07:* the field's undo history is no longer what an open edit's `Ctrl+Z` walks. The browser closes a
+  field's typing run whenever anything else in the document is removed or has its text changed, so the run still ended
+  wherever the page happened to repaint beside the typing: typed at machine speed, `7.5Bravo 2` undid to `7.5`, the
+  cells of the commit before it repainting between the `5` and the `B`, where typed one key at a time it undid to `7`
+  (ADR-0451, the fourth widened night). An open edit now keeps its own history, one over the Cell Editor and the
+  Formula Bar (ADR-0051's one text in two places): characters typed one after another at the caret are one step, and
+  so are deletions one after another; a change of kind, a caret moved between two inputs, a paste, a drop, a cut, a
+  composition and text the grid writes itself (a Reference pointed at, a completion) are each a step of their own;
+  one pointing, however far its outline moves, and one drag of a Reference's grip are one step, and one cancelled
+  leaves none; the text the edit opened on is not undone. `Ctrl+Z` and `Ctrl+Y`, typed, held and taken again, or asked by the
+  browser's menu (`beforeinput`'s `historyUndo` and `historyRedo`), walk that history, and the field's own is never
+  asked. The keys are taken as they are pressed, not heard through `beforeinput`: the browser asks only while its own
+  history has a step, and after an undo of the grid's its redo has none. What a held key types still goes through the browser's editing, as the note above has it. ADR-0007's last
+  bullet, "Ctrl+Z inside the editor undoes uncommitted typing", is unchanged: this says which typing.
 - **An answer is judged against what the commit was taken against.** A row that left, a Source
   replaced, or an order that moved while the answer was out refuses the commit with ADR-0142's reasons.
   The verdict is not consulted again.

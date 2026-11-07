@@ -5,6 +5,7 @@
 // turn by the grid's asynchronous route.
 
 import { showCaret } from './caret-shown';
+import { ownStepInputs } from './edit-history';
 
 /** The input events the root holds while a commit is pending. A key, a press, a drag and what follows a press, typed
  * text and a composition, and the clipboard's three commands. A move with no button down is the hover's, and passes. */
@@ -114,9 +115,6 @@ export function editsAsTyped(field: HTMLInputElement | HTMLTextAreaElement): boo
     return active === field && typeof doc.execCommand === 'function';
 }
 
-/** The input types that are a step of their own in a field's undo history, as the browser's paste, drop and cut are; any
- * other joins the typing run beside it. */
-const ownSteps: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromDrop', 'deleteByCut', 'deleteByDrag']);
 
 /**
  * Runs one of the browser's editing commands on `field`, which holds the keyboard, as the input of `inputType`. A paste,
@@ -128,7 +126,7 @@ const ownSteps: ReadonlySet<string> = new Set(['insertFromPaste', 'insertFromDro
  */
 function runCommand(field: HTMLInputElement | HTMLTextAreaElement, command: 'insertText' | 'delete' | 'forwardDelete', text: string, inputType: string): void {
     const doc = field.ownerDocument;
-    const own = ownSteps.has(inputType);
+    const own = ownStepInputs.has(inputType);
     if (own) closeTypingRun(field);
     const commandType = command === 'insertText' ? 'insertText' : command === 'delete' ? 'deleteContentBackward' : 'deleteContentForward';
     const view = doc.defaultView;
@@ -229,9 +227,11 @@ export type KeyDefault = 'done' | 'none' | 'lost';
  * character, a word or the line (Up and Down to a one-line field's start and end, and lost in a text area, whose lines
  * are its layout's), the primary key with A selects all, and with Z or Y undoes or redoes. A key made again
  * is the page's own, and the browser does none of these for it. `metaIsPrimary` is the platform's: Command is the
- * primary key and Option moves by a word there, Control elsewhere.
+ * primary key and Option moves by a word there, Control elsewhere. `history`, where the field holds an open edit, is
+ * that edit's own history, which an undo or a redo walks instead of the field's (ADR-0380 section 3's note of
+ * 2026-11-07).
  */
-export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: KeyboardEvent, metaIsPrimary: boolean): KeyDefault {
+export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: KeyboardEvent, metaIsPrimary: boolean, history?: (redo: boolean) => void): KeyDefault {
     const value = field.value;
     const start = selectionOf(field, 'start');
     const end = selectionOf(field, 'end');
@@ -257,10 +257,17 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
         field.setSelectionRange(0, value.length, 'forward');
         return 'done';
     }
-    if (primary && !key.altKey && (key.key.toLowerCase() === 'z' || key.key.toLowerCase() === 'y')) {
+    // Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y, the grid's own keys for undo and redo (grid-keys.ts); Ctrl+Shift+Y is none.
+    const historyKey = key.key.toLowerCase();
+    if (primary && !key.altKey && (historyKey === 'z' || (historyKey === 'y' && !key.shiftKey))) {
         // A field's own history is the browser's, reached through the one command that walks it.
-        const redo = key.key.toLowerCase() === 'y' || key.shiftKey;
+        const redo = historyKey === 'y' || key.shiftKey;
+        if (history !== undefined) {
+            history(redo);
+            return 'done';
+        }
         const doc = field.ownerDocument;
+        // oxlint-disable-next-line ex-grid/no-field-history -- a field that holds no edit of the grid's, a panel's or a Consumer's, keeps the browser's own history
         return typeof doc.execCommand === 'function' && doc.execCommand(redo ? 'redo' : 'undo') ? 'done' : 'lost';
     }
     switch (key.key) {

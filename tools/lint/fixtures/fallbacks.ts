@@ -83,3 +83,15 @@ export const noop = (): void => {}; // expect: eslint(no-empty-function)
 export function written(field: HTMLInputElement): void {
     field.setRangeText('typed', 0, 0, 'end'); // expect: ex-grid(no-script-edit)
 }
+
+export function undone(field: HTMLInputElement): boolean {
+    return field.ownerDocument.execCommand('undo'); // expect: ex-grid(no-field-history)
+}
+
+export function walked(field: HTMLInputElement, redo: boolean): boolean {
+    return field.ownerDocument.execCommand(redo ? 'redo' : 'undo'); // expect: ex-grid(no-field-history)
+}
+
+export function typedThrough(field: HTMLInputElement): boolean {
+    return field.ownerDocument.execCommand('insertText', false, 'typed');
+}

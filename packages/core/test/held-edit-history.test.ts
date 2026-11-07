@@ -68,6 +68,16 @@ describe('ADR-0380 §3 (note of 2026-11-05): a held input edits through the brow
         expect(types).toEqual(['insertText']);
     });
 
+    it('ADR-0380 (note of 2026-11-07): a held Ctrl+Z or Ctrl+Y in an open edit walks the edit\'s history, never the field\'s', () => {
+        const calls = editing();
+        const input = textField('7.5');
+        const walked: boolean[] = [];
+        expect(keyDefault(input, key('z', { ctrlKey: true }), false, redo => walked.push(redo))).toBe('done');
+        expect(keyDefault(input, key('y', { ctrlKey: true }), false, redo => walked.push(redo))).toBe('done');
+        expect(keyDefault(input, key('z', { metaKey: true, shiftKey: true }), true, redo => walked.push(redo))).toBe('done');
+        expect([walked, calls]).toEqual([[false, true, true], []]);
+    });
+
     it('deletes a character through the browser\'s own deletion, which finds its extent, for Backspace and Delete', () => {
         const calls = editing();
         const input = textField('7ab');

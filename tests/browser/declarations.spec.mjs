@@ -2288,10 +2288,10 @@ test('DC-30: Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z walk the Sheet\'s stack; with an edi
 });
 
 // ADR-0007's last bullet: the editor's own keys "undo uncommitted typing". The first key opens
-// the editor on its character (a render writes that value); what is typed after it is the
-// input's own history. On the Server host every input's render writes the surface's text back
-// into it, which empties the browser's undo history (found by this suite, 2026-09-27; the same
-// write-back that loses characters in the SRV-5 test below), so there Ctrl+Z undoes nothing.
+// the editor on its character, which is the text the edit opened on; what is typed after it is
+// one run of the edit's own history (ADR-0380 section 3's note of 2026-11-07), whenever the
+// renders answering it land: the browser's own history would have closed its run at whichever
+// render landed between two keys.
 test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing @blazor', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F4');
@@ -2299,15 +2299,13 @@ test('DC-30/ADR-0007: with an edit open, Ctrl+Z undoes uncommitted typing @blazo
     await expect(editor(grid)).toHaveValue('abc');
     // At an ordinary round trip, so that the renders answering these two inputs land after
     // both were typed, as they do on any real network. Ctrl+Z follows at once, before every
-    // answer has landed (ticket 223: passed 20 of 20 on each host, 2026-10-17).
+    // answer has landed.
     await setRoundTrip(150);
     await page.keyboard.type('de');
     await expect(editor(grid)).toHaveValue('abcde');
-    await expect(editor(grid)).toHaveValue('abcde');
     await page.keyboard.press('ControlOrMeta+Z');
     await expect(editor(grid)).toHaveCount(1);
-    await expect(editor(grid)).not.toHaveValue('abcde');
-    await expect(editor(grid)).toHaveValue(/^abc/);
+    await expect(editor(grid)).toHaveValue('a');
     await setRoundTrip(0);
     await page.keyboard.press('Escape');
 });

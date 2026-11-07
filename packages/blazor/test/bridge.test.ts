@@ -137,6 +137,17 @@ describe('the mount', () => {
     });
 });
 
+describe('the input journal (ADR-0451)', () => {
+    it('ADR-0451: the root keeps its numbers\' journal while the grid stands, for a failed layer-3 test to print', () => {
+        const { root, grid } = mount();
+        const journal: unknown = Reflect.get(root, Symbol.for('ex-grid.input-journal'));
+        expect(typeof journal).toBe('function');
+        grid.dispose();
+        attached.splice(attached.indexOf(grid), 1);
+        expect(Reflect.get(root, Symbol.for('ex-grid.input-journal'))).toBeUndefined();
+    });
+});
+
 describe('values', () => {
     it('ADR-0350 section 16: a DateTimeOffset shows in the offset it holds and compares as the instant it names', () => {
         const nine = valueOf({ $: 'o', v: '638000000000000000', m: 540 });

@@ -15,6 +15,7 @@
     "ex-grid/disable-states-why": "error",
     // A user's edit goes through the browser's editing, so it is in the field's undo history.
     "ex-grid/no-script-edit": "error",
+    "ex-grid/no-field-history": "error",
     "eslint/no-empty": ["error", { "allowEmptyCatch": false }],
     "eslint/no-empty-function": "error",
     "eslint/no-useless-catch": "error",
