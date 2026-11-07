@@ -106,3 +106,32 @@ describe('input numbers (ADR-0240 section 11)', () => {
         expect(() => numbers.lose([2], words)).toThrow('Internal: .NET named input 2 lost, which the bridge never sent.');
     });
 });
+
+describe('the input journal (ADR-0451)', () => {
+    it('ADR-0451: a numbered call, its answer, a tell and a loss are journaled in order, for a failed test to print', async () => {
+        const answered = new InputNumbers({ invokeMethodAsync: () => Promise.resolve(null) });
+        await answered.call('Heard', ['undo', null]);
+        expect(answered.journal()).toEqual([
+            { what: 'call', number: 1, method: 'Heard', kind: 'undo' },
+            { what: 'answered', number: 1 },
+        ]);
+
+        const numbers = new InputNumbers(new DownDotNet());
+        void numbers.call('Heard', ['action', { row: 0 }]);
+        numbers.tell();
+        numbers.lose([1], words);
+        expect(numbers.journal()).toEqual([
+            { what: 'call', number: 1, method: 'Heard', kind: 'action' },
+            { what: 'tell', sent: 1, waiting: 1, heard: 0 },
+            { what: 'lost', numbers: [1], untold: true },
+        ]);
+    });
+
+    it('ADR-0451: the journal keeps the latest lines only', () => {
+        const numbers = new InputNumbers(new DownDotNet());
+        for (let i = 0; i < 300; i++) void numbers.call('Find', [i]);
+        const journal = numbers.journal();
+        expect([journal.length, journal[0], journal.at(-1)]).toEqual([256,
+            { what: 'call', number: 45, method: 'Find', kind: undefined }, { what: 'call', number: 300, method: 'Find', kind: undefined }]);
+    });
+});

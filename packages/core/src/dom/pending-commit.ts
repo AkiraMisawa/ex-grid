@@ -229,9 +229,11 @@ export type KeyDefault = 'done' | 'none' | 'lost';
  * character, a word or the line (Up and Down to a one-line field's start and end, and lost in a text area, whose lines
  * are its layout's), the primary key with A selects all, and with Z or Y undoes or redoes. A key made again
  * is the page's own, and the browser does none of these for it. `metaIsPrimary` is the platform's: Command is the
- * primary key and Option moves by a word there, Control elsewhere.
+ * primary key and Option moves by a word there, Control elsewhere. `history`, where the field holds an open edit, is
+ * that edit's own history, which an undo or a redo walks instead of the field's (ADR-0380 section 3's note of
+ * 2026-11-07).
  */
-export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: KeyboardEvent, metaIsPrimary: boolean): KeyDefault {
+export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: KeyboardEvent, metaIsPrimary: boolean, history?: (redo: boolean) => void): KeyDefault {
     const value = field.value;
     const start = selectionOf(field, 'start');
     const end = selectionOf(field, 'end');
@@ -260,7 +262,12 @@ export function keyDefault(field: HTMLInputElement | HTMLTextAreaElement, key: K
     if (primary && !key.altKey && (key.key.toLowerCase() === 'z' || key.key.toLowerCase() === 'y')) {
         // A field's own history is the browser's, reached through the one command that walks it.
         const redo = key.key.toLowerCase() === 'y' || key.shiftKey;
+        if (history !== undefined) {
+            history(redo);
+            return 'done';
+        }
         const doc = field.ownerDocument;
+        // oxlint-disable-next-line ex-grid/no-field-history -- a field that holds no edit of the grid's, a panel's or a Consumer's, keeps the browser's own history
         return typeof doc.execCommand === 'function' && doc.execCommand(redo ? 'redo' : 'undo') ? 'done' : 'lost';
     }
     switch (key.key) {

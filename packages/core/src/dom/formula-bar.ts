@@ -71,8 +71,11 @@ export function formulaBarDeclarations<Row>(options: FormulaBarOptions<Row>): Fo
 
 /** What the grid tells the bar it hears. */
 export interface FormulaBarHooks {
-    /** The text field was typed in. */
-    readonly textTyped: (text: string) => void;
+    /** The text field was typed in, by an input of `inputType`. */
+    readonly textTyped: (text: string, inputType: string) => void;
+    /** The text field is about to take an input of `inputType`: true where the grid takes it instead, an undo or a
+     * redo of an open edit, whose history is the grid's (ADR-0380 section 3's note of 2026-11-07). */
+    readonly textInputAsked: (inputType: string) => boolean;
     /** The text field took the keyboard. */
     readonly textFocused: () => void;
     /** Enter was pressed in the Name Box. */
@@ -193,7 +196,10 @@ export class FormulaBar {
             const typed = this.#text.field();
             if (typed === undefined || !this.#text.is(event.target)) return;
             this.#shownText = typed.value;
-            hooks.textTyped(typed.value);
+            hooks.textTyped(typed.value, event instanceof InputEvent ? event.inputType : 'insertText');
+        });
+        this.band.addEventListener('beforeinput', event => {
+            if (event instanceof InputEvent && this.#text.is(event.target) && hooks.textInputAsked(event.inputType)) event.preventDefault();
         });
         this.band.addEventListener('focusin', event => {
             if (this.#text.is(event.target)) hooks.textFocused();

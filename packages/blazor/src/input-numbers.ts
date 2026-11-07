@@ -18,9 +18,23 @@ export class LostCall {
     }
 }
 
+/** One line of a grid's input journal: what its numbers did, in the order they did it. */
+export type InputJournalEntry =
+    | { readonly what: 'call'; readonly number: number; readonly method: string; readonly kind: string | undefined }
+    | { readonly what: 'answered'; readonly number: number }
+    | { readonly what: 'tell'; readonly sent: number; readonly waiting: number; readonly heard: number }
+    | { readonly what: 'told'; readonly sent: number }
+    | { readonly what: 'lost'; readonly numbers: readonly number[]; readonly untold: boolean };
+
+/** How many lines the journal keeps: the latest. */
+const journalLength = 256;
+
 /** Numbers the calls into .NET that carry the user's input, and ends those .NET says never arrived. */
 export class InputNumbers {
     readonly #dotnet: DotNetCalls;
+    // What the numbers did, the latest `journalLength` lines, read when a test fails (ADR-0451): a lost input that was
+    // never said names whether it was ever numbered.
+    readonly #journal: InputJournalEntry[] = [];
     #sent = 0;
     // How far .NET has heard the numbers went: a tell it answered.
     #heard = 0;
@@ -44,11 +58,13 @@ export class InputNumbers {
         const number = this.#sent + 1;
         const answer = this.#dotnet.invokeMethodAsync('Call', number, method, args);
         this.#sent = number;
+        const kind = args[0];
+        this.#note({ what: 'call', number, method, kind: typeof kind === 'string' ? kind : undefined });
         if (speaks) this.#speaking.add(number);
         const lost = new Promise<LostCall>(resolve => { this.#waiting.set(number, resolve); });
         // Its wait ends before what .NET answered is handed on, so an input made after it tells .NET nothing for it.
         const ended = (): void => {
-            this.#waiting.delete(number);
+            if (this.#waiting.delete(number)) this.#note({ what: 'answered', number });
             this.#speaking.delete(number);
         };
         return Promise.race([answer.finally(ended), lost]);
@@ -68,7 +84,11 @@ export class InputNumbers {
     tell(): void {
         if (this.#waiting.size === 0 || this.#heard >= this.#sent) return;
         const sent = this.#sent;
-        void this.#dotnet.invokeMethodAsync('InputsSent', sent).then(() => { this.#heard = Math.max(this.#heard, sent); });
+        this.#note({ what: 'tell', sent, waiting: this.#waiting.size, heard: this.#heard });
+        void this.#dotnet.invokeMethodAsync('InputsSent', sent).then(() => {
+            this.#heard = Math.max(this.#heard, sent);
+            this.#note({ what: 'told', sent });
+        });
     }
 
     /** Ends the calls `numbers` as lost, with `words`, and answers whether the user is still to be told: a call lost
@@ -85,6 +105,17 @@ export class InputNumbers {
             this.#speaking.delete(number);
             end?.(new LostCall(words));
         }
+        this.#note({ what: 'lost', numbers: [...numbers], untold });
         return untold;
+    }
+
+    /** The journal's lines, oldest first. */
+    journal(): readonly InputJournalEntry[] {
+        return [...this.#journal];
+    }
+
+    #note(entry: InputJournalEntry): void {
+        this.#journal.push(entry);
+        if (this.#journal.length > journalLength) this.#journal.shift();
     }
 }

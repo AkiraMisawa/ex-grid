@@ -974,7 +974,9 @@ describe('Delete and the fill keys', () => {
         key('Z', { ctrlKey: true, shiftKey: true });
         key('Q');
         await painted();
-        expect(key('z', { ctrlKey: true }).defaultPrevented).toBe(false);
+        // With an edit open the key is the edit's own history's (ADR-0380 section 3's note of 2026-11-07), not the
+        // Consumer's.
+        expect(key('z', { ctrlKey: true }).defaultPrevented).toBe(true);
         expect(history).toEqual(['undo', 'redo', 'redo']);
 
         const quiet = await grid(heard());
@@ -1085,5 +1087,81 @@ describe('Delete and the fill keys', () => {
         key('Delete');
         await painted();
         expect([clears.length, listener.refusals]).toEqual([0, [{ kind: 'paste', reason: 'orderMoved' }]]);
+    });
+});
+
+/** Text typed at the editor's caret, one character an input, as the field types a key the grid leaves to it. */
+/** Where a text field's selection starts or ends: a field the grid edits in always has one. */
+function caretOf(at: number | null): number {
+    if (at === null) throw new Error('The editor has no selection.');
+    return at;
+}
+
+function typeAtCaret(root: HTMLElement, text: string): void {
+    const field = editor(root);
+    for (const character of text) {
+        const at = caretOf(field.selectionStart);
+        field.value = field.value.slice(0, at) + character + field.value.slice(caretOf(field.selectionEnd));
+        field.setSelectionRange(at + 1, at + 1);
+        field.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: character }));
+    }
+}
+
+/** What the browser asks before its own undo or redo in a field: answered by the grid, the field's own is not made. */
+function askHistory(field: HTMLInputElement, inputType: 'historyUndo' | 'historyRedo'): InputEvent {
+    const event = new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType });
+    field.dispatchEvent(event);
+    return event;
+}
+
+describe('the open edit\'s own undo history (ADR-0380 section 3\'s note of 2026-11-07)', () => {
+    it('ADR-0380: Ctrl+Z undoes the characters typed together, whatever the page changed beside them', async () => {
+        const root = await grid(heard());
+        const elsewhere = document.body.appendChild(document.createElement('p'));
+        elsewhere.textContent = 'before';
+        press(root, book, rowY(1));
+        await painted();
+        key('7');
+        await painted();
+        typeAtCaret(root, '.5');
+        // The page repaints beside the typing, as a commit's answer did in the Hunt of 2026-11-07: the field's own
+        // history would close its run here.
+        elsewhere.textContent = 'after';
+        typeAtCaret(root, 'Bravo 2');
+        const asked = askHistory(editor(root), 'historyUndo');
+        expect([asked.defaultPrevented, editor(root).value, editor(root).selectionStart]).toEqual([true, '7', 1]);
+        elsewhere.remove();
+    });
+
+    it('ADR-0380: the history gives back what it undid, and has nothing to undo past the text the edit opened on', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        key('a');
+        await painted();
+        typeAtCaret(root, 'bc');
+        askHistory(editor(root), 'historyUndo');
+        askHistory(editor(root), 'historyUndo');
+        expect(editor(root).value).toBe('a');
+        askHistory(editor(root), 'historyRedo');
+        expect(editor(root).value).toBe('abc');
+    });
+
+    it('ADR-0380: Ctrl+Z and Ctrl+Y typed in the editor walk its history, where the browser would ask for no redo', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        key('a');
+        await painted();
+        typeAtCaret(root, 'bc');
+        // The browser asks through beforeinput only while its own history has a step, and the grid's undo left its
+        // redo empty: the keys themselves are the history's.
+        const undo = key('z', { ctrlKey: true });
+        expect([undo.defaultPrevented, editor(root).value]).toEqual([true, 'a']);
+        const redo = key('y', { ctrlKey: true });
+        expect([redo.defaultPrevented, editor(root).value]).toEqual([true, 'abc']);
+        key('z', { ctrlKey: true });
+        key('Z', { ctrlKey: true, shiftKey: true });
+        expect(editor(root).value).toBe('abc');
     });
 });
