@@ -102,7 +102,8 @@ source as ADR-0050 item 5 has it. On Blazor it crosses as a paste's answer does 
   Formula Bar (ADR-0051's one text in two places): characters typed one after another at the caret are one step, and
   so are deletions one after another; a change of kind, a caret moved between two inputs, a paste, a drop, a cut, a
   composition and text the grid writes itself (a Reference pointed at, a completion) are each a step of their own;
-  the text the edit opened on is not undone. `Ctrl+Z` and `Ctrl+Y`, typed, held and taken again, or asked by the
+  one pointing, however far its outline moves, and one drag of a Reference's grip are one step, and one cancelled
+  leaves none; the text the edit opened on is not undone. `Ctrl+Z` and `Ctrl+Y`, typed, held and taken again, or asked by the
   browser's menu (`beforeinput`'s `historyUndo` and `historyRedo`), walk that history, and the field's own is never
   asked. The keys are taken as they are pressed, not heard through `beforeinput`: the browser asks only while its own
   history has a step, and after an undo of the grid's its redo has none. What a held key types still goes through the browser's editing, as the note above has it. ADR-0007's last
