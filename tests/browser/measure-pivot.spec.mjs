@@ -357,7 +357,7 @@ async function questions(page, layouts) {
             console.log(`${layout.name}, run ${run + 1}`);
             await page.locator('#pivot-reset').click();
             await expect(page.locator(REPORT)).toHaveAttribute('aria-rowcount', firstRows, { timeout: 300_000 });
-            await expect(page.locator('.ex-pivot-refusal-notice')).toHaveCount(0);
+            await expect(page.locator('.ex-pivot-refusal-notice')).toBeHidden();
             await quiet(page);
             await layout.build();
             await expect(update).toBeEnabled();
@@ -460,7 +460,7 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
                 await tick(page, 'Quantity').check();
                 await moveEntry(page, 'Sum of Quantity', 'Move to Row Labels');
             },
-            answer: { kind: 'matches', selector: '.ex-pivot-refusal-notice', pattern: 'needs more than 200,000 cells' },
+            answer: { kind: 'matches', selector: '.ex-pivot-refusal-notice', pattern: 'more than 200,000 combinations' },
         },
     ];
     const results = await questions(page, layouts);

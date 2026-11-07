@@ -838,6 +838,9 @@ export class PivotView {
             this.#scheduleRedraw();
         }
         if (asked !== undefined) {
+            // A layout handed in is a new question: the sentence that refused the one before it is not about it, as a
+            // user's move clears it too.
+            this.#refusal = undefined;
             this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
         } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
             this.#ask(this.#layoutAhead, 'consumer', []);

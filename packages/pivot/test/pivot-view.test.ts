@@ -1213,6 +1213,24 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         expect(area(root, 'filters').classList.contains('ex-pivot-drop-target')).toBe(false);
     });
 
+    it('ADR-0370 section 3: a layout the Consumer hands in after a refused drop takes the refusal\'s sentence away', async () => {
+        const options: PivotViewOptions = { source: server(), layout: byRegion, maxLeaves: 3 };
+        const { root, view } = mount(options);
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        await settled();
+        const notice = root.querySelector<HTMLElement>('.ex-pivot-refusal-notice');
+        expect(notice?.hidden).toBe(false);
+        const handed = createPivotLayout({ columns: ['Region'], values: ['Amount'] });
+        view.update({ ...options, layout: handed });
+        await settled();
+        expect(view.shownLayout).toBe(handed);
+        expect(notice?.hidden).toBe(true);
+        expect(notice?.textContent).toBe('');
+    });
+
     it('ADR-0370 section 3: a drop past the cap is refused naming the field, its count and the cap, and the pane goes back to the report\'s layout', async () => {
         const changed: PivotLayout[] = [];
         const refused: string[] = [];
