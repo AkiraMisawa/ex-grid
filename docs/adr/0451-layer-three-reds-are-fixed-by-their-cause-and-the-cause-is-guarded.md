@@ -271,7 +271,11 @@ test was run on seeds no night had drawn.
      failed with the fix taken out and passed with it, each time.
    The guards are a layer-2 test for the first two (`bridge.test.ts`, `grid-pending-commit.test.ts`), each failing on
    the code before it, and seeds 2006, 2025 and 2054 among the fixed seeds, one for each; the third needs a layout,
-   which layer 2 does not have.
+   which layer 2 does not have. With all three fixed, ExGrid's seeds 2040 to 2099 then ran green on the Server host,
+   sixty of sixty.
+3. **A press made while a stream runs, to stop it.** `pivot-csv.spec.mjs`'s Cancel is pressed while a large file streams
+   to the Server host, which keeps the circuit busy until the press stops it: it is made inside `atOnce`. No other
+   test presses while a stream of its own runs.
 
 ## Still open
 

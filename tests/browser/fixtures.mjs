@@ -959,8 +959,10 @@ let racing = 0;
 /**
  * Runs `action`, whose locator calls aim at once, as a user racing the host does: for a test whose subject is an input
  * made before the Server host has answered the one before (a press "before the button greys out", a key "before the
- * circuit has placed the caret"), and which says so in its title. Everywhere else a locator call waits for the host
- * first (aimAtWhatTheHostSaid), unless the test has set a round trip, held the host's answers or cut the connection.
+ * circuit has placed the caret"), and which says so in its title; or for a press made while a stream the test started
+ * keeps the circuit busy, which the press stops (a large file's Cancel). Everywhere else a locator call waits for the
+ * host first (aimAtWhatTheHostSaid), unless the test has set a round trip, held the host's answers or cut the connection,
+ * or its page streams (hostStreams).
  */
 export async function atOnce(action) {
     racing += 1;
