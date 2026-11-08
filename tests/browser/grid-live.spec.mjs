@@ -18,7 +18,9 @@ import { expectCodeIsSource } from './demo-code.mjs';
 // so among 20,000 a mark lands in view within a tick or two; a larger reused server takes longer,
 // and the waits for a first mark allow for it.
 
-test.use({ viewport: { width: 1400, height: 1100 } });
+// The page streams while its live data runs, so its presses aim at once, and a reading that must see all the host will
+// say calls circuitQuiet() once the stream is stopped (hostStreams, ADR-0451's review of 2026-11-08).
+test.use({ viewport: { width: 1400, height: 1100 }, hostStreams: true });
 
 const grid = (page) => page.locator('.ex-grid');
 const marked = (page) => grid(page).locator('.ex-viewport .ex-cell.ex-changed');

@@ -16,7 +16,9 @@ import { blend, contrast, onDeviceGrid, painted, wholePixelCentres } from './pix
 // The API server lives for the whole run, and other files share it: each test starts from
 // POST /api/reset, and turns live updates off again as it ends.
 
-test.use({ viewport: { width: 1400, height: 1100 } });
+// The page streams while its live data runs, so its presses aim at once, and a reading that must see all the host will
+// say calls circuitQuiet() once the stream is stopped (hostStreams, ADR-0451's review of 2026-11-08).
+test.use({ viewport: { width: 1400, height: 1100 }, hostStreams: true });
 
 const section = (page, side) => page.locator(`#pivot-live-${side}`);
 const pivot = (page, side) => section(page, side).locator('.ex-pivot');

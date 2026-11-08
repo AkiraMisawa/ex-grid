@@ -947,8 +947,12 @@ function refuseEmulatedDrags(page) {
 
 /** What the test has done to the wire between the browser and the Server host: a round trip set, the host's answers
  * held, or the connection cut (setRoundTrip, holdAnswers, dropCircuit). Each is the test's own race against the host,
- * which its locator calls then make at once, as the test was written to. */
-const wire = { roundTripSet: false, answersHeld: false, cut: false };
+ * which its locator calls then make at once, as the test was written to. `streams` is the file's page saying it talks
+ * unasked (the hostStreams option): a live page's timer or hub keeps the circuit busy for as long as it runs, so there is
+ * no quiet to aim at, and its tests poll for what they read and call circuitQuiet() themselves once they have stopped the
+ * stream (pivot-live, grid-live, grid-live-local: 2026-11-08, when waiting for a quiet the stream never gives failed
+ * every press of theirs that turns a stream off). */
+const wire = { roundTripSet: false, answersHeld: false, cut: false, streams: false };
 
 let racing = 0;
 
@@ -977,7 +981,8 @@ export async function atOnce(action) {
  * finished showing. Keys typed, or a fill made, into the control that holds the keyboard already are the user's own
  * input and wait for nothing. Nor does an action in a test that races the host on purpose: one that has set a round
  * trip of its own (the widened run's floor is not the test's), holds the host's answers or has cut the connection, or
- * one made inside atOnce. The page's mouse and keyboard aim at nothing and are never held.
+ * one made inside atOnce, or on a page that streams (the hostStreams option). The page's mouse and keyboard aim at
+ * nothing and are never held.
  */
 const AIMS = {
     click: 0, dblclick: 0, tap: 0, hover: 0, check: 0, uncheck: 0, setChecked: 1, selectOption: 1, setInputFiles: 1,
@@ -997,7 +1002,7 @@ function aimAtWhatTheHostSaid(page) {
     for (const name of Object.keys(AIMS)) {
         const act = prototype[name];
         prototype[name] = async function (...args) {
-            if (racing === 0 && !wire.roundTripSet && !wire.answersHeld && !wire.cut) {
+            if (racing === 0 && !wire.roundTripSet && !wire.answersHeld && !wire.cut && !wire.streams) {
                 const holds = TYPED_INTO.has(name) && await this.evaluate((element) => element === element.ownerDocument.activeElement);
                 if (!holds) {
                     await circuitQuiet();
@@ -1412,6 +1417,10 @@ export const test = base.extend({
     expectedLeaks: [[], { option: true }],
     // A document of the test's own: a context of its own and every navigation real (ADR-0056).
     freshDocument: [false, { option: true }],
+    // The file's page talks unasked: a live page whose timer or hub keeps the circuit busy while it runs, so its locator
+    // calls aim at once, never at a quiet the stream never gives (aimAtWhatTheHostSaid). Its readings poll, and it calls
+    // circuitQuiet() itself once it has stopped the stream.
+    hostStreams: [false, { option: true }],
     // The test's context is the file's app's, so what it grants reaches the page it drives; what it
     // granted is taken back as it ends, and what its `use` grants is granted again for the next.
     // Every context is made with the test's own `use` options — Playwright's, as its own context
@@ -1431,12 +1440,17 @@ export const test = base.extend({
         await use(context);
         await context.clearPermissions().catch(() => { });
     },
-    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks }, use, testInfo) => {
+    page: async ({ app, context, viewport, freshDocument, hostStreams, expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks }, use, testInfo) => {
         const options = { expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks };
-        if (viewport === null || freshDocument) {
-            await ownPage(app, await context.newPage(), use, options, testInfo);
-        } else {
-            await sharedPage(app, context, viewport, use, options, testInfo);
+        wire.streams = hostStreams;
+        try {
+            if (viewport === null || freshDocument) {
+                await ownPage(app, await context.newPage(), use, options, testInfo);
+            } else {
+                await sharedPage(app, context, viewport, use, options, testInfo);
+            }
+        } finally {
+            wire.streams = false;
         }
     },
 });
