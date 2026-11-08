@@ -61,7 +61,8 @@ block on `main` before it uses the first number.
 | 0460–0469 | `claude/project-thread-gl335c` | A Sheet given a smaller size than Excel's, for issue #511: nothing held past it, and a Reference past it reading the empty cell (ADR-0460, the user put it in the next release, 0.2.0, on 2026-11-02) |
 | 0470–0479 | `claude/project-thread-v6bw1r` | Find All: Excel's list of every match, asked of the Consumer in pages (ADR-0470, the user put it in 0.2.0 on 2026-11-03) |
 | 0480–0489 | `claude/project-thread-rbcyag` | Dragging a Reference Outline by its edge or corner square to move or resize its Reference, ticket 31 (ADR-0480, the user put it into 0.2.0 on 2026-11-03). 0470–0479 were taken by the Find All branch the same day |
-| 0490– | free | reserve a block of ten |
+| 0490–0499 | `claude/project-thread-7jhvvd` | A cell's Fill split diagonally between two colours, for a Consumer comparing two sides against a base (quant-workspace's XVA what-if page; the user agreed to the direction 2026-11-07) |
+| 0500– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

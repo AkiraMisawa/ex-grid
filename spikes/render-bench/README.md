@@ -40,6 +40,7 @@ per row, whose reference is the row's change signal.
 | `CellFormatInline` | Font colour, Fill and bold as an inline `style` on each formatted cell, one interned string per format |
 | `CellFormatVars` | per-cell custom properties (`--fc`, `--fb`, `--fw`) read by one static rule on every cell |
 | `CellFormatClasses` | interned classes, one per distinct format, written into a generated `<style>` |
+| `CellFormatSplit` | ADR-0490: `CellFormatClasses` with each format a Split Fill as the product paints one: the Fill as the background colour, and the lower-right half a gradient in a custom property that one static rule puts beneath every cell's ground, read on every cell |
 | `BorderLayer` | a layer over the rows: one element per run of the same line along a painted row (bottom edges) or down a painted column (right edges), positioned against the painted slice as the selection overlay is (ADR-0008). Rows know nothing of borders |
 | `BorderInCell` | each cell draws its resolved bottom and right edges inside its own box, in place of its gridlines, through interned classes |
 | `BorderLayerPerRow` | not one of the ticket's two: `BorderLayer` split into one keyed, memoised strip per painted row, with one segment per right edge. Measured because `BorderLayer` renders every run on every scroll step |
@@ -116,6 +117,28 @@ nix develop .#browser -c node tools/cdp-run.mjs http://127.0.0.1:5199/format 200
 `BorderInCellHybrid`, `BorderInCellExcelFull` and the two Fill variants beside a `RowComponent` baseline
 of their own at six shares and Ns (pass `"Measure the hybrid and a Fill with borders"` as the driver's
 button).
+
+**Measure a Split Fill beside a plain one (ADR-0490)** runs `CellFormatSplit` beside `CellFormatClasses`
+and a `RowComponent` baseline, interleaved, at 10% N 1, 50% N 16 and 256, and 100% N 1, 16 and 256 (pass
+`"Measure a Split Fill beside a plain one (ADR-0490)"` as the driver's button).
+
+*(ADR-0490, 2026-11-08: headless Chromium 153, software rendering, on a 4-core Linux container at a load of about 1;
+`results/20261108-013714-623.json`.)* Every configuration's rows skip as they must. The fling's medians, in ms:
+
+| Share, N | Plain frame | Split frame | Plain paint | Split paint |
+|---|---|---|---|---|
+| 10%, 1 | 26.7 | 26.1 | 6.0 | 5.7 |
+| 50%, 16 | 27.8 | 28.4 | 6.6 | 7.2 |
+| 50%, 256 | 28.5 | 29.8 | 6.8 | 7.7 |
+| 100%, 1 | 27.7 | 28.9 | 6.7 | 7.7 |
+| 100%, 16 | 29.0 | 29.2 | 7.5 | 7.7 |
+| 100%, 256 | 29.5 | 31.6 | 7.5 | 8.9 |
+
+A Split Fill costs paint and nothing else: render and layout move by 0.4 ms or less, and the column change stays
+within the run's noise. The paint grows with the share of cells split, about a millisecond a frame when every cell
+is (1.4 ms at N 256, where neighbours rarely share a pair), and does not show at 10%. A first run taken while a build
+ran beside it ranked the modes the same. Software rendering inflates paint, so read the ranking, not the figures; a
+real browser's are still to be taken.
 
 `CDP_PORT` points the driver at another debugging port. **Measure cell format (quick: 50%, N 16)**
 runs one configuration per mode. **Measure borders** runs the border modes only, each share and N

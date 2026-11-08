@@ -114,8 +114,15 @@
    its row paints none. One class's specificity, so each of those wins whatever its order. */
 .ex-pinned:where(.ex-cell) {
     --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
-    background-image: var(--ex-row-rule);
+    background-image: var(--ex-row-rule), var(--ex-split, none);
 }
+/* A Split Fill's lower-right half (ADR-0490), named by the grid's generated class in --ex-split
+   over the upper-left colour, which is the cell's background colour as a Fill's is. It is the
+   bottom image of every ground stacked on a cell below, so whatever lies over a Fill — a stripe's,
+   a Row Kind's or a Missing state's tint, a line, a neighbour's cover, the Change Highlight, the
+   Match Mark — lies over both halves. A cell nothing else stacks a ground on paints it from this
+   rule, which has no specificity, so every ground below wins and carries it. */
+:where(.ex-cell) { background-image: var(--ex-split, none); }
 /* Row Stripes (ADR-0038): the class comes from the row's absolute position, so the pattern
    stays with its row however the Viewport scrolls — :nth-child() would count painted
    siblings and crawl. Painted on the row, under its rule, and on the Pinned Columns' cells,
@@ -133,7 +140,7 @@
 }
 .ex-row-stripe .ex-pinned {
     --ex-tint: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
-    background-image: var(--ex-row-rule, none), var(--ex-tint);
+    background-image: var(--ex-row-rule, none), var(--ex-tint), var(--ex-split, none);
 }
 /* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
    stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
@@ -169,7 +176,7 @@
 }
 .ex-row-group, .ex-row-total { background-image: none; }
 .ex-row-group .ex-cell, .ex-row-group .ex-gap, .ex-row-group.ex-placeholder,
-.ex-row-total .ex-cell, .ex-row-total .ex-gap, .ex-row-total.ex-placeholder { background-image: var(--ex-tint); }
+.ex-row-total .ex-cell, .ex-row-total .ex-gap, .ex-row-total.ex-placeholder { background-image: var(--ex-tint), var(--ex-split, none); }
 .ex-row-group:not(.ex-placeholder)::after, .ex-row-total:not(.ex-placeholder)::after {
     content: "";
     flex: 1 1 auto;
@@ -374,11 +381,11 @@
     background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
         var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
         linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent 0),
-        var(--ex-row-rule, none);
+        var(--ex-row-rule, none), var(--ex-split, none);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
-        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
-        0 0, 0 0, 0 0, 0 0, 0 0;
+        0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
     background-repeat: no-repeat;
     background-origin: border-box;
     box-shadow: none;
@@ -439,7 +446,7 @@
 .ex-cell.ex-state-missing {
     --ex-tint: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
 }
-.ex-cell.ex-state-missing:not(.ex-lined) { background-image: var(--ex-tint), var(--ex-row-rule, none); }
+.ex-cell.ex-state-missing:not(.ex-lined) { background-image: var(--ex-tint), var(--ex-row-rule, none), var(--ex-split, none); }
 .ex-cell.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
 /* A corner mark rather than a fill: the value has been overridden, and the number itself
    is what the reader is here for. A triangle in the top right corner, where Excel marks a
@@ -485,19 +492,19 @@
    and after .ex-lined, so at equal specificity each rule here wins the cell it names. The
    overlays paint above every cell, so no mark hides a selection, the Focus or a band. */
 .ex-cell.ex-changed {
-    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none);
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none), var(--ex-split, none);
 }
 .ex-row-stripe .ex-pinned.ex-changed {
-    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none), var(--ex-tint);
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none), var(--ex-tint), var(--ex-split, none);
 }
 .ex-row-group .ex-cell.ex-changed {
-    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-tint);
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-tint), var(--ex-split, none);
 }
 .ex-row-total .ex-cell.ex-changed {
-    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)));
+    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-split, none);
 }
 .ex-cell.ex-state-missing.ex-changed:not(.ex-lined) {
-    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none);
+    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none), var(--ex-split, none);
 }
 /* A marked cell with lines paints .ex-lined's layers with the mark among them: one more layer,
    so one more size and position, whole and at the origin as the grounds are. */
@@ -506,11 +513,11 @@
         linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
         var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
         linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent 0),
-        var(--ex-row-rule, none);
+        var(--ex-row-rule, none), var(--ex-split, none);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
-        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
-        0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+        0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
 }
 .ex-row-total .ex-cell.ex-lined.ex-changed, .ex-cell.ex-lined.ex-state-missing.ex-changed {
     background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
@@ -518,11 +525,11 @@
         linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
         var(--ex-cover-r, none), var(--ex-cover-b, none),
         linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent 0),
-        var(--ex-row-rule, none);
+        var(--ex-row-rule, none), var(--ex-split, none);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
-        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
-        0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+        0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
 }
 /* The Match Mark (ADR-0332 §4): while the find panel holds a search, every painted cell that
    matches it, and the current match apart, the Focus a found step moved to. Two Visual Tokens

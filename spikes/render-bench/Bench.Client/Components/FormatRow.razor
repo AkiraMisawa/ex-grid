@@ -34,6 +34,13 @@
             }
             break;
 
+        case CellFormatMode.CellFormatSplit:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="@Table!.SplitClasses[Format!.Ids[c]]">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+
         case CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox
             or CellFormatMode.BorderInCellHybrid or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill
             or CellFormatMode.BorderInCellExcelFull:

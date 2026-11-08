@@ -45,6 +45,11 @@ public enum CellFormatMode
     BorderInCellExcelFill,
     /// <summary>Ticket 47: BorderInCellHybrid with a Fill on the same cells.</summary>
     BorderInCellHybridFill,
+    /// <summary>ADR-0490: CellFormatClasses with each format a Split Fill, as the product paints one: the
+    /// upper-left colour is the cell's background colour, and the lower-right half a gradient in a custom
+    /// property that one static rule puts beneath every cell's ground, read on every cell whether it has one
+    /// or not. Measured beside CellFormatClasses, the plain Fill, to read what the split adds.</summary>
+    CellFormatSplit,
     /// <summary>Ticket 47: BorderInCellExcel with every solid part as a gradient over the whole cell,
     /// its hard stop on the device pixel, in place of a tile one or two device pixels high; the dash
     /// patterns stay tiles. Built because under device-scale emulation a tile of a fractional CSS
@@ -65,11 +70,19 @@ public sealed class FormatTable
     public readonly List<string?> Vars = [null];
     /// <summary>Per format id, the whole class attribute.</summary>
     public readonly List<string> Classes = ["c num"];
+    /// <summary>Per format id, CellFormatSplit's class attribute.</summary>
+    public readonly List<string> SplitClasses = ["c num"];
 
     private readonly StringBuilder _rules = new();
+    // ADR-0490's ground: every cell reads the lower-right half beneath its other layers, as ex-grid.css's
+    // `background-image: var(--ex-row-rule), var(--ex-split, none)` does, whether the cell has one or not.
+    private readonly StringBuilder _splitRules = new(".fx.split .c{background-image:var(--sp,none)}\n");
 
     /// <summary>The generated stylesheet of CellFormatClasses: one rule per format.</summary>
     public string Rules => _rules.ToString();
+
+    /// <summary>The generated stylesheet of CellFormatSplit: the static ground rule, and one rule per format.</summary>
+    public string SplitRules => _splitRules.ToString();
 
     public ushort Add()
     {
@@ -80,6 +93,11 @@ public sealed class FormatTable
         Vars.Add($"--fc:{ink};--fb:{fill};--fw:700");
         Classes.Add($"c num f{id}");
         _rules.Append($".fx .f{id}{{color:{ink};background-color:{fill};font-weight:700}}\n");
+        // The product's split class (appearance-styles.ts): the Fill as the background colour, and over it only the
+        // lower-right half, transparent above the diagonal.
+        var lower = Colour(id, 0x40, 4);
+        SplitClasses.Add($"c num s{id}");
+        _splitRules.Append($".fx .s{id}{{color:{ink};background-color:{fill};--sp:linear-gradient(to bottom right,transparent 50%,{lower} 50%);font-weight:700}}\n");
         return (ushort)id;
     }
 

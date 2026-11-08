@@ -93,6 +93,21 @@ const styleNames: Readonly<Record<BorderStyle, string>> = {
 };
 
 const hex = (rgb: number): string => rgb.toString(16).padStart(6, '0');
+
+/** A Split Fill's lower-right colour as the key holds it: -1, never painted, for none, and for one equal to the Fill,
+ * which paints the plain Fill it is (ADR-0490). */
+function lowerRightKeyOf(own: CellAppearance): number {
+    const lower = own.lowerRightFill;
+    return lower === undefined || lower === own.fill ? -1 : lower;
+}
+
+/** The diagonal of a Split Fill (ADR-0490): `to bottom right` puts the gradient's middle on the line from the top-right
+ * corner to the bottom-left one, whatever the box's proportions. Over the cell's background colour only the lower-right
+ * half is painted; the editor's surface, which has no colour beneath, paints both. */
+function splitImage(upperLeft: number, lowerRight: number, lowerOnly = false): string {
+    const first = lowerOnly ? 'transparent' : `#${hex(upperLeft)}`;
+    return `linear-gradient(to bottom right,${first} 50%,#${hex(lowerRight)} 50%)`;
+}
 const device = (pixels: number): string => (pixels === 1 ? 'var(--ex-dp)' : `calc(${pixels} * var(--ex-dp))`);
 
 function repeating(along: string, colour: string, pattern: readonly number[]): string {
@@ -129,6 +144,7 @@ const paintsFont = (font: FontKey): boolean => font.rgb >= 0 || font.bold || fon
 export class AppearanceStyles {
     readonly #fonts = new Map<string, string>();
     readonly #fills = new Map<number, string>();
+    readonly #splits = new Map<string, string>();
     readonly #parts = new Map<string, string>();
     readonly #cells = new Map<string, string | undefined>();
     readonly #editors = new Map<string, string | undefined>();
@@ -151,11 +167,12 @@ export class AppearanceStyles {
         bottomCover: number | undefined): string | undefined {
         const font = fontKeyOf(own);
         const fill = own.fill ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- -1 is the key's "no Fill", never painted
-        const key = `${fontId(font)}|${fill}|${shareKey(top)}|${shareKey(right)}|${shareKey(bottom)}|${shareKey(left)}|${coverKey(rightCover)}|${coverKey(bottomCover)}`;
+        const lower = lowerRightKeyOf(own);
+        const key = `${fontId(font)}|${fill}/${lower}|${shareKey(top)}|${shareKey(right)}|${shareKey(bottom)}|${shareKey(left)}|${coverKey(rightCover)}|${coverKey(bottomCover)}`;
         if (this.#cells.has(key)) return this.#cells.get(key);
         const parts: string[] = [];
         if (paintsFont(font)) parts.push(this.#fontClass(font));
-        if (fill >= 0) parts.push(this.#fillClass(fill));
+        if (fill >= 0) parts.push(lower >= 0 ? this.#splitClass(fill, lower) : this.#fillClass(fill));
         if (top.kind !== 'none' || right.kind !== 'none' || bottom.kind !== 'none' || left.kind !== 'none' || rightCover !== undefined
             || bottomCover !== undefined) {
             parts.push('ex-lined');
@@ -179,7 +196,8 @@ export class AppearanceStyles {
     editorClassFor(own: CellAppearance): string | undefined {
         const font = fontKeyOf(own);
         const fill = own.fill ?? -1; // oxlint-disable-line ex-grid/no-stand-in-default -- -1 is the key's "no Fill", never painted
-        const key = `${fontId(font)}|${fill}`;
+        const lower = lowerRightKeyOf(own);
+        const key = `${fontId(font)}|${fill}/${lower}`;
         if (this.#editors.has(key)) return this.#editors.get(key);
         let fontClass: string | undefined;
         if (paintsFont(font)) {
@@ -193,11 +211,13 @@ export class AppearanceStyles {
         }
         let fillClass: string | undefined;
         if (fill >= 0) {
-            fillClass = this.#fillClass(fill);
+            fillClass = lower >= 0 ? this.#splitClass(fill, lower) : this.#fillClass(fill);
             if (!this.#editorRules.has(fillClass)) {
                 this.#editorRules.add(fillClass);
+                // The editor's surface is a background shorthand, so a Split Fill reaches it as the cell's two halves.
+                const ground = lower >= 0 ? splitImage(fill, lower) : `#${hex(fill)}`;
                 this.#rules += `.ex-viewport .ex-editor.${fillClass},.ex-viewport .ex-reference-text-cell.${fillClass}`
-                    + `{--ex-editor-background:#${hex(fill)}}\n`;
+                    + `{--ex-editor-background:${ground}}\n`;
                 this.#version += 1;
             }
         }
@@ -240,6 +260,22 @@ export class AppearanceStyles {
         // what a double line's middle pixel shows on a gridline no neighbour's Fill covers.
         this.#rules += `.ex-cell.${name}{background-color:#${hex(rgb)};--ex-fill-color:#${hex(rgb)}`
             + ';--ex-column-rule-color:transparent;--ex-row-rule:none}\n';
+        this.#version += 1;
+        return name;
+    }
+
+    #splitClass(upperLeft: number, lowerRight: number): string {
+        const id = `${upperLeft}/${lowerRight}`;
+        const known = this.#splits.get(id);
+        if (known !== undefined) return known;
+        const name = `ex-fill-${hex(upperLeft)}-${hex(lowerRight)}`;
+        this.#splits.set(id, name);
+        // A Split Fill (ADR-0490): the upper-left colour is the cell's background colour, as a Fill's is, and the
+        // lower-right half the bottom layer of every ground ex-grid.css stacks on a cell (--ex-split), so each tint,
+        // line, cover and mark lies over both halves as it lies over a Fill. It covers its gridlines as a Fill does;
+        // its bottom and right edges are the lower-right half's, so a double line's middle pixel shows that colour.
+        this.#rules += `.ex-cell.${name}{background-color:#${hex(upperLeft)};--ex-split:${splitImage(upperLeft, lowerRight, true)}`
+            + `;--ex-fill-color:#${hex(lowerRight)};--ex-column-rule-color:transparent;--ex-row-rule:none}\n`;
         this.#version += 1;
         return name;
     }

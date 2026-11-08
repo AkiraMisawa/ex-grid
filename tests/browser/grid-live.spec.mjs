@@ -215,7 +215,9 @@ for (const chrome of ['builtin', 'mud']) {
                     }
                 }
                 layers.push(value.slice(from).trim());
-                return layers;
+                // A layer that is `none` paints nothing, so it is left out: every cell's ground holds a
+                // Split Fill's layer (ADR-0490), `none` on a cell without one, and a marked cell the row's rule.
+                return layers.filter((layer) => layer !== 'none');
             };
             const mark = root.querySelector('.ex-viewport .ex-cell.ex-changed');
             const row = mark.closest('.ex-row');
