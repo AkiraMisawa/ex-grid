@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitBack, ownContext, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
+import { test, expect, alterPage, atOnce, circuitBack, ownContext, circuitQuiet, connectionMark, dataRowCount, dropCircuit, holdAnswers, layoutCeilingTold, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -599,7 +599,8 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
         // and Enter are still being answered, which is where the hand-over overtook the editor.
         for (let row = 0; row < 12; row += 2) {
             for (const r of [row, row + 1]) {
-                await columnF(page, r).click({ force: true });
+                // At once: the click's subject is that it comes while the key before it is being answered.
+                await atOnce(() => columnF(page, r).click({ force: true }));
                 await page.keyboard.type(String(r % 10));
                 await page.keyboard.press('Enter');
             }
