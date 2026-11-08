@@ -118,6 +118,28 @@ nix develop .#browser -c node tools/cdp-run.mjs http://127.0.0.1:5199/format 200
 of their own at six shares and Ns (pass `"Measure the hybrid and a Fill with borders"` as the driver's
 button).
 
+**Measure a Split Fill beside a plain one (ADR-0490)** runs `CellFormatSplit` beside `CellFormatClasses`
+and a `RowComponent` baseline, interleaved, at 10% N 1, 50% N 16 and 256, and 100% N 1, 16 and 256 (pass
+`"Measure a Split Fill beside a plain one (ADR-0490)"` as the driver's button).
+
+*(ADR-0490, 2026-11-08: headless Chromium 153, software rendering, on a 4-core Linux container at a load of about 1;
+`results/20261108-013714-623.json`.)* Every configuration's rows skip as they must. The fling's medians, in ms:
+
+| Share, N | Plain frame | Split frame | Plain paint | Split paint |
+|---|---|---|---|---|
+| 10%, 1 | 26.7 | 26.1 | 6.0 | 5.7 |
+| 50%, 16 | 27.8 | 28.4 | 6.6 | 7.2 |
+| 50%, 256 | 28.5 | 29.8 | 6.8 | 7.7 |
+| 100%, 1 | 27.7 | 28.9 | 6.7 | 7.7 |
+| 100%, 16 | 29.0 | 29.2 | 7.5 | 7.7 |
+| 100%, 256 | 29.5 | 31.6 | 7.5 | 8.9 |
+
+A Split Fill costs paint and nothing else: render and layout move by 0.4 ms or less, and the column change stays
+within the run's noise. The paint grows with the share of cells split, about a millisecond a frame when every cell
+is (1.4 ms at N 256, where neighbours rarely share a pair), and does not show at 10%. A first run taken while a build
+ran beside it ranked the modes the same. Software rendering inflates paint, so read the ranking, not the figures; a
+real browser's are still to be taken.
+
 `CDP_PORT` points the driver at another debugging port. **Measure cell format (quick: 50%, N 16)**
 runs one configuration per mode. **Measure borders** runs the border modes only, each share and N
 beside a `RowComponent` baseline of its own, to be read as deltas against it (pass `"Measure borders"`
