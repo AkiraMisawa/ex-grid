@@ -942,6 +942,66 @@ function refuseEmulatedDrags(page) {
     };
 }
 
+/**
+ * A focus a test puts inside a Razor slot's contents (ADR-0410) stands for the user's keyboard arriving there, which a
+ * user's own input brings only once the contents stand: until then every input made in the product waits in its order
+ * (ADR-0240), and the part's request for the keyboard is still owed. A test's `locator.focus()` is no input, so it
+ * landed on contents .NET had patched in but not yet said it drew; the owed request was answered once they stood, on
+ * the part's first control, and the key typed next went there. script-pivot's Space on Filter…'s USD, 1 in 770 on the
+ * Server host (Hunt, 2026-11-08). So every Locator call that focuses an element itself first waits for the Settled
+ * Mark of the grid the element's slot stands in, which the slot host holds until the contents drawn from the data last
+ * sent stand (ADR-0410 section 5). Once they stand, the part asks for the keyboard again only for an input of the
+ * user's, so nothing the test did not do takes the focus back. An element outside a Razor slot, in a product with no
+ * grid (ExChart, which has no Settled Mark and holds no input), or holding the keyboard already, is not waited for: a
+ * key pressed or a fill made on a control that holds the keyboard is the user's input, and waits for nothing
+ * (ADR-0220). The page's own calls that focus are refused, so every focus a test makes goes through here.
+ */
+const SLOT_FOCUSES = { focus: 0, press: 1, pressSequentially: 1, type: 1, fill: 1 };
+const PAGE_FOCUSES = ['focus', 'press', 'type', 'fill'];
+const PAGE_FOCUS_REFUSED = 'focus, type, press or fill through a locator, which waits for a Razor slot\'s contents to stand '
+    + 'before it focuses them (focusOnStandingSlots in fixtures.mjs)';
+
+// Whether the grid around `element`'s Razor slot is settled: the nearest laid-out grid outside the slot's contents, the
+// one whose part the slot is (a grid's own) or that stands beside it in its product (a pivot's report). True for an
+// element in no slot, in a product with no grid, or holding the keyboard already, which the call focuses no more.
+const slotStands = (element) => {
+    const contents = element.closest('[data-ex-version]');
+    if (contents === null || element.contains(element.ownerDocument.activeElement)) {
+        return true;
+    }
+    const outside = (grid) => !contents.contains(grid) && grid.getClientRects().length > 0;
+    for (let around = contents.parentElement; around !== null; around = around.parentElement) {
+        const grids = [...(around.classList.contains('ex-grid') ? [around] : []), ...around.querySelectorAll('.ex-grid')].filter(outside);
+        if (grids.length > 0) {
+            return grids.every((grid) => grid.hasAttribute('data-ex-settled'));
+        }
+    }
+    return true;
+};
+
+function focusOnStandingSlots(page) {
+    for (const name of PAGE_FOCUSES) {
+        page[name] = async () => { throw new Error(PAGE_FOCUS_REFUSED); };
+    }
+    const prototype = Object.getPrototypeOf(page.locator('html'));
+    if (prototype.__exFocusOnStandingSlots) {
+        return;
+    }
+    prototype.__exFocusOnStandingSlots = true;
+    for (const [name, at] of Object.entries(SLOT_FOCUSES)) {
+        const focusing = prototype[name];
+        prototype[name] = async function (...args) {
+            const timeout = args[at]?.timeout;
+            await this.waitFor({ state: 'attached', timeout });
+            await expect.poll(() => this.evaluate(slotStands), {
+                message: `${name}() on a Razor slot's control waits for the grid around it to settle, the contents standing (ADR-0410 section 5)`,
+                timeout: timeout ?? 10_000,
+            }).toBe(true);
+            return await focusing.apply(this, args);
+        };
+    }
+}
+
 function holdForcedPresses(page) {
     const prototype = Object.getPrototypeOf(page.locator('html'));
     if (prototype.__exForcedPressesHeld) {
@@ -1051,6 +1111,7 @@ async function attachJournals(testInfo, journals) {
 async function ownPage(app, page, use, options, testInfo) {
     await watchForHang(page);
     holdForcedPresses(page);
+    focusOnStandingSlots(page);
     app.startHostLog();
     const sink = newSink();
     listen(page, () => sink);
@@ -1121,6 +1182,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         return thenReady(page, reload)(...args);
     });
     holdForcedPresses(page);
+    focusOnStandingSlots(page);
     refuseEmulatedDrags(page);
     wrap(page, 'dragAndDrop', () => () => { throw new Error(EMULATED_DRAG); });
     const dragsBefore = app.booted === null ? null : await app.dragsBegun();
