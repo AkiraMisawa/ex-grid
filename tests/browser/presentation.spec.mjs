@@ -678,10 +678,12 @@ const INTERNAL_CLASSES = [
 const INTERNAL_PREFIXES = ['ex-popover-', 'ex-find-'];
 
 /** And its families, generated from a Sheet's document data: the Fill, the Font and the Border
- * sides (a side, a style and a colour), each named by its colour as six hex digits. */
+ * sides (a side, a style and a colour), each named by its colour as six hex digits; and a Split
+ * Fill, named by its two colours, upper-left then lower-right (ADR-0490). */
 const INTERNAL_FAMILIES = [
     /^ex-lined$/,
     /^ex-fill-[0-9a-f]{6}$/,
+    /^ex-fill-[0-9a-f]{6}-[0-9a-f]{6}$/,
     /^ex-font-(x|[0-9a-f]{6})b?i?u?s?$/,
     /^ex-l[trbl]-[a-z]+-[0-9a-f]{6}$/,
 ];

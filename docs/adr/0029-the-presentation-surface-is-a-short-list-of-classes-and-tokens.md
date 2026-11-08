@@ -409,7 +409,9 @@ is added to the stable table, so what a Consumer may style does not grow:
   `-outcome`, `-whole-cell`, …);
 - the Sheet's appearance families, generated from document data: `ex-lined`, `ex-fill-<rgb>`,
   `ex-font-xb`, `ex-font-xi`, and the Border sides `ex-lt-…`, `ex-lr-…`, `ex-lb-…`, `ex-ll-…` (a side,
-  a style and a colour);
+  a style and a colour); and beside them a Split Fill's `ex-fill-<rgb>-<rgb>`, its upper-left colour
+  then its lower-right, which a Consumer's cell appearance makes and no Sheet document does
+  ([ADR-0490](./0490-a-cells-fill-may-be-split-diagonally-between-two-colours.md), entered here on 2026-11-08);
 - the selection's tint, `ex-range-tint`, and the pinned shade layer, `ex-shade-pinned`
   ([ADR-0206](./0206-a-ranges-tint-is-an-element-of-its-own-and-on-the-paper-the-pinned-tints-multiply-as-one-layer.md)).
 
