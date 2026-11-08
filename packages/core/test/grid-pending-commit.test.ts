@@ -89,6 +89,19 @@ function press(root: HTMLElement, x: number, y: number): void {
     mouse('mouseup');
 }
 
+/** A press whose offsets the browser works out when they are first read, against the target as it stands then: read
+ * once a commit had closed the editor, they stood 13 rows lower (the sweep of 2026-11-08, seed 2006). */
+function pressReadLate(root: HTMLElement, x: number, y: number): void {
+    const viewport = q(root, '.ex-viewport');
+    for (const name of ['mousedown', 'mouseup']) {
+        const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1 });
+        let read: number | undefined;
+        Object.defineProperty(event, 'offsetX', { value: x });
+        Object.defineProperty(event, 'offsetY', { get: () => (read ??= y + (editor(root) === undefined ? 13 * 24 : 0)) });
+        viewport.dispatchEvent(event);
+    }
+}
+
 /** A key as the browser types it where the keyboard is: a character the page left alone goes into a field that takes
  * text, at its caret. */
 function key(name: string, init: KeyboardEventInit = {}): KeyboardEvent {
@@ -251,6 +264,29 @@ describe('a verdict answered later', () => {
         expect(written(rejected.heard)).toEqual([]);
         expect(defined(editor(rejected.root), 'the editor held').value).toBe('150');
         expect(focusOf(rejected.heard)).toEqual({ row: 0, column: 1 });
+    });
+
+    it('ED-33 / spine rule 6: a press waiting for a commit lands on the cell it was made on, though its offsets are read late', async () => {
+        const asked: Asked<EditVerdict>[] = [];
+        // The press that commits, taken again once the commit lands.
+        const committing = grid({}, asked);
+        await painted();
+        press(committing.root, notional, rowY(0));
+        keys('1500');
+        pressReadLate(committing.root, notional, rowY(5));
+        await answerAll(asked, domain);
+        expect([written(committing.heard), focusOf(committing.heard)]).toEqual([[['Book-0', '1500']], { row: 5, column: 1 }]);
+        unmountAll();
+
+        // A press made behind an Enter's commit.
+        const behind = grid({}, asked);
+        await painted();
+        press(behind.root, notional, rowY(0));
+        keys('1500');
+        key('Enter');
+        pressReadLate(behind.root, notional, rowY(5));
+        await answerAll(asked, domain);
+        expect([written(behind.heard), focusOf(behind.heard)]).toEqual([[['Book-0', '1500']], { row: 5, column: 1 }]);
     });
 
     it('ED-33 / ADR-0380: a paste key typed while pending keeps its default, and its paste waits and lands where the keys led', async () => {

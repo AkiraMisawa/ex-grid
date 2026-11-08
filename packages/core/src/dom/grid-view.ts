@@ -40,7 +40,7 @@ import { changeHighlightShowingUntil } from '../cells/change-highlight';
 import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import {
-    cancelsPending, editsAsTyped, elementDefault, eventAgain, heldEventTypes, heldInputOf, inputDefault, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
+    cancelsPending, editsAsTyped, elementDefault, eventAgain, heldEvent, heldEventTypes, heldInputOf, inputDefault, isClipboardKey, keyDefault, selectionOf, typedField, typeText,
     type HeldInput,
 } from './pending-commit';
 import { HeldTextCommit } from './held-text-commit';
@@ -5228,7 +5228,7 @@ export class GridView<Row> {
         answered: (value: T) => boolean, failed?: () => void): void {
         const input = this.#input;
         const trigger: HeldInput | undefined = !retake ? undefined
-            : this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? { kind: 'event', event: input } : undefined);
+            : this.#retaking ?? (input !== undefined && input.eventPhase !== Event.NONE ? heldEvent(input) : undefined);
         // The field that holds the keyboard takes no input of its own either, so no IME starts in it meanwhile.
         const holder = typedField(this.#keyboardHolder());
         const stilled = holder === undefined || (pending.edit !== undefined && this.#inEditor(pending.edit, holder)) ? undefined : holder;
@@ -5389,7 +5389,7 @@ export class GridView<Row> {
         if (event.type === 'compositionstart' || event.type === 'compositionupdate' || event.type === 'beforeinput' || event.type === 'input') {
             return true;
         }
-        const again = eventAgain(event);
+        let again = eventAgain(event, input.offset);
         if (event instanceof KeyboardEvent) {
             // A key an IME was composing carries none of its text: it cannot be typed again.
             if (event.type === 'keydown' && (event.isComposing || event.keyCode === 229)) return false;
@@ -5413,6 +5413,8 @@ export class GridView<Row> {
             const doc = this.#root.ownerDocument;
             const under = event instanceof MouseEvent && typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(event.clientX, event.clientY) : null;
             target = under !== null && this.#inputRoot.contains(under) ? under : null;
+            // Its offsets were into what it pressed: into what stands there now, the browser works them out from the point.
+            again = eventAgain(event, undefined);
         }
         if (!(target instanceof Element)) return false;
         target.dispatchEvent(again);

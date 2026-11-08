@@ -413,7 +413,19 @@ export function attach(
         }
     });
     const write: Write = (kind, payload, speaks = false) => gate.handling(numbers.call('Heard', [kind, payload], speaks));
-    const heard = handlers(dotnet, numbers, write, asking);
+    // An input whose effect .NET carries out, a clear, an undo, an Action, holds every input after it until .NET has
+    // answered, as the Razor component's handler ran in the input's own turn: what .NET wrote crosses before its answer,
+    // so the next input is taken against it. Taken at once, an F2 after Ctrl+Z opened on the value the undo was taking
+    // back, and its commit wrote it again (ADR-0240's note of 2026-11-08).
+    const inTurn: InTurn = handled => {
+        const grid = made.grid;
+        if (grid === undefined) throw new Error('Internal: the grid raised an input before it was made.');
+        grid.inOrder(async () => { await handled(); }).catch((error: unknown) => { // oxlint-disable-line ex-grid/no-catch -- a call .NET let go of with the bridge ends with it, and any other rejection is rethrown
+            if (stopped) return;
+            throw error;
+        });
+    };
+    const heard = handlers(dotnet, numbers, write, asking, inTurn);
     const paint = cellPaint(dotnet, columns);
     // Asked of the source the grid holds now, by its number. .NET sends what its source owes before it answers, and
     // answers a step asked of a source or an order it no longer holds as moved: once what a write of the user's holds
@@ -700,14 +712,18 @@ type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => P
  * that it was lost, as an edit's does in its editor. */
 type Write = (kind: HeardKind, payload: unknown, speaks?: boolean) => Promise<unknown>;
 
+/** Holds the inputs made after the one being taken until `handled`, its crossing to .NET, has been answered. */
+type InTurn = (handled: () => Promise<unknown>) => void;
+
 // One function per event, made once, so the core sees the same handler on every update (ADR-0003). A write of the
 // user's own goes by `write`, which holds what .NET sends until .NET has handled it. An edit, a paste and a fill are
 // answered by .NET, which may refuse them: each is pending until it has (ADR-0380 sections 2 and 5).
 // What the browser has already done, a Selection or a column's width, is only heard by .NET, and crosses as it is; what
-// .NET carries out, an Action, an undo or a Name Box entry, is numbered (ADR-0240 section 11).
-function handlers(dotnet: DotNetHandle, numbers: InputNumbers, write: Write, asking: Asking): Handlers {
+// .NET carries out, an Action, an undo or a Name Box entry, is numbered (ADR-0240 section 11), and holds the inputs after
+// it until .NET has answered, as a clear does.
+function handlers(dotnet: DotNetHandle, numbers: InputNumbers, write: Write, asking: Asking, inTurn: InTurn): Handlers {
     const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
-    const carry = (kind: HeardKind, payload: unknown): void => { void numbers.call('Heard', [kind, payload]); };
+    const carry = (kind: HeardKind, payload: unknown): void => { inTurn(() => numbers.call('Heard', [kind, payload])); };
     return Object.freeze({
         onSelectionChanged: (selection: GridSelection) => { send('selectionChanged', wireSelection(selection)); },
         onEdit: intent => asking(intent.signal, async answer => {
@@ -745,7 +761,7 @@ function handlers(dotnet: DotNetHandle, numbers: InputNumbers, write: Write, ask
             // A fill, as a paste, is refused without a sentence of the grid's (ADR-0050 item 5).
             if (answered instanceof LostCall || refusalOf(answered) !== undefined) intent.refuse();
         }),
-        onClear: intent => { void write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
+        onClear: intent => { inTurn(() => write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion })); },
         onUndo: () => { carry('undo', null); },
         onRedo: () => { carry('redo', null); },
         onRefused: (refusal: GridRefusal<BlazorRow>) => { send('refused', wireRefusal(refusal)); },
