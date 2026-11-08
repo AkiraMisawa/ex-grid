@@ -25,6 +25,7 @@
     <button @onclick="RunBordersAsync" disabled="@_running">@(_running ? "measuring…" : "Measure borders (each share and N beside its own baseline)")</button>
     <button @onclick="RunInCellAsync" disabled="@_running">@(_running ? "measuring…" : "Measure in-cell borders (the Excel variants)")</button>
     <button @onclick="RunHybridAsync" disabled="@_running">@(_running ? "measuring…" : "Measure the hybrid and a Fill with borders (ticket 47)")</button>
+    <button @onclick="RunSplitAsync" disabled="@_running">@(_running ? "measuring…" : "Measure a Split Fill beside a plain one (ADR-0490)")</button>
 </div>
 
 @if (_error is not null)
@@ -228,7 +229,8 @@
         var rnd = new Random(44);
         switch (mode)
         {
-            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses
+                or CellFormatMode.CellFormatSplit:
                 _table = new FormatTable();
                 for (var i = 0; i < distinct; i++) _table.Add();
                 _fontRows = new RowFormat[TotalRows];
@@ -239,7 +241,12 @@
                         if (rnd.Next(100) < share) ids[c] = (ushort)(1 + rnd.Next(distinct));
                     _fontRows[r] = new RowFormat(ids);
                 }
-                _css = mode == CellFormatMode.CellFormatClasses ? _table.Rules : "";
+                _css = mode switch
+                {
+                    CellFormatMode.CellFormatClasses => _table.Rules,
+                    CellFormatMode.CellFormatSplit => _table.SplitRules,
+                    _ => "",
+                };
                 break;
 
             case CellFormatMode.BorderLayer or CellFormatMode.BorderLayerPerRow:
@@ -295,6 +302,7 @@
     private string ScrollerClass => _mode switch
     {
         CellFormatMode.CellFormatVars => "scroller fx vars",
+        CellFormatMode.CellFormatSplit => "scroller fx split",
         CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellHybrid or CellFormatMode.BorderInCellExcelFull
             or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill => "scroller fx xcell",
         _ => "scroller fx",
@@ -317,10 +325,21 @@
         or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox or CellFormatMode.BorderInCellHybrid
         or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill or CellFormatMode.BorderInCellExcelFull;
 
-    private enum Sweep { Full, Quick, Borders, InCell, Hybrid }
+    private enum Sweep { Full, Quick, Borders, InCell, Hybrid, Split }
 
     private static IEnumerable<(CellFormatMode Mode, int Share, int Distinct)> Configs(Sweep sweep)
     {
+        if (sweep == Sweep.Split)
+        {
+            // ADR-0490: a Split Fill beside the plain Fill it extends, each share and N beside a baseline of its own,
+            // to be read as deltas: what the second colour, and the ground every cell reads, add.
+            CellFormatMode[] split = [CellFormatMode.RowComponent, CellFormatMode.CellFormatClasses, CellFormatMode.CellFormatSplit];
+            foreach (var (share, distinct) in new[] { (10, 1), (50, 16), (50, 256), (100, 1), (100, 16), (100, 256) })
+                foreach (var mode in split)
+                    yield return (mode, share, distinct);
+            yield break;
+        }
+
         if (sweep == Sweep.Hybrid)
         {
             // Ticket 47: the hybrid against BorderInCellExcel, and each with a Fill on the same cells,
@@ -388,7 +407,8 @@
     {
         switch (_mode)
         {
-            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses
+                or CellFormatMode.CellFormatSplit:
             {
                 var id = _table!.Add();
                 for (var r = 0; r < TotalRows; r++)
@@ -397,9 +417,9 @@
                     ids[column] = id;
                     _fontRows[r] = new RowFormat(ids);
                 }
-                if (_mode == CellFormatMode.CellFormatClasses)
+                if (_mode is CellFormatMode.CellFormatClasses or CellFormatMode.CellFormatSplit)
                 {
-                    _css = _table.Rules;
+                    _css = _mode == CellFormatMode.CellFormatSplit ? _table.SplitRules : _table.Rules;
                     _cssVersion++;
                 }
                 break;
@@ -437,7 +457,8 @@
         var column = (3 + i) % VisibleCols;
         switch (_mode)
         {
-            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses
+                or CellFormatMode.CellFormatSplit:
             {
                 var ids = (ushort[])_fontRows![abs].Ids.Clone();
                 ids[column] = Next(ids[column], _distinct);
@@ -630,6 +651,8 @@
     private Task RunInCellAsync() => RunAsync(Sweep.InCell);
 
     private Task RunHybridAsync() => RunAsync(Sweep.Hybrid);
+
+    private Task RunSplitAsync() => RunAsync(Sweep.Split);
 
     private async Task RunAsync(Sweep sweep)
     {

@@ -20,7 +20,8 @@
 <p>
     Excel's thirteen line styles, black: each on the bottom of a cell in <i>B</i> and on the right
     of a cell in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it
-    and the Focus above it.
+    and the Focus above it; and on the DashDot row a Split Fill, yellow above and left of the diagonal
+    and blue below and right of it (ADR-0490).
 </p>
 <div id="appearance-borders">
     <ExGrid TRow="AppearanceRow" Rows="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
@@ -149,6 +150,7 @@
 
     private static readonly RgbColour Red = RgbColour.FromRgb(0xFF0000);
     private static readonly RgbColour Yellow = RgbColour.FromRgb(0xFFFF00);
+    private static readonly RgbColour Blue = RgbColour.FromRgb(0x0000FF);
 
     private static readonly CellAppearanceOf<AppearanceRow> BorderOf = (row, column) =>
     {
@@ -159,6 +161,7 @@
             "D" when style != BorderStyle.None => new CellAppearance { Right = new Border(style) },
             "C" when row.Index == 3 => new CellAppearance { Bottom = new Border(BorderStyle.Thick, Red) },
             "C" when row.Index == 4 => new CellAppearance { Fill = Yellow },
+            "C" when row.Index == 7 => new CellAppearance { Fill = Yellow, LowerRightFill = Blue },
             _ => default,
         };
     };

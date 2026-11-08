@@ -223,6 +223,59 @@ test.describe('DC-59: lines', () => {
     });
 });
 
+// A Split Fill (ADR-0490) as painted, in device pixels: C on the DashDot row of #appearance-borders is yellow above
+// and left of the diagonal from its top-right corner to its bottom-left one, and blue below and right of it. The
+// cells around it are plain, so each gridline at its edges shows which half covers it. It runs at 100% here and at
+// 150% in the chrome-150 project.
+const BLUE = [0, 0, 255];
+const SPLIT_ROW = 7;
+
+/** The Split Fill's cell, and its colour at a point given as fractions of its width and height. */
+async function splitCell(page) {
+    const cell = cellOf(page, 'appearance-borders', SPLIT_ROW, 2);
+    await cell.scrollIntoViewIfNeeded();
+    const box = await cell.boundingBox();
+    const region = await painted(page, box);
+    return { cell, box, at: (fx, fy) => region.at(box.x + box.width * fx, box.y + box.height * fy) };
+}
+
+test('DC-58: a Split Fill paints fill above and left of the corner-to-corner diagonal and lowerRightFill below and right, each gridline at its edges in the half that meets it (ADR-0490) @behaviour', async ({ page }) => {
+    await open(page);
+    const { box, at } = await splitCell(page);
+    // The diagonal joins the top-right corner to the bottom-left one whatever the cell's proportions: a quarter of the
+    // way down it crosses three quarters of the way along, where a 45° line from the corner would not yet have turned.
+    expect(box.width / box.height, 'a cell much wider than it is high, so the two lines differ').toBeGreaterThan(2);
+    for (const [fx, fy, colour, where] of [
+        [0.15, 0.25, YELLOW, 'top left'], [0.65, 0.25, YELLOW, 'left of the diagonal, a quarter down'],
+        [0.85, 0.25, BLUE, 'right of the diagonal, a quarter down'], [0.15, 0.75, YELLOW, 'left of the diagonal, three quarters down'],
+        [0.35, 0.75, BLUE, 'right of the diagonal, three quarters down'], [0.85, 0.75, BLUE, 'bottom right'],
+    ]) expect(sameColour(at(fx, fy), colour), `${where}: ${at(fx, fy)}`).toBe(true);
+
+    // The cell's own gridlines, bottom and right, are met by the lower-right half; the ones its neighbours hold, above
+    // it and to its left, by the upper-left half.
+    for (const side of ['bottom', 'right']) {
+        const { pixel } = await across(page, box, side, 0.5);
+        expect(sameColour(pixel(-1), BLUE), `its ${side} gridline: ${pixel(-1)}`).toBe(true);
+    }
+    const above = await cellOf(page, 'appearance-borders', SPLIT_ROW - 1, 2).boundingBox();
+    const left = await cellOf(page, 'appearance-borders', SPLIT_ROW, 1).boundingBox();
+    const top = await across(page, above, 'bottom', 0.5);
+    const leftEdge = await across(page, left, 'right', 0.5);
+    expect(sameColour(top.pixel(-1), YELLOW), `the gridline above it: ${top.pixel(-1)}`).toBe(true);
+    expect(sameColour(leftEdge.pixel(-1), YELLOW), `the gridline left of it: ${leftEdge.pixel(-1)}`).toBe(true);
+    // And no further: the pixel above that gridline is the plain cell's own ground.
+    expect(sameColour(top.pixel(-2), YELLOW), 'the plain cell above keeps its ground').toBe(false);
+});
+
+test('DC-58: a Split Fill given in C# as LowerRightFill reaches the paint, both halves and its own gridlines (ADR-0490) @blazor', async ({ page }) => {
+    await open(page);
+    const { box, at } = await splitCell(page);
+    expect(sameColour(at(0.15, 0.25), YELLOW), `upper left: ${at(0.15, 0.25)}`).toBe(true);
+    expect(sameColour(at(0.85, 0.75), BLUE), `lower right: ${at(0.85, 0.75)}`).toBe(true);
+    const { pixel } = await across(page, box, 'bottom', 0.5);
+    expect(sameColour(pixel(-1), BLUE), `its bottom gridline: ${pixel(-1)}`).toBe(true);
+});
+
 test('DC-58: a bold number that fits at the regular widths and not at the bold ones is #### (ADR-0050 item 15, ADR-0016) @blazor', async ({ page }) => {
     await open(page);
     const regular = cellOf(page, 'appearance-bold', 0, 1);

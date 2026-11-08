@@ -40,6 +40,7 @@ per row, whose reference is the row's change signal.
 | `CellFormatInline` | Font colour, Fill and bold as an inline `style` on each formatted cell, one interned string per format |
 | `CellFormatVars` | per-cell custom properties (`--fc`, `--fb`, `--fw`) read by one static rule on every cell |
 | `CellFormatClasses` | interned classes, one per distinct format, written into a generated `<style>` |
+| `CellFormatSplit` | ADR-0490: `CellFormatClasses` with each format a Split Fill as the product paints one: the Fill as the background colour, and the lower-right half a gradient in a custom property that one static rule puts beneath every cell's ground, read on every cell |
 | `BorderLayer` | a layer over the rows: one element per run of the same line along a painted row (bottom edges) or down a painted column (right edges), positioned against the painted slice as the selection overlay is (ADR-0008). Rows know nothing of borders |
 | `BorderInCell` | each cell draws its resolved bottom and right edges inside its own box, in place of its gridlines, through interned classes |
 | `BorderLayerPerRow` | not one of the ticket's two: `BorderLayer` split into one keyed, memoised strip per painted row, with one segment per right edge. Measured because `BorderLayer` renders every run on every scroll step |

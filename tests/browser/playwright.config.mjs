@@ -197,6 +197,7 @@ export default defineConfig({
         // the slice at its target offset through that same compressed mapping (ADR-0012).
         // And the Border lines (DC-59), whose pixels at 150% are Excel's case 9 at that zoom: a
         // line's widths and dashes are device pixels, which only a real display scale lays out.
+        // And a Split Fill (DC-58, ADR-0490): its diagonal and the gridlines its halves cover.
         // And SH-41's sweep of the bold edge (VZ-19): at 150% a Device Pixel is two thirds of a CSS
         // pixel, which is what a column's edges round to and what a number may use of its padding.
         // And the Focus among several ranges (UX-19, ADR-0008 of 2026-10-12): ExGrid's own on /wide,
@@ -207,7 +208,7 @@ export default defineConfig({
         // Headings under both Chromes.
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|CH-10|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
+            grep: /Split Fill|BIG-1\b|CH-10|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59|VZ-19|UX-19\/SH-39|UX-19\/SH-54|UX-19\/UX-9|UX-19 at the display's scale|UX-21 at the display's scale|UX-21 D2 at the display's scale|UX-21 \([^)]*\): on the Sheet/,
             use: {
                 channel: 'chrome',
                 viewport: null,
