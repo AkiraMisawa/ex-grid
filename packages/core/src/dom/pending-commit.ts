@@ -16,7 +16,9 @@ export const heldEventTypes: readonly string[] = Object.freeze([
 
 /** One input made while a commit was pending, in the order it was made. */
 export type HeldInput =
-    | { readonly kind: 'event'; readonly event: Event }
+    /** An event to dispatch again, and a press's offsets into its target, read as it was made (`heldEvent`). A
+     * `KeyboardEvent` or another event without offsets has none. */
+    | { readonly kind: 'event'; readonly event: Event; readonly offset: PressOffset | undefined }
     /** A paste: its flavours, read while the event could still be read, or none where it carried no data. */
     | { readonly kind: 'paste'; readonly flavours: { readonly text: string; readonly html: string } | undefined }
     /** A copy or a cut: done at its turn, where the keyboard is then. */
@@ -26,15 +28,31 @@ export type HeldInput =
      * turn is not taken again as its gesture. */
     | { readonly kind: 'turn'; readonly take: () => void; readonly dropped?: () => void };
 
+/** Where a press was made in its target, as the browser said it while the press was being dispatched. */
+export interface PressOffset {
+    readonly x: number;
+    readonly y: number;
+}
+
+/**
+ * An event held to be dispatched again. A press keeps its offsets into its target as they were when it was made: the
+ * browser works them out only when they are first read, against the layout and the target as they stand then, so read
+ * at the press's turn, once the commit it waited behind had closed its editor, they placed it 13 rows below the cell it
+ * was made on (the sweep of 2026-11-08, ExGrid's differential seed 2006 on the Server host).
+ */
+export function heldEvent(event: Event): HeldInput {
+    return { kind: 'event', event, offset: event instanceof MouseEvent ? { x: event.offsetX, y: event.offsetY } : undefined };
+}
+
 /** What a held event becomes. A clipboard event keeps what only it could tell, and every other event is kept to be
- * dispatched again. */
+ * dispatched again, a press with where it was made (`heldEvent`). */
 export function heldInputOf(event: Event): HeldInput {
     if (event instanceof ClipboardEvent && event.type === 'paste') {
         const data = event.clipboardData;
         return { kind: 'paste', flavours: data === null ? undefined : { text: data.getData('text/plain'), html: data.getData('text/html') } };
     }
     if (event.type === 'copy' || event.type === 'cut') return { kind: event.type };
-    return { kind: 'event', event };
+    return heldEvent(event);
 }
 
 /** Whether a keydown is the Escape that cancels a Pending Commit: the plain key, as Escape cancels an edit
@@ -49,7 +67,7 @@ export function cancelsPending(event: Event): boolean {
  * as it was, so its fields are copied into a new one of the same kind. A press keeps the offset it was made at, which
  * the rows resolve it by.
  */
-export function eventAgain(event: Event): Event {
+export function eventAgain(event: Event, offset: PressOffset | undefined): Event {
     const base = { bubbles: event.bubbles, cancelable: event.cancelable, composed: event.composed };
     let again: Event;
     if (event instanceof KeyboardEvent) {
@@ -66,8 +84,12 @@ export function eventAgain(event: Event): Event {
             button: event.button, buttons: event.buttons, detail: event.detail, relatedTarget: event.relatedTarget,
             ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
         });
-        Object.defineProperty(again, 'offsetX', { value: event.offsetX });
-        Object.defineProperty(again, 'offsetY', { value: event.offsetY });
+        // Where it was made in its target; with none, the browser works them out from the point, in the target it is
+        // dispatched on.
+        if (offset !== undefined) {
+            Object.defineProperty(again, 'offsetX', { value: offset.x });
+            Object.defineProperty(again, 'offsetY', { value: offset.y });
+        }
     } else if (typeof CompositionEvent !== 'undefined' && event instanceof CompositionEvent) {
         again = new CompositionEvent(event.type, { ...base, data: event.data });
     } else if (typeof InputEvent !== 'undefined' && event instanceof InputEvent) {

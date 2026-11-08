@@ -9,7 +9,9 @@ import { expectCodeIsSource } from './demo-code.mjs';
 // that under a sort the painted rows stay in order as the values move (LV-5/LV-7), and that the
 // console stays clean throughout (CON-*). LV-15's timing is measure-live.spec.mjs's, and never gates.
 
-test.use({ viewport: { width: 1400, height: 1100 } });
+// The page streams while its live data runs, so its presses aim at once, and a reading that must see all the host will
+// say calls circuitQuiet() once the stream is stopped (hostStreams, ADR-0451's review of 2026-11-08).
+test.use({ viewport: { width: 1400, height: 1100 }, hostStreams: true });
 
 const grid = (page) => page.locator('.ex-grid');
 const marked = (page) => grid(page).locator('.ex-viewport .ex-cell.ex-changed');

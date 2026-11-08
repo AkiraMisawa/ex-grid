@@ -827,6 +827,27 @@ describe('input lost while the circuit is down (ADR-0240 section 11)', () => {
         expect([dotnet.heard('edit').length, dotnet.heard('undo').length, dotnet.numbers]).toEqual([1, 1, [1, 2]]);
     });
 
+    it('ADR-0240: the keys after an undo .NET carries out wait for its answer, so an F2 opens on what the undo wrote', async () => {
+        const dotnet = new FakeDotNet();
+        let undone: ((answer: null) => void) | undefined;
+        dotnet.answer = (method, args) => (method === 'Heard' && args[0] === 'undo' ? new Promise(resolve => { undone = resolve; }) : null);
+        const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['edit', 'undo'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        key('z', { ctrlKey: true });
+        key('F2');
+        await turns();
+        // The F2 is held: taken now, it would open on the value the undo is taking back (the Hunt's sweep of 2026-11-08).
+        expect(editorOf(root)).toBeNull();
+
+        if (undone === undefined) throw new Error('The undo crossed to .NET.');
+        // What the undo wrote crosses before its answer, as .NET sends it.
+        grid.state(JSON.stringify(state(2, [{ i: 3, c: ['Swaps', 1500], t: [null, '1,500.00'] }, credit])));
+        undone(null);
+        await turns();
+        expect(editorOf(root)?.value).toBe('Swaps');
+    });
+
     it('ADR-0240: an edit lost on the way is refused in its editor, which keeps the text, in the grid\'s words, said once', async () => {
         const dotnet = new FakeDotNet();
         const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
@@ -875,14 +896,14 @@ describe('the error step .NET answers (ADR-0381 section 3)', () => {
         expect(focusHeard(dotnet)).toEqual({ row: 1, column: 1 });
     });
 
-    it('ADR-0142: a step .NET answers as moved waits for the state a write holds, and the grid says the rows moved', async () => {
+    it('ADR-0240, ADR-0142: an F8 typed while a clear crosses is asked once .NET has answered the clear, and a step .NET answers as moved says the rows moved', async () => {
         const dotnet = new FakeDotNet();
         let cleared: ((answer: null) => void) | undefined;
         const { root, grid } = mount({ options: options({ rowHeight: 24, findsErrors: true, hears: ['clear', 'selectionChanged'] }) }, dotnet);
         dotnet.answer = (method, args) => {
             if (method === 'Heard' && args[0] === 'clear') return new Promise(resolve => { cleared = resolve; });
             if (method !== 'FindError') return null;
-            // .NET's source moved before the step's turn: its state crosses first, and the clear in flight holds it.
+            // .NET's source moved before the step's turn: its state crosses first.
             grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
             return '{"moved":true}';
         };
@@ -891,13 +912,15 @@ describe('the error step .NET answers (ADR-0381 section 3)', () => {
         key('Delete');
         key('F8');
         await turns();
-        expect(dotnet.calls.filter(call => call.method === 'FindError')).toHaveLength(1);
-        // Not "none found" in an order the grid no longer shows: nothing is said until the held state is in.
-        expect(root.querySelector('.ex-announce')?.textContent).toBe('');
+        // Held behind the clear, as the Razor component's handler held it in its turn (ADR-0240's note of 2026-11-08):
+        // nothing is asked of a source the clear is still writing.
+        expect(dotnet.calls.filter(call => call.method === 'FindError')).toHaveLength(0);
 
         if (cleared === undefined) throw new Error('The clear crossed to .NET.');
         cleared(null);
         await turns();
+        expect(dotnet.calls.filter(call => call.method === 'FindError')).toHaveLength(1);
+        // Not "none found" in an order the grid no longer shows.
         expect(root.querySelector('.ex-announce')?.textContent)
             .toBe('The rows moved while the next error was looked for, so the step was set aside. Press F8 again.');
     });

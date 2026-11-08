@@ -810,3 +810,29 @@ that reaches .NET before the paste's arguments are taken in calls the paste off 
 open:** a cancel that reaches .NET after a synchronous `OnPaste` or `OnEdit` has already written is said in the browser as
 cancelled. The outcome has to come from .NET for the browser to say it truly, and that change to the wire and the core
 is left for later.
+
+## What .NET carries out holds the inputs after it, and a held press keeps where it was made, 2026-11-08
+
+Two defects the differential test found on the Server host (ADR-0451's review of 2026-11-08), each against this
+decision's sections 1 and 3.
+
+Blazor's ExGrid sent a clear, an undo or redo, an Action and a Name Box entry to .NET, numbered as section 11 has it,
+and then took the next input at once. Each of those is carried out by the Consumer's handler in .NET, which writes the
+rows the next input is taken against. The Razor component ran that handler in the input's own turn, so the input after
+it met the rows it wrote; over the Script Core the input after it met the rows from before, a round trip early:
+`Ctrl+Z` then `F2` opened the editor on the value the undo was taking back, and the edit's commit wrote it again. Each
+now takes its place in the order as work placed with `inOrder` does, and holds every input made after it until .NET
+has answered. What it wrote crosses before its answer (`HeardAsync`), so the next input is taken against it. A handler
+that awaits something slow holds the grid's input meanwhile, as it did on the Razor component; input to a surface of the
+Consumer's own outside the Input Root, a dialog the handler opened, is not held. Nothing new is decided: the Razor
+component's rule is carried over, as the note of 2026-10-28 carried another.
+
+A press held behind a commit, or the press that made the commit and is taken again once it lands, was dispatched again
+with its offsets read from the press as it was made. The browser works those offsets out only when they are first
+read, against the target and the layout as they stand then, and the commit's own press had not had them read when it
+was held: read at its turn, after the editor had gone, they placed it 13 rows below the cell pressed. A held press now
+keeps its offsets, read while it is being dispatched, as a held paste keeps its flavours. Where what it pressed has
+gone by its turn, the editor the commit closed, it is dispatched on what stands at its point, and the browser works its
+offsets out there from the point: kept, they were offsets into the editor, and it landed near the grid's first cell. A
+press is taken where it was made.
+

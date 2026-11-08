@@ -71,6 +71,7 @@ export async function setRoundTrip(ms) {
     if (!response.ok) {
         throw new Error(`the latency proxy refused rtt=${ms}: ${response.status}`);
     }
+    wire.roundTripSet = ms > 0;
     return true;
 }
 
@@ -283,6 +284,7 @@ export async function holdAnswers(held) {
         throw new Error(`the latency proxy refused to ${held ? 'hold' : 'let go of'} the host's answers: ${response.status}`
             + ' (one started from an older checkout does not know /hold, so stop it and run again)');
     }
+    wire.answersHeld = held;
     return true;
 }
 
@@ -313,6 +315,7 @@ export async function dropCircuit(down, from = 0) {
         throw new Error(`the latency proxy refused to ${down ? 'cut' : 'restore'} the connection: ${response.status}`
             + ' (one started from an older checkout does not know /drop, so stop it and run again)');
     }
+    wire.cut = down;
     return true;
 }
 
@@ -942,6 +945,76 @@ function refuseEmulatedDrags(page) {
     };
 }
 
+/** What the test has done to the wire between the browser and the Server host: a round trip set, the host's answers
+ * held, or the connection cut (setRoundTrip, holdAnswers, dropCircuit). Each is the test's own race against the host,
+ * which its locator calls then make at once, as the test was written to. `streams` is the file's page saying it talks
+ * unasked (the hostStreams option): a live page's timer or hub keeps the circuit busy for as long as it runs, so there is
+ * no quiet to aim at, and its tests poll for what they read and call circuitQuiet() themselves once they have stopped the
+ * stream (pivot-live, grid-live, grid-live-local: 2026-11-08, when waiting for a quiet the stream never gives failed
+ * every press of theirs that turns a stream off). */
+const wire = { roundTripSet: false, answersHeld: false, cut: false, streams: false };
+
+let racing = 0;
+
+/**
+ * Runs `action`, whose locator calls aim at once, as a user racing the host does: for a test whose subject is an input
+ * made before the Server host has answered the one before (a press "before the button greys out", a key "before the
+ * circuit has placed the caret"), and which says so in its title; or for a press made while a stream the test started
+ * keeps the circuit busy, which the press stops (a large file's Cancel). Everywhere else a locator call waits for the
+ * host first (aimAtWhatTheHostSaid), unless the test has set a round trip, held the host's answers or cut the connection,
+ * or its page streams (hostStreams).
+ */
+export async function atOnce(action) {
+    racing += 1;
+    try {
+        return await action();
+    } finally {
+        racing -= 1;
+    }
+}
+
+/**
+ * A locator's action is aimed before it is made: Playwright finds the element, waits for it to be visible, enabled and
+ * still, and only then presses, types or focuses it. That finding is a reading of the page, and on the Server host a
+ * reading taken while the host still owes renders reads what is about to change (ADR-0220, ADR-0451's review of
+ * 2026-11-08): a page's Undo found enabled and greyed out before the press landed (2026-11-06), a Razor slot's control
+ * focused before .NET's contents stood (2026-11-08), a drag's source read before it stopped moving (2026-11-04). So on
+ * the Server host every such action waits for the circuit to go quiet first, as a user aims at what the page has
+ * finished showing. Keys typed, or a fill made, into the control that holds the keyboard already are the user's own
+ * input and wait for nothing. Nor does an action in a test that races the host on purpose: one that has set a round
+ * trip of its own (the widened run's floor is not the test's), holds the host's answers or has cut the connection, or
+ * one made inside atOnce, or on a page that streams (the hostStreams option). The page's mouse and keyboard aim at
+ * nothing and are never held.
+ */
+const AIMS = {
+    click: 0, dblclick: 0, tap: 0, hover: 0, check: 0, uncheck: 0, setChecked: 1, selectOption: 1, setInputFiles: 1,
+    selectText: 0, clear: 0, blur: 0, focus: 0, fill: 1, press: 1, pressSequentially: 1, type: 1,
+};
+const TYPED_INTO = new Set(['fill', 'press', 'pressSequentially', 'type', 'clear']);
+
+function aimAtWhatTheHostSaid(page) {
+    if (!SERVER) {
+        return;
+    }
+    const prototype = Object.getPrototypeOf(page.locator('html'));
+    if (prototype.__exAimAtWhatTheHostSaid) {
+        return;
+    }
+    prototype.__exAimAtWhatTheHostSaid = true;
+    for (const name of Object.keys(AIMS)) {
+        const act = prototype[name];
+        prototype[name] = async function (...args) {
+            if (racing === 0 && !wire.roundTripSet && !wire.answersHeld && !wire.cut && !wire.streams) {
+                const holds = TYPED_INTO.has(name) && await this.evaluate((element) => element === element.ownerDocument.activeElement);
+                if (!holds) {
+                    await circuitQuiet();
+                }
+            }
+            return await act.apply(this, args);
+        };
+    }
+}
+
 /**
  * A focus a test puts inside a Razor slot's contents (ADR-0410) stands for the user's keyboard arriving there, which a
  * user's own input brings only once the contents stand: until then every input made in the product waits in its order
@@ -1112,6 +1185,7 @@ async function ownPage(app, page, use, options, testInfo) {
     await watchForHang(page);
     holdForcedPresses(page);
     focusOnStandingSlots(page);
+    aimAtWhatTheHostSaid(page);
     app.startHostLog();
     const sink = newSink();
     listen(page, () => sink);
@@ -1183,6 +1257,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
     });
     holdForcedPresses(page);
     focusOnStandingSlots(page);
+    aimAtWhatTheHostSaid(page);
     refuseEmulatedDrags(page);
     wrap(page, 'dragAndDrop', () => () => { throw new Error(EMULATED_DRAG); });
     const dragsBefore = app.booted === null ? null : await app.dragsBegun();
@@ -1344,6 +1419,10 @@ export const test = base.extend({
     expectedLeaks: [[], { option: true }],
     // A document of the test's own: a context of its own and every navigation real (ADR-0056).
     freshDocument: [false, { option: true }],
+    // The file's page talks unasked: a live page whose timer or hub keeps the circuit busy while it runs, so its locator
+    // calls aim at once, never at a quiet the stream never gives (aimAtWhatTheHostSaid). Its readings poll, and it calls
+    // circuitQuiet() itself once it has stopped the stream.
+    hostStreams: [false, { option: true }],
     // The test's context is the file's app's, so what it grants reaches the page it drives; what it
     // granted is taken back as it ends, and what its `use` grants is granted again for the next.
     // Every context is made with the test's own `use` options — Playwright's, as its own context
@@ -1363,12 +1442,17 @@ export const test = base.extend({
         await use(context);
         await context.clearPermissions().catch(() => { });
     },
-    page: async ({ app, context, viewport, freshDocument, expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks }, use, testInfo) => {
+    page: async ({ app, context, viewport, freshDocument, hostStreams, expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks }, use, testInfo) => {
         const options = { expectedHostLog, expectedWarnings, expectedErrors, expectedPageErrors, expectedLeaks };
-        if (viewport === null || freshDocument) {
-            await ownPage(app, await context.newPage(), use, options, testInfo);
-        } else {
-            await sharedPage(app, context, viewport, use, options, testInfo);
+        wire.streams = hostStreams;
+        try {
+            if (viewport === null || freshDocument) {
+                await ownPage(app, await context.newPage(), use, options, testInfo);
+            } else {
+                await sharedPage(app, context, viewport, use, options, testInfo);
+            }
+        } finally {
+            wire.streams = false;
         }
     },
 });

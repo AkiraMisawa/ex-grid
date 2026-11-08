@@ -226,12 +226,65 @@ release candidate's commit (b3c0adb9, the evening before) failed one test, from 
    adds as it hears the close: the path their names state. Whether that path is the night's failure is not known;
    the journal says next time.
 
+## The review of 2026-11-08
+
+The Hunt had failed every morning, and each morning one red was fixed by its cause. Asked to stop waiting for the
+next one, the whole suite was read for the kinds of cause the reds since 2026-11-04 came from, and the differential
+test was run on seeds no night had drawn.
+
+1. **A test aimed at a control while the Server host still owed renders.** Four of the reds since 2026-11-04 were one
+   kind: a drag's source read before it stopped moving (11-04), a page's Undo found enabled before the circuit greyed
+   it (11-06), an input made before Blazor heard the connection close (11-07), a Razor slot's control focused before
+   its contents stood (11-08). Each was fixed where it showed. A locator's action finds, checks and aims at its element
+   before it acts, and that is a reading of the page (ADR-0220). On the Server host every locator action the harness
+   gives a test now waits for the circuit to go quiet before it aims (`fixtures.mjs`, `aimAtWhatTheHostSaid`). Keys
+   typed, or a fill made, into the control that already holds the keyboard wait for nothing: they are the user's own
+   input, not an aim. The page's mouse and keyboard never wait. A test whose subject is an input made before the host
+   has answered skips the wait by what it does: it sets its own round trip, holds the host's answers or cuts the
+   connection, or makes the action inside `atOnce`, and says so in its title. A page that streams, whose live data
+   keeps the circuit busy for as long as it runs, declares `hostStreams`: its presses aim at once, and it reads what
+   all the host will say with `circuitQuiet()` once it has stopped the stream (`pivot-live`, `grid-live`,
+   `grid-live-local`; waiting for a quiet the stream never gives failed every press that turns a stream off).
+2. **Seeds no night had drawn.** Each night adds one new seed per product, so a race that one seed in eight shows
+   takes a week to find. The Hunt can now be dispatched with a range of seeds, which it splits over sixteen jobs
+   (`diff_seeds`, read by `seedsOf` as `EXGRID_DIFF_SEEDS`), and with a wider round trip and a slower CPU
+   (`rtt_floor`, `cpu_throttle`). Forty seeds per product on the Server host, run locally, found five ExGrid reds and
+   none in ExSheet or ExPivot, from two product races, each deterministic on its seed:
+   - **The keys after a clear, an undo or an Action did not wait for .NET** (seeds 2002, 2025, 2032). Blazor's
+     ExGrid sent each to .NET and took the next key at once, against rows .NET had not yet rewritten: `Ctrl+Z` then
+     `F2` opened the editor on the value the undo was taking back, and its commit wrote it again. The Razor
+     component had run the handler in the input's own turn. Each now holds the inputs after it until .NET has
+     answered, as [ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)'s note of 2026-11-08
+     says. It is likely cause 4 of the reds above too, the edit opened on a row its predecessor's write replaced:
+     seed 366431211 types `Delete` and then `Backspace` on a row the clear rewrote. That seed never reproduced, so
+     cause 4 stays open below.
+   - **A press made while an edit's commit was out landed on another row** (seeds 2006, 2038). The browser works a
+     press's offsets into its target out only when they are first read, against the target and the layout as they
+     stand then. The press that committed, taken again once the commit landed, had its offsets read only then, after
+     the editor had gone, and the Focus went 13 rows below the cell pressed, out of view. A held press now keeps its
+     offsets as they were when it was made (ADR-0240's note of 2026-11-08).
+   - **A press on the editor a commit then closed landed near the grid's first cell** (seeds 2043, 2051, 2054, found
+     by a second sweep of ExGrid's seeds 2040 to 2062 with the two fixes above, and by the code review of them at
+     the same time). Pressed while the editor stood under the pointer, the press was taken again on what stood at its
+     point once the editor had gone, with its offsets into the editor: a few pixels, which the rows read as their
+     first cell. Its offsets are now worked out by the browser from the point, in what it lands on. The three seeds
+     failed with the fix taken out and passed with it, each time.
+   The guards are a layer-2 test for the first two (`bridge.test.ts`, `grid-pending-commit.test.ts`), each failing on
+   the code before it, and seeds 2006, 2025 and 2054 among the fixed seeds, one for each; the third needs a layout,
+   which layer 2 does not have. With all three fixed, ExGrid's seeds 2040 to 2099 then ran green on the Server host,
+   sixty of sixty.
+3. **A press made while a stream runs, to stop it.** `pivot-csv.spec.mjs`'s Cancel is pressed while a large file streams
+   to the Server host, which keeps the circuit busy until the press stops it: it is made inside `atOnce`. No other
+   test presses while a stream of its own runs.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs
-  of its seed on the WebAssembly host, 15 of them at a quarter of the CPU. Its trace was not kept. The seed
-  joins the fixed ones once it reproduces and is fixed (`differential.spec.mjs`); until then the morning
-  reader watches for it.
+  of its seed on the WebAssembly host, 15 of them at a quarter of the CPU. Its trace was not kept. Its steps
+  type `Delete` and then `Backspace` on a row the clear rewrote, the race the review of 2026-11-08 fixed, but
+  that is read from its steps, not seen. The seed joins the fixed ones once it reproduces (`differential.spec.mjs`);
+  until then the morning reader watches for it.
+
 - **The third widened night's cause 3**, the WebAssembly runtime's `memory access out of bounds`: one run, not
   reproduced, its cause not known.
 - **The fourth widened night's cause 2**, a lost row Action that was not said: one run, not reproduced. Its test now
