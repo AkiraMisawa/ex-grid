@@ -1431,7 +1431,14 @@ _Avoid_: text style, typeface
 
 **Fill**:
 The one solid colour behind a cell's text. No patterns and no gradients ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+On an ExGrid, though not on a Sheet, a Fill may be a **Split Fill** ([ADR-0490](./docs/adr/0490-a-cells-fill-may-be-split-diagonally-between-two-colours.md)).
 _Avoid_: background, shading, highlight
+
+**Split Fill**:
+A Fill of two colours, divided by the diagonal from the cell's top-right corner to its bottom-left corner: one colour
+above and left of it, the other below and right. A Consumer gives it; a Sheet never records one
+([ADR-0490](./docs/adr/0490-a-cells-fill-may-be-split-diagonally-between-two-colours.md)).
+_Avoid_: gradient, two-tone, diagonal border (a Border has no diagonals)
 
 **Border**:
 A line on one side of a cell — top, bottom, left or right — in one of Excel's line styles and a

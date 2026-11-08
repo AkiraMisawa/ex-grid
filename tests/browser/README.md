@@ -1305,6 +1305,20 @@ Two traps live in that, and the DemoHost has hit both:
   (a new instance of the row, ADR-0003/0140) fails it as "Element is not visible" with
   nothing sent. `fixtures.mjs` makes such a press once more on the node now there
   (`holdForcedPresses`), so a press is a press at the cell's place, as a user's is.
+- A test's own focus is not an input. `locator.focus()`, and the focus `press`, `pressSequentially`,
+  `type` and `fill` make first, put the keyboard where no user's input can before a Razor slot's
+  contents stand (ADR-0410): until they do, the product holds every input (ADR-0240) and the part
+  still owes its request for the keyboard, which it answers on its first control once they stand,
+  taking the keyboard from where the test put it. Filter…'s USD focused and Space typed went to the
+  search instead, 1 run in 770 on the Server host (Hunt, 2026-11-08). So `fixtures.mjs` makes each
+  of those calls on a control inside a slot's contents (`[data-ex-version]`) wait for the Settled
+  Mark of the nearest laid-out grid outside the contents, the grid whose part the slot is or that
+  stands beside it in its product, which the slot host holds until the contents drawn from the data
+  last sent stand (`focusOnStandingSlots`). Once they stand, the part asks for the keyboard again
+  only for an input of the user's. A control that holds the keyboard already is not waited for: a
+  key pressed there is the user's, at machine speed (ADR-0220). Nor is one in a product with no grid
+  (ExChart, which has no Settled Mark and holds no input). `page.focus`, `page.press`, `page.type`
+  and `page.fill` throw, so every focus a test makes goes through a locator.
 - Restart the DemoHost after any rebuild: a stale host serves a stale app, and the
   first symptom is an unrelated-looking 404 or a page without the newest feature.
 - Two checkouts must not share a port. The host is started on whatever port

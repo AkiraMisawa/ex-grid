@@ -21,6 +21,7 @@ const styles: readonly (readonly [BorderStyle, string])[] = Object.freeze([
 
 const red = 0xFF0000;
 const yellow = 0xFFFF00;
+const blue = 0x0000FF;
 const none: CellAppearance = Object.freeze({});
 
 const row = (index: number, fields: Partial<AppearanceRow> = {}): AppearanceRow => ({ index, label: '', text: '', ...fields });
@@ -43,6 +44,8 @@ function borderOf(r: AppearanceRow, column: GridColumn<AppearanceRow>): CellAppe
     if (column.name === 'D' && style !== undefined) return { right: { style } };
     if (column.name === 'C' && r.index === 3) return { bottom: { style: 'thick', colour: red } };
     if (column.name === 'C' && r.index === 4) return { fill: yellow };
+    // A Split Fill (ADR-0490): yellow above and left of the diagonal, blue below and right of it.
+    if (column.name === 'C' && r.index === 7) return { fill: yellow, lowerRightFill: blue };
     return none;
 }
 
@@ -132,7 +135,9 @@ export function Appearance(): ReactElement {
             <h2>Borders</h2>
             <p>
                 Excel&apos;s thirteen line styles, black: each on the bottom of a cell in <i>B</i> and on the right of a cell
-                in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it and the Focus above it.
+                in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it and the Focus above it;
+                and on the DashDot row a Split Fill, yellow above and left of the diagonal and blue below and right of it
+                (ADR-0490).
             </p>
             <div id="appearance-borders">
                 <ExGrid columns={borderColumns} rows={borderRows} cellAppearance={borderOf} density="excel"

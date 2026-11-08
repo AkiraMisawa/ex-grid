@@ -126,7 +126,7 @@ public readonly record struct Border
 /// <para>Each part is painted as Excel paints it (ADR-0071). The Font gives way on a Stale or Error
 /// cell, whose Cell State must never be the one that disappears (ADR-0006), and outranks a column's
 /// tone, which is the column's rule and not the cell's own. A Fill covers the gridlines at the
-/// cell's edges. A Border is centred on its gridline, a thick line
+/// cell's edges, and may be split diagonally between two colours (ADR-0490). A Border is centred on its gridline, a thick line
 /// reaching into both cells, above the Fills and below the Focus, the Selection and the Reference
 /// Outlines; the line between two cells is drawn once, and where both record one, the grid's
 /// <c>EdgeBorder</c> answer chooses. A bold cell is judged by the bold widths of
@@ -153,8 +153,16 @@ public readonly record struct CellAppearance
     /// <summary>A line through the text.</summary>
     public bool Strikethrough { get; init; }
 
-    /// <summary>The one solid colour behind the text, or null for none.</summary>
+    /// <summary>The one solid colour behind the text, or null for none. With <see cref="LowerRightFill"/> it
+    /// colours the half above and left of the diagonal: a Split Fill's upper-left half (ADR-0490).</summary>
     public RgbColour? Fill { get; init; }
+
+    /// <summary>A Split Fill's other colour, or null for none (ADR-0490): the half below and right of the
+    /// diagonal that runs from the cell's top-right corner to its bottom-left corner, whatever the column's
+    /// width. Given only with <see cref="Fill"/>, which colours the other half: given alone, the grid refuses
+    /// it when it asks for the cell. Equal to <see cref="Fill"/>, it paints the plain Fill it is. A Sheet never
+    /// records one.</summary>
+    public RgbColour? LowerRightFill { get; init; }
 
     /// <summary>The line on the top side.</summary>
     public Border Top { get; init; }

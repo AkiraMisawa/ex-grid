@@ -8,6 +8,8 @@ import type { GridEditIntent } from '../src/cells/edit-intent';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
 import type { GridSelection } from '../src/selection/selection';
+import { AppearanceStyles } from '../src/paint/appearance-styles';
+import { checkedAppearance } from '../src/paint/row-appearances';
 import { GridSource } from '../src/source/grid-source';
 import { mount, painted, q } from './grid-harness';
 
@@ -142,6 +144,46 @@ describe('Per-cell declarations (ADR-0050)', () => {
         expect(style?.tagName).toBe('STYLE');
         expect(style?.textContent).toContain('.ex-cell:not(.ex-state-stale, .ex-state-error).ex-font-ff0000b{color:#ff0000;font-weight:700;}');
         expect(style?.textContent).toContain('.ex-cell.ex-fill-ffff00{background-color:#ffff00;');
+    });
+
+    it('ADR-0490: a Split Fill is one interned class per pair of colours, and covers each gridline in the colour of the half that meets it', async () => {
+        const violet = 0x8a_63_d2;
+        const cyan = 0x22_b8_cf;
+        const split: CellAppearance = { fill: violet, lowerRightFill: cyan };
+        const root = sheet([
+            { cells: ['plain', 'both', 'both'], looks: [{}, split, split] },
+            { cells: ['plain', 'before', ''], looks: [{}, { fill: violet }, {}] },
+        ], { cellAppearance: lookOf });
+        await painted();
+        // A neighbour's top and left edges are its upper-left colour, so the plain cell's gridline is covered in violet;
+        // the split cell's own bottom and right edges are cyan, so a violet neighbour there covers them in violet.
+        expect(cellAt(root, 0, 0).className).toBe('ex-cell ex-lined ex-lr-cover-8a63d2');
+        expect(cellAt(root, 0, 1).className).toBe('ex-cell ex-fill-8a63d2-22b8cf ex-lined ex-lr-cover-8a63d2 ex-lb-cover-8a63d2');
+        expect(cellAt(root, 0, 2).className).toBe('ex-cell ex-fill-8a63d2-22b8cf');
+        expect(cellAt(root, 1, 1).className).toBe('ex-cell ex-fill-8a63d2');
+        const css = root.lastElementChild?.textContent ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- a root without the style fails the next line
+        const rule = '.ex-cell.ex-fill-8a63d2-22b8cf{background-color:#8a63d2;'
+            + '--ex-split:linear-gradient(to bottom right,transparent 50%,#22b8cf 50%);--ex-fill-color:#22b8cf;'
+            + '--ex-column-rule-color:transparent;--ex-row-rule:none}';
+        expect(css.split(rule)).toHaveLength(2);
+    });
+
+    it('ADR-0490: a Split Fill of one colour twice is the plain Fill it is', async () => {
+        const root = sheet([{ cells: ['same'], looks: [{ fill: 0x12_34_56, lowerRightFill: 0x12_34_56 }] }], { cellAppearance: lookOf });
+        await painted();
+        expect(cellAt(root, 0, 0).className).toBe('ex-cell ex-fill-123456');
+    });
+
+    it('ADR-0490: lowerRightFill without fill is refused by name, and is an RGB number like every colour', () => {
+        expect(() => checkedAppearance({ lowerRightFill: 0x22_b8_cf })).toThrow(/A Split Fill names both halves.*ADR-0490/);
+        expect(() => checkedAppearance({ fill: 0, lowerRightFill: 0x1_00_00_00 })).toThrow(RangeError);
+        expect(checkedAppearance({ fill: 0, lowerRightFill: 0xff_ff_ff })).toEqual({ fill: 0, lowerRightFill: 0xff_ff_ff });
+    });
+
+    it('ADR-0490: the Cell Editor over a Split Fill shows both halves, its surface being a background shorthand', () => {
+        const styles = new AppearanceStyles();
+        expect(styles.editorClassFor({ fill: 0x8a_63_d2, lowerRightFill: 0x22_b8_cf })).toBe('ex-fill-8a63d2-22b8cf');
+        expect(styles.css).toContain('{--ex-editor-background:linear-gradient(to bottom right,#8a63d2 50%,#22b8cf 50%)}');
     });
 
     it('ADR-0071: an edge is drawn once, from either cell\'s record, the upper cell holding the gridline and a thick line reaching past it', async () => {

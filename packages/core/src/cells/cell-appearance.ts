@@ -18,7 +18,7 @@ export interface CellBorder {
 
 /**
  * A cell's appearance (ADR-0050, item 15): its Font, its Fill, and the Border on each side. A part not given
- * paints as a grid without the declaration does.
+ * paints as a grid without the declaration does. A Fill may be split diagonally between two colours (ADR-0490).
  *
  * Each part is painted as Excel paints it (ADR-0071). The Font gives way on a Stale or Error cell, whose
  * state must never be the one that disappears (ADR-0006). A Fill covers the gridlines at the cell's edges. A
@@ -37,8 +37,14 @@ export interface CellAppearance {
     readonly underline?: boolean;
     /** A line through the text. */
     readonly strikethrough?: boolean;
-    /** The one solid colour behind the text as `0xRRGGBB`; none unless given. */
+    /** The one solid colour behind the text as `0xRRGGBB`; none unless given. With `lowerRightFill` it is the colour of
+     * the half above and left of the diagonal, a Split Fill's upper-left half (ADR-0490). */
     readonly fill?: number;
+    /** A Split Fill's other colour as `0xRRGGBB` (ADR-0490): the half below and right of the diagonal that runs from the
+     * cell's top-right corner to its bottom-left corner, whatever the column's width. Given only with `fill`, which
+     * colours the other half; given alone it is refused. Equal to `fill`, it paints the plain Fill it is. A Sheet never
+     * records one. */
+    readonly lowerRightFill?: number;
     /** The line on the top side; none unless given. */
     readonly top?: CellBorder;
     /** The line on the right side; none unless given. */
