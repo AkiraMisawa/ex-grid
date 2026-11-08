@@ -75,6 +75,12 @@ internal sealed record RowPaint<TRow>(
             json.WriteBoolean("strikethrough", true);
         if (appearance.Fill is { } fill)
             json.WriteNumber("fill", fill.Rgb);
+        if (appearance.LowerRightFill is { } lowerRight)
+        {
+            if (appearance.Fill is null)
+                throw new InvalidOperationException("A Split Fill names both halves: LowerRightFill is given only with Fill (ADR-0490).");
+            json.WriteNumber("lowerRightFill", lowerRight.Rgb);
+        }
         WriteBorder(json, "top", appearance.Top);
         WriteBorder(json, "right", appearance.Right);
         WriteBorder(json, "bottom", appearance.Bottom);

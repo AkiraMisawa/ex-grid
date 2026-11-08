@@ -1,0 +1,59 @@
+@using System.Globalization
+@using ExGrid.Cells
+
+@* Two drafts start from the same original rows. A cell the first draft changed is filled blue, one the second
+   changed is filled amber, and one both changed is split: the first draft above the diagonal, the second below it
+   (ADR-0490). The words travel in the cell's message, because colour is never the only signal. *@
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExGrid TRow="Position" Source="_source" Columns="_columns" CellAppearance="_appearance" CellMessageOf="_message"
+            Chrome="_chrome" PinnedColumnCount="1" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample(40));
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+
+    // The cells each draft changed, by position and column. An application finds them by comparing each draft with
+    // the original.
+    private static readonly HashSet<(int Id, string Column)> FirstDraft =
+        [(5001, "Quantity"), (5002, "Price"), (5004, "Quantity"), (5004, "Price"), (5007, "Desk"), (5009, "Price")];
+    private static readonly HashSet<(int Id, string Column)> SecondDraft =
+        [(5002, "Price"), (5003, "Quantity"), (5004, "Price"), (5006, "Instrument"), (5007, "Desk"), (5010, "Quantity")];
+
+    // The colours are the Consumer's, as RGB. Dark text keeps them legible under either colour scheme.
+    private static readonly RgbColour Ink = RgbColour.FromRgb(0x1d2733);
+    private static readonly CellAppearance First = new() { Fill = RgbColour.FromRgb(0xcfe2ff), FontColour = Ink };
+    private static readonly CellAppearance Second = new() { Fill = RgbColour.FromRgb(0xffe0b0), FontColour = Ink };
+    private static readonly CellAppearance Both = First with { LowerRightFill = Second.Fill };
+
+    private static (bool First, bool Second) Changed(Position position, GridColumn<Position> column) =>
+        (FirstDraft.Contains((position.Id, column.Name)), SecondDraft.Contains((position.Id, column.Name)));
+
+    // A lookup, asked for each painted cell: kept in a field, so the grid sees the same delegate on every render.
+    private readonly CellAppearanceOf<Position> _appearance = (position, column) => Changed(position, column) switch
+    {
+        (true, true) => Both,
+        (true, false) => First,
+        (false, true) => Second,
+        _ => CellAppearance.None,
+    };
+
+    private readonly Func<Position, GridColumn<Position>, string?> _message = (position, column) => Changed(position, column) switch
+    {
+        (true, true) => "Changed in both drafts.",
+        (true, false) => "Changed in the first draft.",
+        (false, true) => "Changed in the second draft.",
+        _ => null,
+    };
+}

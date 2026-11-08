@@ -91,6 +91,7 @@ export interface CellAppearance {
     readonly fontColour?: number;
     readonly italic?: boolean;
     readonly left?: CellBorder;
+    readonly lowerRightFill?: number;
     readonly right?: CellBorder;
     readonly strikethrough?: boolean;
     readonly top?: CellBorder;
