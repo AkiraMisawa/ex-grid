@@ -425,6 +425,75 @@ describe('createChart', () => {
         expect(root.querySelector('.ex-chart-table')).toBeNull();
     });
 
+    it('ADR-0275: the open table stands through a redraw, and only its changed cells are rewritten, so the keyboard and the scroll stay', () => {
+        const { root, chart } = mount({ definition: definition(), title: 'Exposure profile' });
+        click(q(root, '.ex-chart-table-toggle'));
+        const wrap = q(root, '.ex-chart-table-wrap', HTMLElement);
+        const rows = [...root.querySelectorAll('.ex-chart-table tbody tr')];
+        wrap.tabIndex = 0;
+        wrap.focus();
+        wrap.scrollTop = 40;
+        // A series hidden from the legend, an equal definition, new data: the block, its rows and the keyboard stay.
+        chart.update({ definition: definition(), hiddenSeries: ['pfe'] });
+        expect(q(root, '.ex-chart-table-wrap')).toBe(wrap);
+        expect([...root.querySelectorAll('.ex-chart-table thead th')].map(th => th.textContent)).toEqual(['Years', 'EPE', 'ENE']);
+        expect([...q(root, '.ex-chart-table tbody tr').children].map(c => c.textContent)).toEqual(['0', '1', '-1']);
+        chart.update({ definition: definition(), hiddenSeries: [] });
+        expect([...root.querySelectorAll('.ex-chart-table thead th')].map(th => th.textContent)).toEqual(['Years', 'EPE', 'PFE', 'ENE']);
+        chart.update({ definition: new ChartDefinition({ axis: { values: 'numbers', title: 'Years' }, series: [{ id: 'epe', name: 'EPE', kind: 'level', points: points([7, 8]) }] }) });
+        expect(q(root, '.ex-chart-table-wrap')).toBe(wrap);
+        const standing = [...root.querySelectorAll('.ex-chart-table tbody tr')];
+        expect(standing).toHaveLength(2);
+        standing.forEach((row, r) => { expect(row).toBe(rows[r]); });
+        expect([...root.querySelectorAll('.ex-chart-table tbody tr')].map(tr => [...tr.children].map(c => [c.tagName, c.textContent])))
+            .toEqual([[['TH', '0'], ['TD', '7']], [['TH', '1'], ['TD', '8']]]);
+        expect(document.activeElement).toBe(wrap);
+        expect(wrap.scrollTop).toBe(40);
+        chart.update({ definition: definition(), title: 'Exposure' });
+        expect(q(root, '.ex-chart-table caption').textContent).toBe('Exposure');
+        expect(root.querySelectorAll('.ex-chart-table tbody tr')).toHaveLength(5);
+        expect(q(root, '.ex-chart-table-wrap')).toBe(wrap);
+    });
+
+    it('ADR-0275: a table replaced by the thinned notice under the keyboard hands it to the notice, and back, never to the body', () => {
+        const thinned = new ChartDefinition({
+            axis: { values: 'numbers' },
+            series: [{ id: 's', name: 'S', kind: 'level', points: points([1, 5]), thinned: [{ from: 0, to: 1, min: 1, max: 5, count: 400 }] }],
+        });
+        const { root, chart } = mount({ definition: definition() });
+        click(q(root, '.ex-chart-table-toggle'));
+        const wrap = q(root, '.ex-chart-table-wrap', HTMLElement);
+        wrap.tabIndex = 0;
+        wrap.focus();
+        chart.update({ definition: thinned });
+        expect(wrap.isConnected).toBe(false);
+        expect(document.activeElement).toBe(q(root, '.ex-chart-table-notice'));
+        chart.update({ definition: definition() });
+        expect(root.querySelector('.ex-chart-table-notice')).toBeNull();
+        expect(document.activeElement).not.toBe(document.body);
+        expect(root.contains(document.activeElement)).toBe(true);
+    });
+
+    it('ADR-0275: in a shadow root too, the replaced table hands the keyboard to the notice drawn in its place', () => {
+        const host = document.createElement('div');
+        document.body.append(host);
+        const shadow = host.attachShadow({ mode: 'open' });
+        const root = document.createElement('div');
+        shadow.append(root);
+        const chart = createChart(root, { definition: definition() });
+        mounted.push(chart);
+        click(q(root, '.ex-chart-table-toggle'));
+        const wrap = q(root, '.ex-chart-table-wrap', HTMLElement);
+        wrap.tabIndex = 0;
+        wrap.focus();
+        expect(shadow.activeElement).toBe(wrap);
+        chart.update({ definition: new ChartDefinition({
+            axis: { values: 'numbers' },
+            series: [{ id: 's', name: 'S', kind: 'level', points: points([1, 5]), thinned: [{ from: 0, to: 1, min: 1, max: 5, count: 400 }] }],
+        }) });
+        expect(shadow.activeElement).toBe(q(root, '.ex-chart-table-notice'));
+    });
+
     it('ADR-0344, spine rule 1: a chart its Chart Source thinned saves no CSV and shows no table of the points it holds', async () => {
         const thinned = new ChartDefinition({
             axis: { values: 'numbers' },

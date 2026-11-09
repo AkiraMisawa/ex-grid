@@ -97,10 +97,11 @@
             covered by the ranges together, including overlapping ranges. Headings between ranges stay unmarked.
         </p>
         <p>
-            <code>--ex-heading-mark</code> colours the line, letters and selected triangle;
-            <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code> set the
-            two shades. Your Theme's tokens win. ExSheet.MudBlazor uses its palette, with the primary for the line
-            and letters. The Headings follow the frame's colour scheme, including their shades in dark mode;
+            <code>--ex-heading-mark</code> colours the line and selected triangle, and the letters unless
+            <code>--ex-heading-mark-color</code> is set; <code>--ex-heading-mark-background</code> and
+            <code>--ex-heading-mark-whole-background</code> set the two shades. Your Theme's tokens win.
+            ExSheet.MudBlazor and the Mantine and MUI Wrappers use their palette, with the primary for the line and,
+            for the letters, the primary darkened or lightened until it reads as text (4.5:1) on either shade. The Headings follow the frame's colour scheme, including their shades in dark mode;
             they do not take the cells' white Paper. Where a Heading covers a side of the Focus or a single range,
             its mark supplies the two device pixels without a second outline beside it. Against the pinned block,
             the outline stays inside the cell.

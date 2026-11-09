@@ -20,3 +20,13 @@ reader walks by its own commands. Highcharts' accessibility module takes the sam
 *(2026-10-19, [ADR-0283](./0283-exchart-ships-on-the-familys-train-measured-and-checked-by-machine.md),
 decided with the user: the summary and the table are fixed by an ARIA snapshot in layer 3, not read by
 a person; what a screen reader actually speaks is stated as not verified.)*
+
+*Note of 2026-11-09, found in the review of the legend's keyboard fix (#549):* **the open table stands while
+the chart draws again.** Every rebuild — a series toggled from the legend, new data, a range narrowed, the
+axis switched — replaced the whole table block, so a reader scrolled down a long table was sent back to its
+first row, and one who had tabbed into its scroller lost the keyboard to the page's body. Now the block, its
+caption and its rows stay, and only the rows and cells whose text changed are rewritten, as the drawing's
+parts are (ADR-0252); a 3D surface's table does the same. When the block itself must be replaced — the
+table turned into the notice that the chart was thinned at its source (ADR-0344), or back — a keyboard it
+held is handed to the block drawn in its place, or, where that takes none, to the "View as table" button of
+the built-in toolbar, never to the page's body, as ADR-0271's note of the same day does for the legend.

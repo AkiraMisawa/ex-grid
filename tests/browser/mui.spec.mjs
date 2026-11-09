@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import { REACT } from './hosting.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
-import { contrast, painted, resolvedColour } from './pixels.mjs';
+import { contrast, painted, resolvedColour, weakestHeadingLetters } from './pixels.mjs';
 
 // @ex-grid/mui on /mui, the React host's alone (ADR-0390 section 7): what only a browser shows of a design-system
 // Wrapper. The geometry stays what the grid declared under MUI's own styles, the theme's CSS variables paint the
@@ -99,6 +99,25 @@ test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s
         await expect(grid(page).locator('.ex-range-tint')).not.toHaveCount(0);
         const range = await colours();
         expect(range.fill, JSON.stringify(range)).not.toBe('rgba(0, 0, 0, 0)');
+    }
+});
+
+test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades, in light and dark, whatever the primary @behaviour', async ({ page }) => {
+    await open(page);
+    const worst = (state) => weakestHeadingLetters(grid(page), { frame: '.mui-ex-grid', variable: '--mui-palette-primary-main', state });
+    for (const dark of [false, true]) {
+        if (dark) {
+            await page.locator('#toggle-dark').click();
+            await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+        }
+        await press(page, 2, 1);
+        await expect(grid(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
+        const marked = await worst('ex-heading-marked');
+        expect(marked.ratio, `part of the column, dark=${dark} (${JSON.stringify(marked)})`).toBeGreaterThanOrEqual(4.5);
+        await page.keyboard.press('Control+Space');
+        await expect(grid(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
+        const whole = await worst('ex-heading-whole');
+        expect(whole.ratio, `the whole column, dark=${dark} (${JSON.stringify(whole)})`).toBeGreaterThanOrEqual(4.5);
     }
 });
 

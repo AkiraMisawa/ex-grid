@@ -31,6 +31,7 @@ import { chartWord, chartWordIds, type ChartLabel } from './chart-words';
 import { readEnd, writeEnd } from './range-text';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { n } from './svg-markup';
+import { drawTable, setText, tableBlock, type TableContent } from './table-block';
 
 /**
  * The range of the horizontal axis the user narrowed the chart to (ADR-0273), in the axis' own values — a
@@ -273,6 +274,8 @@ export class ChartElement {
     #notes: HTMLUListElement | null = null;
     #tableBlock: HTMLElement | null = null;
     #tableShown: ChartTable | 'notice' | null = null;
+    #tableCaption = '';
+    #tableNotice = '';
     #parts: readonly (DrawingPart & { readonly nodes: readonly ChildNode[] })[] = [];
     #hits: readonly HTMLDivElement[] = [];
     #hitPlots = '';
@@ -1498,9 +1501,7 @@ export class ChartElement {
 
     // The legend entry that holds the keyboard, read before a paint rewrites any part.
     #heldEntry(): HeldEntry | null {
-        const doc = this.#root.ownerDocument;
-        const scope = this.#root.getRootNode();
-        const active = scope === doc ? doc.activeElement : scope instanceof ShadowRoot ? scope.activeElement : null;
+        const active = this.#activeElement();
         const element = active === null || !this.#svg.contains(active) ? null : active.closest('.ex-chart-legend-entry');
         if (element === null) {
             return null;
@@ -1517,8 +1518,7 @@ export class ChartElement {
     // never to the page's body, where no key reaches the chart (ADR-0410's note of 2026-10-28). Only a keyboard the
     // paint dropped is handed back: one that a listener moved elsewhere as the entry left stays where it was put.
     #handBack(held: HeldEntry): void {
-        const doc = this.#root.ownerDocument;
-        if (held.element.isConnected || (doc.activeElement !== null && doc.activeElement !== doc.body)) {
+        if (held.element.isConnected || !this.#keyboardDropped()) {
             return;
         }
         const everywhere = legendEntries(this.#parts);
@@ -1718,65 +1718,98 @@ export class ChartElement {
     #paintTable(): void {
         const shown: ChartTable | 'notice' | null = !this.#tableOpen ? null : this.#thinnedAtSource ? 'notice' : this.#table;
         const caption = this.#options.title === undefined || this.#options.title.trim() === '' ? this.#word(chartWordIds.chartData) : this.#options.title;
-        if (shown === 'notice' && this.#tableShown === 'notice' && this.#tableBlock !== null) {
-            setText(this.#tableBlock, this.#word(chartWordIds.thinnedAtSource));
+        // The notice's words matter only while it is shown: a table's cells are not walked for text they never hold.
+        const notice = shown === 'notice' ? this.#word(chartWordIds.thinnedAtSource) : '';
+        const block = this.#tableBlock;
+        if (shown === this.#tableShown && caption === this.#tableCaption && notice === this.#tableNotice) {
             return;
         }
-        if (shown === this.#tableShown && this.#tableBlock?.querySelector('caption')?.textContent === caption) {
-            return;
-        }
-        if (shown === this.#tableShown && shown !== 'notice' && shown !== null) {
-            setText(found(this.#tableBlock === null ? null : this.#tableBlock.querySelector('caption'), 'the table\'s caption'), caption);
-            return;
-        }
+        const wasTable = this.#tableShown !== null && this.#tableShown !== 'notice';
         this.#tableShown = shown;
-        this.#tableBlock?.remove();
+        this.#tableCaption = caption;
+        this.#tableNotice = notice;
+        // While the table stays open the block stands, and only the text that changed is rewritten, so the
+        // keyboard and the scroll position stay where the reader left them (ADR-0275's note of 2026-11-09).
+        if (block !== null && shown === 'notice' && !wasTable) {
+            setText(block, notice);
+            return;
+        }
+        if (block !== null && shown !== null && shown !== 'notice' && wasTable) {
+            drawTable(block, tableContent(shown, caption));
+            return;
+        }
+        const held = block !== null && this.#holdsKeyboard(block);
+        block?.remove();
         this.#tableBlock = null;
+        // Only the toggle and the menu's command close the table, and each holds the keyboard as it does.
         if (shown === null) {
             return;
         }
         if (shown === 'notice') {
-            const notice = document.createElement('p');
-            notice.className = 'ex-chart-table-notice';
-            notice.setAttribute('role', 'note');
-            notice.textContent = this.#word(chartWordIds.thinnedAtSource);
-            this.#root.append(notice);
-            this.#tableBlock = notice;
+            const p = this.#root.ownerDocument.createElement('p');
+            p.className = 'ex-chart-table-notice';
+            p.setAttribute('role', 'note');
+            p.textContent = notice;
+            this.#tableBlock = p;
+        } else {
+            const wrap = tableBlock(this.#root.ownerDocument);
+            drawTable(wrap, tableContent(shown, caption));
+            this.#tableBlock = wrap;
+        }
+        this.#root.append(this.#tableBlock);
+        if (held) {
+            this.#handTableBack(this.#tableBlock);
+        }
+    }
+
+    // The element that holds the keyboard, read in the root's own document or shadow root.
+    #activeElement(): Element | null {
+        const doc = this.#root.ownerDocument;
+        const scope = this.#root.getRootNode();
+        return scope === doc ? doc.activeElement : scope instanceof ShadowRoot ? scope.activeElement : null;
+    }
+
+    // Whether the keyboard is inside `element`.
+    #holdsKeyboard(element: Element): boolean {
+        const active = this.#activeElement();
+        return active !== null && element.contains(active);
+    }
+
+    // Whether a paint dropped the keyboard: it is on the page's body, nowhere in the root's shadow root, or still on
+    // an element that has left the page. One a listener moved elsewhere is not dropped.
+    #keyboardDropped(): boolean {
+        const active = this.#activeElement();
+        return active === null || active === this.#root.ownerDocument.body || !active.isConnected;
+    }
+
+    // The table's block replaced under the keyboard — the table turned into the notice that the chart was thinned
+    // at its source, or back — hands the keyboard to the block drawn in its place, never to the page's body,
+    // where no key reaches the chart (ADR-0275's note of 2026-11-09, as ADR-0271's of the same day does for the
+    // legend). Only a keyboard the replacement dropped is handed back.
+    #handTableBack(block: HTMLElement): void {
+        if (!this.#keyboardDropped()) {
             return;
         }
-        const wrap = document.createElement('div');
-        wrap.className = 'ex-chart-table-wrap';
-        const table = document.createElement('table');
-        table.className = 'ex-chart-table';
-        const captionElement = document.createElement('caption');
-        captionElement.textContent = caption;
-        const head = document.createElement('thead');
-        const headRow = document.createElement('tr');
-        for (const h of shown.header) {
-            const th = document.createElement('th');
-            th.scope = 'col';
-            th.textContent = h;
-            headRow.append(th);
+        // The notice is no control; it takes the keyboard only as the place a reader was reading.
+        if (block.classList.contains('ex-chart-table-notice')) {
+            block.tabIndex = -1;
         }
-        head.append(headRow);
-        const body = document.createElement('tbody');
-        for (const row of shown.rows) {
-            const tr = document.createElement('tr');
-            row.forEach((value, c) => {
-                const cell = document.createElement(c === 0 ? 'th' : 'td');
-                if (c === 0) {
-                    cell.setAttribute('scope', 'row');
-                }
-                cell.textContent = value;
-                tr.append(cell);
-            });
-            body.append(tr);
+        block.focus({ preventScroll: true });
+        // A table too short to scroll is no scroller the browser lets the keyboard into: the button that shows it
+        // takes the keyboard, where the built-in toolbar draws one.
+        if (this.#keyboardDropped()) {
+            this.#toolbar.querySelector<HTMLElement>('.ex-chart-table-toggle')?.focus({ preventScroll: true });
         }
-        table.append(captionElement, head, body);
-        wrap.append(table);
-        this.#root.append(wrap);
-        this.#tableBlock = wrap;
     }
+}
+
+// What the chart's table shows, as cells: the axis' column and a column per series, a row per position.
+function tableContent(table: ChartTable, caption: string): TableContent {
+    return {
+        caption,
+        head: table.header.map(text => ({ tag: 'th', text, scope: 'col' })),
+        rows: table.rows.map(row => row.map((text, c) => (c === 0 ? { tag: 'th', text, scope: 'row' } : { tag: 'td', text }))),
+    };
 }
 
 /** The class the built-in toolbar's button for a command carries, which the DOM contract and layer 3 name. */
@@ -1817,11 +1850,6 @@ function found<T>(value: T | null, what: string): T {
 // A field's text: an end not typed is an empty field.
 const fieldText = (text: string | null): string => (text === null ? '' : text);
 
-function setText(element: Element, text: string): void {
-    if (element.textContent !== text) {
-        element.textContent = text;
-    }
-}
 
 // SVG markup parsed in SVG's namespace, as the nodes it is.
 function svgNodes(markup: string): readonly ChildNode[] {

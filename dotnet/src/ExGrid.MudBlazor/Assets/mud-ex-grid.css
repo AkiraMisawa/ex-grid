@@ -40,6 +40,10 @@
        The text palette may carry alpha; take its channels before mixing into the surface. */
     --ex-heading-mark-background: color-mix(in srgb, rgb(from var(--mud-palette-text-primary) r g b / 1) 12%, var(--mud-palette-surface));
     --ex-heading-mark-whole-background: color-mix(in srgb, var(--mud-palette-primary) 20%, var(--mud-palette-surface));
+    /* The marked Heading's letters are text, which needs 4.5:1 against both shades above where the line needs
+       3:1 (ADR-0029's note of 2026-11-09): the primary darkened to an OKLCH lightness of at most 0.42, hue and
+       chroma kept. The dark scheme lightens it, below. */
+    --ex-heading-mark-color: oklch(from var(--mud-palette-primary) min(l, 0.42) c h);
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);
     --ex-editor-color: var(--mud-palette-text-primary);
@@ -115,6 +119,9 @@
 @container style(--mud-native-html-color-scheme: dark) {
     .mud-ex-grid {
         --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.64) c h);
+        /* At least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
+           the dark: 4.5:1 for any primary against the shades over the default dark surface. */
+        --ex-heading-mark-color: oklch(from var(--mud-palette-primary) max(l, 0.87) min(c, 0.1) h);
     }
 }
 .mud-ex-grid.mud-ex-grid-square {

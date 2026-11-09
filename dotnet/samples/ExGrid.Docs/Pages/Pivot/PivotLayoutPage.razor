@@ -134,10 +134,12 @@
             label column when the selection reaches it. A whole column takes a distinct shade, including when
             several ranges together cover it. It is ExGrid's
             <a href="exgrid/selection#rectangles--a-focus-and-an-extent">Heading Mark</a>:
-            <code>--ex-heading-mark</code> colours the line and letters in the Focus outline's colour unless set;
+            <code>--ex-heading-mark</code> colours the line in the Focus outline's colour unless set, and the
+            letters unless <code>--ex-heading-mark-color</code> is set;
             <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code> set the
-            two shades. Your Theme's tokens win, ExPivot.MudBlazor uses its palette, and the header follows the
-            frame's colour scheme. Where the header covers a side of the Focus or a single range, the mark supplies
+            two shades. Your Theme's tokens win, and ExPivot.MudBlazor and the Mantine and MUI Wrappers use their
+            palette, with the letters in a shade of the primary that reads as text on either shade. The header
+            follows the frame's colour scheme. Where the header covers a side of the Focus or a single range, the mark supplies
             the two device pixels without a second outline beside it. Against the pinned block, the outline stays
             inside the cell.
             The ordinary Focus and single-range outline defaults to two device pixels on every side,

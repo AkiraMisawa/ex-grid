@@ -19,6 +19,7 @@ import { chartWord, chartWordIds, type ChartLabel } from './chart-words';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { clamp, drawSurface, sliceAxisAt, type DrawnSurfacePoint, type SurfaceDrawing } from './surface-drawing';
 import { n } from './svg-markup';
+import { drawTable, setText, tableBlock, type TableCell, type TableContent } from './table-block';
 
 /** What a 3D surface is drawn from, and what it raises. */
 export interface SurfaceOptions {
@@ -826,49 +827,42 @@ export class SurfaceElement {
         }
         this.#tableShape = shape;
         this.#tableOf = definition;
-        this.#tableBlock?.remove();
-        this.#tableBlock = null;
         if (!this.#tableOpen) {
+            this.#tableBlock?.remove();
+            this.#tableBlock = null;
             return;
         }
+        // While the table stays open its block stands, and new data rewrites only the cells whose text changed,
+        // so the keyboard and the scroll position stay where the reader left them (ADR-0275's note of 2026-11-09).
+        if (this.#tableBlock === null) {
+            this.#tableBlock = this.#root.appendChild(tableBlock(this.#root.ownerDocument));
+        }
+        drawTable(this.#tableBlock, { caption, ...this.#tableCells(definition) });
+    }
+
+    // The surface's values as cells: a row per y and a column per x, or a mesh's nodes, each where it lies.
+    #tableCells(definition: SurfaceDefinition): Omit<TableContent, 'caption'> {
         const x = nameOr(definition.x.title, 'x');
         const y = nameOr(definition.y.title, 'y');
-        const headRow = document.createElement('tr');
-        const body = document.createElement('tbody');
         const nodes = definition.nodes;
         if (nodes === undefined) {
-            headRow.append(cell('th', `${y} \\ ${x}`, 'col'), ...definition.x.values.map((_, i) => cell('th', definition.x.write(i), 'col')));
-            definition.y.values.forEach((_, j) => {
-                const tr = document.createElement('tr');
-                tr.append(cell('th', definition.y.write(j), 'row'));
-                definition.x.values.forEach((__, i) => {
-                    const v = definition.at(i, j);
-                    tr.append(cell('td', v === null ? '' : definition.writeZ(v)));
-                });
-                body.append(tr);
-            });
-        } else {
-            // A mesh has no grid to tabulate: its nodes are listed, each where it lies (ADR-0311).
-            headRow.append(cell('th', x, 'col'), cell('th', y, 'col'), cell('th', nameOr(definition.zTitle, this.#word(chartWordIds.surfaceValue)), 'col'));
-            for (const q of nodes) {
-                const tr = document.createElement('tr');
-                tr.append(cell('td', definition.x.writeValue(q.x)), cell('td', definition.y.writeValue(q.y)),
-                    cell('td', q.z === null ? '' : definition.writeZ(q.z)));
-                body.append(tr);
-            }
+            return {
+                head: [cell('th', `${y} \\ ${x}`, 'col'), ...definition.x.values.map((_, i) => cell('th', definition.x.write(i), 'col'))],
+                rows: definition.y.values.map((_, j) => [
+                    cell('th', definition.y.write(j), 'row'),
+                    ...definition.x.values.map((__, i) => {
+                        const v = definition.at(i, j);
+                        return cell('td', v === null ? '' : definition.writeZ(v));
+                    }),
+                ]),
+            };
         }
-        const head = document.createElement('thead');
-        head.append(headRow);
-        const captionElement = document.createElement('caption');
-        captionElement.textContent = caption;
-        const table = document.createElement('table');
-        table.className = 'ex-chart-table';
-        table.append(captionElement, head, body);
-        const wrap = document.createElement('div');
-        wrap.className = 'ex-chart-table-wrap';
-        wrap.append(table);
-        this.#root.append(wrap);
-        this.#tableBlock = wrap;
+        // A mesh has no grid to tabulate: its nodes are listed, each where it lies (ADR-0311).
+        return {
+            head: [cell('th', x, 'col'), cell('th', y, 'col'), cell('th', nameOr(definition.zTitle, this.#word(chartWordIds.surfaceValue)), 'col')],
+            rows: nodes.map(q => [cell('td', definition.x.writeValue(q.x)), cell('td', definition.y.writeValue(q.y)),
+                cell('td', q.z === null ? '' : definition.writeZ(q.z))]),
+        };
     }
 
 }
@@ -880,13 +874,8 @@ function toolbarButton(cls: string): HTMLButtonElement {
     return b;
 }
 
-function cell(tag: 'th' | 'td', content: string, scope?: 'col' | 'row'): HTMLTableCellElement {
-    const c = document.createElement(tag);
-    if (scope !== undefined) {
-        c.setAttribute('scope', scope);
-    }
-    c.textContent = content;
-    return c;
+function cell(tag: 'th' | 'td', text: string, scope?: 'col' | 'row'): TableCell {
+    return scope === undefined ? { tag, text } : { tag, text, scope };
 }
 
 function arrowStep(key: string): readonly [number, number] | null {
@@ -896,11 +885,5 @@ function arrowStep(key: string): readonly [number, number] | null {
         case 'ArrowUp': return [0, -1];
         case 'ArrowDown': return [0, 1];
         default: return null;
-    }
-}
-
-function setText(element: Element, text: string): void {
-    if (element.textContent !== text) {
-        element.textContent = text;
     }
 }

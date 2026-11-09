@@ -222,7 +222,7 @@ describe('createSurface', () => {
         expect(q(root, '.ex-chart-notes').textContent).toBe('Tenor 3Y の断面はありません。このサーフェスにその値はありません。');
     });
 
-    it('ADR-0275, ADR-0311: View as table tabulates a grid, its hole blank, and lists a mesh\'s nodes', () => {
+    it('ADR-0275, ADR-0311: View as table tabulates a grid, its hole blank, and lists a mesh\'s nodes in the block that stands', () => {
         const { root, surface } = mount({ definition: vol(), title: 'EURUSD' });
         click(q(root, '.ex-chart-table-toggle'));
         expect(q(root, '.ex-chart-table-toggle').getAttribute('aria-expanded')).toBe('true');
@@ -230,7 +230,13 @@ describe('createSurface', () => {
         expect([...root.querySelectorAll('.ex-chart-table thead th')].map(th => th.textContent)).toEqual(['Tenor \\ Delta', ...deltas]);
         expect(root.querySelectorAll('.ex-chart-table tbody tr')).toHaveLength(8);
         expect(root.querySelectorAll('.ex-chart-table tbody tr')[6]?.querySelectorAll('td')[3]?.textContent).toBe('');
+        // New data rewrites the cells in the block that stands, so a reader keeps the keyboard and the scroll (#549).
+        const wrap = q(root, '.ex-chart-table-wrap');
+        const first = q(root, '.ex-chart-table tbody tr');
         surface.update({ definition: mesh() });
+        expect(q(root, '.ex-chart-table-wrap')).toBe(wrap);
+        expect(q(root, '.ex-chart-table tbody tr')).toBe(first);
+        expect([...first.children].map(c => [c.tagName, c.getAttribute('scope')])).toEqual([['TD', null], ['TD', null], ['TD', null]]);
         expect(q(root, '.ex-chart-table caption').textContent).toBe('Surface data');
         expect([...root.querySelectorAll('.ex-chart-table thead th')].map(th => th.textContent)).toEqual(['x', 'y', 'u']);
         expect(root.querySelectorAll('.ex-chart-table tbody tr')).toHaveLength(4);
