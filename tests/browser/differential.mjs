@@ -34,17 +34,30 @@ export const pick = (next, list) => list[Math.floor(next() * list.length)];
  * and a title drawn twice would name two different tests.
  */
 export function seedsOf(fixed) {
+    const seeds = [...fixed];
+    const add = (seed) => {
+        if (!seeds.includes(seed)) seeds.push(seed);
+    };
     const extra = process.env.EXGRID_DIFF_SEED;
-    if (!extra) {
-        return fixed;
+    if (extra) {
+        const number = Number(extra);
+        if (!Number.isInteger(number) || number <= 0) {
+            throw new Error(`EXGRID_DIFF_SEED is not a positive whole number: ${extra}`);
+        }
+        // A run id past mulberry32's range is folded into it; one that folds to 0 takes 1.
+        add(number % 0x7FFFFFFF || 1);
     }
-    const number = Number(extra);
-    if (!Number.isInteger(number) || number <= 0) {
-        throw new Error(`EXGRID_DIFF_SEED is not a positive whole number: ${extra}`);
+    // A sweep: EXGRID_DIFF_SEEDS=first-last adds every seed between, to look for the races one seed a night
+    // would take months to draw (the review of 2026-11-08).
+    const sweep = process.env.EXGRID_DIFF_SEEDS;
+    if (sweep) {
+        const range = /^(\d+)-(\d+)$/.exec(sweep);
+        if (range === null || Number(range[1]) <= 0 || Number(range[2]) < Number(range[1]) || Number(range[2]) >= 0x7FFFFFFF) {
+            throw new Error(`EXGRID_DIFF_SEEDS is not a range of positive seeds, first-last: ${sweep}`);
+        }
+        for (let seed = Number(range[1]); seed <= Number(range[2]); seed++) add(seed);
     }
-    // A run id past mulberry32's range is folded into it; one that folds to 0 takes 1.
-    const seed = number % 0x7FFFFFFF || 1;
-    return fixed.includes(seed) ? fixed : [...fixed, seed];
+    return seeds;
 }
 
 /**

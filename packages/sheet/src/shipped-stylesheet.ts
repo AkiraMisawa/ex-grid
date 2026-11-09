@@ -5,4 +5,4 @@
 export const stylesheetName = 'ex-sheet.css';
 
 /** The SHA-256 of that stylesheet's source: the stamp its own notice rule hides the notice for. */
-export const stylesheetStamp = '17ce2ebd71ab40f9a773a2965946086201667a9c8f52525abd042a581c4c26f7';
+export const stylesheetStamp = '1008b0af94139e01643800cc5a1204d2eb3c28ca25264d9c60d88deb0155229f';

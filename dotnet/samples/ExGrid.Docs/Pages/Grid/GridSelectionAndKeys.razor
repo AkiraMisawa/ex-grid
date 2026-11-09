@@ -25,8 +25,9 @@
             Headings corner, its triangle takes the mark's colour when every cell is selected.
         </p>
         <p>
-            The mark changes without rendering the data row components again. Its line, letters and selected corner triangle use
-            <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it. The shades use
+            The mark changes without rendering the data row components again. Its line and selected corner triangle use
+            <code>--ex-heading-mark</code>, the Focus outline's colour unless you set it, and its letters
+            <code>--ex-heading-mark-color</code>, the line's colour unless you set it. The shades use
             <code>--ex-heading-mark-background</code> and <code>--ex-heading-mark-whole-background</code>
             (<a href="exgrid/appearance#visual-tokens">Visual Tokens</a>). Where the header or a Row Heading covers
             a side of the Focus or a single range, the mark supplies its two device pixels without a second outline
@@ -155,7 +156,10 @@
             <code>await expect(page.locator('.ex-grid')).toHaveAttribute('data-ex-settled', '')</code> between
             the last input and the first reading. Never wait a fixed time between inputs to make a script pass: a
             user typing quickly meets the very ordering the wait hides, and the grid already keeps every input in
-            its place.
+            its place. On Blazor that includes what .NET carries out: a key typed straight after Delete,
+            <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd>, a row Action or a Name Box entry waits until your handler has run and its rows have reached
+            the page, so an <kbd>F2</kbd> after an undo opens on the value the undo put back. A press made while an
+            edit's commit waits for its answer lands on the cell it was made on.
         </p>
         <p>
             <strong>Wait for the grid to be there first.</strong> Blazor's ExGrid, ExSheet and ExPivot are drawn by their

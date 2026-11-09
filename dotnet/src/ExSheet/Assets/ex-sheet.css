@@ -166,7 +166,7 @@
    Wrapper token wins in either. Original Row Headings retain the frame's colour scheme. */
 .ex-sheet .ex-header-cell.ex-heading-marked, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading {
     background-color: var(--ex-heading-mark-background, light-dark(#e1e1e1, color-mix(in srgb, CanvasText 12%, Canvas)));
-    color: var(--ex-heading-mark, var(--ex-focus-outline, #217346));
+    color: var(--ex-heading-mark-color, var(--ex-heading-mark, var(--ex-focus-outline, #217346)));
 }
 .ex-sheet .ex-header-cell.ex-heading-whole, .ex-sheet .ex-row:where(:has(+ .ex-heading-state.ex-heading-whole)) > .ex-row-heading {
     background-color: var(--ex-heading-mark-whole-background, light-dark(#d3f0e0, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, #217346)) 20%, Canvas)));

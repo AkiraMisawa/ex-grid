@@ -33,6 +33,9 @@
     /* Heading Mark shades are opaque, so nothing beneath can alter the frame's shade. */
     --ex-heading-mark-background: color-mix(in srgb, var(--mantine-color-text) 12%, var(--mantine-color-body));
     --ex-heading-mark-whole-background: color-mix(in srgb, var(--mantine-primary-color-filled) 20%, var(--mantine-color-body));
+    /* The marked Heading's letters are text, which needs 4.5:1 against both shades above where the line needs 3:1:
+       the primary held to a lightness that reads as text in each scheme (ADR-0029's note of 2026-11-09). */
+    --ex-heading-mark-color: var(--mantine-ex-ink);
     --ex-grid-focus-outline: 2px solid var(--mantine-ex-strong);
     --ex-editor-background: var(--mantine-color-body);
     --ex-editor-color: var(--mantine-color-text);
@@ -90,6 +93,10 @@
     /* What the keyboard's marks are drawn in, the Focus outline, the grid's and the editor's: the primary, which
        the light body sets off. */
     --mantine-ex-strong: var(--mantine-primary-color-filled);
+    /* What the keyboard's marks write text in: the primary, darkened where it is lighter than an OKLCH lightness
+       of 0.42, hue and chroma kept, which holds 4.5:1 against the Heading Mark's shades for every Mantine colour at
+       every shade, and for any hue at any lightness. */
+    --mantine-ex-ink: oklch(from var(--mantine-primary-color-filled) min(l, 0.42) c h);
 }
 :where([data-mantine-color-scheme='dark']) .mantine-ex-grid {
     --mantine-ex-rule: var(--mantine-color-dark-4);
@@ -102,6 +109,9 @@
     /* The dark scheme's (UX-9): the primary with its lightness raised just far enough to clear 3:1 against the
        dark body, hue and chroma kept, as the MudBlazor Wrapper raises its own. */
     --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) c h);
+    /* Lightened to at least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
+       the dark (a full red at 0.78 painted 4.4:1). */
+    --mantine-ex-ink: oklch(from var(--mantine-primary-color-filled) max(l, 0.87) min(c, 0.1) h);
 }
 /* A Stretch grid's Paper (ADR-0045): as wide as the container, so the grid inside it takes the container's width, not
    its columns'. */

@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, dataRowCount, setTicked, chromeHost } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount, setTicked, chromeHost, atOnce } from './fixtures.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
@@ -158,7 +158,9 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-file')).toBeDisabled();
             await expect(page.locator('#csv-sample')).toBeDisabled();
 
-            await page.locator('#csv-cancel').click();
+            // Made while the file streams to the Server host, which keeps the circuit busy until the press stops it: there is
+            // no quiet to aim at (fixtures.mjs, atOnce).
+            await atOnce(() => page.locator('#csv-cancel').click());
 
             await expect(status(page)).toHaveText(/^Cancelled after [\d,]+ rows: nothing was read\.$/);
             // And nothing read after it, once the host has said all it will (ADR-0056).

@@ -1,6 +1,6 @@
 import { test, expect, alterPage, circuitQuiet, twoFrames, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, columnHeader, expectFocusAt, openSheet, pressAt } from './sheet-helpers.mjs';
-import { painted, resolvedColour, paints, blend, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
+import { contrast, painted, resolvedColour, paints, blend, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
 
 // The Heading Mark (ADR-0008, 2026-10-13; UX-21), read in device pixels from what the browser
 // painted: for every Selection, the Headings of the columns and the rows that hold part of it carry
@@ -180,7 +180,11 @@ for (const [chrome, mode] of CHROMES) {
         if (mode === 'builtin') expect(ink).toEqual([33, 115, 70]);
         for (const heading of [c, label]) {
             expect(paints(await headingPaint(page, heading), ordinary)).toBe(true);
-            expect(await resolvedColour(page, await heading.evaluate(el => getComputedStyle(el).color))).toEqual(ink);
+            const letters = await resolvedColour(page, await heading.evaluate(el => getComputedStyle(el).color));
+            // The Sheet's letters are its line's green; a Wrapper's are its primary held to a shade that reads as
+            // text, 4.5:1 on the shade where the line needs 3:1 (ADR-0029's note of 2026-11-09).
+            if (mode === 'builtin') expect(letters).toEqual(ink);
+            else expect(contrast(letters, ordinary), JSON.stringify({ letters, ordinary })).toBeGreaterThanOrEqual(4.5);
         }
         await expect(grid.locator('.ex-headings-corner-marked')).toHaveCount(0);
         await expect(grid.locator('.ex-header-cell.ex-heading-whole')).toHaveCount(0);
@@ -226,7 +230,7 @@ for (const [chrome, mode] of CHROMES) {
         await alterPage(page, () => {
             const root = document.querySelector('.ex-sheet .ex-grid');
             const before = root.getAttribute('style');
-            root.style.setProperty('--ex-heading-mark', 'rgb(180, 0, 20)');
+            root.style.setProperty('--ex-heading-mark-color', 'rgb(180, 0, 20)');
             root.style.setProperty('--ex-heading-mark-whole-background', 'rgb(220, 235, 250)');
             return () => before === null ? root.removeAttribute('style') : root.setAttribute('style', before);
         });

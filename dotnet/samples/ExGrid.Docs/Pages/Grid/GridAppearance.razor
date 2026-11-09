@@ -49,7 +49,8 @@
                 <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
                 <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
                 <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code>, <code>--ex-focus-among-ranges-outline</code></td><td>The selection and the Focus cell. The fill lies over the cells' text, so give it a translucent colour. The last is the Focus's thin border among several ranges, and is the Focus outline's colour unless you set it.</td></tr>
-                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark's line, marked letters and all-selected corner triangle. The Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark</code></td><td>The Heading Mark's line and all-selected corner triangle. The Focus outline's colour unless you set it.</td></tr>
+                <tr><td><code>--ex-heading-mark-color</code></td><td>The marked Heading's letters. Text needs 4.5:1 against the shades below, where a line needs 3:1, so the letters have a token of their own; <code>--ex-heading-mark</code>'s colour unless you set it.</td></tr>
                 <tr><td><code>--ex-heading-mark-background</code>, <code>--ex-heading-mark-whole-background</code></td><td>The marked Heading's ground: the first for part of a column or row, the second when every cell in it is selected.</td></tr>
                 <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-focus-column-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row, Focus column and hover bands. They lie over the cells' text, as the selection does, so give each a translucent colour: an opaque one hides the values in its row. The Focus column's is the Focus row's unless set.</td></tr>
                 <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
@@ -79,9 +80,12 @@
             Row Heading whose column or row holds part of the selection, colours its letters, and draws a line two
             device pixels thick on its edge toward the cells. A whole column or row takes a distinct shade. Where
             the grid has a Headings corner, its triangle takes the mark's colour when every cell is selected.
-            <code>--ex-heading-mark</code> colours the line, letters and triangle, using the Focus outline's colour
-            unless you set it. The two background tokens above set the shades. A bare grid uses system colours;
-            ExGrid.MudBlazor uses its palette, with the primary for the line and letters. Your Theme's tokens win,
+            <code>--ex-heading-mark</code> colours the line and triangle, using the Focus outline's colour
+            unless you set it, and <code>--ex-heading-mark-color</code> the letters, using the line's colour unless
+            you set it. The two background tokens above set the shades. A bare grid uses system colours; the
+            Wrappers (ExGrid.MudBlazor, <code>@@ex-grid/mantine</code>, <code>@@ex-grid/mui</code>) use their theme, with the
+            primary for the line and, for the letters, the primary darkened in a light scheme and lightened in a
+            dark one until it reads as text (4.5:1) on either shade, whatever primary the theme has. Your Theme's tokens win,
             and the Headings follow the frame's colour scheme. Under forced colours the shades are dropped and
             the line and marked letters use the system's highlight colour.
         </p>

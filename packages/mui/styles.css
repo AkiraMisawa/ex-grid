@@ -33,6 +33,13 @@
     /* Heading Mark shades are opaque, so nothing beneath can alter the frame's shade. */
     --ex-heading-mark-background: color-mix(in srgb, var(--mui-palette-text-primary) 12%, var(--mui-palette-background-paper));
     --ex-heading-mark-whole-background: color-mix(in srgb, var(--mui-palette-primary-main) 20%, var(--mui-palette-background-paper));
+    /* The marked Heading's letters are text, which needs 4.5:1 against both shades above where the line needs 3:1
+       (ADR-0029's note of 2026-11-09): the primary darkened to an OKLCH lightness of at most 0.42 in the light
+       scheme, and lightened to at least 0.87 with its chroma held to 0.1 in the dark, hue kept. The scheme is the
+       color-scheme MUI writes beside each scheme's palette, which light-dark() reads, so no scheme selector is
+       named; a theme made with disableCssColorScheme is read as light. */
+    --ex-heading-mark-color: light-dark(oklch(from var(--mui-palette-primary-main) min(l, 0.42) c h),
+        oklch(from var(--mui-palette-primary-main) max(l, 0.87) min(c, 0.1) h));
     --ex-grid-focus-outline: 2px solid var(--mui-palette-primary-main);
     --ex-editor-background: var(--mui-palette-background-paper);
     --ex-editor-color: var(--mui-palette-text-primary);

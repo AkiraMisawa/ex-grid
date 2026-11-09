@@ -1,5 +1,5 @@
 import { test, expect, circuitQuiet, twoFrames } from './fixtures.mjs';
-import { painted, contrast, resolvedColour, sameColour, edgePixels, onDevicePixels } from './pixels.mjs';
+import { painted, contrast, resolvedColour, sameColour, edgePixels, onDevicePixels, weakestHeadingLetters } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -154,6 +154,26 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         expect(withRange.range, JSON.stringify(withRange)).toEqual(oneCell.focus);
         expect(withRange.fill, JSON.stringify(withRange)).not.toBeNull();
         expect(withRange.fill).not.toBe('rgba(0, 0, 0, 0)');
+    }
+});
+
+test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades, in light and dark, whatever the primary @blazor', async ({ page }) => {
+    await open(page);
+    const worst = (state) => weakestHeadingLetters(gridA(page), { frame: '.mud-ex-grid', variable: '--mud-palette-primary', state });
+    const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
+    for (const dark of [false, true]) {
+        if (dark) {
+            await page.locator('#toggle-dark').click();
+            await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+        }
+        await cellAt(2, 2).click({ force: true });
+        await expect(gridA(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
+        const marked = await worst('ex-heading-marked');
+        expect(marked.ratio, `part of the column, dark=${dark} (${JSON.stringify(marked)})`).toBeGreaterThanOrEqual(4.5);
+        await page.keyboard.press('Control+Space');
+        await expect(gridA(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
+        const whole = await worst('ex-heading-whole');
+        expect(whole.ratio, `the whole column, dark=${dark} (${JSON.stringify(whole)})`).toBeGreaterThanOrEqual(4.5);
     }
 });
 

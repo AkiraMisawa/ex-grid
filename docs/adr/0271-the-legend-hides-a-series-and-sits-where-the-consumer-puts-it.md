@@ -19,3 +19,14 @@ alignment — start, centre or end — or no legend at all. That covers the plac
 
 What is hidden reaches the files as everything the chart shows does: SVG, PNG and CSV leave a hidden
 series out (grilling Q5, M1).
+
+*Note of 2026-11-09, as a Consumer toggled two series from the keyboard:* **an entry is a button on the
+keyboard as well.** Tab reaches it, and Enter or Space hides or shows its series, as a click does. A toggle
+changes the legend's markup, so the legend is drawn again (ADR-0252), and the entry that held the keyboard
+left with the old drawing: the keyboard fell to the page's body, and a second Enter reached nothing. Now a
+legend drawn again under the keyboard, for any reason — the toggle, the Consumer's hidden keys, new data —
+hands it to the entry for the same series, in whichever legend that entry now stands. An entry gone with its
+series hands it to the entry drawn in its place, or, its legend gone with its panel, to the first entry left,
+as a closed Chart Dock tab hands it to the tab shown in its place and never to the page's body (ADR-0410's
+note of 2026-10-28). Only a keyboard the drawing dropped is handed back: one a listener moved elsewhere as
+the entry left stays where it was put, and a chart that did not hold the keyboard takes none.

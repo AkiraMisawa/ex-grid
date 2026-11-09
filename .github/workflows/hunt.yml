@@ -30,6 +30,18 @@ on:
         description: 'Spec files to run, space-separated; empty for all of layer 3'
         type: string
         default: ''
+      rtt_floor:
+        description: "The widened run's round trip floor on the Server host, in ms"
+        type: number
+        default: 150
+      cpu_throttle:
+        description: "The widened run's CPU slowdown, as a rate"
+        type: number
+        default: 4
+      diff_seeds:
+        description: 'A sweep of differential seeds, first-last (e.g. 1000-1159), cut into eight slices a host; empty for none'
+        type: string
+        default: ''
   pull_request:
     paths:
       - .github/workflows/hunt.yml
@@ -57,8 +69,8 @@ env:
   # failures; this job is built before the hunt has run, so these start where the suite's own
   # circuit tests already put a round trip (150 ms, ED-22 and ticket 202) and at DevTools' "4x
   # slowdown", to be revised from what the hunt finds.
-  RTT_FLOOR: '150'
-  CPU_THROTTLE: '4'
+  RTT_FLOOR: ${{ inputs.rtt_floor || 150 }}
+  CPU_THROTTLE: ${{ inputs.cpu_throttle || 4 }}
 
 jobs:
   # As in ci.yml: the hosts published once in Release and handed to every runner.
@@ -234,6 +246,75 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: widened-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
+          path: |
+            verification/
+            tests/browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  # A sweep of the differential test's seeds (ADR-0240 §8), asked for by hand: the nightly run adds one seed a product,
+  # so a race the steps can draw is met one night in many. Each slice runs differential.spec.mjs once over its share of
+  # the range, on the two Blazor hosts, where every verdict and answer crosses .NET.
+  sweep:
+    name: Differential sweep against ${{ matrix.hosting }}, slice ${{ matrix.slice }}/8 (Linux, headed)
+    if: github.event_name == 'workflow_dispatch' && inputs.diff_seeds != ''
+    needs: hosts
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        hosting: [wasm, server]
+        slice: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/dotnet
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: hunt-hosts
+          path: hosts
+
+      - name: This slice's seeds
+        id: seeds
+        shell: bash
+        env:
+          RANGE: ${{ inputs.diff_seeds }}
+        run: |
+          if ! [[ "${RANGE}" =~ ^([0-9]+)-([0-9]+)$ ]]; then
+            echo "diff_seeds is \"${RANGE}\"; it is a range first-last." >&2
+            exit 1
+          fi
+          first=${BASH_REMATCH[1]}
+          last=${BASH_REMATCH[2]}
+          size=$(( (last - first + 8) / 8 ))
+          from=$(( first + (${{ matrix.slice }} - 1) * size ))
+          to=$(( from + size - 1 > last ? last : from + size - 1 ))
+          if [ "${from}" -gt "${last}" ]; then
+            echo "Slice ${{ matrix.slice }}/8 of ${RANGE} takes no seed." >> "$GITHUB_STEP_SUMMARY"
+            echo "range=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Slice ${{ matrix.slice }}/8: seeds ${from}-${to}" >> "$GITHUB_STEP_SUMMARY"
+            echo "range=${from}-${to}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: The differential test over the slice's seeds, headed under xvfb
+        if: steps.seeds.outputs.range != ''
+        working-directory: tests/browser
+        env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
+          EXGRID_HOSTING: ${{ matrix.hosting }}
+          EXGRID_DIFF_SEEDS: ${{ steps.seeds.outputs.range }}
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
+          ./counted-run.sh 1 differential.spec.mjs --project=chrome
+
+      - name: Keep the run's records
+        if: always() && steps.seeds.outputs.range != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: sweep-${{ matrix.hosting }}-${{ matrix.slice }}
           path: |
             verification/
             tests/browser/test-results/
