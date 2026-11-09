@@ -43,7 +43,7 @@ public class WrapperStylesheetTests
     public void No_wrapper_maps_the_focus_among_ranges(string package, string file)
         => Assert.DoesNotContain("ex-focus-among-ranges", Stylesheet(package, file), StringComparison.Ordinal);
 
-    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark ink follows the Focus outline; shades are palette tokens, never internal selectors
+    [Theory] // ADR-0008 (2026-10-13) / ADR-0030: the Heading Mark's line follows the Focus outline (its letters have their own token, ADR-0029 2026-11-09); shades are palette tokens, never internal selectors
     [InlineData("ExGrid.MudBlazor", "mud-ex-grid.css")]
     [InlineData("ExSheet.MudBlazor", "mud-ex-sheet.css")]
     [InlineData("ExPivot.MudBlazor", "mud-ex-pivot.css")]

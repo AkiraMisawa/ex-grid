@@ -817,15 +817,18 @@
    follows every painted row with a Row Heading, so selection size does not change the DOM.
    CSS paints the original Heading without rendering its row or replacing its typography.
    The state conditions add no specificity; Sheet defaults can win in either load order.
-   The line remains one overlay rectangle per run, above the Headings. */
+   The line remains one overlay rectangle per run, above the Headings.
+   The marked letters are text, which needs 4.5:1 where a line needs 3:1, so they read their own token,
+   --ex-heading-mark-color, before the line's (ADR-0029's note of 2026-11-09): a Wrapper whose Focus
+   outline is a theme's primary gives the letters a shade of it that reads as text, and leaves the line. */
 .ex-heading-state { display: none; }
 .ex-header-cell.ex-heading-marked {
     background-color: var(--ex-heading-mark-background, color-mix(in srgb, CanvasText 12%, var(--ex-header-background, Canvas)));
-    color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+    color: var(--ex-heading-mark-color, var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)));
 }
 .ex-row:where(:has(+ .ex-heading-state.ex-heading-marked)) > .ex-row-heading {
     background-color: var(--ex-heading-mark-background, color-mix(in srgb, CanvasText 12%, var(--ex-heading-background, var(--ex-header-background, Canvas))));
-    color: var(--ex-heading-mark, var(--ex-focus-outline, CanvasText));
+    color: var(--ex-heading-mark-color, var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)));
 }
 .ex-header-cell.ex-heading-whole {
     background-color: var(--ex-heading-mark-whole-background, color-mix(in srgb, var(--ex-heading-mark, var(--ex-focus-outline, CanvasText)) 20%, var(--ex-header-background, Canvas)));

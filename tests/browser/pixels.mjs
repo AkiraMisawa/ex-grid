@@ -132,6 +132,41 @@ export function contrast(a, b) {
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+/**
+ * The weakest contrast a marked Heading's letters make with its shade (ADR-0029's note of 2026-11-09), over a
+ * sweep of primaries: every hue in steps of 15 degrees, fully saturated, and grey, each at ten lightnesses. Each is
+ * set as `variable` on the Wrapper's element `frame` (a selector its grid's ancestors match) for its reading and
+ * taken off after the sweep; the letters and the shade are as the browser resolves them through the Wrapper's
+ * relative colours. `state` is the Heading's class, `ex-heading-marked` or `ex-heading-whole`.
+ */
+export async function weakestHeadingLetters(grid, { frame, variable, state }) {
+    const samples = await grid.evaluate((g, { frame: selector, variable: name, state: which }) => {
+        const wrapper = g.closest(selector);
+        const heading = g.querySelector(`.ex-header-cell.${which}`);
+        if (wrapper === null || heading === null) throw new Error(`No ${selector} around the grid, or no .${which} Heading in it.`);
+        const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true });
+        const srgb = (colour) => {
+            context.clearRect(0, 0, 1, 1);
+            context.fillStyle = colour;
+            context.fillRect(0, 0, 1, 1);
+            return Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3));
+        };
+        const primaries = [...Array.from({ length: 24 }, (_, h) => h * 15).map((h) => `${h} 100%`), '0 0%']
+            .flatMap((hue) => Array.from({ length: 10 }, (_, i) => `hsl(${hue} ${5 + i * 10}%)`));
+        try {
+            return primaries.map((primary) => {
+                wrapper.style.setProperty(name, primary);
+                const seen = getComputedStyle(heading);
+                return { primary, letters: srgb(seen.color), ground: srgb(seen.backgroundColor) };
+            });
+        } finally {
+            wrapper.style.removeProperty(name);
+        }
+    }, { frame, variable, state });
+    return samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.ground) }))
+        .reduce((weakest, sample) => (sample.ratio < weakest.ratio ? sample : weakest));
+}
+
 // ---------------------------------------------------------------------------------------------
 // The one allowance for rounding
 

@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExSheet/ex-sheet.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "943a5fd9517a";
+    internal const string StylesheetVersion = "b700c91393cf";
 
     /// <summary>The SHA-256 of <c>Assets/ex-sheet.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "17ce2ebd71ab40f9a773a2965946086201667a9c8f52525abd042a581c4c26f7";
+    internal const string StylesheetStamp = "1008b0af94139e01643800cc5a1204d2eb3c28ca25264d9c60d88deb0155229f";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "ex-sheet.css";

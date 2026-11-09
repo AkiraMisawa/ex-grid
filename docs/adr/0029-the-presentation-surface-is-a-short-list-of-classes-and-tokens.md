@@ -495,6 +495,23 @@ the text colour's RGB channels without its alpha so the label ground is opaque. 
 theme defaults, not Excel measurements; a Consumer's tokens win. The Sheet's light defaults are
 the D1 readings above, while its dark frame uses the same system-colour mixes.
 
+*Note of 2026-11-09, as a Consumer's Mantine theme with an amber primary painted its marked Headings'
+letters at 2.05:1 (#550):* **the marked letters read a token of their own, `--ex-heading-mark-color`,
+before the line's.** The line, the letters and the triangle all took `--ex-heading-mark`, and through it
+the Focus outline's colour, which every Wrapper maps onto its theme's primary. That colour is chosen for a
+line, which needs 3:1; letters are text, which needs 4.5:1 (WCAG 1.4.3), and Mantine's default blue, MUI's
+and MudBlazor's own primaries all fall short of it over the 12% shade. Where nothing names the new token
+it is `--ex-heading-mark`'s, so a bare grid and a Sheet see what they saw. Under a Wrapper, a Consumer who
+set `--ex-heading-mark` now colours the line and the triangle with it, and sets `--ex-heading-mark-color`
+for the letters too: the Wrapper's mapping of the letters stands until one of the Consumer's names them. The three Wrappers map it, and only it, onto their primary held to an OKLCH lightness that reads
+as text: at most 0.42 in the light scheme, at least 0.87 with its chroma held to 0.1 in the dark, hue
+kept, which holds 4.5:1 against both shades over each Wrapper's default ground for every Mantine colour at
+every shade, and for every hue fully saturated at ten lightnesses (measured in Chrome, and held there by a
+layer-3 sweep per Wrapper; the dark chroma is held because the browser clips an out-of-gamut colour back
+toward the dark). The line and the triangle keep the Focus outline's colour, so "no Wrapper maps
+`--ex-heading-mark`" above still holds. CSS cannot compare two colours, so a Consumer's own ground is not
+recomputed; a Consumer's `--ex-heading-mark-color` wins.
+
 ## Added by ADR-0400 *(2026-10-27, decided with the user)*
 
 A Header Group's toggle and its Hidden Mark
