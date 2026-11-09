@@ -51,16 +51,44 @@ test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, an
     await expect(guide).toHaveCount(0);
 });
 
-test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a second shows it @behaviour', async ({ page }) => {
+test('ADR-0271, ADR-0272: a legend click hides a series and raises its key, the entry drawn again keeps the focus without the keyboard\'s ring; a second shows it @behaviour', async ({ page }) => {
     const chart = exposure(page);
     const entry = chart.locator('g.ex-chart-legend-entry[data-series="ene-before"]');
     await entry.click();
     await expect(page.locator('#exposure-events')).toHaveText('ene-before hidden');
     await expect(chart.locator('g.ex-chart-series[data-series="ene-before"]')).toHaveCount(0);
     await expect(entry).toHaveAttribute('aria-pressed', 'false');
+    await expect(entry).toBeFocused();
+    expect(await entry.evaluate(e => e.matches(':focus-visible')), 'a click shows no keyboard ring').toBe(false);
     await entry.click();
     await expect(page.locator('#exposure-events')).toHaveText('ene-before shown');
     await expect(chart.locator('g.ex-chart-series[data-series="ene-before"]')).toHaveCount(1);
+});
+
+test('ADR-0271: an entry toggled from the keyboard keeps it and its ring, so Tab and Shift+Tab go on from it @behaviour', async ({ page }) => {
+    const chart = exposure(page);
+    const events = page.locator('#exposure-events');
+    const entry = (series) => chart.locator(`g.ex-chart-legend-entry[data-series="${series}"]`);
+    // Reached by Tab from the EPE panel's last entry, as a keyboard user reaches it.
+    await entry('pfe-after').focus();
+    await page.keyboard.press('Tab');
+    await expect(entry('ene-before')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(events).toHaveText('ene-before hidden');
+    await expect(entry('ene-before')).toHaveAttribute('aria-pressed', 'false');
+    // The legend was drawn again with the entry faded; the keyboard is on the entry drawn, and its ring shows.
+    await expect(entry('ene-before')).toBeFocused();
+    expect(await entry('ene-before').evaluate(e => e.matches(':focus-visible')), 'the entry shows the keyboard\'s ring').toBe(true);
+    await page.keyboard.press('Tab');
+    await expect(entry('ene-after')).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(events).toHaveText('ene-after hidden');
+    await expect(entry('ene-after')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(entry('ene-before')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(events).toHaveText('ene-before shown');
+    await expect(entry('ene-before')).toBeFocused();
 });
 
 test('ADR-0273, ADR-0272: a drag across the plot narrows the range; a double-click returns it @behaviour', async ({ page }) => {
