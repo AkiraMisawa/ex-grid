@@ -94,6 +94,15 @@ function click(element: Element): void {
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
+// A legend entry's key, as the chart writes it.
+function legendKey(entry: Element): string {
+    const key = entry.getAttribute('data-series');
+    if (key === null) {
+        throw new Error('A legend entry has no key.');
+    }
+    return key;
+}
+
 // A key pressed where the keyboard is, as the browser sends it.
 function press(key: string): void {
     const target = document.activeElement;
@@ -215,7 +224,7 @@ describe('createChart', () => {
         expect(root.querySelector('g.ex-chart-series[data-series="pfe"]')).not.toBeNull();
     });
 
-    it('ADR-0271: an entry toggled from the keyboard keeps it, through the Consumer taking the key back and a legend rewritten from outside', () => {
+    it('ADR-0271: an entry toggled from the keyboard keeps it, through the Consumer taking the key back, new data and an entry gone', () => {
         let hidden: readonly string[] = [];
         // As a React or Blazor Consumer does: the keys raised come back as the option on the render the event causes.
         const options = (keys: readonly string[], d = definition()): ChartOptions => ({
@@ -251,14 +260,30 @@ describe('createChart', () => {
         chart.update(options(['pfe']));
         expect(document.activeElement).toBe(field);
 
-        // An entry gone with its series hands the keyboard to no other entry.
+        // New data, with the series moved into the other panel: the keyboard follows its series into the other legend.
         entry().focus();
+        const moved = definition({ series: [
+            { id: 'epe', name: 'EPE', kind: 'level', points: points([2, 6, 9, 5, 3]), panel: 'EPE' },
+            { id: 'pfe', name: 'PFE', kind: 'level', points: points([3, 7, 12, 6, 4]), panel: 'ENE' },
+            { id: 'ene', name: 'ENE', kind: 'level', points: points([-1, -3, -2, -2, -1]), panel: 'ENE' },
+        ] });
+        chart.update(options([], moved));
+        const legends = [...root.querySelectorAll('.ex-chart-legend')];
+        expect(legends.map(l => [...l.querySelectorAll('.ex-chart-legend-entry')].map(legendKey))).toEqual([['epe'], ['pfe', 'ene']]);
+        expect(document.activeElement).toBe(entry());
+
+        // An entry gone with its series hands the keyboard to the entry drawn in its place, never to the page's body.
         chart.update(options([], definition({ series: [
-            { id: 'epe', name: 'EPE', kind: 'level', points: points([1, 5, 9, 4, 2]), panel: 'EPE' },
+            { id: 'epe', name: 'EPE', kind: 'level', points: points([2, 6, 9, 5, 3]), panel: 'EPE' },
             { id: 'ene', name: 'ENE', kind: 'level', points: points([-1, -3, -2, -2, -1]), panel: 'ENE' },
         ] })));
         expect(root.querySelector('.ex-chart-legend-entry[data-series="pfe"]')).toBeNull();
-        expect(root.contains(document.activeElement)).toBe(false);
+        expect(document.activeElement).toBe(q(root, '.ex-chart-legend-entry[data-series="ene"]'));
+        // Its whole legend gone with its panel, the first entry left takes it.
+        chart.update(options([], definition({ series: [
+            { id: 'epe', name: 'EPE', kind: 'level', points: points([2, 6, 9, 5, 3]), panel: 'EPE' },
+        ] })));
+        expect(document.activeElement).toBe(q(root, '.ex-chart-legend-entry[data-series="epe"]'));
     });
 
     it('ADR-0272: hidden keys are taken back, kept across new data, and replaced only when the option changes', () => {

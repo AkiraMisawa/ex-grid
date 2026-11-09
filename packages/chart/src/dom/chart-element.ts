@@ -159,6 +159,14 @@ interface Built {
     readonly summary: string;
 }
 
+// The legend entry that held the keyboard before a paint: its series, the legend it stood in and its place there.
+interface HeldEntry {
+    readonly element: Element;
+    readonly series: string;
+    readonly legend: string;
+    readonly index: number;
+}
+
 interface Command {
     readonly id: string;
     readonly label: string;
@@ -1039,7 +1047,7 @@ export class ChartElement {
         }
         const entry = target.closest('.ex-chart-legend-entry');
         if (entry !== null) {
-            this.#toggle(found(entry.getAttribute('data-series'), 'a legend entry\'s key'));
+            this.#toggle(legendKey(entry));
             return;
         }
         if (target.closest('.ex-chart-menu-backdrop') !== null) {
@@ -1087,7 +1095,7 @@ export class ChartElement {
         const entry = target.closest('.ex-chart-legend-entry');
         if (entry !== null && (event.key === 'Enter' || event.key === ' ')) {
             event.preventDefault();
-            this.#toggle(found(entry.getAttribute('data-series'), 'a legend entry\'s key'));
+            this.#toggle(legendKey(entry));
             return;
         }
         if (target.closest('.ex-chart-menu') !== null && event.key === 'Escape') {
@@ -1438,7 +1446,7 @@ export class ChartElement {
 
         // The parts, each rewritten only when its markup changed, then the band and the guide over them.
         const lh = this.#lineHeight;
-        const focused = this.#focusedEntry();
+        const held = this.#heldEntry();
         const kept = new Map(this.#parts.map(p => [p.key, p]));
         const drawn = this.#drawn !== null && this.#drawn.built === this.#built && this.#drawn.angle === this.#angle
             ? this.#drawn : { built: this.#built, angle: this.#angle, parts: drawingParts(scene, lh, this.#angle) };
@@ -1465,8 +1473,8 @@ export class ChartElement {
             }
         }
         this.#parts = parts;
-        if (focused !== null && !focused.entry.isConnected) {
-            this.#focusEntryAgain(focused);
+        if (held !== null) {
+            this.#handBack(held);
         }
 
         // A hit layer over each plot, carrying the plot's offsets, which the pointer's offsets are added to.
@@ -1488,32 +1496,38 @@ export class ChartElement {
         this.#paintTooltip();
     }
 
-    // The legend entry that holds the keyboard, and the part it is drawn in, read before a paint rewrites any part.
-    #focusedEntry(): { readonly entry: Element; readonly part: string; readonly series: string } | null {
-        const active = this.#root.ownerDocument.activeElement;
-        const entry = active === null || !this.#svg.contains(active) ? null : active.closest('.ex-chart-legend-entry');
-        if (entry === null) {
+    // The legend entry that holds the keyboard, read before a paint rewrites any part.
+    #heldEntry(): HeldEntry | null {
+        const doc = this.#root.ownerDocument;
+        const scope = this.#root.getRootNode();
+        const active = scope === doc ? doc.activeElement : scope instanceof ShadowRoot ? scope.activeElement : null;
+        const element = active === null || !this.#svg.contains(active) ? null : active.closest('.ex-chart-legend-entry');
+        if (element === null) {
             return null;
         }
-        // Everything in the drawing past its title is a part's.
-        const part = defined(this.#parts.find(p => p.nodes.some(node => node.contains(entry))), 'the part a legend entry is drawn in');
-        return { entry, part: part.key, series: found(entry.getAttribute('data-series'), 'a legend entry\'s key') };
+        // Everything in the drawing past its title is a part's, and an entry stands in its legend's.
+        const legend = defined(this.#parts.find(p => p.nodes.some(node => node.contains(element))), 'the legend an entry is drawn in');
+        return { element, series: legendKey(element), legend: legend.key, index: legendEntries([legend]).indexOf(element) };
     }
 
-    // A legend rewritten under the keyboard — its entry toggled, a series hidden by the Consumer, the data replaced —
-    // hands the keyboard to the entry for the same series in the new markup, so a keyboard user toggling one series
-    // after another stays in the legend (ADR-0271). A legend or an entry gone with its panel or its series hands it
-    // to no other one: which would be a guess.
-    #focusEntryAgain(was: { readonly part: string; readonly series: string }): void {
-        const part = this.#parts.find(p => p.key === was.part);
-        if (part === undefined) {
+    // A legend drawn again under the keyboard — its entry toggled, a series hidden by the Consumer, new data — hands
+    // the keyboard to the entry for the same series, in whichever legend it now stands, so a keyboard user toggling
+    // one series after another stays in the legend (ADR-0271's note of 2026-11-09). An entry gone with its series
+    // hands it to the entry drawn in its place, as a closed Chart Dock tab hands it to the tab shown in its place, and
+    // never to the page's body, where no key reaches the chart (ADR-0410's note of 2026-10-28). Only a keyboard the
+    // paint dropped is handed back: one that a listener moved elsewhere as the entry left stays where it was put.
+    #handBack(held: HeldEntry): void {
+        const doc = this.#root.ownerDocument;
+        if (held.element.isConnected || (doc.activeElement !== null && doc.activeElement !== doc.body)) {
             return;
         }
-        const entry = part.nodes
-            .flatMap(node => (node instanceof Element ? [...node.querySelectorAll('.ex-chart-legend-entry')] : []))
-            .find(e => e.getAttribute('data-series') === was.series);
-        if (entry instanceof SVGElement) {
-            entry.focus({ preventScroll: true });
+        const everywhere = legendEntries(this.#parts);
+        const same = everywhere.find(e => legendKey(e) === held.series);
+        const own = legendEntries(this.#parts.filter(p => p.key === held.legend));
+        const instead = same ?? own[Math.min(held.index, own.length - 1)] ?? everywhere[0];
+        // No legend entry is left anywhere in the chart, and nothing else in its drawing takes the keyboard.
+        if (instead instanceof SVGElement) {
+            instead.focus({ preventScroll: true });
         }
     }
 
@@ -1784,6 +1798,13 @@ const commandShape = (commands: readonly Command[]): unknown[] =>
 
 // Whether `element` stands in a Chrome's slot, whose contents answer through their context (ADR-0390).
 const inSlot = (element: Element): boolean => element.closest('[data-ex-chart-slot]') !== null;
+
+// A legend entry's key (ADR-0257): the series it stands for.
+const legendKey = (entry: Element): string => found(entry.getAttribute('data-series'), 'a legend entry\'s key');
+
+// The legend entries drawn in `parts`, in the order Tab reaches them.
+const legendEntries = (parts: readonly { readonly nodes: readonly ChildNode[] }[]): Element[] =>
+    parts.flatMap(p => p.nodes).flatMap(node => (node instanceof Element ? [...node.querySelectorAll('.ex-chart-legend-entry')] : []));
 
 /** The value, which the chart knows is there: `null` throws, naming what was missing. */
 function found<T>(value: T | null, what: string): T {
