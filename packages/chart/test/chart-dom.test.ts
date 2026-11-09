@@ -94,6 +94,15 @@ function click(element: Element): void {
     element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 }
 
+// A key pressed where the keyboard is, as the browser sends it.
+function press(key: string): void {
+    const target = document.activeElement;
+    if (target === null) {
+        throw new Error('Nothing holds the keyboard.');
+    }
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+}
+
 // The last of what a slot was handed: a slot that was handed nothing fails the test here.
 function last<T>(handed: readonly T[]): T {
     const found = handed.at(-1);
@@ -204,6 +213,52 @@ describe('createChart', () => {
         q(root, '.ex-chart-legend-entry[data-series="pfe"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         expect(heard).toEqual([{ key: 'pfe', hidden: true }, { key: 'pfe', hidden: false }]);
         expect(root.querySelector('g.ex-chart-series[data-series="pfe"]')).not.toBeNull();
+    });
+
+    it('ADR-0271: an entry toggled from the keyboard keeps it, through the Consumer taking the key back and a legend rewritten from outside', () => {
+        let hidden: readonly string[] = [];
+        // As a React or Blazor Consumer does: the keys raised come back as the option on the render the event causes.
+        const options = (keys: readonly string[], d = definition()): ChartOptions => ({
+            definition: d, hiddenSeries: keys,
+            onSeriesVisibilityChanged: change => { hidden = change.hidden ? [...hidden, change.key] : hidden.filter(k => k !== change.key); },
+        });
+        const { root, chart } = mount(options(hidden));
+        const entry = (): SVGElement => q(root, '.ex-chart-legend-entry[data-series="pfe"]', SVGElement);
+        const toggled = entry();
+        toggled.focus();
+        press('Enter');
+        // The legend was drawn again, and the keyboard went to the new entry of the same series.
+        expect(toggled.isConnected).toBe(false);
+        expect(document.activeElement).toBe(entry());
+        expect(entry().getAttribute('aria-pressed')).toBe('false');
+        chart.update(options(hidden));
+        expect(document.activeElement).toBe(entry());
+        press(' ');
+        chart.update(options(hidden));
+        expect(hidden).toEqual([]);
+        expect(document.activeElement).toBe(entry());
+        expect(entry().getAttribute('aria-pressed')).toBe('true');
+        // Another series hidden by the Consumer rewrites the legend under the keyboard, which stays on its entry.
+        const before = entry();
+        chart.update(options(['epe']));
+        expect(before.isConnected).toBe(false);
+        expect(document.activeElement).toBe(entry());
+
+        // The chart takes no keyboard it did not hold: a field beside it keeps it across a rewritten legend.
+        const field = document.createElement('input');
+        document.body.append(field);
+        field.focus();
+        chart.update(options(['pfe']));
+        expect(document.activeElement).toBe(field);
+
+        // An entry gone with its series hands the keyboard to no other entry.
+        entry().focus();
+        chart.update(options([], definition({ series: [
+            { id: 'epe', name: 'EPE', kind: 'level', points: points([1, 5, 9, 4, 2]), panel: 'EPE' },
+            { id: 'ene', name: 'ENE', kind: 'level', points: points([-1, -3, -2, -2, -1]), panel: 'ENE' },
+        ] })));
+        expect(root.querySelector('.ex-chart-legend-entry[data-series="pfe"]')).toBeNull();
+        expect(root.contains(document.activeElement)).toBe(false);
     });
 
     it('ADR-0272: hidden keys are taken back, kept across new data, and replaced only when the option changes', () => {

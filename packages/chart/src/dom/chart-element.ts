@@ -1438,6 +1438,7 @@ export class ChartElement {
 
         // The parts, each rewritten only when its markup changed, then the band and the guide over them.
         const lh = this.#lineHeight;
+        const focused = this.#focusedEntry();
         const kept = new Map(this.#parts.map(p => [p.key, p]));
         const drawn = this.#drawn !== null && this.#drawn.built === this.#built && this.#drawn.angle === this.#angle
             ? this.#drawn : { built: this.#built, angle: this.#angle, parts: drawingParts(scene, lh, this.#angle) };
@@ -1464,6 +1465,9 @@ export class ChartElement {
             }
         }
         this.#parts = parts;
+        if (focused !== null && !focused.entry.isConnected) {
+            this.#focusEntryAgain(focused);
+        }
 
         // A hit layer over each plot, carrying the plot's offsets, which the pointer's offsets are added to.
         const plots = scene.panels.map(p => `${n(p.plot.x)},${n(p.plot.y)},${n(p.plot.width)},${n(p.plot.height)}`).join(';');
@@ -1482,6 +1486,35 @@ export class ChartElement {
             this.#hitPlots = plots;
         }
         this.#paintTooltip();
+    }
+
+    // The legend entry that holds the keyboard, and the part it is drawn in, read before a paint rewrites any part.
+    #focusedEntry(): { readonly entry: Element; readonly part: string; readonly series: string } | null {
+        const active = this.#root.ownerDocument.activeElement;
+        const entry = active === null || !this.#svg.contains(active) ? null : active.closest('.ex-chart-legend-entry');
+        if (entry === null) {
+            return null;
+        }
+        // Everything in the drawing past its title is a part's.
+        const part = defined(this.#parts.find(p => p.nodes.some(node => node.contains(entry))), 'the part a legend entry is drawn in');
+        return { entry, part: part.key, series: found(entry.getAttribute('data-series'), 'a legend entry\'s key') };
+    }
+
+    // A legend rewritten under the keyboard — its entry toggled, a series hidden by the Consumer, the data replaced —
+    // hands the keyboard to the entry for the same series in the new markup, so a keyboard user toggling one series
+    // after another stays in the legend (ADR-0271). A legend or an entry gone with its panel or its series hands it
+    // to no other one: which would be a guess.
+    #focusEntryAgain(was: { readonly part: string; readonly series: string }): void {
+        const part = this.#parts.find(p => p.key === was.part);
+        if (part === undefined) {
+            return;
+        }
+        const entry = part.nodes
+            .flatMap(node => (node instanceof Element ? [...node.querySelectorAll('.ex-chart-legend-entry')] : []))
+            .find(e => e.getAttribute('data-series') === was.series);
+        if (entry instanceof SVGElement) {
+            entry.focus({ preventScroll: true });
+        }
     }
 
     // What the pointer changes: the band, the guide and the tooltip, and nothing else (ADR-0252).
