@@ -837,9 +837,14 @@ export class PivotView {
             this.#disarmRedraw();
             this.#scheduleRedraw();
         }
+        // A refusal's sentence answers the question refused, and goes when the Consumer asks another, as when the user
+        // does: a layout or a source handed in, or the report asked again under other words or caps. A layout this
+        // pivot raised, handed back, asks nothing (ADR-0059), and the sentence stays with the report it is about.
         if (asked !== undefined) {
+            this.#refusal = undefined;
             this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
         } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
+            this.#refusal = undefined;
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
         const gridChromeMoved = options.chrome?.grid !== before.chrome?.grid;
