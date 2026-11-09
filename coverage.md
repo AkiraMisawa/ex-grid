@@ -29,7 +29,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/sheet-mantine` | ExSheet | 81.5% | 75.6% | 168 |
 | `packages/sheet-mui` | ExSheet | 83.8% | 74% | 180 |
 | `packages/sheet-blazor` | ExSheet | 86.1% | 65.4% | 664 |
-| `packages/pivot` | ExPivot | 94.3% | 81% | 3238 |
+| `packages/pivot` | ExPivot | 94.3% | 81% | 3240 |
 | `packages/pivot-engine` | ExPivot | 93.8% | 84.2% | 6944 |
 | `packages/pivot-react` | ExPivot | 94.1% | 76.6% | 86 |
 | `packages/pivot-mantine` | ExPivot | 87.2% | 74.6% | 94 |
@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/09/2026 - 11:04:56 |
+| Generated on: | 11/09/2026 - 11:42:59 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
 | Files: | 500 |
-| **Line coverage:** | 86.9% (60693 of 69785) |
-| Covered lines: | 60693 |
-| Uncovered lines: | 9092 |
+| **Line coverage:** | 86.9% (60694 of 69785) |
+| Covered lines: | 60694 |
+| Uncovered lines: | 9091 |
 | Coverable lines: | 69785 |
 | Total lines: | 106349 |
-| **Branch coverage:** | 82.8% (36567 of 44141) |
-| Covered branches: | 36567 |
+| **Branch coverage:** | 82.8% (36568 of 44141) |
+| Covered branches: | 36568 |
 | Total branches: | 44141 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -637,7 +637,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
