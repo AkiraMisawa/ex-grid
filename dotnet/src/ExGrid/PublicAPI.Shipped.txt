@@ -2511,3 +2511,5 @@ ExGrid.InMemoryGridSource<TRow>.CanFindAll.get -> bool
 ExGrid.InMemoryGridSource<TRow>.FindAllAsync(ExGrid.Finding.GridFindAllRequest! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<ExGrid.Finding.GridFindAllPage!>!
 ExGrid.InMemoryGridSource<TRow>.FindAllRowLabel.get -> System.Func<TRow, string!>?
 ExGrid.InMemoryGridSource<TRow>.FindAllRowLabel.set -> void
+ExGrid.Cells.CellAppearance.LowerRightFill.get -> ExGrid.Cells.RgbColour?
+ExGrid.Cells.CellAppearance.LowerRightFill.init -> void

@@ -1,3 +1,1 @@
 #nullable enable
-ExGrid.Cells.CellAppearance.LowerRightFill.get -> ExGrid.Cells.RgbColour?
-ExGrid.Cells.CellAppearance.LowerRightFill.init -> void
