@@ -1,0 +1,30 @@
++ grep -n '<TargetFramework' dotnet/src/ExBoard/ExBoard.csproj dotnet/src/ExChart.Engine/ExChart.Engine.csproj dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj dotnet/src/ExChart/ExChart.csproj dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj dotnet/src/ExGrid.Data/ExGrid.Data.csproj dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj dotnet/src/ExGrid/ExGrid.csproj dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj dotnet/src/ExPivot/ExPivot.csproj dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj dotnet/src/ExSheet/ExSheet.csproj
+dotnet/src/ExBoard/ExBoard.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart.Engine/ExChart.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart/ExChart.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data/ExGrid.Data.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj:6:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid/ExGrid.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot/ExPivot.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet/ExSheet.csproj:5:    <TargetFramework>net10.0</TargetFramework>
++ echo '== LangVersion'
+== LangVersion
++ grep -rn '--include=*.csproj' '--include=*.props' '--include=*.targets' '<LangVersion' dotnet/src/ dotnet/Directory.Build.props
++ echo '== PRE-5'
+== PRE-5
++ grep -n projects tests/browser/playwright.config.mjs
+19:// What starts the hosts. By default the projects themselves, with `dotnet run`: the
+180:    projects: [
++ echo '== PRE-6'
+== PRE-6
++ git status --porcelain -- dotnet/src/
++ echo '== end'
+== end

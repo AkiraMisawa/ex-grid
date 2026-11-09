@@ -1,0 +1,44 @@
+﻿2026-11-09T14:00:27.3509187Z Current runner version: '2.338.2'
+2026-11-09T14:00:27.3531208Z ##[group]Runner Image Provisioner
+2026-11-09T14:00:27.3531995Z Hosted Compute Agent
+2026-11-09T14:00:27.3532610Z Version: 20261028.624
+2026-11-09T14:00:27.3533221Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-09T14:00:27.3533909Z Build Date: 2026-10-28T21:51:42Z
+2026-11-09T14:00:27.3534482Z Worker ID: {a9271220-05ca-4e4e-8d67-1ab1e1f10a39}
+2026-11-09T14:00:27.3535072Z Region: westus2
+2026-11-09T14:00:27.3535590Z Cloud: Azure
+2026-11-09T14:00:27.3536049Z ##[endgroup]
+2026-11-09T14:00:27.3537206Z ##[group]Operating System
+2026-11-09T14:00:27.3537760Z Ubuntu
+2026-11-09T14:00:27.3538246Z 24.04.5
+2026-11-09T14:00:27.3538895Z LTS
+2026-11-09T14:00:27.3539355Z ##[endgroup]
+2026-11-09T14:00:27.3539880Z ##[group]Runner Image
+2026-11-09T14:00:27.3540404Z Image: ubuntu-24.04
+2026-11-09T14:00:27.3540915Z Version: 20261101.360.1
+2026-11-09T14:00:27.3542026Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-09T14:00:27.3543293Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+2026-11-09T14:00:27.3544112Z ##[endgroup]
+2026-11-09T14:00:27.3545309Z ##[group]GITHUB_TOKEN Permissions
+2026-11-09T14:00:27.3547170Z Contents: read
+2026-11-09T14:00:27.3547688Z Metadata: read
+2026-11-09T14:00:27.3548234Z ##[endgroup]
+2026-11-09T14:00:27.3550196Z Secret source: Actions
+2026-11-09T14:00:27.3551066Z Cache mode: write
+2026-11-09T14:00:27.3551906Z Prepare workflow directory
+2026-11-09T14:00:27.3992454Z Prepare all required actions
+2026-11-09T14:00:27.4045350Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.2.0-rc.4 (0326ce27ff7f179f98aa1525f794c4630a48a8d5)
+2026-11-09T14:00:27.4049604Z ##[group] Inputs
+2026-11-09T14:00:27.4050181Z   version: 0.2.0-rc.4
+2026-11-09T14:00:27.4050981Z   long: true
+2026-11-09T14:00:27.4051584Z ##[endgroup]
+2026-11-09T14:00:27.4052400Z Complete job name: Every layer, and the packages / Layer 3 on Chrome and Edge against the React host (Linux, headed)
+2026-11-09T14:00:27.4824713Z ##[group]Run test "success" = success || { test "true" = false && test "success" = skipped; }
+2026-11-09T14:00:27.4825855Z [36;1mtest "success" = success || { test "true" = false && test "success" = skipped; }[0m
+2026-11-09T14:00:27.6599680Z shell: /usr/bin/bash -e {0}
+2026-11-09T14:00:27.6600491Z env:
+2026-11-09T14:00:27.6601182Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T14:00:27.6601727Z   DOTNET_NOLOGO: 1
+2026-11-09T14:00:27.6602248Z   LONG_RUN: true
+2026-11-09T14:00:27.6602714Z ##[endgroup]
+2026-11-09T14:00:27.6955584Z Cleaning up orphan processes

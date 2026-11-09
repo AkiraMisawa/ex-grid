@@ -1,0 +1,51 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet/ExSheet.csproj (in 1.22 sec).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj (in 1.22 sec).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart.Engine/ExChart.Engine.csproj (in 1.22 sec).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj (in 1.22 sec).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj (in 3 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj (in 7 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot/ExPivot.csproj (in 9 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid/ExGrid.csproj (in 5 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data/ExGrid.Data.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 6 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart/ExChart.csproj (in 6 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 37 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 42 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 54 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj (in 6 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExBoard/ExBoard.csproj (in 8 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExChart.Showcases/ExChart.Showcases.csproj (in 10 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj (in 74 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 87 ms).
+  ../../dotnet/src/ExGrid/wwwroot/ex-grid-core.min.js: 52858 bytes from 10 sources, version 7d64a187905c
+  ../../dotnet/src/ExGrid/wwwroot/ex-grid-script.min.js: 700060 bytes from 173 sources, version 98309bca6bc1
+  ExGrid.Data -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExPivot.Engine -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExChart.Engine -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data.Xlsx/bin/Release/net10.0/ExGrid.Data.Xlsx.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.Xlsx/bin/Release/net10.0/ExSheet.Xlsx.dll
+  ExGrid -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ../../dotnet/src/ExChart/wwwroot/ex-chart-core.min.js: 184908 bytes from 47 sources, version 7fcf2467e643
+  ../../dotnet/src/ExSheet/wwwroot/ex-sheet.min.js: 550231 bytes from 112 sources, version 2e4ef437a6be
+  ../../dotnet/src/ExPivot/wwwroot/ex-pivot.min.js: 453564 bytes from 83 sources, version d7234a1e1e23
+  ExSheet -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExPivot -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExChart -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart/bin/Release/net10.0/ExChart.dll
+  ../../dotnet/src/ExBoard/wwwroot/ex-board.min.js: 695043 bytes from 145 sources, version 41067c28975f
+  ExGrid.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExBoard -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExBoard/bin/Release/net10.0/ExBoard.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExChart.MudBlazor/bin/Release/net10.0/ExChart.MudBlazor.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  ExChart.Showcases -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExChart.Showcases/bin/Release/net10.0/ExChart.Showcases.dll
+  ExGrid.DemoPages -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoPages/bin/Release/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoHost/bin/Release/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoHost/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  ExGrid.DemoHost -> /tmp/claude-0/-home-claude-ex-grid/35fd2175-458d-58c3-a332-3c43374f5fb4/scratchpad/m6/publish-rc3/

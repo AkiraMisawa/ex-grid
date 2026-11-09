@@ -1,0 +1,375 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 3.59 sec).
+  44 of 45 projects are up-to-date for restore.
+  ../../dotnet/src/ExGrid/wwwroot/ex-grid-core.min.js: 53038 bytes from 10 sources, version 9c089fccef5c
+  ../../dotnet/src/ExGrid/wwwroot/ex-grid-script.min.js: 700953 bytes from 173 sources, version 5a1a37d4fb4c
+  ExGrid.Docs.Generator -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+  ExGrid.Release -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tools/release/ExGrid.Release/bin/Debug/net10.0/ExGrid.Release.dll
+  ExGrid.Data -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExChart.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExGrid.Release.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExGrid.Data.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  ExPivot.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ../../dotnet/src/ExChart/wwwroot/ex-chart-core.min.js: 186271 bytes from 48 sources, version 0e505ec44625
+  ../../dotnet/src/ExSheet/wwwroot/ex-sheet.min.js: 550231 bytes from 112 sources, version f08c22ddd8be
+  ../../dotnet/src/ExPivot/wwwroot/ex-pivot.min.js: 453598 bytes from 83 sources, version 6744b0106823
+  ExChart -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExChart.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExSheet.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  ExGrid.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.Oracle -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tools/sheet-oracle/bin/Debug/net10.0/ExSheet.Oracle.dll
+  ExGrid.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  ExSheet -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExGrid.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  ExChart.Showcases -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExChart.Showcases/bin/Debug/net10.0/ExChart.Showcases.dll
+  ExGrid.Data.Xlsx.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Arrow.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  ExPivot -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExPivot.Oracle -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tools/pivot-oracle/bin/Debug/net10.0/ExPivot.Oracle.dll
+  ../../dotnet/src/ExBoard/wwwroot/ex-board.min.js: 696896 bytes from 146 sources, version d8abab16735c
+  ExPivot.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  ExChart.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+  ExBoard -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExBoard.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll
+  ExGrid.DemoApi -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExSheet.Xlsx.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll
+  ExPivot.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  ExGrid.DemoApi.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  ExSheet.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  ExPivot.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  
+  > exgrid-docs-react@0.0.0 typecheck
+  > tsc --noEmit -p tsconfig.json
+  
+  
+  > exgrid-docs-react@0.0.0 build
+  > vite build
+  
+  vite v8.3.5 building client environment for production...
+  transforming...
+  ✓ 2508 modules transformed.
+  rendering chunks...
+  computing gzip size...
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/index.html                                      0.59 kB │ gzip:   0.35 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-DnO04qm-.css                      1.25 kB │ gzip:   0.42 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-DayYTDsm.css                      1.58 kB │ gzip:   0.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-DrYhEEda.css                      3.90 kB │ gzip:   0.91 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-NfErI8yN.css                      4.31 kB │ gzip:   1.03 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-BOXzpfD8.css                      5.65 kB │ gzip:   1.41 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-CLRDDBip.css                      6.32 kB │ gzip:   1.36 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-Dom_jOCb.css                      6.36 kB │ gzip:   1.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-BDIxu469.css                      7.15 kB │ gzip:   1.63 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/index-CmoRcufL.css                      72.48 kB │ gzip:  12.53 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-CFist2yt.css                    248.41 kB │ gzip:  35.91 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/get-env-MimdSsZv.js                      0.04 kB │ gzip:   0.06 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListPanel-ut6sI_4J.js                 0.05 kB │ gzip:   0.06 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListButton-CpKgvCE6.js                0.06 kB │ gzip:   0.06 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListChrome-DBIHtR5D.js                0.06 kB │ gzip:   0.06 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-pBy_3W-S.js                       0.09 kB │ gzip:   0.10 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SpecialColumnsParts-BoLChC9e.js          0.13 kB │ gzip:   0.13 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/getValidReactChildren-BjeB_g0U.js        0.15 kB │ gzip:   0.15 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Seeded-BsERB_me.js                       0.16 kB │ gzip:   0.14 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/create-safe-context-D0d-8SfA.js          0.20 kB │ gzip:   0.17 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SmallSheet-C3XaIGWO.js                   0.24 kB │ gzip:   0.21 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/to-int-OnIRWTUZ.js                       0.25 kB │ gzip:   0.20 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FontGridMui-BdNEbW48.js                  0.27 kB │ gzip:   0.22 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FontGrid-gaJtw47u.js                     0.27 kB │ gzip:   0.22 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/NumericHeaders-uqiPU-BN.js               0.27 kB │ gzip:   0.22 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/NumericHeadersMui-DWMUODoo.js            0.28 kB │ gzip:   0.22 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FontGridMantine-BZa5VL2l.js              0.29 kB │ gzip:   0.23 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/NumericHeadersMantine-Cwq14fJW.js        0.30 kB │ gzip:   0.23 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CellFormats-DdOERT_g.js                  0.30 kB │ gzip:   0.24 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CellFormatsMui-D8jMWwPP.js               0.31 kB │ gzip:   0.24 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/BordersUnderSelection-BcI0sJ4B.js        0.32 kB │ gzip:   0.25 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CellFormatsMantine-DIQ_f5jM.js           0.32 kB │ gzip:   0.25 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DraftFills-lY7r1LQx.js                   0.33 kB │ gzip:   0.25 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DraftFillsMui-40Og3jls.js                0.33 kB │ gzip:   0.25 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DraftFillsMantine-Ce1_pQJL.js            0.35 kB │ gzip:   0.26 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/clsx-DB0hHKMi.js                         0.36 kB │ gzip:   0.23 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chart-filter-text-CZzd3Pgo.js            0.38 kB │ gzip:   0.26 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/MillionRows-DHmkV1I_.js                  0.39 kB │ gzip:   0.29 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/TypedNumber-CrLtwBjq.js                  0.42 kB │ gzip:   0.28 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/MillionRowsMui-C-xAA90C.js               0.42 kB │ gzip:   0.30 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FieldsPane-COpPWUF1.js                   0.43 kB │ gzip:   0.30 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/MillionRowsMantine-BBpVd4n_.js           0.43 kB │ gzip:   0.30 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstPivot-BjQCmGhq.js                   0.45 kB │ gzip:   0.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FieldsPaneMui-CIc3B655.js                0.47 kB │ gzip:   0.32 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListChrome-DFIuU52A.js                0.48 kB │ gzip:   0.33 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FieldsPaneMantine-DadQ-DXb.js            0.49 kB │ gzip:   0.33 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstPivotMui-DtaCZA6b.js                0.50 kB │ gzip:   0.36 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerSource-Ct3YtMl2.js                 0.51 kB │ gzip:   0.36 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerSourceMui-DwVWE3Vw.js              0.51 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstPivotMantine-Bkl1zMLT.js            0.51 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/UnitedKingdomWords-DwtixEkr.js           0.52 kB │ gzip:   0.35 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerSourceMantine-D99yMOnm.js          0.53 kB │ gzip:   0.38 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstSheet-DC8MbHtY.js                   0.53 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstSheetMui-D3KX0QhJ.js                0.54 kB │ gzip:   0.38 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ThemedGridMui-DYO1yvJ7.js                0.54 kB │ gzip:   0.35 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindInReport-v42ndclY.js                 0.54 kB │ gzip:   0.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ThemedGridMantine-D-HdUgph.js            0.55 kB │ gzip:   0.35 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FetchGrid-BDchm9jp.js                    0.55 kB │ gzip:   0.38 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstSheetMantine-DTaawgyH.js            0.55 kB │ gzip:   0.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExactMoney-XNe5OfV1.js                   0.56 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/UnitedKingdomWordsMui-lrhF17PJ.js        0.56 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/esm-Da5EC8jY.js                          0.56 kB │ gzip:   0.32 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExactMoneyMui-rlhTnFCb.js                0.56 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindInReportMui-OkGM2scr.js              0.57 kB │ gzip:   0.41 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/UnitedKingdomWordsMantine-33A_aWr2.js    0.58 kB │ gzip:   0.38 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExactMoneyMantine-CUJHDD7Y.js            0.58 kB │ gzip:   0.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnOrder-DZUV-qMB.js                  0.59 kB │ gzip:   0.31 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindInReportMantine-65VdrKEp.js          0.59 kB │ gzip:   0.42 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/pacer-lTE-UG0i.js                        0.60 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ItemsAndOrder-BxL7PAE3.js                0.60 kB │ gzip:   0.41 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ItemsAndOrderMui-BtdTMvWa.js             0.64 kB │ gzip:   0.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ItemsAndOrderMantine-D9YdXzVL.js         0.65 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Trades-BMokEnPc.js                       0.66 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Code-mAd9z8Ny.js                         0.68 kB │ gzip:   0.42 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/AskEarlyMantine-CIw77o7s.js              0.70 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromSnapshot-CmcKC6PV.js                 0.70 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Box-gKnzdrka.js                          0.70 kB │ gzip:   0.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ToolbarOwnList-Cccc9w8p.js               0.70 kB │ gzip:   0.42 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Aggregations-BccyHCUt.js                 0.71 kB │ gzip:   0.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveQuotes-CJjMiglV.js                   0.71 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/AskEarlyMui-CClRdT19.js                  0.71 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FetchGridMantine-BROUI06j.js             0.72 kB │ gzip:   0.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindMarks-B8MFqFaW.js                    0.72 kB │ gzip:   0.48 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveWrites-OPiVsSO_.js                   0.72 kB │ gzip:   0.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FetchGridMui-_Nzk3o0Y.js                 0.73 kB │ gzip:   0.44 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/AskEarly-CNcpjDgw.js                     0.73 kB │ gzip:   0.46 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromSnapshotMui-BErfnQVw.js              0.74 kB │ gzip:   0.45 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/AggregationsMui-C59iABDI.js              0.75 kB │ gzip:   0.41 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromSnapshotMantine-WAVHwtkB.js          0.75 kB │ gzip:   0.47 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ThemedGridParts-DoC2MOfM.js              0.75 kB │ gzip:   0.37 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveQuotesMantine-D2Z6M6La.js            0.76 kB │ gzip:   0.47 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/AggregationsMantine-DCSwewDS.js          0.77 kB │ gzip:   0.42 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EditingGrid-D93q7ZXW.js                  0.79 kB │ gzip:   0.43 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/HoldingsData-DjQqqKqS.js                 0.81 kB │ gzip:   0.46 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveQuotesMui-DsSvfVwb.js                0.82 kB │ gzip:   0.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerOrderKey-xazTsdMc.js               0.82 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerOrderKeyMui-CE_ewmSj.js            0.82 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindMarksMantine-DniExyd8.js             0.83 kB │ gzip:   0.51 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowDetails-BBTx_AVE.js                  0.83 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveWritesMantine-BuZX65DT.js            0.83 kB │ gzip:   0.47 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerOrderKeyMantine-BzPHSHUo.js        0.84 kB │ gzip:   0.56 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindReplace-5N1inOls.js                  0.84 kB │ gzip:   0.53 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mantine-pivot-CZ4lARbu.js                0.86 kB │ gzip:   0.47 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mui-pivot-54p9nzhM.js                    0.88 kB │ gzip:   0.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveWritesMui-LKaAL_cd.js                0.88 kB │ gzip:   0.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindMarksMui-ByCRrxr3.js                 0.88 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstGrid-EKGPtZbz.js                    0.88 kB │ gzip:   0.45 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedLayout-rXVUn60Z.js                  0.89 kB │ gzip:   0.53 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveServer-Tl-9eQcL.js                   0.90 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OrderedFieldText-BMfzko1w.js             0.91 kB │ gzip:   0.56 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EditingGridMantine-BWHkumnW.js           0.92 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowDetailsMantine-epvFALS4.js           0.92 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstGridMui-b9nsHAyF.js                 0.92 kB │ gzip:   0.48 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mui-ex-grid-B7DbTBEe.js                  0.92 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ThemedGrid-D7biRQr6.js                   0.92 kB │ gzip:   0.51 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EditingGridMui-DRZbdDNj.js               0.93 kB │ gzip:   0.51 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FirstGridMantine-D8Y0t05j.js             0.93 kB │ gzip:   0.48 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListButton-DDTR9toj.js                0.95 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CurveTrades-CJO4LNGO.js                  0.96 kB │ gzip:   0.62 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueuedRowCommands-MciFkl5Z.js            0.98 kB │ gzip:   0.51 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OrderedFieldTextMui-yHpYFZJK.js          0.98 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/text-geometry-Dd-3zgKq.js                0.98 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromGrid-CRQoJUSB.js                     0.98 kB │ gzip:   0.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OrderedFieldTextMantine-DDSRqDoM.js      0.99 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Positions-BPYUZkYQ.js                    1.00 kB │ gzip:   0.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindMarksParts-BBsZSuqS.js               1.00 kB │ gzip:   0.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveServerMantine-D8HJNkRq.js            1.01 kB │ gzip:   0.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveServerMui-jfU_o3VM.js                1.01 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SortFilterFind-D8PRBW-n.js               1.03 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SpecialColumns-suu3L1YC.js               1.03 kB │ gzip:   0.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SortFilterFindMui-DH_qBSu5.js            1.03 kB │ gzip:   0.49 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowDetailsMui-BdqWmHb9.js               1.04 kB │ gzip:   0.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SpecialColumnsMantine-BZ1ZNQaa.js        1.04 kB │ gzip:   0.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SpecialColumnsMui-C3i1MJGq.js            1.04 kB │ gzip:   0.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedView-BVVv4BoT.js                    1.05 kB │ gzip:   0.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mantine-ex-grid-Bs_XwfMw.js              1.05 kB │ gzip:   0.57 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SortFilterFindMantine-C-nXSvfB.js        1.05 kB │ gzip:   0.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FontGridParts-CtkVD2T1.js                1.06 kB │ gzip:   0.51 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ResponsiveBox-WwNjHyuA.js                1.06 kB │ gzip:   0.58 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedLayoutMantine-gYPFy_vH.js           1.06 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SaveAndLoad-B3L8sxLT.js                  1.06 kB │ gzip:   0.58 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Toolbar-DmqsyE8o.js                      1.07 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindAll-qRLuuTEE.js                      1.07 kB │ gzip:   0.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ToolbarMui-DMNZr-Eg.js                   1.07 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindAllMui-DH2HVmYp.js                   1.07 kB │ gzip:   0.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueuedRowCommandsMantine-BculZUrT.js     1.08 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ToolbarMantine-ELc4QeIb.js               1.09 kB │ gzip:   0.69 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindAllMantine-Rv221Y2I.js               1.09 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/UndoRedo-C07XXzSz.js                     1.10 kB │ gzip:   0.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedLayoutMui-Ci0tus8B.js               1.11 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueuedRowCommandsMui-DTfHYoto.js         1.11 kB │ gzip:   0.56 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DraftFillsParts-UoQh4tw5.js              1.12 kB │ gzip:   0.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveBatches-DeqIehlg.js                  1.12 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/NumericHeaderCopy-lkXqjViU.js            1.12 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Group-BccL0pN9.js                        1.13 kB │ gzip:   0.66 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Expenses-xy2QB1PR.js                     1.14 kB │ gzip:   0.63 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ResponsiveBoxMui-B3tnjGsf.js             1.16 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ResponsiveBoxMantine-DohUJNP3.js         1.16 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/BoardToolCallBuiltin-CD-xwlXJ.js         1.17 kB │ gzip:   0.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ChartSpecBoardBuiltin-BJQ6h8ls.js        1.17 kB │ gzip:   0.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowValuesAs-CnATDh6s.js                 1.17 kB │ gzip:   0.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SeededDraws-NEWmM_kf.js                  1.18 kB │ gzip:   0.63 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LoadInSlices-BcPTz9Ez.js                 1.19 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowValuesAsMantine-BvsKvj5F.js          1.25 kB │ gzip:   0.70 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShapedColumns-PWOuhmuE.js                1.26 kB │ gzip:   0.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindHeaders-H4TGzMbu.js                  1.26 kB │ gzip:   0.65 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/WorkbookTabs-ClSEZi6a.js                 1.26 kB │ gzip:   0.66 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/WorkbookTabsMui-sd_kDMke.js              1.27 kB │ gzip:   0.66 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedViewMui-CJsUv2mL.js                 1.28 kB │ gzip:   0.65 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/WorkbookTabsMantine-BdKCsKdb.js          1.28 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ReportFormsMantine-BQxzhdrB.js           1.30 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ReportForms-biEZQy41.js                  1.32 kB │ gzip:   0.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnToolbar-BOoWXIen.js                   1.34 kB │ gzip:   0.72 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EngineOnly-DzBX0kIH.js                   1.36 kB │ gzip:   0.72 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShapedColumnsMui-BhkafejA.js             1.37 kB │ gzip:   0.69 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DeskBoardBuiltin-B3s8YGiU.js             1.41 kB │ gzip:   0.67 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QuarterlyPnl-Cb_7uDwA.js                 1.42 kB │ gzip:   0.75 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindHeadersMantine-q-qDuiaN.js           1.44 kB │ gzip:   0.73 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SalesServer-2byjMXBA.js                  1.44 kB │ gzip:   0.69 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueuedRowCommandsDesk-BiJ3JOsh.js        1.45 kB │ gzip:   0.75 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/OwnListPanel-Hq-0o7Ia.js                 1.45 kB │ gzip:   0.80 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnTypesMui-LxtuS_81.js               1.46 kB │ gzip:   0.71 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnTypesMantine-BOFdQQ_V.js           1.48 kB │ gzip:   0.73 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/WorkbookSpan-Bm10Kb5m.js                 1.49 kB │ gzip:   0.83 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindHeadersMui-CSNUUxDt.js               1.51 kB │ gzip:   0.77 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EngineWorkbook-BdNd72Hl.js               1.51 kB │ gzip:   0.72 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromCsv-AEi42LLT.js                      1.52 kB │ gzip:   0.81 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ReportFormsMui-DED8G3Vt.js               1.53 kB │ gzip:   0.77 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExpandableGroups-BD_dVlvV.js             1.53 kB │ gzip:   0.73 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExpandableGroupsMui-IGHLa1Oc.js          1.54 kB │ gzip:   0.73 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ExpandableGroupsMantine-BiYgMESN.js      1.56 kB │ gzip:   0.74 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnTypes-Blqfcj4Q.js                  1.61 kB │ gzip:   0.79 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SheetDay-DzWnNokD.js                     1.61 kB │ gzip:   0.82 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionStatus--ATj04Y0.js              1.63 kB │ gzip:   0.80 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionStatusMui-B2V9HGC4.js           1.63 kB │ gzip:   0.81 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SalesSnapshot-BhJx7Qay.js                1.64 kB │ gzip:   0.69 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromCsvMantine-niCWKMpc.js               1.64 kB │ gzip:   0.87 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionStatusMantine-C51Onohp.js       1.65 kB │ gzip:   0.82 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DensityGridMantine-DZU2g9Pc.js           1.67 kB │ gzip:   0.74 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromCsvMui-CQ90Tac8.js                   1.70 kB │ gzip:   0.92 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Alert-Dm2MxbsE.js                        1.71 kB │ gzip:   0.87 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FormatFromCode-BAJwRiGF.js               1.73 kB │ gzip:   0.82 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DensityGrid-C90BEwhx.js                  1.75 kB │ gzip:   0.71 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Formulas-BeQtKJwj.js                     1.79 kB │ gzip:   0.93 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DeskBoardBuiltinMantine-AHHM2hfm.js      1.80 kB │ gzip:   0.86 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShapedTrades-DHYxumVB.js                 1.81 kB │ gzip:   0.84 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueryFromCode-CDrt6Le0.js                1.82 kB │ gzip:   0.88 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DeskBoardBuiltinMui-BAmMjjV1.js          1.86 kB │ gzip:   0.90 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DensityGridMui-BFOaQWuE.js               1.91 kB │ gzip:   0.85 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindReplace-Bd82I1wP.js                  1.94 kB │ gzip:   0.99 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueryFromCodeMantine-BjTrZfT1.js         1.96 kB │ gzip:   0.95 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/QueryFromCodeMui-BahU97fC.js             1.97 kB │ gzip:   0.96 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ReadAheadTrades-DzAtRO_Q.js              2.01 kB │ gzip:   0.99 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionFigures-Ba32ySEx.js             2.03 kB │ gzip:   0.96 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ex-grid-BTopufUt.js                      2.04 kB │ gzip:   0.88 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindReplaceMantine-DvpzyOZx.js           2.06 kB │ gzip:   1.05 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/MillionTrades-C6tiOGhn.js                2.07 kB │ gzip:   1.11 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FindReplaceMui-CXgIp1bJ.js               2.09 kB │ gzip:   1.08 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionFiguresMantine-D_NLzt69.js      2.17 kB │ gzip:   1.03 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Stack-p_5EnJy4.js                        2.23 kB │ gzip:   1.09 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SelectionFiguresMui-Cwd2pb6Y.js          2.24 kB │ gzip:   1.07 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/TradeServer-CMUXO5Ji.js                  2.24 kB │ gzip:   1.08 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Quotes-CXgojhQH.js                       2.25 kB │ gzip:   1.21 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedViewParts-A15DcxpW.js               2.33 kB │ gzip:   1.10 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveWritesDesk-lD611WgM.js               2.34 kB │ gzip:   1.18 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/DeskBoard-DV8OASXN.js                    2.34 kB │ gzip:   0.94 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CollectionRules-i_8eMfLX.js              2.49 kB │ gzip:   1.17 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CollectionRulesMantine-DVN7vkxV.js       2.61 kB │ gzip:   1.24 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/engine-values-BCxo8hII.js                2.64 kB │ gzip:   1.17 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CollectionRulesMui-CG1n_HhZ.js           2.64 kB │ gzip:   1.26 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SpecialColumnsParts-DZlr6wDR.js          2.68 kB │ gzip:   1.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ClipboardGrid-D9WeCGFB.js                2.70 kB │ gzip:   1.33 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ClipboardGridMantine-Cpy0jXtV.js         2.72 kB │ gzip:   1.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ClipboardGridMui-C1yjUGJD.js             2.72 kB │ gzip:   1.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveBatchesMantine-1E0R8mhA.js           2.75 kB │ gzip:   1.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromGridMantine-C6VzQjwa.js              2.82 kB │ gzip:   1.29 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chart-chrome-D5TIb9Vx.js                 2.92 kB │ gzip:   1.07 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnLayout-DjCnzEAf.js                 2.97 kB │ gzip:   1.23 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnLayoutMantine-CQ7KOR_r.js          3.07 kB │ gzip:   1.27 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ColumnLayoutMui-WYO-epZV.js              3.10 kB │ gzip:   1.30 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ServerBoardBuiltin-J1BYpOYR.js           3.15 kB │ gzip:   1.45 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/dates-rEPL4Wje.js                        3.19 kB │ gzip:   1.41 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/FromGridMui-uzHp0n6U.js                  3.26 kB │ gzip:   1.53 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/IconButton-bv0YHy1f.js                   3.32 kB │ gzip:   1.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LinkedTable-CZrJJ5Fx.js                  3.36 kB │ gzip:   1.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ToggleButtonGroup-CSNe6iLq.js            3.41 kB │ gzip:   1.36 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Switch-sLD4oY-J.js                       3.45 kB │ gzip:   1.59 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SalesData-U8xTCDs7.js                    3.52 kB │ gzip:   1.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Textarea-k5uWTg1r.js                     3.53 kB │ gzip:   1.57 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/react-dom-Cx_oes3Q.js                    3.54 kB │ gzip:   1.34 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ToggleButton-1FIShttx.js                 3.62 kB │ gzip:   1.40 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LoadInSlicesMantine-C-kQNUew.js          3.85 kB │ gzip:   1.70 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShapedColumnsMantine-BZLQHj5o.js         4.10 kB │ gzip:   1.60 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/toolbar-item-DAbyw80K.js                 4.51 kB │ gzip:   1.93 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/grid-ruleset-DR-NcHqm.js                 4.58 kB │ gzip:   1.85 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/EditingDesk-uFin8wjb.js                  4.86 kB │ gzip:   2.03 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Alert-DDNHHReJ.js                        4.98 kB │ gzip:   2.06 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ShowValuesAsMui-Cqc8oDC_.js              5.22 kB │ gzip:   2.26 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Switch-BcwTcRy6.js                       5.99 kB │ gzip:   1.90 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Tabs-CTkcl6aF.js                         6.34 kB │ gzip:   2.57 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SegmentedControl-h7W6XGzY.js             7.43 kB │ gzip:   2.97 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LoadInSlicesMui-CaXmm3FA.js              7.48 kB │ gzip:   2.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/presentation-BBx8kUkL.js                 8.23 kB │ gzip:   2.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/jsx-runtime-CwtgHpVt.js                  8.44 kB │ gzip:   3.21 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chart-chrome-DrFkyzic.js                 8.54 kB │ gzip:   2.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/LiveBatchesMui-BE-jZZoY.js               9.40 kB │ gzip:   3.24 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/board-tool-CIZzorq6.js                   9.99 kB │ gzip:   3.25 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/pivot-chrome-da7sYVor.js                12.18 kB │ gzip:   3.02 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/snapshot-0N7ClTcb.js                    12.66 kB │ gzip:   4.05 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/pivot-chrome-CHRQIwIW.js                13.50 kB │ gzip:   3.53 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/shaped-grid-fJO0fmL3.js                 14.37 kB │ gzip:   4.78 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/grid-source-BfZ23Bs1.js                 15.27 kB │ gzip:   5.40 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/Tabs-C2ep63R_.js                        15.59 kB │ gzip:   5.50 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/format-code-CZyLMTOG.js                 16.40 kB │ gzip:   6.09 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SavedViewMantine-1_LQHx5n.js            17.88 kB │ gzip:   5.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/CurveHistory-BMe7Tk8a.js                20.47 kB │ gzip:   7.29 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/esm-NbsOOjX0.js                         25.93 kB │ gzip:   7.82 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/floating-ui.react-BYaqnRTb.js           26.11 kB │ gzip:   9.87 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/view-state-json-BQgf5ZLZ.js             28.60 kB │ gzip:   9.68 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/SalesCsv-DmDQz8Fx.js                    33.26 kB │ gzip:  12.12 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/writer-DS4VvhrD.js                      36.27 kB │ gzip:  11.48 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mui-ex-sheet-CB9S56tZ.js                39.64 kB │ gzip:  13.31 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/mantine-ex-sheet-BpkFVODJ.js            43.45 kB │ gzip:  13.75 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/temporal-polyfill-f9uggUMV.js           56.59 kB │ gzip:  19.20 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/portals-BoXgd3OU.js                     66.07 kB │ gzip:  21.18 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chrome-DynODuFS.js                      67.90 kB │ gzip:  19.54 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/styles-DlyzboQA.js                      88.64 kB │ gzip:  30.76 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ex-board-ac2wO3l_.js                    97.68 kB │ gzip:  29.95 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ex-chart-BXtxpw85.js                   127.64 kB │ gzip:  40.52 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/XlsxOpenSave-BvhNb85L.js               138.72 kB │ gzip:  45.30 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/theme-B928TDsp.js                      151.73 kB │ gzip:  46.07 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/ex-sheet-Beyk60XY.js                   190.99 kB │ gzip:  56.61 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/index-B1zVf-YD.js                      230.17 kB │ gzip:  67.64 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/workbook-xU2Kt53V.js                   327.75 kB │ gzip:  96.77 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chrome-DITRHLZS.js                     423.12 kB │ gzip: 128.39 kB
+  ../../dotnet/samples/ExGrid.Docs/wwwroot/react/assets/chrome-DAp1HMj7.js                     441.72 kB │ gzip: 125.50 kB
+  
+  ✓ built in 2.26s
+  ExGrid.Docs.Generator.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll
+  ExGrid.DemoPages -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+  ExGrid.Docs -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.Docs/bin/Debug/net10.0/ExGrid.Docs.dll
+  ExGrid.Docs (Blazor output) -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.Docs/bin/Debug/net10.0/wwwroot
+  ExGrid.DemoHost.Server -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGrid.DemoHost.Server.dll
+  ExSheet.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  ExGrid.DemoHost -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:01:52.76
+PRE-1 exit 0

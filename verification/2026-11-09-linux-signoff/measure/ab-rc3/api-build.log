@@ -1,0 +1,15 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoApi/ExGrid.DemoApi.csproj (in 834 ms).
+  4 of 5 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.DemoApi -> /home/claude/ex-grid/.claude/worktrees/ab-rc3/dotnet/samples/ExGrid.DemoApi/bin/Release/net10.0/ExGrid.DemoApi.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.23
