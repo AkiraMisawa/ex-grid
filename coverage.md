@@ -8,10 +8,10 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | ExGrid | 93.7% | 84.9% | 88.2% | 78.4% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82.1% | 86.1% | 82.1% |
-| ExChart | 92.3% | 83.1% | 91.1% | 84.9% |
+| ExChart | 92.3% | 83.2% | 91.1% | 84.9% |
 | ExBoard | 93.2% | 75.8% | 67.3% | 59.6% |
 | Data | 94.3% | 83.6% | 94.5% | 89.9% |
-| **Total** | **93.5%** | **84%** | **86.9%** | **82.8%** |
+| **Total** | **93.5%** | **84.1%** | **86.9%** | **82.8%** |
 
 <details><summary>TypeScript coverage per package</summary>
 
@@ -35,7 +35,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/pivot-mantine` | ExPivot | 87.2% | 74.6% | 94 |
 | `packages/pivot-mui` | ExPivot | 89.5% | 75.5% | 105 |
 | `packages/pivot-blazor` | ExPivot | 79.3% | 61.8% | 553 |
-| `packages/chart` | ExChart | 92.7% | 84.4% | 5929 |
+| `packages/chart` | ExChart | 92.7% | 84.6% | 5941 |
 | `packages/chart-react` | ExChart | 93.2% | 75% | 149 |
 | `packages/chart-mantine` | ExChart | 94.5% | 80% | 37 |
 | `packages/chart-mui` | ExChart | 93.1% | 78.7% | 44 |
@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/09/2026 - 08:37:30 |
+| Generated on: | 11/09/2026 - 11:04:56 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
@@ -144,7 +144,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.2%**|**73.4%**|
+|**ExChart**|**84.2%**|**73.5%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -158,7 +158,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExChart.Components.ChartRazorSlot|95.5%|86.1%|
 |ExChart.Components.ChartWire|81%|75%|
 |ExChart.Components.DrawingState|100%||
-|ExChart.Components.ExChart|88%|86.6%|
+|ExChart.Components.ExChart|88%|87.3%|
 |ExChart.Components.ExChartStylesheet|0%||
 |ExChart.Components.ExSurface|79%|62.9%|
 |ExChart.Components.RowKeys|77.5%|71.6%|
