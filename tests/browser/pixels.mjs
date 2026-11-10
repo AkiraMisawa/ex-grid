@@ -124,8 +124,8 @@ export function resolvedColour(page, css) {
  * the compositor may round the other, so `paints` takes the exact value and allows either byte.
  */
 export async function exactColour(page, css) {
-    const fraction = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)\)$/.exec(css);
-    return fraction === null ? resolvedColour(page, css) : fraction.slice(1, 4).map((channel) => Number(channel) * 255);
+    const srgbMatch = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)\)$/.exec(css);
+    return srgbMatch === null ? resolvedColour(page, css) : srgbMatch.slice(1, 4).map((channel) => Number(channel) * 255);
 }
 
 /** WCAG's contrast ratio between two sRGB colours. */

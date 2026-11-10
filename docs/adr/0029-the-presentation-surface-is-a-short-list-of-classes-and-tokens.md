@@ -493,7 +493,10 @@ Heading ground; the whole-axis shade mixes the mark colour at 20%. The MudBlazor
 these tokens to its text-primary/surface and primary/surface at the same proportions, taking
 the text colour's RGB channels without its alpha so the label ground is opaque. These are
 theme defaults, not Excel measurements; a Consumer's tokens win. The Sheet's light defaults are
-the D1 readings above, while its dark frame uses the same system-colour mixes.
+the D1 readings above, while its dark frame uses the same system-colour mixes. (Since 2026-11-10,
+ADR-0030's note of that day: in MudBlazor's dark scheme the Wrapper sets both shades over the
+surface with 30% black instead, the ordinary one that ground itself and the whole-axis one the
+primary at 20% over it, so the line clears them.)
 
 *Note of 2026-11-09, as a Consumer's Mantine theme with an amber primary painted its marked Headings'
 letters at 2.05:1 (#550):* **the marked letters read a token of their own, `--ex-heading-mark-color`,

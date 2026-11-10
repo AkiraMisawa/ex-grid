@@ -119,11 +119,12 @@
    primary already lighter than the floor keeps its lightness.
    The Heading Mark's line is drawn in this colour too, and ExSheet's white Paper keeps the floor
    from rising (SH-39): 3:1 against white needs a relative luminance of at most 0.30. So the
-   Heading Mark's shades darken instead, below the surface they are set in, where the light
-   scheme's text at 12% would have lightened them: the surface with 30% black, and the primary at
-   20% over that for a whole column. MudBlazor's default violet read 2.3:1 on the lighter shades;
-   on these the line reads at least 4.1:1 on the one and 3.3:1 on the other for any primary, and
-   the letters 5.9:1 (ADR-0030's note of 2026-11-10).
+   Heading Mark's shades darken instead, where the text at 12%, set above for both schemes, would
+   lift them above the surface: the surface with 30% black, and the primary at 20% over that for a
+   whole column or row. MudBlazor's default violet read 2.3:1 on the lighter shades; on these,
+   measured over every hue in 15-degree steps at ten lightnesses, and grey, on the default dark
+   surface, the line reads at least 4.1:1 on the one and 3.3:1 on the other, and the letters
+   5.9:1 (ADR-0030's note of 2026-11-10).
    The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
    luminance, so a Consumer's own is not recomputed. The range outline follows through
    --ex-selection-outline, which defaults to this token.
@@ -135,7 +136,8 @@
     .mud-ex-grid {
         --mud-ex-strong: oklch(from var(--mud-palette-primary) max(l, 0.64) min(c, 0.16) h);
         /* At least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
-           the dark: 4.5:1 for any primary against the shades over the default dark surface. */
+           the dark: 4.5:1 for any primary against the shades over the default dark surface, which it cleared
+           when they were lighter and clears further now they are darker (5.9:1). */
         --ex-heading-mark-color: oklch(from var(--mud-palette-primary) max(l, 0.87) min(c, 0.1) h);
         --mud-ex-heading-ground: color-mix(in srgb, black 30%, var(--mud-palette-surface));
         --ex-heading-mark-background: var(--mud-ex-heading-ground);

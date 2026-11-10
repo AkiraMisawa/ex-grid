@@ -142,7 +142,7 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
     }
 });
 
-test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @blazor', async ({ page }) => {
+test('ADR-0029, ADR-0030, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @blazor', async ({ page }) => {
     await open(page);
     // Under the dark scheme the shades are darker than the surface, so the line clears them as it clears the surface
     // and an ExSheet's white Paper (ADR-0030's note of 2026-11-10, its later paragraph).
