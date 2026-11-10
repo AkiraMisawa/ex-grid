@@ -7,8 +7,9 @@ namespace ExGrid;
 /// </summary>
 public enum GridHeaderDisplay
 {
-    /// <summary>The default, the header an untouched grid always drew: the ▾ in a band of its
-    /// own, and the sort mark in a box of its own after the label.</summary>
+    /// <summary>The default, the layout an untouched grid always had: the ▾ in a band of its
+    /// own, and the sort mark in a box of its own after the label. The ▾ of a filtered column
+    /// is painted as a funnel (ADR-0501).</summary>
     Standard = 0,
 
     /// <summary>One Header Box inside the cell's right padding for both: the ▾ while the

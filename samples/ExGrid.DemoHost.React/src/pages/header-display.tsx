@@ -161,6 +161,7 @@ export function HeaderDisplay(): ReactElement {
                 The same rows under the header&apos;s two displays (ADR-0500). A standard header gives the ▾ a band of its own
                 and the sort mark a box of its own; a compact header gives both one box inside the cell&apos;s right padding,
                 which shows the ▾ while the column holds nothing and the mark of its Sort or filter while it holds one.
+                Under either, the ▾ of a filtered column is a funnel (ADR-0501).
                 Click a header to sort, press its ▾ or Alt+↓ for the menu and the filter, and drag or double-click a
                 column&apos;s right edge.
             </p>

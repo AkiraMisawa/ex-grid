@@ -25,6 +25,10 @@ Compact Header Display "the header's ▾" is the Header Box, the same button sho
 Sort, a funnel for a Filter, or both. A press on it opens this one popover whatever it shows, and Alt+↓
 is unchanged.)*
 
+*(2026-11-10, [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md): the
+Standard Header Display's ▾ shows the funnel too while its column is filtered, so "a column that is
+filtered" is now told from the header, before the popover is opened, under either display.)*
+
 **The two seams stay two seams.** `IGridChrome` still supplies the column menu and the filter
 panel separately, each with its own context (ADR-0009/0010), and the core stacks what the two
 return inside the one popover it places ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)).

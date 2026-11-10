@@ -62,6 +62,10 @@ padding as the Header Box, where it also shows the mark of the column's Sort and
 the toggle of the first dismissal above, whatever it shows, and the menu it opens is unchanged. A Chrome
 draws none of it.)*
 
+*(2026-11-10, [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md): under
+either Header Display the ▾ of a column the Filter holds a spec for is painted as a funnel and named
+*Column menu, filtered*. It is the same button and the same toggle.)*
+
 ## Loading indicator — receive and render
 
 ```csharp

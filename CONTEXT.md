@@ -947,6 +947,8 @@ charged and nothing a header means: a click still sorts, and the same button ope
 width somebody set is never changed by it; an Auto width takes its header's new need and keeps what its
 values taught it
 ([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
+Under either, the menu button of a column the **Filter** holds a spec for is painted as a funnel
+([ADR-0501](./docs/adr/0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md)).
 _Avoid_: compact mode, header mode, header density (Density is heights, type and padding)
 
 **Header Box**:

@@ -507,11 +507,13 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * standing keeps the contents it opened with. */
     readonly chrome?: GridChrome<Row>;
     /** Leaves the ▾ off every header, and Alt+↓ with it (ADR-0050, item 12): the column menu, the column's
-     * commands, is shown unless given. */
+     * commands, is shown unless given. The ▾ is also where a header marks a filtered column, so a standard header
+     * without it shows no mark of the Filter; a compact header keeps its box as a mark (ADR-0501 section 3). */
     readonly hideColumnMenu?: boolean;
     /**
      * How every header lays out what stands beside its label (ADR-0500); `'standard'` unless given, which is the
-     * header an untouched grid always drew. `'compact'` puts the ▾ and the marks of the column's Sort and filter in
+     * layout an untouched grid always had. Under either, the ▾ of a column the Filter holds a spec for is painted as
+     * a funnel (ADR-0501). `'compact'` puts the ▾ and the marks of the column's Sort and filter in
      * one Header Box inside the cell's right padding, so a header needs less width: the ▾ while the column has
      * neither, the mark of what it has while it has one, and a press on either opens the column menu. It moves no
      * meaning: a click on a header still sorts, and what can be sorted, filtered or hidden is declared as before. It
@@ -1896,9 +1898,9 @@ export class GridView<Row> {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
         readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
         readonly menus: boolean; readonly headingStyle: string | undefined;
-        /** The header's display, and under `compact` the columns the Filter holds a spec for, which their Header Boxes
-         * mark (ADR-0500); `undefined` under `standard`, whose header shows no filter. */
-        readonly display: GridHeaderDisplay; readonly filtered: string | undefined;
+        /** The header's display (ADR-0500), and the columns the Filter holds a spec for, which their headers mark
+         * under either display (ADR-0501). */
+        readonly display: GridHeaderDisplay; readonly filtered: string;
         /** The commandLabel the header's controls were named through: a ▾ and a group's toggle (ADR-0370 section 10). */
         readonly labels: ((id: string) => string | undefined) | undefined;
     } | undefined;
@@ -11962,13 +11964,13 @@ export class GridView<Row> {
         const grips = this.#onColumnWidthChanged !== undefined;
         // And a ▾ at its right, unless the Consumer hides the column menu (ADR-0044).
         const menus = !this.#hideColumnMenu;
-        // A compact header marks a filtered column in its Header Box (ADR-0500), so there the columns the Filter
-        // holds a spec for are painted too; a standard header shows none, and a Filter repaints nothing of it.
+        // A header marks a filtered column on its ▾, under either display (ADR-0500, ADR-0501), so the columns the
+        // Filter holds a spec for are painted too.
         const display = this.#headerDisplay;
         const compact = display === 'compact';
         const filter = this.#state.filter;
-        const filteredNames = compact && filter !== undefined ? Object.keys(filter.columns) : [];
-        const filtered = compact ? JSON.stringify(filteredNames) : undefined;
+        const filteredNames = filter === undefined ? [] : Object.keys(filter.columns);
+        const filtered = JSON.stringify(filteredNames);
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
             && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus && painted.headingStyle === this.#rowHeadingStyle
@@ -12019,8 +12021,9 @@ export class GridView<Row> {
             cell.setAttribute('aria-colindex', String(c + 1));
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
-            // A filtered column says so on its compact header, where its Header Box paints the mark (ADR-0500).
-            const marksFilter = compact && filteredNames.includes(column.name);
+            // A filtered column's header says so, and the stylesheet paints the funnel from it: on the ▾ under
+            // either display, and on a compact header's box where there is no ▾ (ADR-0500, ADR-0501).
+            const marksFilter = filteredNames.includes(column.name);
             if (marksFilter) cell.setAttribute('data-ex-filtered', '');
             cell.textContent = label;
             // The header's checkbox is one element for the grid's life, moved into the cell built anew (ADR-0043).
@@ -12033,14 +12036,15 @@ export class GridView<Row> {
                 button.className = 'ex-menu-button';
                 button.tabIndex = -1;
                 // The sort is the header's own aria-sort; a filter has no attribute of ARIA's, so the button that
-                // shows its mark says it (ADR-0500).
+                // shows its mark says it, under either display (ADR-0500, ADR-0501).
                 button.setAttribute('aria-label', this.#labelOf(marksFilter ? gridLabelIds.columnMenuFiltered : gridLabelIds.columnMenu));
                 button.setAttribute('data-ex-claims', 'click');
                 cell.append(button);
                 this.#menuButtons.set(button, column.name);
             } else if (compact && column.queryable !== false) {
                 // With no ▾, the Header Box still shows what the column holds (ADR-0500): a mark and nothing to
-                // press, named only while it says something the header's aria-sort does not.
+                // press, named only while it says something the header's aria-sort does not. A standard header
+                // has no box without its ▾, and there a Filter has no mark (ADR-0501 section 3).
                 const state = doc.createElement('span');
                 state.className = 'ex-header-state';
                 if (marksFilter) {

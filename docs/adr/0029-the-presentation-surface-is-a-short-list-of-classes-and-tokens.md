@@ -580,6 +580,10 @@ class, **internal**, and no token.
 - **State hooks, written by the core.** The header band wears `data-ex-header-display="compact"`, and a
   header cell `data-ex-filtered` while the Filter holds a spec for its column, in the Compact display alone;
   a Standard header wears neither, and is the markup it was. The Sort is the cell's `aria-sort`, as before.
+  *(2026-11-10, [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md): a header
+  cell wears `data-ex-filtered` under either display, and the stylesheet paints the funnel on its
+  `ex-menu-button` from it. The band's `data-ex-header-display` is still the Compact display's alone. Both
+  remain internal: a Consumer reads the Filter it handed the grid, not the attribute.)*
 - **No Visual Token and no Geometry Token is added.** The marks are pictures painted as masks in the
   header's colour, in the box `--ex-menu-button-width` and `--ex-menu-button-inset` already size; under
   forced colours they are painted in `CanvasText`. A Wrapper sets nothing for them.

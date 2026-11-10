@@ -5,7 +5,8 @@ import { test, expect, settled, setTicked } from './fixtures.mjs';
 // means are judged without a browser (grid-header-display.test.ts, the shared metric cases). Here is what only a
 // layout and a real pointer show: that the room charged is the room the stylesheet keeps, so no label lies under the
 // box or is cut; that a press on the box and a click beside it land on different things; that the marks are painted;
-// and that nothing a column comes to hold moves a column on screen.
+// and that nothing a column comes to hold moves a column on screen. A standard header paints a filtered column's ▾
+// as the same funnel (ADR-0501), and that picture, beside the Sort's own mark, is a browser's to show too.
 
 const WIDE = { width: 1600, height: 1000 };
 
@@ -106,6 +107,38 @@ test('FN-12f: under a compact header a click sorts and a press on the box opens 
     await header(grid, 'CCY').hover({ force: true });
     await settled(grid);
     expect(await widthsOf(grid), 'a Sort, a Filter and a pointer move no column').toEqual(declared);
+});
+
+test('FN-12i: a standard header paints a filtered column\'s ▾ as the funnel, beside the Sort\'s own mark, and no width moves (ADR-0501) @behaviour', async ({ page }) => {
+    await open(page);
+    const grid = gridIn(page, 'held-grid');
+    const declared = await widthsOf(grid);
+    await expect(grid.locator('.ex-header')).not.toHaveAttribute('data-ex-header-display');
+    const tenor = header(grid, 'Tenor');
+    expect(await boxOf(tenor)).toEqual({ picture: false, glyph: '"▾"', strength: '0.55' });
+
+    // Sorted first, so the standard header's two boxes are both in use once the Filter is set.
+    const cell = await tenor.boundingBox();
+    await page.mouse.click(cell.x + 12, cell.y + (cell.height / 2));
+    await expect(page.locator('#sort-status')).toHaveText('Sorts: Tenor ascending');
+
+    const box = await tenor.locator('.ex-menu-button').boundingBox();
+    await page.mouse.click(box.x + (box.width / 2), box.y + (box.height / 2));
+    const popover = grid.locator('.ex-popover');
+    await setTicked(popover.locator('.ex-popover-list label input[type=checkbox]').first(), false);
+    await popover.locator('.ex-popover-actions button', { hasText: 'OK' }).click();
+    await expect(page.locator('#filter-status')).toHaveText('Filtered: Tenor');
+
+    // The ▾ is the funnel, at full strength, in the box it had; the Sort keeps its own mark after the label.
+    await expect(tenor.locator('.ex-menu-button')).toHaveAccessibleName('Column menu, filtered');
+    expect(await boxOf(tenor)).toEqual({ picture: true, glyph: '""', strength: '1' });
+    expect(await tenor.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"▲"');
+    expect(await tenor.locator('.ex-menu-button').boundingBox(), 'the box is where it was').toEqual(box);
+    // A column that is not filtered keeps its ▾.
+    expect(await boxOf(header(grid, 'CCY'))).toEqual({ picture: false, glyph: '"▾"', strength: '0.55' });
+    await settled(grid);
+    expect(await widthsOf(grid), 'a Filter moves no column').toEqual(declared);
+    await expect(page.locator('#width-status')).toHaveText('Changes:');
 });
 
 // What a header is charged and what it paints are the Script Core's, judged above on the React host. Blazor's own

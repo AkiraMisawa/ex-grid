@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // Layer 2 (ADR-0350 section 13): the header's display (ADR-0500). `standard` is the header an untouched grid always
-// drew, to the attribute; `compact` gives the ▾ and the marks of the column's Sort and filter one Header Box,
+// drew, to the attribute, until a Filter marks a column's ▾ (ADR-0501); `compact` gives the ▾ and the marks of the column's Sort and filter one Header Box,
 // charges a header that box and no more, and changes neither a declared width nor anything the grid holds when it
 // is switched on a grid in use.
 import { afterEach, describe, expect, it } from 'vitest';
@@ -90,13 +90,58 @@ describe('the standard header', () => {
         const { root } = mount<Trade>(options);
         const { root: named } = mount<Trade>({ ...options, source: GridSource.from(trades(50)), headerDisplay: 'standard' });
         source.setSorts([{ column: 'Book', direction: 'ascending' }]);
-        source.setFilter({ columns: { Book: notBlank } });
         await painted();
-        // No mark on the band, none of a filter on a cell, and the ▾ named as it always was.
+        // No mark on the band, and the ▾ named as it always was.
         expect(q(root, '.ex-header').hasAttribute('data-ex-header-display')).toBe(false);
         expect(said(root)).toEqual(['ascending unfiltered button:Column menu', 'none unfiltered button:Column menu']);
         expect(q(named, '.ex-header').outerHTML.replace(/ex-\d+-/gu, '')).toBe(
             q(mount<Trade>({ ...options, source: GridSource.from(trades(50)) }).root, '.ex-header').outerHTML.replace(/ex-\d+-/gu, ''));
+    });
+
+    it('ADR-0501: a standard header marks a filtered column on its ▾ and names it, beside the Sort\'s own mark, and is the header it was once the Filter is cleared', async () => {
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: fixed, source, ...box, commandLabel: japaneseGridWords });
+        await painted();
+        const unfiltered = q(root, '.ex-header').outerHTML;
+
+        source.setFilter({ columns: { Notional: notBlank } });
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered button:列のメニュー', 'none filtered button:列のメニュー (フィルター適用中)']);
+        // The band is still the standard one: the mark is the cell's, and the ▾ is the button it was.
+        expect(q(root, '.ex-header').hasAttribute('data-ex-header-display')).toBe(false);
+        expect(root.querySelectorAll('.ex-header-cell > .ex-menu-button[tabindex="-1"]')).toHaveLength(2);
+        expect(root.querySelector('.ex-header-state')).toBeNull();
+
+        // Sorted and filtered at once, the column says both: the Sort where it always did, the Filter on its ▾.
+        source.setSorts([{ column: 'Notional', direction: 'descending' }]);
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered button:列のメニュー', 'descending filtered button:列のメニュー (フィルター適用中)']);
+
+        source.setSorts([]);
+        source.setFilter(undefined);
+        await painted();
+        expect(q(root, '.ex-header').outerHTML).toBe(unfiltered);
+    });
+
+    it('ADR-0501: a Filter moves no width of a standard header, Auto or Fixed, and nothing is reported', async () => {
+        const heard: GridColumnWidthChange[] = [];
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: auto, source, ...box, onColumnWidthChanged: change => { heard.push(change); } });
+        await painted();
+        const before = widths(root);
+        source.setFilter({ columns: { Ccy: notBlank, Book: notBlank } });
+        await painted();
+        expect(said(root).map(cell => cell.split(' ')[1])).toEqual(['filtered', 'unfiltered', 'filtered']);
+        expect(widths(root)).toEqual(before);
+        expect(heard).toEqual([]);
+    });
+
+    it('ADR-0501: with the column menu hidden a standard header has no ▾ and no box, and shows no mark of a Filter', async () => {
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: fixed, source, ...box, hideColumnMenu: true });
+        source.setFilter({ columns: { Book: notBlank } });
+        await painted();
+        expect(said(root)).toEqual(['none filtered no box', 'none unfiltered no box']);
     });
 
     it('ADR-0500: a headerDisplay that is neither is refused by name, on a new grid and on one in use', async () => {

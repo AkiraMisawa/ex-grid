@@ -156,9 +156,11 @@
             <kbd>Ctrl</kbd> still select columns, the edge still resizes, and a press on the box opens the same
             column menu as the ▾, as <kbd>Alt</kbd>+<kbd>↓</kbd> does from a cell. The label keeps the room it had, so
             a label that was painted whole is still painted whole. A screen reader hears the sort from the column
-            header as before, and the filter in the button's name. The compact header is also where a filtered
-            column says so at a glance; the standard header shows a filter only in its menu. With
-            <code>HideColumnMenu</code>, a compact header keeps the box as a mark, with nothing to press.
+            header as before, and the filter in the button's name. A filtered column says so at a glance in
+            either display: the standard header paints its ▾ as the same funnel, beside the sort mark's own box,
+            and no width changes for it. With <code>HideColumnMenu</code>, a compact header keeps the box as a
+            mark, with nothing to press; a standard header has no ▾ then and no room kept for one, so it shows
+            no mark of a filter.
         </p>
         <p>
             In a column the user has dragged narrower than its header needs, the box stays whole and the label

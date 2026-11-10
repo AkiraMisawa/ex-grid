@@ -18,6 +18,15 @@ widened come back narrower, a fit nobody asked for. An Auto width now keeps what
 What a standard header shows at a width fitted under a compact one, and what gives way in a column too
 narrow for both the label and the box, were implied and are now said, in sections 2 and 4.)*
 
+*(2026-11-10, decided with the user once the pull request stated the open points. Kept as written: the
+option's name and its two values (section 1); an Auto column's header part following the display, and
+`hideColumnMenu` carrying Auto widths the same way (section 4); and the ADR block reserved in this
+branch. Changed: the standard header no longer stays silent about a Filter. Its ▾ is painted as the
+funnel while its column is filtered, at the widths that stand, which is
+[ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md). Where this text
+says the standard header shows no Filter, or that its DOM is the one an earlier version drew, read it
+with the notes of this date below.)*
+
 This amends [ADR-0016](./0016-column-width-and-overflow.md) ("What a fit counts in the header"),
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) and
 [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md) (the ▾ and what it shows)
@@ -68,6 +77,10 @@ the rest of `GridOptions`. An unknown value is refused by name.
 
 - **`standard` is the header as it was, and its DOM is the one an earlier version drew**: no attribute is
   added to it and no rule of the compact header reaches it. A Consumer who sets nothing sees no change.
+  *(2026-11-10, [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md): this
+  holds of a grid that is given no Filter. A filtered column's header cell wears `data-ex-filtered`
+  under either display and its ▾ is named and painted as filtered; the band's own attribute stays the
+  compact header's alone.)*
 - **It is one choice for the grid.** A column has no override: none was asked for, and a header whose
   neighbours lay their marks out differently reads as two grids. A column still declares what it always
   did (`queryable`, `filterUi`, its widths), and `hideColumnMenu` still removes the menu.
@@ -80,7 +93,8 @@ the rest of `GridOptions`. An unknown value is refused by name.
   `compact` are also names of Density presets. They are the user's words for these two displays and are
   kept; the option is named `headerDisplay`, never "compact mode", so that `density: 'compact'` and
   `headerDisplay: 'compact'` are not read as one switch. **For the user:** other value names (`full` and
-  `slim`, say) would remove the overlap at the cost of the specification's own words.
+  `slim`, say) would remove the overlap at the cost of the specification's own words. *(2026-11-10: the
+  user kept `headerDisplay`, `standard` and `compact`.)*
 
 ### 2. A compact header has one Header Box, inside the cell's padding
 
@@ -183,7 +197,8 @@ stands takes it.
   narrow where the Consumer's own policy says so. An Auto column is that policy, declared by the
   Consumer, so its header's part follows the display. If Auto columns were meant to hold their width
   too, they could keep it on the way to compact and grow only on the way back, at the cost of a grid
-  whose widths depend on the order of its settings.
+  whose widths depend on the order of its settings. *(2026-11-10: the user kept it as written, for the
+  display and for `hideColumnMenu` alike.)*
 - **Back to `standard`, a header is the standard one again, at the widths that stand.** Nothing is
   dropped from it by rule: the ▾ is in its band and the sort mark in its box. What it can lose is room.
   A `Fixed` width that was fitted under `compact` is 28px short of the standard charge, and the standard
@@ -192,7 +207,9 @@ stands takes it.
   fit, so once the column is sorted an ellipsis stands where the mark would (`Tenor…`, observed in
   Chrome on `/header-display`), and the Sort is then read from `aria-sort` by assistive technology, or
   on screen after the column is widened. The column menu does not say which way a column is sorted, in
-  either display. The Filter has no mark in a standard header at any width (see Consequences). The
+  either display. The Filter has no mark in a standard header at any width (see Consequences).
+  *(2026-11-10, ADR-0501: it now has one, the funnel on the ▾, which a narrow column keeps as it keeps
+  the ▾.)* The
   user's way out is the one that made the width: Size to fit under `standard` gives the standard
   charge. The grid does not widen the column for them, because that width was set.
 - **All of this is said of a column the Consumer hands again as the same object.** An Auto width is
@@ -243,7 +260,9 @@ text + 72px).
   seven header-decided columns 28px narrower each and no label cut.
 - A compact header shows that a column is filtered and a standard header still does not. The standard
   header was left as it was, because adding a mark to it changes every grid in use; whether it gains one
-  is a decision of its own.
+  is a decision of its own. *(2026-11-10: that decision is
+  [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md). The user chose the
+  mark: a filtered column's ▾ is a funnel in the standard header too, and no width changes.)*
 - The label's em of slack is now most of what a compact header carries beside its text. Removing it is
   not this decision.
 - Touch ([ADR-0045](./0045-exgrid-is-a-desktop-grid.md),
