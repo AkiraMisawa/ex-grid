@@ -113,12 +113,16 @@
    raised just far enough to clear 3:1 against what it is drawn on, the hue kept.
    Measured, MudBlazor's dark primary (#776be7) against its dark surface (#373740) is 2.83:1.
    An OKLCH lightness of 0.64, painted, is 3.31:1 against the surface and 3.06:1 against the
-   Focus band's tint over it; 0.63 was 2.95:1 there. That floor left the Heading Mark's line,
-   drawn in the same colour on the Heading Mark's shade, at 2.3:1 there (#556): the shade is
-   the text's colour without its alpha, white, at 12%, which is light. A lightness of at least
-   0.76, the chroma held to 0.16, holds 3:1 there and against the surface for any hue at any
-   lightness; the chroma is held because the browser clips a light, saturated colour back
-   toward the dark. A primary already lighter than the floor keeps its lightness.
+   Focus band's tint over it; 0.63 was 2.95:1 there. The chroma is held to 0.16 (#556), which
+   keeps 3:1 against the surface and the band for any hue at any lightness: the browser clips a
+   light, saturated colour back toward the dark, and a full blue raised to 0.64 fell short. A
+   primary already lighter than the floor keeps its lightness.
+   The Heading Mark's line, drawn in this colour, reads 3:1 against the surface it borders but
+   not against the Heading Mark's own shades, which are light here (the text's colour without
+   its alpha, white, at 12%): MudBlazor's default violet reads 2.3:1 on them. No one colour
+   can clear both those shades and an ExSheet's white Paper, which the Focus outline is drawn
+   on in this scheme too (SH-39), so the floor stays where the Paper holds (ADR-0030's note of
+   2026-11-10).
    The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
    luminance, so a Consumer's own is not recomputed. The range outline follows through
    --ex-selection-outline, which defaults to this token.
@@ -128,7 +132,7 @@
    it. */
 @container style(--mud-native-html-color-scheme: dark) {
     .mud-ex-grid {
-        --mud-ex-strong: oklch(from var(--mud-palette-primary) max(l, 0.76) min(c, 0.16) h);
+        --mud-ex-strong: oklch(from var(--mud-palette-primary) max(l, 0.64) min(c, 0.16) h);
         /* At least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
            the dark: 4.5:1 for any primary against the shades over the default dark surface. */
         --ex-heading-mark-color: oklch(from var(--mud-palette-primary) max(l, 0.87) min(c, 0.1) h);

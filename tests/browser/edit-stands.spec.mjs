@@ -1,6 +1,7 @@
 import { test, expect, setRoundTrip, alterPage, settled, chromeHost, roundTripHost, BLAZOR } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
+import { resolvedColour } from './pixels.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
     pressAt,
@@ -400,16 +401,11 @@ for (const chrome of ['builtin', 'mud']) {
         // No outline while the keyboard is in the Sheet (2026-10-16): the width alone is taken away.
         expect(full.width).toBe('0px');
         if (chrome !== 'builtin') {
-            // The Wrapper's token, not the core's default: the palette's primary.
-            const primary = await left.evaluate((root) => {
-                const probe = document.createElement('span');
-                probe.style.color = getComputedStyle(root).getPropertyValue('--mud-palette-primary');
-                root.append(probe);
-                const color = getComputedStyle(probe).color;
-                probe.remove();
-                return color;
-            });
-            expect(full.color).toBe(primary);
+            // The Wrapper's token, not the core's default: the palette's primary, which the light scheme's cap
+            // leaves as it is (ADR-0030's note of 2026-11-10). The outline is a relative colour, so the two are
+            // compared as painted.
+            const primary = await left.evaluate((root) => getComputedStyle(root).getPropertyValue('--mud-palette-primary'));
+            expect(await resolvedColour(page, full.color)).toEqual(await resolvedColour(page, primary));
         }
 
         // The keyboard goes to the other Sheet: the left edit stands, outlined 1px, same colour.

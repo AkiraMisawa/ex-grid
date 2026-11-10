@@ -140,9 +140,10 @@ export function contrast(a, b) {
  * `ex-heading-marked` or `ex-heading-whole`. `letters` is the weakest of the letters against the Heading's shade,
  * which text needs at 4.5:1 (ADR-0029's note of 2026-11-09, #550); `marks` the weakest of the Heading Mark's line
  * against that shade and against the grid's ground, and of the Focus outline against the ground and the Focus band's
- * tint over it where the grid draws one, which a mark needs at 3:1 (#556).
+ * tint over it where the grid draws one, which a mark needs at 3:1 (#556). `lineOnShade: false` leaves out the line
+ * against the shade, the one reading ADR-0030's note of 2026-11-10 names as short under MudBlazor's dark scheme.
  */
-export async function weakestHeadingMarks(grid, { frame, variable, state }) {
+export async function weakestHeadingMarks(grid, { frame, variable, state, lineOnShade = true }) {
     const samples = await grid.evaluate((g, { frame: selector, variable: name, state: which }) => {
         const wrapper = g.closest(selector);
         const heading = g.querySelector(`.ex-header-cell.${which}`);
@@ -187,7 +188,7 @@ export async function weakestHeadingMarks(grid, { frame, variable, state }) {
     return {
         letters: weakest(samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.shade) }))),
         marks: weakest(samples.flatMap((sample) => [
-            { ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) },
+            ...(lineOnShade ? [{ ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) }] : []),
             { ...sample, against: 'the line on the ground', ratio: contrast(sample.line, sample.ground) },
             { ...sample, against: 'the Focus outline on the ground', ratio: contrast(sample.focus, sample.ground) },
             ...(sample.band === null ? [] : [{ ...sample, against: 'the Focus outline on the Focus band', ratio: contrast(sample.focus, sample.band) }]),
