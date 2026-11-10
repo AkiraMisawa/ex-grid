@@ -29,8 +29,8 @@ public class WrapperStylesheetTests
         var root = Regex.Match(css, @"\.mud-ex-grid\s*\{([^}]*)\}");
 
         Assert.True(root.Success, "no .mud-ex-grid rule in the Wrapper's stylesheet");
-        // The Focus outline is the palette's primary (ADR-0030)...
-        Assert.Matches(new Regex(@"(^|[;\s])--ex-focus-outline:\s*var\(--mud-palette-primary\);"), root.Groups[1].Value);
+        // The Focus outline is the palette's primary (ADR-0030), held to 3:1 in each scheme (#556)...
+        Assert.Matches(new Regex(@"(^|[;\s])--ex-focus-outline:\s*var\(--mud-ex-strong\);"), root.Groups[1].Value);
         // ...and the border's own token is left unnamed, so the core's rule takes the Focus outline's
         // colour (2026-10-12, decided with the user: under the MudBlazor Wrappers it follows their
         // primary with no mapping of its own).

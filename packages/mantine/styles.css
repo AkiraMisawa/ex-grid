@@ -20,7 +20,7 @@
     --ex-column-rule-color: transparent;
     --ex-pinned-background: var(--mantine-color-body);
     /* Selection from the primary colour, translucent so the value reads through it (ADR-0008); the Focus outline
-       and everything drawn with it is the primary filled. */
+       and everything drawn with it is the primary filled, held to 3:1 in each scheme (--mantine-ex-strong, below). */
     --ex-selection-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 18%, transparent);
     --ex-focus-row-fill: color-mix(in srgb, var(--mantine-primary-color-filled) 8%, transparent);
     /* The hover band is an overlay drawn above the cells' text, as the Focus band is (ADR-0029), so it is
@@ -90,9 +90,11 @@
     --mantine-ex-tooltip-background: var(--mantine-color-gray-9);
     --mantine-ex-tooltip-color: var(--mantine-color-white);
     --mantine-ex-scrollbar: var(--mantine-color-gray-4);
-    /* What the keyboard's marks are drawn in, the Focus outline, the grid's and the editor's: the primary, which
-       the light body sets off. */
-    --mantine-ex-strong: var(--mantine-primary-color-filled);
+    /* What the keyboard's marks are drawn in, the Focus outline, the grid's and the editor's, and the Heading Mark's
+       line: the primary, darkened where it is lighter than an OKLCH lightness of 0.54, hue and chroma kept, which
+       holds 3:1 against the light body and against the Heading Mark's shades for any hue at any lightness. A light
+       primary, an amber or a yellow, painted 2:1 there as it was (#556). */
+    --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) min(l, 0.54) c h);
     /* What the keyboard's marks write text in: the primary, darkened where it is lighter than an OKLCH lightness
        of 0.42, hue and chroma kept, which holds 4.5:1 against the Heading Mark's shades for every Mantine colour at
        every shade, and for any hue at any lightness. */
@@ -106,9 +108,11 @@
     --mantine-ex-tooltip-background: var(--mantine-color-gray-2);
     --mantine-ex-tooltip-color: var(--mantine-color-black);
     --mantine-ex-scrollbar: var(--mantine-color-dark-3);
-    /* The dark scheme's (UX-9): the primary with its lightness raised just far enough to clear 3:1 against the
-       dark body, hue and chroma kept, as the MudBlazor Wrapper raises its own. */
-    --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) c h);
+    /* The dark scheme's (UX-9): the primary with its lightness raised to at least 0.64 and its chroma held to 0.16,
+       hue kept, which clears 3:1 against the dark body and against the Heading Mark's shades for any hue at any
+       lightness, as the MudBlazor Wrapper raises its own. The chroma is held because the browser clips a light,
+       saturated colour back toward the dark: a full blue raised to 0.64 painted 2.7:1 on the shade (#556). */
+    --mantine-ex-strong: oklch(from var(--mantine-primary-color-filled) max(l, 0.64) min(c, 0.16) h);
     /* Lightened to at least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
        the dark (a full red at 0.78 painted 4.4:1). */
     --mantine-ex-ink: oklch(from var(--mantine-primary-color-filled) max(l, 0.87) min(c, 0.1) h);
@@ -126,6 +130,17 @@
     --ex-column-rule-color: var(--mantine-ex-rule);
 }
 
+/* The Action Column's buttons (ADR-0020, #553): painted as Mantine's default Button, which reads in both schemes,
+   where the browser's own grey button was the brightest thing in a dark row. Colours only, as ADR-0030 allows: the
+   button's box, its padding, its border's width and its gap, is geometry the core sizes an Auto column by. */
+.mantine-ex-grid .ex-action {
+    background-color: var(--mantine-color-default);
+    color: var(--mantine-color-default-color);
+    border-style: solid;
+    border-color: var(--mantine-color-default-border);
+}
+.mantine-ex-grid .ex-action:hover { background-color: var(--mantine-color-default-hover); }
+
 /* The menus' items (ADR-0010/0036): Mantine's subtle buttons laid out as its Menu's items, each label at the
    start. Scoped to the menu's own element, which stands inside the core's popover; the popover, its place and its
    box stay the core's. */
@@ -141,6 +156,10 @@
 .mantine-ex-grid-menu .mantine-ex-grid-menu-item .mantine-Button-inner {
     justify-content: flex-start;
 }
+/* A command that changes nothing is disabled as Mantine's Menu disables an item: its label dimmed, on no shade of its
+   own. Mantine's Button gives every disabled button a filled grey, whatever its variant, and a run of them read as
+   one disabled panel (#552). */
+.mantine-ex-grid-menu .mantine-ex-grid-menu-item:disabled { background: transparent; }
 
 /* The filter panel (ADR-0009/0030): Mantine's controls in a column inside the core's popover, the value list
    scrolling on its own and the actions at the end. No width of its own: the core's popover sets it (ADR-0040). */

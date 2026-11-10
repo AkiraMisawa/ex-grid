@@ -27,15 +27,21 @@
     /* Selection from the palette's primary, translucent so the value reads through it
        (ADR-0008). The Focus outline, and everything else drawn with it — the pointing
        outline, the fill handle, the chosen action, and a single range's outline, whose own
-       token defaults to it — is the primary too (ADR-0030, 2026-09-29); the dark scheme
-       raises it, below. */
+       token defaults to it — is the primary too (ADR-0030, 2026-09-29), held to 3:1 in each
+       scheme through --mud-ex-strong: the light scheme's darkens it, here, and the dark
+       scheme's raises it, below. */
     --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
     --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
     --ex-row-hover-background: var(--mud-palette-table-hover);
     /* Row Stripes, where Striped or the grid turns them on (ADR-0038): the palette's
        table-stripe colour, as MudBlazor's own tables paint it. */
     --ex-row-stripe-background: var(--mud-palette-table-striped);
-    --ex-focus-outline: var(--mud-palette-primary);
+    /* The light scheme's (#556): the primary darkened to an OKLCH lightness of at most 0.54,
+       hue and chroma kept, which holds 3:1 against the surface and the Heading Mark's shades
+       for any hue at any lightness. An amber primary painted 2.7:1 on the surface as it was.
+       MudBlazor's own primary is darker than the cap and is left as it is. */
+    --mud-ex-strong: oklch(from var(--mud-palette-primary) min(l, 0.54) c h);
+    --ex-focus-outline: var(--mud-ex-strong);
     /* Heading Mark shades are opaque, so the Paper beneath cannot alter the frame's shade.
        The text palette may carry alpha; take its channels before mixing into the surface. */
     --ex-heading-mark-background: color-mix(in srgb, rgb(from var(--mud-palette-text-primary) r g b / 1) 12%, var(--mud-palette-surface));
@@ -44,10 +50,10 @@
        3:1 (ADR-0029's note of 2026-11-09): the primary darkened to an OKLCH lightness of at most 0.42, hue and
        chroma kept. The dark scheme lightens it, below. */
     --ex-heading-mark-color: oklch(from var(--mud-palette-primary) min(l, 0.42) c h);
-    --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
+    --ex-grid-focus-outline: 2px solid var(--mud-ex-strong);
     --ex-editor-background: var(--mud-palette-surface);
     --ex-editor-color: var(--mud-palette-text-primary);
-    --ex-editor-outline: 2px solid var(--mud-palette-primary);
+    --ex-editor-outline: 2px solid var(--mud-ex-strong);
     --ex-placeholder-background: var(--mud-palette-skeleton);
     --ex-resize-guide-color: var(--mud-palette-primary);
     --ex-drop-indicator-color: var(--mud-palette-primary);
@@ -104,11 +110,15 @@
     font-family: var(--mud-typography-default-family, Roboto, "Helvetica Neue", Arial, sans-serif);
 }
 /* The dark scheme's Focus outline (ADR-0030, 2026-09-29; UX-9): the primary with its lightness
-   raised just far enough to clear 3:1 against what it is drawn on, the hue and chroma kept.
+   raised just far enough to clear 3:1 against what it is drawn on, the hue kept.
    Measured, MudBlazor's dark primary (#776be7) against its dark surface (#373740) is 2.83:1.
    An OKLCH lightness of 0.64, painted, is 3.31:1 against the surface and 3.06:1 against the
-   Focus band's tint over it; 0.63 was 2.95:1 there. A primary already lighter than the floor
-   is left as it is, and the light scheme's is never touched.
+   Focus band's tint over it; 0.63 was 2.95:1 there. That floor left the Heading Mark's line,
+   drawn in the same colour on the Heading Mark's shade, at 2.3:1 there (#556): the shade is
+   the text's colour without its alpha, white, at 12%, which is light. A lightness of at least
+   0.76, the chroma held to 0.16, holds 3:1 there and against the surface for any hue at any
+   lightness; the chroma is held because the browser clips a light, saturated colour back
+   toward the dark. A primary already lighter than the floor keeps its lightness.
    The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
    luminance, so a Consumer's own is not recomputed. The range outline follows through
    --ex-selection-outline, which defaults to this token.
@@ -118,7 +128,7 @@
    it. */
 @container style(--mud-native-html-color-scheme: dark) {
     .mud-ex-grid {
-        --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.64) c h);
+        --mud-ex-strong: oklch(from var(--mud-palette-primary) max(l, 0.76) min(c, 0.16) h);
         /* At least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
            the dark: 4.5:1 for any primary against the shades over the default dark surface. */
         --ex-heading-mark-color: oklch(from var(--mud-palette-primary) max(l, 0.87) min(c, 0.1) h);
@@ -134,6 +144,18 @@
 .mud-ex-grid.mud-ex-grid-bordered {
     --ex-column-rule-color: var(--mud-palette-table-lines);
 }
+/* The Action Column's buttons (ADR-0020, #553): painted as MudBlazor's outlined default
+   button, the surface with the text's colour and the inputs' line, which reads in both
+   schemes, where the browser's own grey button was the brightest thing in a dark row. Colours
+   only, as ADR-0030 allows: the button's box, its padding, its border's width and its gap, is
+   geometry the core sizes an Auto column by. */
+.mud-ex-grid .ex-action {
+    background-color: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    border-style: solid;
+    border-color: var(--mud-palette-lines-inputs);
+}
+.mud-ex-grid .ex-action:hover { background-color: var(--mud-palette-action-default-hover); }
 .mud-ex-grid .mud-ex-grid-toolbar {
     padding-left: 8px;
     padding-right: 8px;
@@ -161,7 +183,7 @@
     line-height: inherit;
     background: transparent;
     color: inherit;
-    box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
+    box-shadow: inset 0 -2px 0 var(--mud-ex-strong);
 }
 /* A Reject stands (ADR-0034): the underline turns the palette's error colour, the
    same colour the core's message popover speaks in. Painted, not laid out. Under the
@@ -199,7 +221,7 @@
 }
 .mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus,
 .mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text[data-ex-formula-bar-field]:read-write:focus {
-    box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
+    box-shadow: inset 0 -2px 0 var(--mud-ex-strong);
 }
 /* The completion list and the argument hint (ADR-0051): the contents of the box the core
    stands beneath the editor — its place, width and bound are the core's (.ex-completion).

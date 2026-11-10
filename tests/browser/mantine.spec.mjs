@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import { REACT } from './hosting.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
-import { contrast, painted, resolvedColour, weakestHeadingLetters } from './pixels.mjs';
+import { contrast, hueApart, painted, resolvedColour, weakestHeadingMarks } from './pixels.mjs';
 
 // @ex-grid/mantine on /mantine, the React host's alone (ADR-0390 section 7): what only a browser shows of a
 // design-system Wrapper. The geometry stays what the grid declared under Mantine's own styles, the theme's colours
@@ -83,7 +83,8 @@ test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s
             expect(one.ground, JSON.stringify(one)).not.toEqual(lightGround);
         } else {
             lightGround = one.ground;
-            expect(one.focus, JSON.stringify(one)).toEqual(one.primary);
+            // The primary's hue, darkened where it is too light to clear 3:1 on the Heading Mark's shade (#556).
+            expect(hueApart(one.focus, one.primary), JSON.stringify(one)).toBeLessThanOrEqual(2);
         }
         expect(contrast(one.focus, one.ground), `the outline against the ground, dark=${dark} (${JSON.stringify(one)})`).toBeGreaterThanOrEqual(3);
         // As painted: the outline's top lies a pixel above the cell (ADR-0008), over the ground beside it.
@@ -94,6 +95,16 @@ test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s
         const seen = { outline: pixels.at(box.x + box.width / 2, box.y - 1), ground: pixels.at(box.x + 6, box.y + 6) };
         expect(contrast(seen.outline, seen.ground), `painted, dark=${dark} (${JSON.stringify(seen)})`).toBeGreaterThanOrEqual(3);
 
+        // The Action Column's button in Mantine's default Button's colours, never the browser's own grey (#553).
+        const action = await grid(page).evaluate((g) => {
+            const button = g.querySelector('.ex-action');
+            const seen = getComputedStyle(button);
+            const theme = getComputedStyle(g);
+            return { background: seen.backgroundColor, color: seen.color, themeBackground: theme.getPropertyValue('--mantine-color-default'), themeColor: theme.getPropertyValue('--mantine-color-default-color') };
+        });
+        expect([await resolvedColour(page, action.background), await resolvedColour(page, action.color)], `the action, dark=${dark} (${JSON.stringify(action)})`)
+            .toEqual([await resolvedColour(page, action.themeBackground), await resolvedColour(page, action.themeColor)]);
+
         await press(page, 3, 2, ['Shift']);
         await expect(grid(page).locator('.ex-range-tint')).not.toHaveCount(0);
         const range = await colours();
@@ -101,9 +112,9 @@ test('UX-9 / ADR-0390: the Focus outline and the selection fill are the theme\'s
     }
 });
 
-test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades, in light and dark, whatever the primary @behaviour', async ({ page }) => {
+test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @behaviour', async ({ page }) => {
     await open(page);
-    const worst = (state) => weakestHeadingLetters(grid(page), { frame: '.mantine-ex-grid', variable: '--mantine-primary-color-filled', state });
+    const worst = (state) => weakestHeadingMarks(grid(page), { frame: '.mantine-ex-grid', variable: '--mantine-primary-color-filled', state });
     for (const dark of [false, true]) {
         if (dark) {
             await page.locator('#toggle-dark').click();
@@ -112,11 +123,13 @@ test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades,
         await press(page, 2, 1);
         await expect(grid(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
         const marked = await worst('ex-heading-marked');
-        expect(marked.ratio, `part of the column, dark=${dark} (${JSON.stringify(marked)})`).toBeGreaterThanOrEqual(4.5);
+        expect(marked.letters.ratio, `the letters, part of the column, dark=${dark} (${JSON.stringify(marked.letters)})`).toBeGreaterThanOrEqual(4.5);
+        expect(marked.line.ratio, `the line and the Focus, part of the column, dark=${dark} (${JSON.stringify(marked.line)})`).toBeGreaterThanOrEqual(3);
         await page.keyboard.press('Control+Space');
         await expect(grid(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
         const whole = await worst('ex-heading-whole');
-        expect(whole.ratio, `the whole column, dark=${dark} (${JSON.stringify(whole)})`).toBeGreaterThanOrEqual(4.5);
+        expect(whole.letters.ratio, `the letters, the whole column, dark=${dark} (${JSON.stringify(whole.letters)})`).toBeGreaterThanOrEqual(4.5);
+        expect(whole.line.ratio, `the line and the Focus, the whole column, dark=${dark} (${JSON.stringify(whole.line)})`).toBeGreaterThanOrEqual(3);
     }
 });
 
@@ -129,6 +142,8 @@ test('KB-30 / ADR-0390: a column menu drawn in Mantine\'s buttons is crossed by 
     const items = await menu.locator('button[role=menuitem]:not([disabled])').allTextContents();
     // Book's commands: its two sorts, and Clear filter, not enabled while nothing filters it.
     expect(items).toEqual(['Sort ascending', 'Sort descending']);
+    // And Clear filter is drawn as Mantine's Menu draws a disabled item, on no grey of its own (#552).
+    await expect(menu.locator('button[role=menuitem][disabled]').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     const active = () => page.evaluate(() => document.activeElement?.textContent?.trim() ?? null);
     await expect.poll(active).toBe(items[0]);
     for (const [key, lands] of [['ArrowDown', 1], ['ArrowDown', 0], ['End', 1], ['Home', 0], ['ArrowUp', 1]]) {

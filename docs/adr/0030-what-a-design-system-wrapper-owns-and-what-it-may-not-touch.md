@@ -174,6 +174,29 @@ default dark palette: CSS cannot compare two colours' luminance, so a Consumer's
 not recomputed, and UX-9 measures only the defaults. The range outline reads
 `--ex-selection-outline`, which defaults to the Focus outline and needs no mapping of its own.
 
+*Note of 2026-11-10, as a Consumer's Mantine theme with an amber primary drew its Focus at 2.70:1 on
+the white body and the Heading Mark's line at 2.04:1 on its shade (#556):* **the colour every
+keyboard mark is drawn in is held to 3:1 in both schemes, for any primary, against the grid's
+ground and the Heading Mark's shades.** "In the light scheme that is the primary itself" above was
+safe only for primaries dark enough to be lines: Mantine's own default blue read 2.7:1 on the 12%
+shade. And the dark floor above was set against the surface alone; the line on the shade, which is
+the text's colour without its alpha at 12% and so light, read 2.3:1 under MudBlazor's own default
+violet, and 1.8:1 under a saturated blue, which the browser clips back toward the dark when its
+lightness is raised. Each Wrapper now names that colour once (`--mantine-ex-strong`,
+`--mui-ex-strong`, `--mud-ex-strong`) and maps the Focus outline, the grid's focus ring, the
+editor's outline and its underline onto it; the Heading Mark's line follows the Focus outline as
+before, so ADR-0029's "no Wrapper maps `--ex-heading-mark`" still holds. In the light scheme it is
+the primary with its OKLCH lightness lowered to at most 0.54, hue and chroma kept. In the dark it is
+raised to at least 0.64 under Mantine and MUI, and 0.76 under MudBlazor, whose shade is the lightest,
+with the chroma held to 0.16, hue kept. Measured in Chrome over every hue in steps of 15 degrees at
+ten lightnesses each, and grey, the weakest reading over each Wrapper's default grounds is 3.15:1
+(light, a saturated green on Mantine's shade), 3.2:1 (dark, Mantine), 3.7:1 (dark, MUI) and 3.4:1
+(dark, MudBlazor); a layer-3 sweep per Wrapper holds it there, beside the letters' of ADR-0029's note
+of 2026-11-09. What it costs: Mantine's default blue draws a shade darker in the light scheme,
+MUI's barely changes, MudBlazor's light primary not at all, and MudBlazor's dark violet is drawn
+lighter and a little softer. As before, CSS cannot compare two colours, so a Consumer's own grounds
+are not recomputed, and a Consumer's own token wins.
+
 ## How a violation is caught rather than trusted away
 
 The contract is enforceable because each prohibition lands somewhere observable:

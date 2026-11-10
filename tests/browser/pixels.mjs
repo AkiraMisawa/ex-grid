@@ -133,17 +133,24 @@ export function contrast(a, b) {
 }
 
 /**
- * The weakest contrast a marked Heading's letters make with its shade (ADR-0029's note of 2026-11-09), over a
- * sweep of primaries: every hue in steps of 15 degrees, fully saturated, and grey, each at ten lightnesses. Each is
- * set as `variable` on the Wrapper's element `frame` (a selector its grid's ancestors match) for its reading and
- * taken off after the sweep; the letters and the shade are as the browser resolves them through the Wrapper's
- * relative colours. `state` is the Heading's class, `ex-heading-marked` or `ex-heading-whole`.
+ * The weakest contrasts a marked Heading and the Focus make, over a sweep of primaries: every hue in steps of 15
+ * degrees, fully saturated, and grey, each at ten lightnesses. Each is set as `variable` on the Wrapper's element
+ * `frame` (a selector its grid's ancestors match) for its reading and taken off after the sweep; every colour is as
+ * the browser resolves it through the Wrapper's relative colours. `state` is the Heading's class,
+ * `ex-heading-marked` or `ex-heading-whole`. `letters` is the weakest of the letters against the Heading's shade,
+ * which text needs at 4.5:1 (ADR-0029's note of 2026-11-09, #550); `line` the weakest of the Heading Mark's line
+ * against that shade and against the grid's ground, and of the Focus outline against the ground, which a mark needs
+ * at 3:1 (#556).
  */
-export async function weakestHeadingLetters(grid, { frame, variable, state }) {
+export async function weakestHeadingMarks(grid, { frame, variable, state }) {
     const samples = await grid.evaluate((g, { frame: selector, variable: name, state: which }) => {
         const wrapper = g.closest(selector);
         const heading = g.querySelector(`.ex-header-cell.${which}`);
-        if (wrapper === null || heading === null) throw new Error(`No ${selector} around the grid, or no .${which} Heading in it.`);
+        const line = g.querySelector('.ex-heading-mark-column');
+        const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
+        if (wrapper === null || heading === null || line === null || focus === undefined) {
+            throw new Error(`No ${selector} around the grid, or no .${which} Heading, Heading Mark line or Focus in it.`);
+        }
         const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true });
         const srgb = (colour) => {
             context.clearRect(0, 0, 1, 1);
@@ -157,14 +164,49 @@ export async function weakestHeadingLetters(grid, { frame, variable, state }) {
             return primaries.map((primary) => {
                 wrapper.style.setProperty(name, primary);
                 const seen = getComputedStyle(heading);
-                return { primary, letters: srgb(seen.color), ground: srgb(seen.backgroundColor) };
+                return {
+                    primary,
+                    letters: srgb(seen.color),
+                    shade: srgb(seen.backgroundColor),
+                    line: srgb(getComputedStyle(line).borderBottomColor),
+                    focus: srgb(getComputedStyle(focus, '::after').borderTopColor),
+                    ground: srgb(getComputedStyle(g).backgroundColor),
+                };
             });
         } finally {
             wrapper.style.removeProperty(name);
         }
     }, { frame, variable, state });
-    return samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.ground) }))
-        .reduce((weakest, sample) => (sample.ratio < weakest.ratio ? sample : weakest));
+    const weakest = (rated) => rated.reduce((low, sample) => (sample.ratio < low.ratio ? sample : low));
+    return {
+        letters: weakest(samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.shade) }))),
+        line: weakest(samples.flatMap((sample) => [
+            { ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) },
+            { ...sample, against: 'the line on the ground', ratio: contrast(sample.line, sample.ground) },
+            { ...sample, against: 'the Focus outline on the ground', ratio: contrast(sample.focus, sample.ground) },
+        ])),
+    };
+}
+
+/** A colour's OKLCH hue, in degrees, from sRGB bytes: to say that a Wrapper's raise or cap kept its primary's hue. */
+export function oklchHue([r, g, b]) {
+    const linear = (v) => {
+        const c = v / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    const [lr, lg, lb] = [linear(r), linear(g), linear(b)];
+    const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+    const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+    const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+    const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+    const bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+    return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
+}
+
+/** How far apart two colours' OKLCH hues are, in degrees, the short way round. */
+export function hueApart(a, b) {
+    const apart = Math.abs(oklchHue(a) - oklchHue(b));
+    return Math.min(apart, 360 - apart);
 }
 
 // ---------------------------------------------------------------------------------------------
