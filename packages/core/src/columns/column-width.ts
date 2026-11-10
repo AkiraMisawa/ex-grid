@@ -112,15 +112,13 @@ export class ColumnWidthSpec {
      * Size to fit: fixes the width at the content of this moment, clamped, an approximation over the
      * fetched rows (ADR-0016). Takes the widest value's full required cell width (`estimatePx`, padding
      * included: the unit {@link AutoWidth.observe} takes). Always Fixed, and it may be narrower than the
-     * current width: the only way an Auto column narrows.
+     * current width: the only way a column narrows below what its values taught it (a header that comes to
+     * need less gives up its own part alone, {@link AutoWidth.underHeader}, ADR-0500).
      *
      * @internal
      */
     sizeToFit(requiredWidthPx: number): ColumnWidth {
-        if (!Number.isFinite(requiredWidthPx) || requiredWidthPx < 0) {
-            throw new RangeError(`A required width is a finite, non-negative number of pixels. (requiredWidthPx: ${requiredWidthPx})`);
-        }
-        return ColumnWidth.fixed(this.clamp(requiredWidthPx));
+        return ColumnWidth.fixed(this.clamp(checkedRequiredPx(requiredWidthPx)));
     }
 
     /** The one place the Auto-or-Fixed branch lives, so no caller derives which width applies (ADR-0016).
@@ -128,4 +126,13 @@ export class ColumnWidthSpec {
     resolveWidthPx(current: AutoWidth): number {
         return this.width.isAuto ? current.currentPx : this.width.fixedPx;
     }
+}
+
+/** A required width, which is a finite, non-negative number of pixels: anything else is refused, never clamped.
+ * @internal */
+export function checkedRequiredPx(requiredWidthPx: number): number {
+    if (!Number.isFinite(requiredWidthPx) || requiredWidthPx < 0) {
+        throw new RangeError(`A required width is a finite, non-negative number of pixels. (requiredWidthPx: ${requiredWidthPx})`);
+    }
+    return requiredWidthPx;
 }

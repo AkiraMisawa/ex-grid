@@ -672,6 +672,8 @@ const INTERNAL_CLASSES = [
     ...['top', 'bottom', 'left', 'right', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight'].map((kind) => `ex-reference-grip-${kind}`),
     // The Focus column band (ADR-0008 of 2026-11-03, entered in ADR-0029).
     'ex-focus-column',
+    // A compact header's Header Box where the column has no menu button (ADR-0500, entered in ADR-0029).
+    'ex-header-state',
 ];
 
 /** The same section's prefixes: every popover part not named above, and every part of Find. */

@@ -1178,6 +1178,9 @@ export interface GridHandle<Row> {
 }
 
 // @public
+export type GridHeaderDisplay = 'standard' | 'compact';
+
+// @public
 export interface GridHeaderGroup {
     readonly columns: readonly string[];
     readonly expanded?: boolean;
@@ -1192,6 +1195,7 @@ export interface GridHeaderGroup {
 export function gridHeaderRequiredPx(label: string, options: GridTextOptions & {
     readonly menuButton: boolean;
     readonly sortable: boolean;
+    readonly headerDisplay?: GridHeaderDisplay;
 }): number;
 
 // @public
@@ -1202,6 +1206,8 @@ export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
     readonly columnMenu: 'column-menu';
+    readonly columnMenuFiltered: 'column-menu-filtered';
+    readonly columnFiltered: 'column-filtered';
     readonly headerGroupExpand: 'header-group-expand';
     readonly headerGroupCollapse: 'header-group-collapse';
 }>;
@@ -1241,6 +1247,7 @@ export class GridMetrics {
     get fillHandleSizePx(): number;
     readonly fontSizePx: number;
     get formulaBarHeightPx(): number;
+    get headerBoxRoomPx(): number;
     readonly headerGroupToggleWidthPx: number;
     readonly headerHeightPx: number;
     headerRequiredPx(header: HeaderOptions): number;
@@ -1295,6 +1302,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
     readonly headerClickSelects?: boolean;
+    readonly headerDisplay?: GridHeaderDisplay;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
     readonly hideColumnMenu?: boolean;
@@ -1800,6 +1808,7 @@ export interface HeaderGroupToggle {
 
 // @public
 export interface HeaderOptions {
+    readonly display?: GridHeaderDisplay;
     readonly label: string;
     readonly menuButton: boolean;
     readonly sortable: boolean;

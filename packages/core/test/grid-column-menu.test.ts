@@ -190,7 +190,7 @@ describe('the column menu\'s commands', () => {
         expect([pins, shown(root)[4], shown(root)[5], active()]).toEqual([[], 'Pin up to this column (disabled)', 'Unpin all columns', item(root, 'Sort ascending')]);
     });
 
-    it('ADR-0044: hidden while it stands, the column menu goes with its ▾, and an Auto header is measured again', async () => {
+    it('ADR-0044: hidden while it stands, the column menu goes with its ▾, and an Auto header gives up its room and takes it back', async () => {
         const auto: readonly GridColumn<Trade>[] = [{ name: 'Book', type: 'text', value: trade => trade.book, width: { auto: true } }];
         const options: GridOptions<Trade> = { ...base, columns: auto };
         const { root, view } = mount<Trade>(options);

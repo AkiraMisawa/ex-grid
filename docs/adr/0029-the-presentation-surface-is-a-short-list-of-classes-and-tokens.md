@@ -568,3 +568,23 @@ declared `moveReference` beside `referencesIn`.
 - **No Visual Token is added.** The squares take the outline's `--ex-reference-1` to `--ex-reference-7`; their sizes
   are Grid Metrics, emitted inline. The root's `data-ex-reference-drag` (`move`, `nwse` or `nesw`) stands while a grip
   is dragged and gives the cursor.
+
+## Added by ADR-0500 *(2026-11-10)*
+
+The Compact Header Display
+([ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)) adds one
+class, **internal**, and no token.
+
+- `ex-header-state`: the Header Box of a column that has no menu button (`hideColumnMenu`), a mark that takes
+  no pointer. Where there is a button the box is `ex-menu-button`, as in the Standard display.
+- **State hooks, written by the core.** The header band wears `data-ex-header-display="compact"`, and a
+  header cell `data-ex-filtered` while the Filter holds a spec for its column, in the Compact display alone;
+  a Standard header wears neither, and is the markup it was. The Sort is the cell's `aria-sort`, as before.
+  *(2026-11-10, [ADR-0501](./0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md): a header
+  cell wears `data-ex-filtered` under either display, and the stylesheet paints the funnel on its
+  `ex-menu-button` from it. The band's `data-ex-header-display` is still the Compact display's alone. Both
+  remain internal: a Consumer reads the Filter it handed the grid, not the attribute.)*
+- **No Visual Token and no Geometry Token is added.** The marks are pictures painted as masks in the
+  header's colour, in the box `--ex-menu-button-width` and `--ex-menu-button-inset` already size; under
+  forced colours they are painted in `CanvasText`. A Wrapper sets nothing for them.
+

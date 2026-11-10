@@ -22,7 +22,11 @@
                 <code>ValueList</code> of distinct values to tick, a <code>Condition</code> (the default), or
                 <code>Both</code>. The value list is asked for when the panel opens; past 1,000 distinct values it
                 gives way to the condition form. While the list is on its way the condition form stands, and a
-                condition chosen or typed there in that time stays when the list arrives.
+                condition chosen or typed there in that time stays when the list arrives. While a column is
+                filtered its ▾ is drawn as a funnel, so a filtered column is told from the header without opening
+                the menu, and a screen reader hears <em>Column menu, filtered</em>; no column's width changes for
+                it. With <code>HideColumnMenu</code> there is no ▾ to mark. Under a
+                <a href="exgrid/columns#a-compact-header">compact header</a> the ▾'s box shows the sort as well.
             </li>
             <li>
                 <strong>Press <kbd>Ctrl</kbd>+<kbd>F</kbd></strong> in the grid for the find panel. It searches

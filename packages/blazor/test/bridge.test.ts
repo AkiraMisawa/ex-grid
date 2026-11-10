@@ -465,6 +465,19 @@ describe('the grid', () => {
         expect(root.getAttribute('aria-rowcount')).toBe('4');
     });
 
+    it('ADR-0500: the header display .NET names is the one the grid draws, and an update changes it on the grid that stands', async () => {
+        const { root, grid } = mount({ options: options({ hideColumnMenu: false, headerDisplay: 'compact' }) });
+        const display = (): string | null | undefined => root.querySelector('.ex-header')?.getAttribute('data-ex-header-display');
+        const body = root.querySelector('.ex-scroller');
+        expect(display()).toBe('compact');
+        grid.update(JSON.stringify({
+            options: options({ hideColumnMenu: false, headerDisplay: 'standard' }), source: { generation: 1, rowKey: false, vouchesDistinctRows: false, finds: false },
+            state: state(2, [rates, credit]),
+        }));
+        await Promise.resolve();
+        expect([display(), body !== null && root.querySelector('.ex-scroller') === body]).toEqual([null, true]);
+    });
+
     it('ADR-0142: another source .NET sends replaces the one the grid reads, with its own state', async () => {
         const { root, grid } = mount();
         grid.update(JSON.stringify({

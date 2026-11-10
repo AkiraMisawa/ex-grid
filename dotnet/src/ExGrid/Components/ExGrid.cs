@@ -99,8 +99,21 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// parameter still wins, per value (ADR-0028).</summary>
     [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
 
-    /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
+    /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044). The ▾ is also where a header marks a
+    /// filtered column, so a <see cref="GridHeaderDisplay.Standard"/> header without it shows no mark of the Filter;
+    /// a <see cref="GridHeaderDisplay.Compact"/> one keeps its box as a mark (ADR-0501).</summary>
     [Parameter] public bool HideColumnMenu { get; set; }
+
+    /// <summary>How every header lays out what stands beside its label (ADR-0500):
+    /// <see cref="GridHeaderDisplay.Standard"/> unless set, which is the layout an untouched grid always had. Under
+    /// either, the ▾ of a filtered column is painted as a funnel (ADR-0501).
+    /// <see cref="GridHeaderDisplay.Compact"/> puts the ▾ and the marks of the column's Sort and filter in one Header
+    /// Box inside the cell's right padding, so a header needs less width. It moves no meaning, and is chosen apart
+    /// from <see cref="Density"/>, <see cref="RowHeight"/> and <see cref="HeaderHeight"/>. Changing it on a grid in use
+    /// keeps the rows, the Sort, the Filter, the Selection, an open edit and every declared width. A column whose
+    /// width is Auto keeps what its values taught it and takes its header's new need in place of the old one
+    /// (ADR-0016): one its header decided follows the display, one its values decided does not move.</summary>
+    [Parameter] public GridHeaderDisplay HeaderDisplay { get; set; }
 
     /// <summary>Whether the menus leave out Copy with headers, and Ctrl+Shift+C is left to the page (ADR-0036,
     /// ADR-0005).</summary>
@@ -1142,6 +1155,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (Presentation is { } presentation)
             ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         json.WriteBoolean("hideColumnMenu", HideColumnMenu);
+        json.WriteString("headerDisplay", ScriptJson.Camel(HeaderDisplay));
         json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);
         json.WriteBoolean("pasteMaySpill", PasteMaySpill);

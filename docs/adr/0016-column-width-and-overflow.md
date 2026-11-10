@@ -91,6 +91,12 @@ Not narrowing means it cannot oscillate, and after a few screens it settles in p
 narrow, the user presses "size to fit" explicitly (which fixes the width at the content of that
 moment).
 
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md):
+"only ever grows" is said of what the values teach a column. What the header needs is a fact of how
+the header is drawn, held apart, and replaced when that changes: a column its header decided gives up
+the room its header no longer keeps when the Header Display or `hideColumnMenu` changes, and never
+goes below its widest value. Scrolling still narrows nothing.)*
+
 *(Refined while implementing: the width is measured from **what has been painted**, not from the
 whole Window. A Window can hold far more rows than the Viewport shows, and measuring all of them
 on every push would cost more than virtualisation saves. Because observation is a monotone
@@ -395,6 +401,15 @@ stylesheet literal, `content: " ▲"`, beside a C# charge for it — the pairing
 stands in a box C# sizes, `--ex-sort-mark-width`, as the menu button's ▾ does: an em for the
 glyph and a 6px gap, 20px at 14px. The header estimate charges that box, and the stylesheet sizes
 the mark with the same number.)*
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md):
+this is what a header is charged in the Standard Header Display, which is the default. In the Compact
+one the ▾ and the marks of the column's Sort and Filter share one Header Box inside the cell's padding,
+and a header is charged its label, the em of slack below, and only what that box is wider than the
+padding, 14px at the default metrics where the band and the sort mark's box are 42px. The reason for
+counting it always is the same: nothing a column comes to hold moves a column. An Auto width holds what
+its header needs apart from what its values taught it, so a change of the display, or of
+`hideColumnMenu`, replaces the header's part and keeps the values': a column its header decided follows
+the header, a column its values decided does not move, and a Fixed one is left alone.)*
 
 **Full-width characters are a fourth class, charged at 1em** — the font size. These are the
 characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so

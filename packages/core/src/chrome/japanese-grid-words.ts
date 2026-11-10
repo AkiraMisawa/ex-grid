@@ -18,6 +18,8 @@ export const japaneseGridWordTable: ReadonlyMap<string, string> = new Map([
     ['name-box', '名前ボックス'],
     ['formula-bar', '数式バー'],
     ['column-menu', '列のメニュー'],
+    ['column-menu-filtered', '列のメニュー (フィルター適用中)'],
+    ['column-filtered', 'フィルター適用中'],
     ['header-group-expand', '{label} を展開'],
     ['header-group-collapse', '{label} を折りたたむ'],
     ['reload-notice-stylesheet', 'このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。'],

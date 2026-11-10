@@ -971,12 +971,88 @@
     pointer-events: auto;
 }
 .ex-menu-button::after { content: "▾"; opacity: 0.55; }
+/* A filtered column's ▾ is a funnel, under either Header Display (ADR-0501): the core marks the
+   header cell while the Filter holds a spec for its column, and the picture takes the ▾'s place in
+   the button's own box, in the header's colour and at full strength, where the ▾ is faint. It is
+   told by shape and by weight, never by colour alone, and it moves nothing: the box is the one the
+   ▾ had. A standard header keeps the sort mark in its own box after the label, so a column that is
+   sorted and filtered shows both; the compact header's rules below give its one box a picture for
+   a Sort and for both, and outrank these. Its box without a ▾ (.ex-header-state) takes the funnel
+   from here too; a standard header has no such box. */
+.ex-header-cell[data-ex-filtered] > :is(.ex-menu-button, .ex-header-state)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: var(--ex-menu-button-width, 16px);
+    height: var(--ex-menu-button-width, 16px);
+    opacity: 1;
+    background-color: currentColor;
+    -webkit-mask: center / contain no-repeat;
+    mask: center / contain no-repeat;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12L9.5 8.5v5l-3-1.5v-3.5z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 3h12L9.5 8.5v5l-3-1.5v-3.5z'/%3E%3C/svg%3E");
+}
 /* A header cell that carries the button keeps its label out from under it: the
    button's band is added to the right padding, the same band the Auto header estimate
    adds. A left-aligned label does not move; a right-aligned one ends where the button
    begins instead of beneath it. */
 .ex-header-cell:has(> .ex-menu-button) {
     padding-right: calc(var(--ex-cell-padding-x, 8px) + var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px));
+}
+/* The compact header (ADR-0500), which the core marks on the band: the ▾ and the marks of the
+   column's Sort and filter share one Header Box, the button's own box, which stands inside the
+   cell's right padding. The label's room ends where the box begins, at every moment alike, so
+   nothing the column comes to hold, and no pointer, moves or cuts a label that fitted: the band
+   below is the one the Auto header estimate adds past the cell's padding (headerBoxRoomPx). A
+   standard header's band wears no mark, and none of these rules reaches it. */
+.ex-header[data-ex-header-display="compact"] .ex-header-cell:has(> :is(.ex-menu-button, .ex-header-state)) {
+    padding-right: max(var(--ex-cell-padding-x, 8px), calc(var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px)));
+}
+/* The sort mark moves into the box, so the cell paints none after its label. */
+.ex-header[data-ex-header-display="compact"] .ex-header-cell[aria-sort]::after { content: none; }
+/* With no ▾ (hideColumnMenu) the box is a mark and nothing to press: the button's box, taking no
+   pointer, so a click there is the header's as it is anywhere else on the cell. */
+.ex-header-state {
+    position: absolute;
+    top: 0;
+    right: var(--ex-menu-button-inset, 6px);
+    width: var(--ex-menu-button-width, 16px);
+    height: 100%;
+    pointer-events: none;
+}
+/* What the box shows while the column holds a Sort: a picture in place of the ▾, painted as the
+   funnel above is, so a column that holds something is told from one that holds nothing by shape
+   and by weight, never by colour alone. Its box is the button's width squared, a Geometry Token.
+   An arrow for the Sort, pointing as aria-sort says, with a shaft, so that descending is never
+   read as the ▾; the funnel for a filter, from the rule above; both side by side for both. */
+.ex-header[data-ex-header-display="compact"] .ex-header-cell:is([aria-sort="ascending"], [aria-sort="descending"]) > :is(.ex-menu-button, .ex-header-state)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: var(--ex-menu-button-width, 16px);
+    height: var(--ex-menu-button-width, 16px);
+    opacity: 1;
+    background-color: currentColor;
+    -webkit-mask: center / contain no-repeat;
+    mask: center / contain no-repeat;
+}
+.ex-header[data-ex-header-display="compact"] .ex-header-cell[aria-sort="ascending"] > :is(.ex-menu-button, .ex-header-state)::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5 12.5 8H8.75v5.5h-1.5V8H3.5z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.5 12.5 8H8.75v5.5h-1.5V8H3.5z'/%3E%3C/svg%3E");
+}
+.ex-header[data-ex-header-display="compact"] .ex-header-cell[aria-sort="descending"] > :is(.ex-menu-button, .ex-header-state)::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13.5 3.5 8h3.75V2.5h1.5V8h3.75z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13.5 3.5 8h3.75V2.5h1.5V8h3.75z'/%3E%3C/svg%3E");
+}
+.ex-header[data-ex-header-display="compact"] .ex-header-cell[data-ex-filtered][aria-sort="ascending"] > :is(.ex-menu-button, .ex-header-state)::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 3h9L6.4 7.8v5.7l-2.8-1.4V7.8zM13 3l3 4h-2.25v6.5h-1.5V7H10z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 3h9L6.4 7.8v5.7l-2.8-1.4V7.8zM13 3l3 4h-2.25v6.5h-1.5V7H10z'/%3E%3C/svg%3E");
+}
+.ex-header[data-ex-header-display="compact"] .ex-header-cell[data-ex-filtered][aria-sort="descending"] > :is(.ex-menu-button, .ex-header-state)::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 3h9L6.4 7.8v5.7l-2.8-1.4V7.8zM13 13.5l-3-4h2.25V3h1.5v6.5H16z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M.5 3h9L6.4 7.8v5.7l-2.8-1.4V7.8zM13 13.5l-3-4h2.25V3h1.5v6.5H16z'/%3E%3C/svg%3E");
 }
 /* A popover (ADR-0009/0010/0018/0040): anchored to the instance root, outside the scroll
    container, and bounded by the grid's box — its max-height arrives inline from the core's
@@ -1441,6 +1517,10 @@
     /* A Header Group's toggle and its Hidden Mark keep their pictures (ADR-0400 section 7): the
        toggle's icon in ButtonText and the mark's shape in Highlight, so neither disappears. */
     .ex-header-group-toggle::before { forced-color-adjust: none; background-color: ButtonText; }
+    /* A header's marks keep their pictures too, in the header's text colour: the funnel of a
+       filtered column under either display (ADR-0501), and a compact header's arrows (ADR-0500). */
+    .ex-header-cell[data-ex-filtered] > :is(.ex-menu-button, .ex-header-state)::after,
+    .ex-header[data-ex-header-display="compact"] .ex-header-cell:is([aria-sort="ascending"], [aria-sort="descending"]) > :is(.ex-menu-button, .ex-header-state)::after { forced-color-adjust: none; background-color: CanvasText; }
     .ex-hidden-mark { forced-color-adjust: none; background: Highlight; }
     /* A group row keeps its weight; a total row's rule becomes an overline — a text
        decoration survives where the gradient does not. */

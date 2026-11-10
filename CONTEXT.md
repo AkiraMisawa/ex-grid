@@ -939,6 +939,27 @@ edge or the column menu, and **it leaves a Fixed width**, unlike Auto, which is 
 is not persisted ([ADR-0016](./docs/adr/0016-column-width-and-overflow.md)).
 _Avoid_: autofit, auto-size (Excel's word, easily confused with an **Auto** width)
 
+**Header Display**:
+How every header of a grid lays out what stands beside its label: **Standard**, the menu button's band
+and the sort mark's box side by side, which is the default, or **Compact**, one **Header Box** for both.
+It is one choice for the grid, chosen apart from **Density**, and it changes what a header's width is
+charged and nothing a header means: a click still sorts, and the same button opens the column menu. A
+width somebody set is never changed by it; an Auto width takes its header's new need and keeps what its
+values taught it
+([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
+Under either, the menu button of a column the **Filter** holds a spec for is painted as a funnel
+([ADR-0501](./docs/adr/0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md)).
+_Avoid_: compact mode, header mode, header density (Density is heights, type and padding)
+
+**Header Box**:
+In a Compact Header Display, the one box at a header's right edge, inside the cell's padding, that is
+both the column menu's button and the mark of what the column holds: a ▾ for nothing, an arrow for a
+Sort, a funnel for a Filter, both for both. It is always there and always the same size, so nothing
+moves when the column's state or the pointer does; a press on it opens the column menu, and where there
+is no menu it is a mark alone
+([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
+_Avoid_: slot (a Chrome's), badge, indicator, sort button (it does not sort)
+
 **Pinned Column**:
 A column held against the Viewport's edge while the others pan under it — Excel's frozen panes.
 It stands **outside virtualisation and is always painted**, so it is the landmark that survives

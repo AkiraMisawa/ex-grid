@@ -1,0 +1,138 @@
+@page "/header-display"
+@using System.Globalization
+@using ExGrid.Chrome
+
+<DemoNav />
+
+<h1>Header display</h1>
+
+<p>
+    The header's two displays over the same rows (ADR-0500). <code>HeaderDisplay</code> is one choice for
+    the grid, apart from <code>Density</code>: <code>Standard</code>, the default, reserves the menu
+    button's band and the sort mark's box side by side; <code>Compact</code> gives both one box inside the
+    cell's padding, which shows ▾, an arrow for a Sort, a funnel for a Filter, or both, and opens the
+    column menu when pressed. A click on a header sorts under either, and the ▾ of a filtered column is
+    the funnel under either (ADR-0501).
+</p>
+
+<h2>The same declared widths under either display</h2>
+
+<p>
+    Every width here is declared, so changing the display changes no width and reports none: the room a
+    compact header frees is taken by a double-click on a column's edge, or by <em>Size to fit</em> in its
+    menu. Sort a column, filter one, select cells, then switch.
+</p>
+
+<p class="demo-status">
+    <button id="header-display-standard" @onclick="() => _display = GridHeaderDisplay.Standard">Standard</button>
+    <button id="header-display-compact" @onclick="() => _display = GridHeaderDisplay.Compact">Compact</button>
+    <button id="header-display-reset" @onclick="ResetWidths">Reset widths</button>
+    <span id="header-display-status">Display: @_display.ToString().ToLowerInvariant()</span>
+    <span id="width-status">Changes: @_widthStatus</span>
+</p>
+
+<div id="held-grid">
+    <ExGrid TRow="HeaderRow"
+            Source="_held"
+            Columns="_columns"
+            HeaderDisplay="_display"
+            PinnedColumnCount="1"
+            ViewportHeight="240"
+            ViewportWidth="ViewportSize.Stretch"
+            OnColumnWidthChanged="OnWidthChanged" />
+</div>
+
+<h2>Auto widths in each display</h2>
+
+<p>
+    No width is declared here, so each grid gives every column what its header and its values need under
+    its own display. The columns whose header decides the width are narrower in the second grid; a column
+    whose values are wider than its header is the same in both.
+</p>
+
+<h3>Standard</h3>
+<div id="standard-grid">
+    <ExGrid TRow="HeaderRow" Source="_standard" Columns="AutoColumns" ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+</div>
+
+<h3>Compact</h3>
+<div id="compact-grid">
+    <ExGrid TRow="HeaderRow" Source="_compact" Columns="AutoColumns" HeaderDisplay="GridHeaderDisplay.Compact" ViewportHeight="180"
+            ViewportWidth="ViewportSize.Stretch" />
+</div>
+
+@code {
+    /// <summary>One row of this page: a swap position, most of whose values are far shorter than a
+    /// header's own parts.</summary>
+    public sealed record HeaderRow(int Id, string Ccy, string Tenor, int Qty, bool Live, decimal Rate, decimal Pv, decimal Dv01,
+        string Counterparty, decimal Notional);
+
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly string[] Currencies = ["USD", "EUR", "JPY", "GBP", "CHF"];
+    private static readonly string[] Tenors = ["1Y", "2Y", "5Y", "10Y", "30Y"];
+    private static readonly string[] Counterparties = ["Aldgate Securities", "Bishopsgate Bank", "Cornhill Capital", "Dowgate Partners"];
+
+    // Held once, never rebuilt per render (ADR-0003).
+    private static readonly HeaderRow[] Rows = Enumerable.Range(0, 200)
+        .Select(i => new HeaderRow(i + 1, Currencies[i % Currencies.Length], Tenors[i / 2 % Tenors.Length], i % 9 + 1, i % 4 != 0,
+            1.25m + i * 37 % 300 / 100m, (i * 7919 % 20_000 - 10_000) / 10m, i * 31 % 900 / 10m,
+            Counterparties[i % Counterparties.Length], 1_000_000m * (i % 25 + 1)))
+        .ToArray();
+
+    /// <summary>The widths the first grid opens at: what a standard header and the values need, so the
+    /// same columns under the same widths are read in both displays.</summary>
+    private static readonly IReadOnlyDictionary<string, double> OpeningWidths = new Dictionary<string, double>
+    {
+        ["Id"] = 92, ["Ccy"] = 102, ["Tenor"] = 121, ["Qty"] = 102, ["Live"] = 111, ["Rate"] = 111, ["Pv"] = 92, ["Dv01"] = 111,
+        ["Counterparty"] = 189, ["Notional"] = 303,
+    };
+
+    private static readonly GridColumn<HeaderRow>[] AutoColumns = ColumnsAt(new Dictionary<string, double>());
+
+    private readonly InMemoryGridSource<HeaderRow> _held = GridSource.From(Rows);
+    private readonly InMemoryGridSource<HeaderRow> _standard = GridSource.From(Rows);
+    private readonly InMemoryGridSource<HeaderRow> _compact = GridSource.From(Rows);
+
+    private GridHeaderDisplay _display = GridHeaderDisplay.Standard;
+    private Dictionary<string, double> _widths = new(OpeningWidths);
+    private IReadOnlyList<GridColumn<HeaderRow>> _columns = ColumnsAt(OpeningWidths);
+    private string _widthStatus = "";
+
+    /// <summary>The columns, each at the width <paramref name="widths"/> names for it and Auto where it
+    /// names none: short values under short labels, where the header decides the width, and one label
+    /// far longer than its values.</summary>
+    private static GridColumn<HeaderRow>[] ColumnsAt(IReadOnlyDictionary<string, double> widths)
+    {
+        ColumnWidthSpec? At(string name) => widths.TryGetValue(name, out var px) ? new ColumnWidthSpec(ColumnWidth.Fixed(px)) : null;
+        return
+        [
+            new("Id", ColumnType.Number, r => r.Id, header: "ID", width: At("Id")),
+            new("Ccy", ColumnType.Text, r => r.Ccy, header: "CCY", width: At("Ccy"), filterUi: FilterUiMode.Both),
+            new("Tenor", ColumnType.Text, r => r.Tenor, width: At("Tenor"), filterUi: FilterUiMode.Both),
+            new("Qty", ColumnType.Number, r => r.Qty, width: At("Qty")),
+            new("Live", ColumnType.Boolean, r => r.Live, width: At("Live")),
+            new("Rate", ColumnType.Number, r => r.Rate, width: At("Rate"), format: v => ((decimal)v).ToString("N2", Invariant)),
+            new("Pv", ColumnType.Number, r => r.Pv, header: "PV", width: At("Pv"), format: v => ((decimal)v).ToString("N1", Invariant)),
+            new("Dv01", ColumnType.Number, r => r.Dv01, header: "DV01", width: At("Dv01"), format: v => ((decimal)v).ToString("N1", Invariant)),
+            new("Counterparty", ColumnType.Text, r => r.Counterparty, width: At("Counterparty"), filterUi: FilterUiMode.Both),
+            new("Notional", ColumnType.Number, r => r.Notional, header: "Notional (USD equivalent)", width: At("Notional"),
+                format: v => ((decimal)v).ToString("N0", Invariant)),
+        ];
+    }
+
+    private void OnWidthChanged(ColumnWidthChange change)
+    {
+        // Every change is kept: a gesture over several whole columns raises one per column.
+        var entry = FormattableString.Invariant($"{change.Column}={change.WidthPx:0.###}");
+        _widthStatus = _widthStatus.Length == 0 ? entry : $"{_widthStatus};{entry}";
+        _widths[change.Column] = change.WidthPx;
+        _columns = ColumnsAt(_widths);
+    }
+
+    private void ResetWidths()
+    {
+        _widths = new(OpeningWidths);
+        _columns = ColumnsAt(_widths);
+        _widthStatus = "";
+    }
+}

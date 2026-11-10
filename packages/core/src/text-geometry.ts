@@ -4,7 +4,7 @@
 // (ADR-0151). Nothing here reads a browser's layout (ADR-0021).
 
 import type { CellTextMetrics } from './columns/cell-text-metrics';
-import { GridMetrics, type GridDensity } from './grid-metrics';
+import { GridMetrics, type GridDensity, type GridHeaderDisplay } from './grid-metrics';
 import type { GridPresentationDefaults } from './grid-presentation-defaults';
 
 /** The widths a grid charges each character class, its cells' padding, and single glyphs, in pixels. */
@@ -101,9 +101,11 @@ export function gridTextGeometry(options: GridTextOptions = {}): GridTextGeometr
 }
 
 /** The cell width a header needs in a grid drawn with `options`, as an Auto width charges it (ADR-0016): its label,
- * an em of slack, the column-menu button's band when `menuButton`, and the sort mark's box when `sortable`. A
+ * an em of slack, the column-menu button's band when `menuButton`, and the sort mark's box when `sortable`; under
+ * `headerDisplay: 'compact'`, its label, the slack and the one Header Box's room when either (ADR-0500). A
  * Consumer that fixes a column's width beside the grid's own charges its header alike. */
-export function gridHeaderRequiredPx(label: string, options: GridTextOptions & { readonly menuButton: boolean; readonly sortable: boolean }): number {
-    const { menuButton, sortable } = options;
-    return metricsAt(options).headerRequiredPx({ label, menuButton, sortable });
+export function gridHeaderRequiredPx(label: string,
+    options: GridTextOptions & { readonly menuButton: boolean; readonly sortable: boolean; readonly headerDisplay?: GridHeaderDisplay }): number {
+    const { menuButton, sortable, headerDisplay } = options;
+    return metricsAt(options).headerRequiredPx({ label, menuButton, sortable, ...(headerDisplay === undefined ? {} : { display: headerDisplay }) });
 }

@@ -132,13 +132,32 @@ public sealed record GridMetrics
     /// both read this, so they agree on what a header needs.
     /// </summary>
     public double HeaderRequiredPx(string label, bool menuButton, bool sortable)
+        => HeaderRequiredPx(label, menuButton, sortable, GridHeaderDisplay.Standard);
+
+    /// <summary>
+    /// The full cell width a header needs under <paramref name="display"/> (ADR-0500).
+    /// <see cref="GridHeaderDisplay.Standard"/> is what the three-argument overload answers.
+    /// A <see cref="GridHeaderDisplay.Compact"/> header is charged its label, the same em of
+    /// slack, and the Header Box's room where it has a menu button or can be sorted: one box
+    /// for the ▾ and for the marks, whichever it shows, so nothing a column comes to hold
+    /// moves its label either.
+    /// </summary>
+    public double HeaderRequiredPx(string label, bool menuButton, bool sortable, GridHeaderDisplay display)
     {
         ArgumentNullException.ThrowIfNull(label);
-        return CellMetrics.For(ColumnType.Text).EstimatePx(label)
-            + CellMetrics.FullWidthPx
-            + (menuButton ? MenuButtonBandPx : 0)
-            + (sortable ? SortMarkWidthPx : 0);
+        var text = CellMetrics.For(ColumnType.Text).EstimatePx(label) + CellMetrics.FullWidthPx;
+        return display switch
+        {
+            GridHeaderDisplay.Standard => text + (menuButton ? MenuButtonBandPx : 0) + (sortable ? SortMarkWidthPx : 0),
+            GridHeaderDisplay.Compact => text + (menuButton || sortable ? HeaderBoxRoomPx : 0),
+            _ => throw new ArgumentOutOfRangeException(nameof(display), display, "Unknown header display (ADR-0500)."),
+        };
     }
+
+    /// <summary>What the Header Box takes off a compact header's label, past the cell's own
+    /// right padding (ADR-0500): the box stands inside that padding, so only what the menu
+    /// button's band is wider than it is charged.</summary>
+    internal double HeaderBoxRoomPx => Math.Max(0, MenuButtonBandPx - CellPaddingXPx);
 
     /// <summary>
     /// The tallest row a result of <paramref name="totalRowCount"/> rows can carry

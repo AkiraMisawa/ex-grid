@@ -25,6 +25,8 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridLabelIds.nameBox, 'Name Box'],
     [gridLabelIds.formulaBar, 'Formula Bar'],
     [gridLabelIds.columnMenu, 'Column menu'],
+    [gridLabelIds.columnMenuFiltered, 'Column menu, filtered'],
+    [gridLabelIds.columnFiltered, 'Filtered'],
     [gridLabelIds.headerGroupExpand, 'Expand {label}'],
     [gridLabelIds.headerGroupCollapse, 'Collapse {label}'],
     [reloadNoticeLabelIds.stylesheet, 'This page holds another version\'s stylesheet. Reload the page.'],

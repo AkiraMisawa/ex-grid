@@ -64,6 +64,8 @@ public static class DemoPageList
             "ExGrid, ExSheet and ExPivot keep their values, geometry and View State as flex, grid and split containers change size (ADR-0045)."),
         new("density", "Density", "Layout",
             "A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028)."),
+        new("header-display", "Header display", "Layout",
+            "The header's standard and compact displays over the same rows: the same declared widths under either, and Auto widths in each, so what a compact header gives back is read from the columns (ADR-0500)."),
         new("lifecycle", "Lifecycle", "Layout",
             "Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021)."),
         new("mud", "MudBlazor Wrapper", "MudBlazor",

@@ -132,6 +132,84 @@
                      Files="@(["Examples/Grid/Position.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="A compact header">
+        <p>
+            A header is wider than its label. Beside the label it keeps room for the column menu's ▾ and, on a
+            column that can be sorted, for the sort mark, whether the column is sorted at that moment or not, so that
+            sorting never moves a column. On a currency code, a tenor, a flag or a small count, that room decides
+            the column's width. <code>HeaderDisplay</code> chooses how the room is laid out, for the whole grid:
+        </p>
+        <ul>
+            <li>
+                <code>Standard</code>, the default, is the header as it has always been: the ▾ and the sort mark
+                each in a box of its own. A grid that sets nothing is unchanged.
+            </li>
+            <li>
+                <code>Compact</code> gives both one box at the header's right edge, inside the cell's padding. The
+                box shows ▾ while the column holds nothing, an arrow while it is sorted, a funnel while it is
+                filtered, and both for both. It is always there and always the same size: nothing appears on hover,
+                and a sort or a filter moves no column.
+            </li>
+        </ul>
+        <p>
+            Nothing a header means changes. A click on the header still sorts, <kbd>Shift</kbd> and
+            <kbd>Ctrl</kbd> still select columns, the edge still resizes, and a press on the box opens the same
+            column menu as the ▾, as <kbd>Alt</kbd>+<kbd>↓</kbd> does from a cell. The label keeps the room it had, so
+            a label that was painted whole is still painted whole. A screen reader hears the sort from the column
+            header as before, and the filter in the button's name. A filtered column says so at a glance in
+            either display: the standard header paints its ▾ as the same funnel, beside the sort mark's own box,
+            and no width changes for it. With <code>HideColumnMenu</code>, a compact header keeps the box as a
+            mark, with nothing to press; a standard header has no ▾ then and no room kept for one, so it shows
+            no mark of a filter.
+        </p>
+        <p>
+            In a column the user has dragged narrower than its header needs, the box stays whole and the label
+            gives way: it is cut with an ellipsis in the room left of the box. A sort and a filter together are
+            one picture in the one box, never two. A label that is cut is read whole by widening the column, and
+            <em>Size to fit</em> gives exactly the width that paints it whole; the header has no tooltip in
+            either display.
+        </p>
+        <p>
+            A compact header needs 28&nbsp;px less than a standard one on a column that can be sorted and has the
+            menu, at the default <code>Density</code>, which it is chosen apart from. What that does to a column
+            depends on its width:
+        </p>
+        <ul>
+            <li>
+                <strong>An Auto column counts the header its display draws</strong>, so it comes out narrower
+                wherever the header decided its width. Changing the display on a grid in use replaces only the
+                header's part of an Auto width: a column its header decided follows the display, in both
+                directions, and a column its values decided does not move. Nothing is measured again.
+                The same holds when <code>HideColumnMenu</code> changes. As everywhere, an Auto width is kept
+                for a column you hand again as the same object: columns built anew on every render are measured
+                afresh on every render.
+            </li>
+            <li>
+                <strong>A Fixed width is never changed</strong>: one you declared, one the user dragged or fitted,
+                one restored from a saved view. Changing the display reports no width. The room is taken by the
+                user with a double-click on the column's edge or <em>Size to fit</em>, which fit to the compact
+                header, or by your application handing back the columns without the saved widths.
+            </li>
+        </ul>
+        <p>
+            Going back to <code>Standard</code> works the same way, and a width that was fitted under
+            <code>Compact</code> is then 28&nbsp;px short of what a standard header needs. The standard header keeps
+            its ▾, and a label that is not sorted is usually still whole; once the column is sorted, the sort
+            mark no longer fits and an ellipsis stands in its place, so the direction is read after the column is
+            widened (a screen reader still hears it from the column header). <em>Size to fit</em> under
+            <code>Standard</code> gives the column its standard width again; the grid does not widen a width that
+            was set.
+        </p>
+        <p>
+            Changing the display keeps the rows, the sort, the filter, the selection, the scroll position and an
+            open edit. In ExGrid for React the option is <code>headerDisplay</code>, <code>'standard'</code> or
+            <code>'compact'</code>. Switch the display below, then click a header to sort and filter <em>Ccy</em> or
+            <em>Desk</em> from its menu: the widths stay where they are.
+        </p>
+        <DocsExample Title="Standard and compact headers over Auto widths" Builtin="typeof(HeaderDisplayGrid)" Mud="typeof(HeaderDisplayGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="Resizing, reordering and hiding">
         <p>
             Column layout is your application's state, and the grid only reports the gestures:

@@ -15,6 +15,7 @@ import { ChartBridge } from './pages/chart-bridge';
 import { ChartCandles } from './pages/chart-candles';
 import { ChartSpecPage } from './pages/chart-spec';
 import { Density } from './pages/density';
+import { HeaderDisplay } from './pages/header-display';
 import { Features } from './pages/features';
 import { GroupToggle } from './pages/group-toggle';
 import { Fetch } from './pages/fetch';
@@ -85,6 +86,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     tones: Tones,
     appearance: Appearance,
     density: Density,
+    'header-display': HeaderDisplay,
     lifecycle: Lifecycle,
     stretch: Stretch,
     sizing: Sizing,
