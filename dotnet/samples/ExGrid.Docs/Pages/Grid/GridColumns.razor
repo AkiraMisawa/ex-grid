@@ -243,6 +243,9 @@
                 <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises
                 <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
                 action, or enters a cell with several, where ← and → choose and Space presses the one chosen.
+                A bare grid draws the buttons as the browser draws a button. Under a Wrapper they take the theme's
+                colours in either scheme (ExGrid.MudBlazor's outlined default, Mantine's default Button, MUI's paper
+                and text) and keep the grid's box, which an Auto column is sized by.
             </li>
             <li>
                 <strong>Under live data</strong>, a press acts on the row it was made on, as that row is now: a value

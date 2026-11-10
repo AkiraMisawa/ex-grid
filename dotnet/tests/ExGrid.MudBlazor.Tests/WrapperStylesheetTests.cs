@@ -29,8 +29,8 @@ public class WrapperStylesheetTests
         var root = Regex.Match(css, @"\.mud-ex-grid\s*\{([^}]*)\}");
 
         Assert.True(root.Success, "no .mud-ex-grid rule in the Wrapper's stylesheet");
-        // The Focus outline is the palette's primary (ADR-0030)...
-        Assert.Matches(new Regex(@"(^|[;\s])--ex-focus-outline:\s*var\(--mud-palette-primary\);"), root.Groups[1].Value);
+        // The Focus outline is the palette's primary (ADR-0030), held to 3:1 in each scheme (#556)...
+        Assert.Matches(new Regex(@"(^|[;\s])--ex-focus-outline:\s*var\(--mud-ex-strong\);"), root.Groups[1].Value);
         // ...and the border's own token is left unnamed, so the core's rule takes the Focus outline's
         // colour (2026-10-12, decided with the user: under the MudBlazor Wrappers it follows their
         // primary with no mapping of its own).
@@ -94,6 +94,20 @@ public class WrapperStylesheetTests
     [Fact] // ADR-0068 / ADR-0029/0030: the Wrapper paints the mark through its token alone, and writes no rule against the class
     public void The_wrapper_writes_no_rule_against_the_change_highlight()
         => Assert.DoesNotContain("ex-changed", WrapperStylesheet());
+
+    [Fact] // ADR-0020/0030, #553: the Action Column's buttons take the palette's colours, of no specificity, and nothing of their box
+    public void The_action_buttons_take_the_palette_and_keep_their_box()
+    {
+        var css = Regex.Replace(WrapperStylesheet(), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var rule = Regex.Match(css, @":where\(\.mud-ex-grid \.ex-action\)\s*\{([^}]*)\}");
+
+        Assert.True(rule.Success, "no :where(.mud-ex-grid .ex-action) rule in the Wrapper's stylesheet");
+        Assert.Contains("background-color: var(--mud-palette-surface);", rule.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("color: var(--mud-palette-text-primary);", rule.Groups[1].Value, StringComparison.Ordinal);
+        Assert.Contains("border-color: var(--mud-palette-lines-inputs);", rule.Groups[1].Value, StringComparison.Ordinal);
+        // The box is geometry an Auto Action Column is sized by (ADR-0030): no width, padding, margin or border width.
+        Assert.DoesNotMatch(new Regex(@"(^|[;\s])(width|height|padding|margin|border-width|font)[\w-]*\s*:"), rule.Groups[1].Value);
+    }
 
     [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: with the Wrapper's stylesheet loaded a mark still never animates — it transitions and animates nothing
     public void The_wrapper_transitions_and_animates_nothing()

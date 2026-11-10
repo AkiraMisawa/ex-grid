@@ -22,14 +22,21 @@
     --ex-pinned-background: var(--mui-palette-background-paper);
     /* Selection from the primary colour, translucent so the value reads through it (ADR-0008); the Focus outline
        and everything drawn with it is the primary's main shade, which MUI writes lighter for the dark scheme, as it
-       draws its own focused fields. */
+       draws its own focused fields, held to 3:1 in each scheme (--mui-ex-strong, below). */
     --ex-selection-fill: color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent);
     --ex-focus-row-fill: color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent);
     --ex-row-hover-background: var(--mui-palette-action-hover);
     /* Row Stripes (ADR-0038): MUI has no striped table, so the text colour at a whisper, which turns with the
        scheme. */
     --ex-row-stripe-background: color-mix(in srgb, var(--mui-palette-text-primary) 3%, transparent);
-    --ex-focus-outline: var(--mui-palette-primary-main);
+    /* What the keyboard's marks are drawn in, the Focus outline, the grid's and the editor's, and the Heading Mark's
+       line (#556): the primary darkened to an OKLCH lightness of at most 0.54 in the light scheme, and lightened to
+       at least 0.64 with its chroma held to 0.16 in the dark, hue kept, which holds 3:1 against the paper and the
+       Heading Mark's shades for any hue at any lightness. The chroma is held because the browser clips a light,
+       saturated colour back toward the dark. Read through light-dark(), as the letters below are. */
+    --mui-ex-strong: light-dark(oklch(from var(--mui-palette-primary-main) min(l, 0.54) c h),
+        oklch(from var(--mui-palette-primary-main) max(l, 0.64) min(c, 0.16) h));
+    --ex-focus-outline: var(--mui-ex-strong);
     /* Heading Mark shades are opaque, so nothing beneath can alter the frame's shade. */
     --ex-heading-mark-background: color-mix(in srgb, var(--mui-palette-text-primary) 12%, var(--mui-palette-background-paper));
     --ex-heading-mark-whole-background: color-mix(in srgb, var(--mui-palette-primary-main) 20%, var(--mui-palette-background-paper));
@@ -40,10 +47,10 @@
        named; a theme made with disableCssColorScheme is read as light. */
     --ex-heading-mark-color: light-dark(oklch(from var(--mui-palette-primary-main) min(l, 0.42) c h),
         oklch(from var(--mui-palette-primary-main) max(l, 0.87) min(c, 0.1) h));
-    --ex-grid-focus-outline: 2px solid var(--mui-palette-primary-main);
+    --ex-grid-focus-outline: 2px solid var(--mui-ex-strong);
     --ex-editor-background: var(--mui-palette-background-paper);
     --ex-editor-color: var(--mui-palette-text-primary);
-    --ex-editor-outline: 2px solid var(--mui-palette-primary-main);
+    --ex-editor-outline: 2px solid var(--mui-ex-strong);
     --ex-placeholder-background: var(--mui-palette-action-hover);
     --ex-resize-guide-color: var(--mui-palette-primary-main);
     --ex-drop-indicator-color: var(--mui-palette-primary-main);
@@ -95,6 +102,20 @@
 .mui-ex-grid.mui-ex-grid-column-borders {
     --ex-column-rule-color: var(--mui-palette-TableCell-border);
 }
+
+/* The Action Column's buttons (ADR-0020, #553): painted in the paper's colour with the text's and the divider's, as MUI's
+   outlined Button stands on its paper, which reads in both schemes, where the browser's own grey button was the brightest thing in a dark row. Colours only, as
+   ADR-0030 allows: the button's box, its padding, its border's width and its gap, is geometry the core sizes an
+   Auto column by. Of no specificity, so an action's own className, a theme's icon, still paints over it; the core
+   sets none of these. MUI's hover shade is translucent, so it is laid over the paper, never in its place, and the
+   row's fill does not show through the button. */
+:where(.mui-ex-grid .ex-action) {
+    background-color: var(--mui-palette-background-paper);
+    color: var(--mui-palette-text-primary);
+    border-style: solid;
+    border-color: var(--mui-palette-divider);
+}
+:where(.mui-ex-grid .ex-action:hover) { background-image: linear-gradient(var(--mui-palette-action-hover), var(--mui-palette-action-hover)); }
 
 /* The menus' items (ADR-0010/0036): MUI's list item buttons, laid out as its Menu's list. Scoped to the
    menu's own element, which stands inside the core's popover; the popover, its place and its box stay the core's. */
@@ -172,7 +193,7 @@
     color: inherit;
 }
 .mui-ex-grid .ex-editor .mui-ex-editor {
-    box-shadow: inset 0 -2px 0 var(--mui-palette-primary-main);
+    box-shadow: inset 0 -2px 0 var(--mui-ex-strong);
 }
 /* A Reject stands (ADR-0034): the underline turns the theme's error colour, as MUI's field marks an error. Painted,
    not laid out. */
@@ -189,7 +210,7 @@
     color: var(--mui-palette-text-secondary);
 }
 .mui-ex-grid .ex-formula-bar-text .mui-ex-formula-bar-text:not([readonly]):focus {
-    box-shadow: inset 0 -2px 0 var(--mui-palette-primary-main);
+    box-shadow: inset 0 -2px 0 var(--mui-ex-strong);
 }
 
 /* The completion list and the argument hint (ADR-0051): a row's height per candidate in the cell's font, as the

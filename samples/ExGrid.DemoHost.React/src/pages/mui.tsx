@@ -3,7 +3,7 @@ import createCache, { type EmotionCache } from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { ThemeProvider, createTheme, useColorScheme } from '@mui/material/styles';
 import { Temporal } from 'temporal-polyfill';
-import { EditorCompletion, GridSource, type GridColumn, type GridDensity, type GridEditIntent } from '@ex-grid/core';
+import { actionColumn, EditorCompletion, GridSource, type GridColumn, type GridDensity, type GridEditIntent } from '@ex-grid/core';
 import { MuiExGrid } from '@ex-grid/mui';
 // The Wrapper's stylesheet, as text this page writes into a <style> of its own and takes away when it goes: the other
 // pages, the bare grid's fixtures, stay bare, and a spec file's document is the one it booted with once the page is
@@ -33,6 +33,8 @@ const columns: readonly GridColumn<DemoTrade>[] = Object.freeze([
     { name: 'Trader', type: 'text', value: (r: DemoTrade) => r.trader, width: 120, editable: true },
     { name: 'Notional', type: 'number', value: (r: DemoTrade) => r.notional, width: 140 },
     { name: 'TradeDate', type: 'date', value: (r: DemoTrade) => r.tradeDate, header: 'Trade date', width: 140, format: isoDate },
+    // The Action Column's button, which the Wrapper paints in its theme's colours and leaves the box of (ADR-0030).
+    actionColumn<DemoTrade>('Open', [{ name: 'open', label: 'Open' }], { width: 80 }),
 ]);
 
 const traders = [...new Set(rows.map(row => row.trader))].toSorted();
@@ -85,7 +87,7 @@ function MuiPage(): ReactElement {
                 columns={columns}
                 source={source}
                 viewportHeight={240}
-                viewportWidth={560}
+                viewportWidth={640}
                 stripeRows
                 highlightHoverRow
                 highlightFocusRow

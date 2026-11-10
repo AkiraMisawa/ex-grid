@@ -1,5 +1,5 @@
 import { test, expect, circuitQuiet, twoFrames } from './fixtures.mjs';
-import { painted, contrast, resolvedColour, sameColour, edgePixels, onDevicePixels, weakestHeadingLetters } from './pixels.mjs';
+import { painted, contrast, resolvedColour, sameColour, edgePixels, onDevicePixels, weakestHeadingMarks, hueApart } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -60,22 +60,6 @@ test('nothing under the Viewport transitions or animates with the Wrapper loaded
     expect(offenders).toEqual([]);
 });
 
-// A colour's OKLCH hue, in degrees, from sRGB bytes — to say that the dark scheme's raise kept
-// the primary's hue (ADR-0030, 2026-09-29).
-function hue([r, g, b]) {
-    const linear = (v) => {
-        const c = v / 255;
-        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    };
-    const [lr, lg, lb] = [linear(r), linear(g), linear(b)];
-    const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
-    const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
-    const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
-    const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
-    const bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
-    return ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360;
-}
-
 test('the focus outline and the selection fill stay visible under the Wrapper theme, light and dark (UX-9) @blazor', async ({ page }) => {
     await open(page);
     // The colours the cascade resolved, in whatever syntax it kept them — the dark scheme's is
@@ -124,9 +108,10 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         if (dark) {
             // Raised from the primary, which misses 3:1 on this surface, and the hue kept.
             expect(contrast(oneCell.primary, oneCell.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
-            expect(Math.abs(hue(oneCell.focus) - hue(oneCell.primary)), JSON.stringify(oneCell)).toBeLessThanOrEqual(2);
+            expect(hueApart(oneCell.focus, oneCell.primary), JSON.stringify(oneCell)).toBeLessThanOrEqual(2);
         } else {
-            // The palette's primary itself (ADR-0030, 2026-09-29).
+            // The palette's primary itself (ADR-0030, 2026-09-29): MudBlazor's is darker than the light scheme's cap
+            // of an OKLCH lightness of 0.54 (ADR-0030's note of 2026-11-10), so the cap leaves it as it is.
             expect(oneCell.focus, JSON.stringify(oneCell)).toEqual(oneCell.primary);
         }
         // And as painted, where this page puts it: on the Focus band's tint over the surface,
@@ -157,9 +142,11 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
     }
 });
 
-test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades, in light and dark, whatever the primary @blazor', async ({ page }) => {
+test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @blazor', async ({ page }) => {
     await open(page);
-    const worst = (state) => weakestHeadingLetters(gridA(page), { frame: '.mud-ex-grid', variable: '--mud-palette-primary', state });
+    // Under the dark scheme the line on its own shade is the one reading left short, by name (ADR-0030's note of
+    // 2026-11-10): no colour clears both those light shades and an ExSheet's white Paper.
+    const worst = (state, dark) => weakestHeadingMarks(gridA(page), { frame: '.mud-ex-grid', variable: '--mud-palette-primary', state, lineOnShade: !dark });
     const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
     for (const dark of [false, true]) {
         if (dark) {
@@ -168,12 +155,14 @@ test('ADR-0029, #550: a marked Heading\'s letters read 4.5:1 on both its shades,
         }
         await cellAt(2, 2).click({ force: true });
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
-        const marked = await worst('ex-heading-marked');
-        expect(marked.ratio, `part of the column, dark=${dark} (${JSON.stringify(marked)})`).toBeGreaterThanOrEqual(4.5);
+        const marked = await worst('ex-heading-marked', dark);
+        expect(marked.letters.ratio, `the letters, part of the column, dark=${dark} (${JSON.stringify(marked.letters)})`).toBeGreaterThanOrEqual(4.5);
+        expect(marked.marks.ratio, `the line and the Focus, part of the column, dark=${dark} (${JSON.stringify(marked.marks)})`).toBeGreaterThanOrEqual(3);
         await page.keyboard.press('Control+Space');
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
-        const whole = await worst('ex-heading-whole');
-        expect(whole.ratio, `the whole column, dark=${dark} (${JSON.stringify(whole)})`).toBeGreaterThanOrEqual(4.5);
+        const whole = await worst('ex-heading-whole', dark);
+        expect(whole.letters.ratio, `the letters, the whole column, dark=${dark} (${JSON.stringify(whole.letters)})`).toBeGreaterThanOrEqual(4.5);
+        expect(whole.marks.ratio, `the line and the Focus, the whole column, dark=${dark} (${JSON.stringify(whole.marks)})`).toBeGreaterThanOrEqual(3);
     }
 });
 

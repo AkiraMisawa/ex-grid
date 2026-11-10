@@ -28,6 +28,8 @@
 .mantine-ex-chart-menu { display: flex; flex-direction: column; padding: 4px; }
 .mantine-ex-chart-menu .mantine-ex-chart-menu-item { font-weight: 400; }
 .mantine-ex-chart-menu .mantine-ex-chart-menu-item .mantine-Button-inner { justify-content: flex-start; }
+/* A command that changes nothing is disabled as Mantine's Menu disables an item, on no shade of its own (#552). */
+.mantine-ex-chart-menu .mantine-ex-chart-menu-item:disabled { background: transparent; color: var(--mantine-color-dimmed); }
 
 /* The Chart Dock (ADR-0258): the grid and a panel of charts beside it or below it, never over it. */
 .mantine-ex-chart-dock { display: flex; gap: 12px; align-items: flex-start; }

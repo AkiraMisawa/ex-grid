@@ -85,7 +85,11 @@
             you set it. The two background tokens above set the shades. A bare grid uses system colours; the
             Wrappers (ExGrid.MudBlazor, <code>@@ex-grid/mantine</code>, <code>@@ex-grid/mui</code>) use their theme, with the
             primary for the line and, for the letters, the primary darkened in a light scheme and lightened in a
-            dark one until it reads as text (4.5:1) on either shade, whatever primary the theme has. Your Theme's tokens win,
+            dark one until it reads as text (4.5:1) on either shade, whatever primary the theme has. The line, the
+            Focus outline and the editor's underline take the primary darkened or lightened the same way, less far,
+            until they read as a mark (3:1) against the grid's ground and either shade: an amber or a yellow
+            primary is drawn a darker amber in a light scheme, and a saturated one is drawn lighter and a little
+            softer in a dark one, the hue kept. Your Theme's tokens win,
             and the Headings follow the frame's colour scheme. Under forced colours the shades are dropped and
             the line and marked letters use the system's highlight colour.
         </p>
@@ -350,7 +354,8 @@
             <code>Paper</code> (<code>withBorder</code>, <code>radius</code>, <code>shadow</code>; a <code>radius</code> of
             <code>0</code> sets the grid square), and needs a <code>MantineProvider</code> above it and
             <code>@@ex-grid/mantine/styles.css</code> loaded after Mantine's styles. The stylesheet maps the grid's colours
-            onto the theme's variables, so a palette edit or a change of scheme recolours the grid with no render. Mantine
+            onto the theme's variables, so a palette edit or a change of scheme recolours the grid with no render, the
+            Action Column's buttons drawn as Mantine's default Button and a menu's disabled command as its Menu's. Mantine
             has no word like Dense, so the Density picks the components' size: <code>xs</code> for Compact and Excel,
             <code>sm</code> for Standard, <code>md</code> for Comfortable. Mantine's Table words <code>striped</code> and
             <code>highlightOnHover</code> turn on Row Stripes and the hover band where the grid is given neither, and
@@ -373,7 +378,7 @@
             <code>createTheme(&#123; cssVariables: true &#125;)</code>, with MUI's own <code>--mui</code> prefix and a
             <code>rootSelector</code> the grid stands inside. The stylesheet maps the grid's colours onto the
             theme's CSS variables, so a palette edit or a change of scheme recolours the grid with no render, under any
-            <code>colorSchemeSelector</code>. A theme made without CSS variables is refused: <code>MuiExGrid</code> throws,
+            <code>colorSchemeSelector</code>, the Action Column's buttons drawn in the paper's and the text's colours. A theme made without CSS variables is refused: <code>MuiExGrid</code> throws,
             naming the option, rather than draw the grid in colours that are not your theme's. The Density picks the
             components' size: <code>small</code> with dense menus for Compact and Excel, MUI's own <code>medium</code> for
             Standard and Comfortable. MUI's Table has no stripes, so Row Stripes and the hover band are the grid's own
