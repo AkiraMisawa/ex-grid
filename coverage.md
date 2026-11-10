@@ -21,7 +21,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | `packages/react` | ExGrid | 87.9% | 81.6% | 183 |
 | `packages/mantine` | ExGrid | 83.1% | 71.1% | 95 |
 | `packages/mui` | ExGrid | 85.5% | 73.4% | 104 |
-| `packages/blazor` | ExGrid | 83.8% | 66.6% | 1502 |
+| `packages/blazor` | ExGrid | 83.8% | 66.7% | 1502 |
 | `packages/sheet` | ExSheet | 88.9% | 78% | 4095 |
 | `packages/sheet-engine` | ExSheet | 96.6% | 89.7% | 9269 |
 | `packages/sheet-xlsx` | ExSheet | 95.4% | 86.8% | 1348 |
@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/10/2026 - 10:25:50 |
+| Generated on: | 11/10/2026 - 14:22:46 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
 | Files: | 500 |
-| **Line coverage:** | 86.9% (60694 of 69785) |
-| Covered lines: | 60694 |
-| Uncovered lines: | 9091 |
+| **Line coverage:** | 86.9% (60693 of 69785) |
+| Covered lines: | 60693 |
+| Uncovered lines: | 9092 |
 | Coverable lines: | 69785 |
 | Total lines: | 106349 |
-| **Branch coverage:** | 82.8% (36568 of 44141) |
-| Covered branches: | 36568 |
+| **Branch coverage:** | 82.8% (36567 of 44141) |
+| Covered branches: | 36567 |
 | Total branches: | 44141 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -637,7 +637,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
