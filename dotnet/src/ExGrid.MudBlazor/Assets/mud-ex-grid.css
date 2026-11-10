@@ -148,14 +148,17 @@
    button, the surface with the text's colour and the inputs' line, which reads in both
    schemes, where the browser's own grey button was the brightest thing in a dark row. Colours
    only, as ADR-0030 allows: the button's box, its padding, its border's width and its gap, is
-   geometry the core sizes an Auto column by. */
-.mud-ex-grid .ex-action {
+   geometry the core sizes an Auto column by. Of no specificity, so an action's own
+   className, a theme's icon, still paints over it; the core sets none of these. The hover
+   shade is translucent, so it is laid over the surface, never in its place, and the row's
+   fill does not show through the button. */
+:where(.mud-ex-grid .ex-action) {
     background-color: var(--mud-palette-surface);
     color: var(--mud-palette-text-primary);
     border-style: solid;
     border-color: var(--mud-palette-lines-inputs);
 }
-.mud-ex-grid .ex-action:hover { background-color: var(--mud-palette-action-default-hover); }
+:where(.mud-ex-grid .ex-action:hover) { background-image: linear-gradient(var(--mud-palette-action-default-hover), var(--mud-palette-action-default-hover)); }
 .mud-ex-grid .mud-ex-grid-toolbar {
     padding-left: 8px;
     padding-right: 8px;

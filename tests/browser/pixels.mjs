@@ -138,9 +138,9 @@ export function contrast(a, b) {
  * `frame` (a selector its grid's ancestors match) for its reading and taken off after the sweep; every colour is as
  * the browser resolves it through the Wrapper's relative colours. `state` is the Heading's class,
  * `ex-heading-marked` or `ex-heading-whole`. `letters` is the weakest of the letters against the Heading's shade,
- * which text needs at 4.5:1 (ADR-0029's note of 2026-11-09, #550); `line` the weakest of the Heading Mark's line
- * against that shade and against the grid's ground, and of the Focus outline against the ground, which a mark needs
- * at 3:1 (#556).
+ * which text needs at 4.5:1 (ADR-0029's note of 2026-11-09, #550); `marks` the weakest of the Heading Mark's line
+ * against that shade and against the grid's ground, and of the Focus outline against the ground and the Focus band's
+ * tint over it where the grid draws one, which a mark needs at 3:1 (#556).
  */
 export async function weakestHeadingMarks(grid, { frame, variable, state }) {
     const samples = await grid.evaluate((g, { frame: selector, variable: name, state: which }) => {
@@ -152,25 +152,31 @@ export async function weakestHeadingMarks(grid, { frame, variable, state }) {
             throw new Error(`No ${selector} around the grid, or no .${which} Heading, Heading Mark line or Focus in it.`);
         }
         const context = new OffscreenCanvas(1, 1).getContext('2d', { willReadFrequently: true });
-        const srgb = (colour) => {
+        const srgb = (...colours) => {
             context.clearRect(0, 0, 1, 1);
-            context.fillStyle = colour;
-            context.fillRect(0, 0, 1, 1);
+            for (const colour of colours) {
+                context.fillStyle = colour;
+                context.fillRect(0, 0, 1, 1);
+            }
             return Array.from(context.getImageData(0, 0, 1, 1).data.slice(0, 3));
         };
+        const band = g.querySelector('.ex-focus-row');
         const primaries = [...Array.from({ length: 24 }, (_, h) => h * 15).map((h) => `${h} 100%`), '0 0%']
             .flatMap((hue) => Array.from({ length: 10 }, (_, i) => `hsl(${hue} ${5 + i * 10}%)`));
         try {
             return primaries.map((primary) => {
                 wrapper.style.setProperty(name, primary);
                 const seen = getComputedStyle(heading);
+                const ground = getComputedStyle(g).backgroundColor;
                 return {
                     primary,
                     letters: srgb(seen.color),
                     shade: srgb(seen.backgroundColor),
                     line: srgb(getComputedStyle(line).borderBottomColor),
                     focus: srgb(getComputedStyle(focus, '::after').borderTopColor),
-                    ground: srgb(getComputedStyle(g).backgroundColor),
+                    ground: srgb(ground),
+                    // The Focus band's translucent tint as it lies over the ground, where the grid draws one.
+                    band: band === null ? null : srgb(ground, getComputedStyle(band).backgroundColor),
                 };
             });
         } finally {
@@ -180,11 +186,31 @@ export async function weakestHeadingMarks(grid, { frame, variable, state }) {
     const weakest = (rated) => rated.reduce((low, sample) => (sample.ratio < low.ratio ? sample : low));
     return {
         letters: weakest(samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.shade) }))),
-        line: weakest(samples.flatMap((sample) => [
+        marks: weakest(samples.flatMap((sample) => [
             { ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) },
             { ...sample, against: 'the line on the ground', ratio: contrast(sample.line, sample.ground) },
             { ...sample, against: 'the Focus outline on the ground', ratio: contrast(sample.focus, sample.ground) },
+            ...(sample.band === null ? [] : [{ ...sample, against: 'the Focus outline on the Focus band', ratio: contrast(sample.focus, sample.band) }]),
         ])),
+    };
+}
+
+/**
+ * An Action Column button's background and text as painted, beside the two theme variables a Wrapper maps them onto
+ * (#553), each as sRGB bytes, read off the grid's first `.ex-action`.
+ */
+export async function actionColours(page, grid, { background, color }) {
+    const css = await grid.evaluate((g, names) => {
+        const style = getComputedStyle(g.querySelector('.ex-action'));
+        const theme = getComputedStyle(g);
+        return {
+            background: style.backgroundColor, color: style.color,
+            themeBackground: theme.getPropertyValue(names.background), themeColor: theme.getPropertyValue(names.color),
+        };
+    }, { background, color });
+    return {
+        painted: [await resolvedColour(page, css.background), await resolvedColour(page, css.color)],
+        theme: [await resolvedColour(page, css.themeBackground), await resolvedColour(page, css.themeColor)],
     };
 }
 

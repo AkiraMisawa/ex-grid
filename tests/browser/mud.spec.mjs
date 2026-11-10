@@ -110,7 +110,8 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
             expect(contrast(oneCell.primary, oneCell.ground), 'the premise: the dark primary alone misses 3:1').toBeLessThan(3);
             expect(hueApart(oneCell.focus, oneCell.primary), JSON.stringify(oneCell)).toBeLessThanOrEqual(2);
         } else {
-            // The palette's primary itself (ADR-0030, 2026-09-29).
+            // The palette's primary itself (ADR-0030, 2026-09-29): MudBlazor's is darker than the light scheme's cap
+            // of an OKLCH lightness of 0.54 (ADR-0030's note of 2026-11-10), so the cap leaves it as it is.
             expect(oneCell.focus, JSON.stringify(oneCell)).toEqual(oneCell.primary);
         }
         // And as painted, where this page puts it: on the Focus band's tint over the surface,
@@ -154,12 +155,12 @@ test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its s
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
         const marked = await worst('ex-heading-marked');
         expect(marked.letters.ratio, `the letters, part of the column, dark=${dark} (${JSON.stringify(marked.letters)})`).toBeGreaterThanOrEqual(4.5);
-        expect(marked.line.ratio, `the line and the Focus, part of the column, dark=${dark} (${JSON.stringify(marked.line)})`).toBeGreaterThanOrEqual(3);
+        expect(marked.marks.ratio, `the line and the Focus, part of the column, dark=${dark} (${JSON.stringify(marked.marks)})`).toBeGreaterThanOrEqual(3);
         await page.keyboard.press('Control+Space');
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
         const whole = await worst('ex-heading-whole');
         expect(whole.letters.ratio, `the letters, the whole column, dark=${dark} (${JSON.stringify(whole.letters)})`).toBeGreaterThanOrEqual(4.5);
-        expect(whole.line.ratio, `the line and the Focus, the whole column, dark=${dark} (${JSON.stringify(whole.line)})`).toBeGreaterThanOrEqual(3);
+        expect(whole.marks.ratio, `the line and the Focus, the whole column, dark=${dark} (${JSON.stringify(whole.marks)})`).toBeGreaterThanOrEqual(3);
     }
 });
 

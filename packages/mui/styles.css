@@ -103,17 +103,19 @@
     --ex-column-rule-color: var(--mui-palette-TableCell-border);
 }
 
-/* The Action Column's buttons (ADR-0020, #553): painted as MUI's outlined Button in the text's colour, which reads in
-   both schemes, where the browser's own grey button was the brightest thing in a dark row. Colours only, as
+/* The Action Column's buttons (ADR-0020, #553): painted in the paper's colour with the text's and the divider's, as MUI's
+   outlined Button stands on its paper, which reads in both schemes, where the browser's own grey button was the brightest thing in a dark row. Colours only, as
    ADR-0030 allows: the button's box, its padding, its border's width and its gap, is geometry the core sizes an
-   Auto column by. */
-.mui-ex-grid .ex-action {
+   Auto column by. Of no specificity, so an action's own className, a theme's icon, still paints over it; the core
+   sets none of these. MUI's hover shade is translucent, so it is laid over the paper, never in its place, and the
+   row's fill does not show through the button. */
+:where(.mui-ex-grid .ex-action) {
     background-color: var(--mui-palette-background-paper);
     color: var(--mui-palette-text-primary);
     border-style: solid;
     border-color: var(--mui-palette-divider);
 }
-.mui-ex-grid .ex-action:hover { background-color: var(--mui-palette-action-hover); }
+:where(.mui-ex-grid .ex-action:hover) { background-image: linear-gradient(var(--mui-palette-action-hover), var(--mui-palette-action-hover)); }
 
 /* The menus' items (ADR-0010/0036): MUI's list item buttons, laid out as its Menu's list. Scoped to the
    menu's own element, which stands inside the core's popover; the popover, its place and its box stay the core's. */

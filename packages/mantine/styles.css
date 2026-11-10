@@ -132,14 +132,15 @@
 
 /* The Action Column's buttons (ADR-0020, #553): painted as Mantine's default Button, which reads in both schemes,
    where the browser's own grey button was the brightest thing in a dark row. Colours only, as ADR-0030 allows: the
-   button's box, its padding, its border's width and its gap, is geometry the core sizes an Auto column by. */
-.mantine-ex-grid .ex-action {
+   button's box, its padding, its border's width and its gap, is geometry the core sizes an Auto column by. Of no
+   specificity, so an action's own className, a theme's icon, still paints over it; the core sets none of these. */
+:where(.mantine-ex-grid .ex-action) {
     background-color: var(--mantine-color-default);
     color: var(--mantine-color-default-color);
     border-style: solid;
     border-color: var(--mantine-color-default-border);
 }
-.mantine-ex-grid .ex-action:hover { background-color: var(--mantine-color-default-hover); }
+:where(.mantine-ex-grid .ex-action:hover) { background-color: var(--mantine-color-default-hover); }
 
 /* The menus' items (ADR-0010/0036): Mantine's subtle buttons laid out as its Menu's items, each label at the
    start. Scoped to the menu's own element, which stands inside the core's popover; the popover, its place and its
@@ -159,7 +160,7 @@
 /* A command that changes nothing is disabled as Mantine's Menu disables an item: its label dimmed, on no shade of its
    own. Mantine's Button gives every disabled button a filled grey, whatever its variant, and a run of them read as
    one disabled panel (#552). */
-.mantine-ex-grid-menu .mantine-ex-grid-menu-item:disabled { background: transparent; }
+.mantine-ex-grid-menu .mantine-ex-grid-menu-item:disabled { background: transparent; color: var(--mantine-color-dimmed); }
 
 /* The filter panel (ADR-0009/0030): Mantine's controls in a column inside the core's popover, the value list
    scrolling on its own and the actions at the end. No width of its own: the core's popover sets it (ADR-0040). */

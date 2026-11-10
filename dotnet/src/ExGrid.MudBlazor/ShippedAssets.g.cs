@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExGrid.MudBlazor/mud-ex-grid.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "4b9579ac55fa";
+    internal const string StylesheetVersion = "ed466ee0ac91";
 
     /// <summary>The SHA-256 of <c>Assets/mud-ex-grid.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "24b58aef3eafef2f5cf5a3bb2b28571c65531483bcf22b4e00324075630eb903";
+    internal const string StylesheetStamp = "8b893247e9669d6b74d24ade74d4b05e727706a11bf0372fab98ce3751aa7c4d";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "mud-ex-grid.css";
