@@ -277,6 +277,37 @@ test was run on seeds no night had drawn.
    to the Server host, which keeps the circuit busy until the press stops it: it is made inside `atOnce`. No other
    test presses while a stream of its own runs.
 
+## The night of 2026-11-10
+
+No test failed. Two jobs did not finish: the Hunt's Server shard 4, in Edge and in Chrome, ran out of their 150
+minutes with 932 of 1,080 repetitions done, and the run ended red with nothing failed and no records kept. One
+cause, and a second found beside it:
+
+1. **The shards were weighed by a count of `test(` lines read from the source.** The differential test is one such
+   line drawn once per product and fixed seed, 33 tests that night, and the suite's longest: each runs its scenario
+   twice behind a 150 ms round trip, 15 to 30 seconds. Weighed as one test, it went to a shard judged the lightest,
+   which was then given 108 tests where the others had 52 to 100; its ten passes alone took close to two hours. Since
+   the review of 2026-11-08 added three seeds, the shard that held it had already taken 126 of its 150 minutes the
+   night before. `shard-files.mjs` now weighs the
+   tests Playwright itself lists for the host, every one a loop draws included, and a test tagged `SPREAD` has its
+   file's tests go round the shards one at a time instead of staying together: the differential test's, three or
+   four to a shard.
+2. **A shard ran tests of files it did not name.** Playwright reads a file argument as a pattern, so a shard given
+   `pivot.spec.mjs` also ran `script-pivot.spec.mjs` and `measure-pivot.spec.mjs`: thirty tests a pass on the Server
+   host ran in two shards each, and `counted-run.sh`, counting what Playwright listed for the same arguments, could
+   not see it. CI's repeat of a changed spec (`browser-repeat`) met the same. A shard is now handed on as a list of
+   tests (`--test-list`), which names each test exactly, and `counted-run.sh`, which every repeated run goes through,
+   hands a spec file named on its command line to Playwright as that file alone.
+
+The guards: `shard-files.mjs` reads its list back through Playwright and refuses one whose every line does not match
+exactly one test, so a test cannot fall out of every shard unseen, and the Hunt's own pull-request check now runs the
+differential test, so every shard's list is drawn and read back there too. A long test nobody tags `SPREAD` is not
+prevented; it is found: every Hunt job, the seed sweep included, stops its run with `--global-timeout` about half an
+hour before the job's own limit, and `counted-run.sh` counts only the repetitions that ran (Playwright's stats count
+what it never reached as skipped), says what Playwright reported outside any test, and writes the time each spec
+file took to the job's summary. A shard that outgrows its job ends red with its records kept and the file that took
+the time named, never cancelled with nothing said.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs

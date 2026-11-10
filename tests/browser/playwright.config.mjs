@@ -163,7 +163,8 @@ export default defineConfig({
     // host's log. Not the zoom, which this comment used to give: the device scale is
     // emulated per page, and each worker has a browser of its own (ADR-0056). More at once
     // is done across machines — CI's shards (ADR-0041) — where none of it is shared, and a
-    // shard is whole spec files, so a file's booted app is never split.
+    // shard boots each spec file it takes once: CI's whole files, the Hunt's a file's tests together, or a
+    // spread file's share of them (shard-files.mjs).
     workers: 1,
     fullyParallel: false,
     reporter: [['list']],

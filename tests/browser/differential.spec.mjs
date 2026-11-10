@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, SPREAD } from './fixtures.mjs';
 import { random, seedsOf, bothWays, describeStep } from './differential.mjs';
 import { scenarios } from './differential-products.mjs';
 
@@ -10,6 +10,8 @@ import { scenarios } from './differential-products.mjs';
 //
 // The seeds below gate every CI run; the Hunt adds one of its run's per scenario (differential.mjs, seedsOf).
 // A red names its seed and prints its steps: add the seed here if it is not, and it reproduces.
+// Each test runs its scenario twice, 15 to 30 seconds behind the round trip, so the Hunt spreads them over its
+// shards rather than keep the file in one (SPREAD, shard-files.mjs).
 //
 // What a sequence may hold is kept to inputs whose outcome does not depend on what the user saw when
 // making them. A press is aimed at a place on screen, and both runs aim it at the same place, so
@@ -23,7 +25,7 @@ import { scenarios } from './differential-products.mjs';
 
 function differential(product, scenario, makeSteps, fixedSeeds) {
     for (const seed of seedsOf(fixedSeeds)) {
-        test(`ADR-0240 §8: ${product} ends the same typed fast and slow, seed ${seed} @blazor`, async ({ page }, testInfo) => {
+        test(`ADR-0240 §8: ${product} ends the same typed fast and slow, seed ${seed} @blazor`, { tag: SPREAD }, async ({ page }, testInfo) => {
             test.setTimeout(240_000);
             const steps = makeSteps(random(seed));
             testInfo.annotations.push({ type: 'seed', description: String(seed) });
