@@ -446,9 +446,19 @@ so does the daily hunt, `.github/workflows/hunt.yml`, which gates nothing:
 
 - **The hunt** runs all of layer 3, each test ten times, on the hosts its tag names in Chrome and Edge, in
   ten shards each (ADR-0220 §4). A failure it finds is a defect to record and fix (§3), never one
-  to re-run. A shard is whole spec files, chosen by `shard-files.mjs`, never Playwright's
-  `--shard`: that one cuts the tests after `--repeat-each` has multiplied them, and the hunt's first
-  run took a third of a shard's repetitions that way, which `counted-run.sh` refused.
+  to re-run. A shard is a list of tests, chosen by `shard-files.mjs` from Playwright's own listing and
+  handed to it as `--test-list`, never Playwright's `--shard`: that one cuts the tests after
+  `--repeat-each` has multiplied them, and the hunt's first run took a third of a shard's repetitions
+  that way, which `counted-run.sh` refused. A file's tests stay in one shard, except a file whose test
+  is tagged `SPREAD` (`{ tag: SPREAD }`, from `fixtures.mjs`), whose tests go round the shards one at a
+  time: the differential test's, each of which takes 15 to 30 seconds on the Server host. Each job
+  stops its run with `--global-timeout` half an hour before the job's own limit, and `counted-run.sh`
+  writes the time each spec file took to the summary, so a shard that outgrows its job says which file
+  took the time. To see what a shard takes:
+
+```sh
+EXGRID_HOSTING=server EXGRID_SHARD=4/10 node shard-files.mjs
+```
 - **The widened run** runs it once more, slowed (§5): `EXGRID_RTT_FLOOR=<ms>` makes the latency
   proxy add that round trip to every chunk, on top of what a test sets, 0 included, and
   `EXGRID_CPU_THROTTLE=<rate>` makes every page the fixture's contexts open run that many times

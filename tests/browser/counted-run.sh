@@ -53,12 +53,46 @@ report=test-results/counted.json
 status=0
 PLAYWRIGHT_JSON_OUTPUT_FILE="${report}" npx playwright test "$@" --repeat-each="${repeat}" --reporter=list,json || status=$?
 
-# Every repetition the report holds an outcome for: passed, failed, flaky (never, with no retries)
-# and skipped — a test that skips itself by decision ran, and said so.
+# Every repetition the report holds an outcome for: passed, failed or timed out, and skipped where the
+# test skipped itself by decision, which it says in an annotation — it ran, and said so. A repetition the
+# run never reached, because it was stopped or ran out of its --global-timeout, has no result, or one
+# marked skipped with no such annotation, though the report's stats count it as skipped.
 ran=$(node -e '
-    const { stats } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
-    console.log(stats.expected + stats.unexpected + stats.flaky + stats.skipped);
+    const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+    let ran = 0;
+    const walk = (suite) => {
+        for (const spec of suite.specs ?? []) {
+            for (const test of spec.tests) {
+                const decided = test.annotations.some((annotation) => annotation.type === "skip" || annotation.type === "fixme");
+                ran += test.results.filter((result) => result.status !== "skipped" || decided).length;
+            }
+        }
+        for (const inner of suite.suites ?? []) walk(inner);
+    };
+    for (const suite of report.suites ?? []) walk(suite);
+    console.log(ran);
 ' "${report}" 2>/dev/null || echo 0)
+# What stopped the run as a whole, such as its --global-timeout: the run is red, and this says why.
+stopped=$(node -e '
+    const { errors } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+    for (const error of errors ?? []) console.log(error.message.replace(/\x1b\[[0-9;]*m/g, ""));
+' "${report}" 2>/dev/null || true)
+# Where the run's time went, a line per spec file, the longest first: a shard that outgrows its job's
+# time names the file that took it (hunt.yml, 2026-11-10).
+minutes=$(node -e '
+    const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+    const spent = new Map();
+    const walk = (suite) => {
+        for (const spec of suite.specs ?? []) {
+            for (const test of spec.tests) {
+                for (const result of test.results) spent.set(spec.file, (spent.get(spec.file) ?? 0) + result.duration);
+            }
+        }
+        for (const inner of suite.suites ?? []) walk(inner);
+    };
+    for (const suite of report.suites ?? []) walk(suite);
+    for (const [file, ms] of [...spent].sort(([, a], [, b]) => b - a)) console.log(`${file}: ${(ms / 60000).toFixed(1)} min`);
+' "${report}" 2>/dev/null || echo 'no report to read the time from')
 failed=$(node -e '
     const { stats } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
     console.log(stats.unexpected);
@@ -66,10 +100,19 @@ failed=$(node -e '
 
 line="${listed} tests listed, repeated ${repeat}×: ${expected} expected, ${ran} ran, ${failed} failed."
 echo "counted-run.sh: ${line}"
+if [ -n "${stopped}" ]; then
+    line="${line} The run did not finish: ${stopped//$'\n'/; }."
+    echo "counted-run.sh: the run did not finish: ${stopped}" >&2
+fi
+printf 'counted-run.sh: the time each spec file took:\n%s\n' "${minutes}"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     echo "${line} (\`$*\`)" >> "${GITHUB_STEP_SUMMARY}"
+    printf '\n%s\n' "$(printf '%s\n' "${minutes}" | sed 's/^/- /')" >> "${GITHUB_STEP_SUMMARY}"
 fi
 
+if [ -n "${stopped}" ] && [ "${status}" -eq 0 ]; then
+    exit 1
+fi
 if [ "${ran}" != "${expected}" ]; then
     echo "counted-run.sh: ${expected} repetitions were asked for and ${ran} ran." >&2
     exit 1
