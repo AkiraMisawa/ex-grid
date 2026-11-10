@@ -274,7 +274,9 @@
                 A cell under two ranges counts once. An answerer that holds error values — a Sheet, a pivot report,
                 your own through <code>GridSummaryCells</code> — counts an error in Count and never in Numerical
                 Count, and Average, Min, Max and Sum are then shown nowhere, as in Excel. Those four wear the format of
-                the Focus's column, as Excel's wear the active cell's.
+                the Focus's column, as Excel's wear the active cell's. The grid's figures and ExPivot's totals each
+                compute the Aggregations in their own code, where one definition both answer through is meant: a known
+                limitation of <code>0.2.0</code>.
             </li>
             <li>
                 <strong>Never the wrong total.</strong> Change the selection and the figures go at once; they come

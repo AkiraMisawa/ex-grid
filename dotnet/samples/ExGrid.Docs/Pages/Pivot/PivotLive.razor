@@ -105,6 +105,12 @@
             source says it can be refreshed.
         </p>
         <p>
+            The checks <code>0.2.0</code> was released with for a server whose data moves on were written for the
+            report Window ExPivot used to fetch, before it fetched Leaf Aggregates. What they asked only of that path is
+            not met, since that path is gone, and is not yet asked of the Leaf Aggregates: a known limitation of
+            <code>0.2.0</code>. The checks are to be rewritten for them.
+        </p>
+        <p>
             When the newest data cannot be shown (it breaks a cap, the source fails, a Refresh fails, or memory runs out
             while its report is laid out), the report stays on the last version it could compute, and a notice under the
             Pivot Toolbar says what happened and as of when, with Retry. The report never shows half a change. Memory running

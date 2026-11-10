@@ -84,7 +84,10 @@
             <code>OnPaste</code> or <code>OnFill</code> handler is waited for the same way, and its intent carries the token. Every verdict
             there, <code>Validate</code>'s too, crosses from .NET, so on Blazor Server each commit waits one round trip.
             Check the token before your handler writes: <kbd>Escape</kbd> is decided in the browser, so a cancel that
-            reaches .NET after your handler wrote finds the write made, and the cell shows it under the editor. While the answer is out the commit is pending: the editor keeps the text and the
+            reaches .NET after your handler wrote finds the write made, and the cell shows it under the editor. After a
+            synchronous <code>OnEdit</code> or <code>OnPaste</code> the live region still says the edit was cancelled
+            though the write stands, since naming which happened needs the outcome from .NET: a known limitation of
+            <code>0.2.0</code>. While the answer is out the commit is pending: the editor keeps the text and the
             keyboard, read-only and <code>aria-busy</code> with its outline dashed, the pointer shows the grid busy, and the
             root carries <code>data-ex-pending-commit</code> in place of the Settled Mark. Every key, press and paste made
             meanwhile waits, and is taken once the answer has come, against what it left: <code>150</code>
