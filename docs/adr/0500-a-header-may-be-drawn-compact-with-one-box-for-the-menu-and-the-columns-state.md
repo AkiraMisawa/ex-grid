@@ -120,7 +120,8 @@ instead of beside it.
 - **In a column narrower than its header's charge the box stays and the label gives way.** A width
   somebody dragged below the charge is kept (section 4), so the header has to choose: the Header Box is
   painted whole at the right edge, at its own size, and the label is cut with an ellipsis in the room
-  left of it, down to no label at all. So the order is the state and the way to the menu first, then
+  left of it, down to no label at all (observed in Chrome at 60px and at the 40px MinWidth: the box is
+  16px wide and 6px from the edge at both, with its picture, and a press on it opens the menu). So the order is the state and the way to the menu first, then
   the label; a Sort and a Filter together are one picture in the one box (the funnel and the arrow side
   by side, each smaller than alone), never two boxes, and neither is dropped for the other. A label that
   is cut is read whole by widening the column: a drag of the grip, or Size to fit, which gives the width
@@ -185,13 +186,20 @@ stands takes it.
   whose widths depend on the order of its settings.
 - **Back to `standard`, a header is the standard one again, at the widths that stand.** Nothing is
   dropped from it by rule: the ▾ is in its band and the sort mark in its box. What it can lose is room.
-  A `Fixed` width that was fitted under `compact` is up to 28px short of the standard charge, and the
-  standard header does there what it does in any column narrower than its charge: the ▾ stays, the
-  label is cut with an ellipsis, and the sort mark, which follows the label, is cut with it, so the
-  Sort is then read from `aria-sort`, from the column menu, or after the column is widened. The Filter
-  has no mark in a standard header at any width (see Consequences). The user's way out is the one that
-  made the width: Size to fit under `standard` gives the standard charge. The grid does not widen the
-  column for them, because that width was set.
+  A `Fixed` width that was fitted under `compact` is 28px short of the standard charge, and the standard
+  header does there what it does in any column narrower than its charge. The ▾ stays. The label keeps
+  6px of its slack, so a label that is not sorted is usually still whole; the sort mark's 20px no longer
+  fit, so once the column is sorted an ellipsis stands where the mark would (`Tenor…`, observed in
+  Chrome on `/header-display`), and the Sort is then read from `aria-sort` by assistive technology, or
+  on screen after the column is widened. The column menu does not say which way a column is sorted, in
+  either display. The Filter has no mark in a standard header at any width (see Consequences). The
+  user's way out is the one that made the width: Size to fit under `standard` gives the standard
+  charge. The grid does not widen the column for them, because that width was set.
+- **All of this is said of a column the Consumer hands again as the same object.** An Auto width is
+  carried for the same column object under the same Grid Metrics, and measured afresh otherwise
+  (ADR-0016, ADR-0003's note of 2026-10-11): that rule is older than this decision and is not changed
+  by it. A Consumer who builds its columns anew on every render already has them measured afresh on
+  every render, the one that changes the display included. Blazor's adapter keeps the objects.
 
 ### 5. Nothing new crosses to the browser's layout, and nothing per cell
 

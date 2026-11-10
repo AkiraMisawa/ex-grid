@@ -1,10 +1,11 @@
-import type { ColumnWidthSpec } from './column-width';
+import { checkedRequiredPx, type ColumnWidthSpec } from './column-width';
 
 /**
- * The current computed width of an Auto column. It only ever grows (ADR-0016): a width that moved back
- * down as screens of short values scrolled past would make the columns judder, so not narrowing is what
- * makes it settle. Grow-only is structural: the only transition a value makes is {@link AutoWidth.observe},
- * which takes the maximum itself. Narrowing happens only through the spec's explicit Size to fit.
+ * The current computed width of an Auto column. What its values taught it only ever grows (ADR-0016): a
+ * width that moved back down as screens of short values scrolled past would make the columns judder, so not
+ * narrowing is what makes it settle. Grow-only is structural: the only transition a value makes is
+ * {@link AutoWidth.observe}, which takes the maximum itself. Below that, a column narrows only through the
+ * spec's explicit Size to fit.
  *
  * What the column's header needs is held apart from what its values taught it (ADR-0500): a header's need is
  * a fact of how the header is drawn, never an observation, so {@link AutoWidth.underHeader} replaces it,
@@ -37,7 +38,9 @@ export class AutoWidth {
         return new AutoWidth(spec, spec.minWidthPx, spec.minWidthPx);
     }
 
-    /** Whether `other` tracks the same declaration, under the same header, and stands at the same width. */
+    /** Whether `other` tracks the same declaration, under a header that needs the same, having learned the same
+     * from its values: two that stand at one width for different reasons are not equal, since another header
+     * would part them. */
     equals(other: AutoWidth): boolean {
         return other instanceof AutoWidth && this.#spec.equals(other.#spec) && this.#headerPx === other.#headerPx && this.#valuesPx === other.#valuesPx;
     }
@@ -49,7 +52,7 @@ export class AutoWidth {
      * order-independent, so the same observations settle at the same width in any order.
      */
     observe(requiredWidthPx: number): AutoWidth {
-        return new AutoWidth(this.#spec, this.#headerPx, Math.max(this.#valuesPx, this.#spec.clamp(required(requiredWidthPx))));
+        return new AutoWidth(this.#spec, this.#headerPx, Math.max(this.#valuesPx, this.#spec.clamp(checkedRequiredPx(requiredWidthPx))));
     }
 
     /**
@@ -58,13 +61,6 @@ export class AutoWidth {
      * it. Every observation made stands.
      */
     underHeader(requiredWidthPx: number): AutoWidth {
-        return new AutoWidth(this.#spec, this.#spec.clamp(required(requiredWidthPx)), this.#valuesPx);
+        return new AutoWidth(this.#spec, this.#spec.clamp(checkedRequiredPx(requiredWidthPx)), this.#valuesPx);
     }
-}
-
-function required(requiredWidthPx: number): number {
-    if (!Number.isFinite(requiredWidthPx) || requiredWidthPx < 0) {
-        throw new RangeError(`A required width is a finite, non-negative number of pixels. (requiredWidthPx: ${requiredWidthPx})`);
-    }
-    return requiredWidthPx;
 }

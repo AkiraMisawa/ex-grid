@@ -91,6 +91,12 @@ Not narrowing means it cannot oscillate, and after a few screens it settles in p
 narrow, the user presses "size to fit" explicitly (which fixes the width at the content of that
 moment).
 
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md):
+"only ever grows" is said of what the values teach a column. What the header needs is a fact of how
+the header is drawn, held apart, and replaced when that changes: a column its header decided gives up
+the room its header no longer keeps when the Header Display or `hideColumnMenu` changes, and never
+goes below its widest value. Scrolling still narrows nothing.)*
+
 *(Refined while implementing: the width is measured from **what has been painted**, not from the
 whole Window. A Window can hold far more rows than the Viewport shows, and measuring all of them
 on every push would cost more than virtualisation saves. Because observation is a monotone

@@ -178,7 +178,9 @@
                 wherever the header decided its width. Changing the display on a grid in use replaces only the
                 header's part of an Auto width: a column its header decided follows the display, in both
                 directions, and a column its values decided does not move. Nothing is measured again.
-                The same holds when <code>HideColumnMenu</code> changes.
+                The same holds when <code>HideColumnMenu</code> changes. As everywhere, an Auto width is kept
+                for a column you hand again as the same object: columns built anew on every render are measured
+                afresh on every render.
             </li>
             <li>
                 <strong>A Fixed width is never changed</strong>: one you declared, one the user dragged or fitted,
@@ -189,10 +191,12 @@
         </ul>
         <p>
             Going back to <code>Standard</code> works the same way, and a width that was fitted under
-            <code>Compact</code> is then up to 28&nbsp;px short of what a standard header needs. The standard header
-            keeps its ▾ and cuts the label with an ellipsis, and a sort mark, which follows the label, is cut with
-            it. <em>Size to fit</em> under <code>Standard</code> gives the column its standard width again; the grid
-            does not widen a width that was set.
+            <code>Compact</code> is then 28&nbsp;px short of what a standard header needs. The standard header keeps
+            its ▾, and a label that is not sorted is usually still whole; once the column is sorted, the sort
+            mark no longer fits and an ellipsis stands in its place, so the direction is read after the column is
+            widened (a screen reader still hears it from the column header). <em>Size to fit</em> under
+            <code>Standard</code> gives the column its standard width again; the grid does not widen a width that
+            was set.
         </p>
         <p>
             Changing the display keeps the rows, the sort, the filter, the selection, the scroll position and an

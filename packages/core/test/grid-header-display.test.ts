@@ -245,6 +245,30 @@ describe('what a header\'s gestures mean under either display', () => {
     });
 });
 
+describe('a compact header under Header Groups', () => {
+    it('ADR-0500 / ADR-0032: the leaves wear the Header Box and a group\'s cell does not, and the groups stand where they stood', async () => {
+        const three: readonly GridColumn<Trade>[] = [
+            { name: 'Book', type: 'text', value: trade => trade.book, width: 110 },
+            { name: 'Notional', type: 'number', value: trade => trade.notional, width: 140 },
+            { name: 'Quantity', type: 'number', value: trade => trade.notional / 10, width: 120 },
+        ];
+        const source = GridSource.from(trades(20));
+        const options: GridOptions<Trade> = { columns: three, source, ...box, headerGroups: [{ label: 'Money', columns: ['Notional', 'Quantity'] }] };
+        const { root, view } = mount<Trade>(options);
+        source.setSorts([{ column: 'Notional', direction: 'ascending' }]);
+        await painted();
+        const groups = (): (string | null)[] => [...root.querySelectorAll('.ex-header-group')].map(group => `${group.textContent} ${group.getAttribute('style')}`);
+        const standard = { groups: groups(), widths: widths(root) };
+        expect(standard.groups).toHaveLength(1);
+
+        view.update({ ...options, headerDisplay: 'compact' });
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered button:Column menu', 'ascending unfiltered button:Column menu', 'none unfiltered button:Column menu']);
+        expect(root.querySelectorAll('.ex-header-group :is(.ex-menu-button, .ex-header-state)')).toHaveLength(0);
+        expect({ groups: groups(), widths: widths(root) }).toEqual(standard);
+    });
+});
+
 describe('what a compact header needs', () => {
     it('ADR-0500: an Auto column whose header decides is narrower by what the header no longer keeps aside', async () => {
         const { root: standard } = mount<Trade>({ columns: auto, rows: trades(30), ...box });

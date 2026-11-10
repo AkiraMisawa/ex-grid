@@ -2689,11 +2689,11 @@ export class GridView<Row> {
                 const auto = (carried ?? AutoWidth.of(spec)).underHeader(metrics.headerRequiredPx({
                     label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false, display: headerDisplay,
                 }));
-                if (carried !== undefined) return auto;
                 // An Action Column paints no value, so the rows never grow it and its header is usually empty:
                 // what it declares is its labels, measured once, side by side, each with its button's box, and
-                // the cell's own padding once (ADR-0016, ADR-0020). A label is text (ticket 83).
-                if (actions.length === 0) return auto;
+                // the cell's own padding once (ADR-0016, ADR-0020). A label is text (ticket 83). A width
+                // carried has them already, among what its values taught it.
+                if (carried !== undefined || actions.length === 0) return auto;
                 const asText = metrics.cellMetrics.for('text');
                 return auto.observe(actions.reduce((required, action) => required + asText.textWidthPx(action.label) + metrics.actionButtonChromePx,
                     asText.estimatePx('')));
