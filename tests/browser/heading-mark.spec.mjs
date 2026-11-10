@@ -1,6 +1,6 @@
 import { test, expect, alterPage, circuitQuiet, twoFrames, chromeHost } from './fixtures.mjs';
 import { sheet, cell, clickCell, columnHeader, expectFocusAt, openSheet, pressAt } from './sheet-helpers.mjs';
-import { contrast, painted, resolvedColour, paints, blend, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
+import { contrast, painted, resolvedColour, exactColour, paints, blend, onDeviceGrid, wholePixelCentres, edgePixels, onDevicePixels } from './pixels.mjs';
 
 // The Heading Mark (ADR-0008, 2026-10-13; UX-21), read in device pixels from what the browser
 // painted: for every Selection, the Headings of the columns and the rows that hold part of it carry
@@ -256,9 +256,9 @@ for (const [chrome, mode] of CHROMES) {
             const header = columnHeader(grid, 'C');
             const label = rowHeading(grid, 3);
             const shadeCss = await header.evaluate(el => getComputedStyle(el).backgroundColor);
-            const shade = await resolvedColour(page, shadeCss);
+            const shade = await exactColour(page, shadeCss);
             shades[scheme] = shade;
-            expect(await resolvedColour(page, await label.evaluate(el => getComputedStyle(el).backgroundColor))).toEqual(shade);
+            expect(await exactColour(page, await label.evaluate(el => getComputedStyle(el).backgroundColor))).toEqual(shade);
             expect(paints(await headingPaint(page, header), shade), `${scheme} header: ${shadeCss}`).toBe(true);
             expect(paints(await headingPaint(page, label), shade), `${scheme} row: ${shadeCss}`).toBe(true);
             // The cell's recorded Fill remains its document colour in both schemes.

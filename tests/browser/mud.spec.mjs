@@ -142,11 +142,11 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
     }
 });
 
-test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @blazor', async ({ page }) => {
+test('ADR-0029, ADR-0030, #550, #556: a marked Heading\'s letters read 4.5:1 on both its shades, and its line and the Focus outline 3:1, in light and dark, whatever the primary @blazor', async ({ page }) => {
     await open(page);
-    // Under the dark scheme the line on its own shade is the one reading left short, by name (ADR-0030's note of
-    // 2026-11-10): no colour clears both those light shades and an ExSheet's white Paper.
-    const worst = (state, dark) => weakestHeadingMarks(gridA(page), { frame: '.mud-ex-grid', variable: '--mud-palette-primary', state, lineOnShade: !dark });
+    // Under the dark scheme the shades are darker than the surface, so the line clears them as it clears the surface
+    // and an ExSheet's white Paper (ADR-0030's note of 2026-11-10, its later paragraph).
+    const worst = (state) => weakestHeadingMarks(gridA(page), { frame: '.mud-ex-grid', variable: '--mud-palette-primary', state });
     const cellAt = (row, column) => gridA(page).locator('.ex-row').nth(row).locator('.ex-cell').nth(column);
     for (const dark of [false, true]) {
         if (dark) {
@@ -155,12 +155,12 @@ test('ADR-0029, #550, #556: a marked Heading\'s letters read 4.5:1 on both its s
         }
         await cellAt(2, 2).click({ force: true });
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-marked:not(.ex-heading-whole)')).toHaveCount(1);
-        const marked = await worst('ex-heading-marked', dark);
+        const marked = await worst('ex-heading-marked');
         expect(marked.letters.ratio, `the letters, part of the column, dark=${dark} (${JSON.stringify(marked.letters)})`).toBeGreaterThanOrEqual(4.5);
         expect(marked.marks.ratio, `the line and the Focus, part of the column, dark=${dark} (${JSON.stringify(marked.marks)})`).toBeGreaterThanOrEqual(3);
         await page.keyboard.press('Control+Space');
         await expect(gridA(page).locator('.ex-header-cell.ex-heading-whole')).toHaveCount(1);
-        const whole = await worst('ex-heading-whole', dark);
+        const whole = await worst('ex-heading-whole');
         expect(whole.letters.ratio, `the letters, the whole column, dark=${dark} (${JSON.stringify(whole.letters)})`).toBeGreaterThanOrEqual(4.5);
         expect(whole.marks.ratio, `the line and the Focus, the whole column, dark=${dark} (${JSON.stringify(whole.marks)})`).toBeGreaterThanOrEqual(3);
     }

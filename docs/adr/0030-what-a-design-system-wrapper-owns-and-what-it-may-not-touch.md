@@ -204,6 +204,17 @@ Mantine's default blue draws a shade darker in the light scheme, MUI's barely ch
 MudBlazor's light primary not at all. As before, CSS cannot compare two colours, so a Consumer's own grounds
 are not recomputed, and a Consumer's own token wins.
 
+**The gap closed, decided with the user the same day:** the shades darken. Under MudBlazor's dark scheme
+the Heading Mark's two shades are set below the surface they sit in, where the light scheme's mix of the
+text at 12% had lifted them above it: the surface with 30% black for part of a column or row, and the
+primary at 20% over that for a whole one. The floor of 0.64 stays, so the Paper still holds. Measured
+over the same sweep, the line now reads at least 4.1:1 on the one shade and 3.3:1 on the other, the
+letters 5.9:1, and the sweep's MudBlazor dark reading judges the line on the shade again. Rejected: a
+line of its own colour, which would part the Heading Mark from the Focus outline that ADR-0029 has it
+follow, and keeping the gap named. What it costs: a marked Heading under MudBlazor's dark scheme reads
+as a darker band (1.28:1 against the surface) where it read as a lighter one, and a whole column's shade
+is set apart from the surface by its tint more than by its lightness.
+
 ## How a violation is caught rather than trusted away
 
 The contract is enforceable because each prohibition lands somewhere observable:

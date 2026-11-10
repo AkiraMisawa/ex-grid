@@ -117,12 +117,14 @@
    keeps 3:1 against the surface and the band for any hue at any lightness: the browser clips a
    light, saturated colour back toward the dark, and a full blue raised to 0.64 fell short. A
    primary already lighter than the floor keeps its lightness.
-   The Heading Mark's line, drawn in this colour, reads 3:1 against the surface it borders but
-   not against the Heading Mark's own shades, which are light here (the text's colour without
-   its alpha, white, at 12%): MudBlazor's default violet reads 2.3:1 on them. No one colour
-   can clear both those shades and an ExSheet's white Paper, which the Focus outline is drawn
-   on in this scheme too (SH-39), so the floor stays where the Paper holds (ADR-0030's note of
-   2026-11-10).
+   The Heading Mark's line is drawn in this colour too, and ExSheet's white Paper keeps the floor
+   from rising (SH-39): 3:1 against white needs a relative luminance of at most 0.30. So the
+   Heading Mark's shades darken instead, where the text at 12%, set above for both schemes, would
+   lift them above the surface: the surface with 30% black, and the primary at 20% over that for a
+   whole column or row. MudBlazor's default violet read 2.3:1 on the lighter shades; on these,
+   measured over every hue in 15-degree steps at ten lightnesses, and grey, on the default dark
+   surface, the line reads at least 4.1:1 on the one and 3.3:1 on the other, and the letters
+   5.9:1 (ADR-0030's note of 2026-11-10).
    The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
    luminance, so a Consumer's own is not recomputed. The range outline follows through
    --ex-selection-outline, which defaults to this token.
@@ -134,8 +136,12 @@
     .mud-ex-grid {
         --mud-ex-strong: oklch(from var(--mud-palette-primary) max(l, 0.64) min(c, 0.16) h);
         /* At least 0.87, its chroma held to 0.1, which the browser's gamut would otherwise clip back toward
-           the dark: 4.5:1 for any primary against the shades over the default dark surface. */
+           the dark: 4.5:1 for any primary against the shades over the default dark surface, which it cleared
+           when they were lighter and clears further now they are darker (5.9:1). */
         --ex-heading-mark-color: oklch(from var(--mud-palette-primary) max(l, 0.87) min(c, 0.1) h);
+        --mud-ex-heading-ground: color-mix(in srgb, black 30%, var(--mud-palette-surface));
+        --ex-heading-mark-background: var(--mud-ex-heading-ground);
+        --ex-heading-mark-whole-background: color-mix(in srgb, var(--mud-palette-primary) 20%, var(--mud-ex-heading-ground));
     }
 }
 .mud-ex-grid.mud-ex-grid-square {

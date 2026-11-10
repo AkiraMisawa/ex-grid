@@ -118,6 +118,16 @@ export function resolvedColour(page, css) {
     }, css);
 }
 
+/**
+ * A CSS colour as the page resolves it, in sRGB channels of 0 to 255 kept to their fraction where the cascade
+ * kept one: a mix the browser holds as `color(srgb …)` can land between two bytes, which a canvas rounds one way and
+ * the compositor may round the other, so `paints` takes the exact value and allows either byte.
+ */
+export async function exactColour(page, css) {
+    const srgbMatch = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)\)$/.exec(css);
+    return srgbMatch === null ? resolvedColour(page, css) : srgbMatch.slice(1, 4).map((channel) => Number(channel) * 255);
+}
+
 /** WCAG's contrast ratio between two sRGB colours. */
 export function contrast(a, b) {
     const luminance = (rgb) => {
@@ -140,10 +150,9 @@ export function contrast(a, b) {
  * `ex-heading-marked` or `ex-heading-whole`. `letters` is the weakest of the letters against the Heading's shade,
  * which text needs at 4.5:1 (ADR-0029's note of 2026-11-09, #550); `marks` the weakest of the Heading Mark's line
  * against that shade and against the grid's ground, and of the Focus outline against the ground and the Focus band's
- * tint over it where the grid draws one, which a mark needs at 3:1 (#556). `lineOnShade: false` leaves out the line
- * against the shade, the one reading ADR-0030's note of 2026-11-10 names as short under MudBlazor's dark scheme.
+ * tint over it where the grid draws one, which a mark needs at 3:1 (#556).
  */
-export async function weakestHeadingMarks(grid, { frame, variable, state, lineOnShade = true }) {
+export async function weakestHeadingMarks(grid, { frame, variable, state }) {
     const samples = await grid.evaluate((g, { frame: selector, variable: name, state: which }) => {
         const wrapper = g.closest(selector);
         const heading = g.querySelector(`.ex-header-cell.${which}`);
@@ -188,7 +197,7 @@ export async function weakestHeadingMarks(grid, { frame, variable, state, lineOn
     return {
         letters: weakest(samples.map((sample) => ({ ...sample, ratio: contrast(sample.letters, sample.shade) }))),
         marks: weakest(samples.flatMap((sample) => [
-            ...(lineOnShade ? [{ ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) }] : []),
+            { ...sample, against: 'the line on the shade', ratio: contrast(sample.line, sample.shade) },
             { ...sample, against: 'the line on the ground', ratio: contrast(sample.line, sample.ground) },
             { ...sample, against: 'the Focus outline on the ground', ratio: contrast(sample.focus, sample.ground) },
             ...(sample.band === null ? [] : [{ ...sample, against: 'the Focus outline on the Focus band', ratio: contrast(sample.focus, sample.band) }]),
