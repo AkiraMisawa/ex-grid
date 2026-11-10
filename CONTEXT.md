@@ -944,7 +944,8 @@ How every header of a grid lays out what stands beside its label: **Standard**, 
 and the sort mark's box side by side, which is the default, or **Compact**, one **Header Box** for both.
 It is one choice for the grid, chosen apart from **Density**, and it changes what a header's width is
 charged and nothing a header means: a click still sorts, and the same button opens the column menu. A
-width somebody set is never changed by it; an Auto width is measured again under it
+width somebody set is never changed by it; an Auto width takes its header's new need and keeps what its
+values taught it
 ([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
 _Avoid_: compact mode, header mode, header density (Density is heights, type and padding)
 

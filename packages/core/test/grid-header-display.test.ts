@@ -6,7 +6,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { GridColumn } from '../src/dom/grid-column';
-import type { GridColumnWidthChange, GridOptions } from '../src/dom/grid-view';
+import type { GridColumnWidthChange } from '../src/dom/column-gestures';
+import type { GridOptions } from '../src/dom/grid-view';
 import { GridMetrics } from '../src/grid-metrics';
 import { japaneseGridWords } from '../src/chrome/japanese-grid-words';
 import { GridSource } from '../src/source/grid-source';
@@ -57,11 +58,19 @@ function key(target: Element, name: string, init: KeyboardEventInit = {}): Keybo
     return event;
 }
 
+/** What the DOM answers with `null` when it is missing, and the test knows is there. */
+function present<T>(value: T | null, what: string): T {
+    if (value === null) throw new Error(`${what} is missing.`);
+    return value;
+}
+/** A place on the header band, at its own offsets, with the client x at the same place. */
+const onBand = (x: number, init: MouseEventInit = {}): MouseEventInit & { offsetX: number; offsetY: number } =>
+    ({ clientX: x, clientY: 10, offsetX: x, offsetY: 10, ...init });
 const cells = (root: HTMLElement): HTMLElement[] => [...root.querySelectorAll<HTMLElement>('.ex-header-cell')];
 /** Each header's width, as the grid writes it inline (ADR-0016). */
 const widths = (root: HTMLElement): number[] => cells(root).map(cell => {
-    const width = /(?:^|; )width: ([\d.]+)px/u.exec(defined(cell.getAttribute('style'), 'a header cell\'s style'));
-    return Number(defined(width, 'a header cell\'s width')[1]);
+    const width = /(?:^|; )width: ([\d.]+)px/u.exec(present(cell.getAttribute('style'), 'a header cell\'s style'));
+    return Number(present(width, 'a header cell\'s width')[1]);
 });
 /** What each header says of its column: its aria-sort, whether it is marked filtered, and its box's name. */
 const said = (root: HTMLElement): string[] => cells(root).map(cell => {
@@ -92,12 +101,13 @@ describe('the standard header', () => {
 
     it('ADR-0500: a headerDisplay that is neither is refused by name, on a new grid and on one in use', async () => {
         const options = { columns: fixed, rows: trades(5), ...box };
-        expect(() => mount<Trade>({ ...options, headerDisplay: 'dense' as never })).toThrow('headerDisplay is \'standard\' or \'compact\', not "dense" (ADR-0500).');
+        expect(() => mount<Trade>({ ...options, headerDisplay: 'dense' as never })).toThrow('A header display is \'standard\' or \'compact\', not "dense" (ADR-0500).');
         const { root, view } = mount<Trade>(options);
         await painted();
         expect(() => { view.update({ ...options, headerDisplay: 'excel' as never }); }).toThrow(RangeError);
         expect(q(root, '.ex-header').hasAttribute('data-ex-header-display')).toBe(false);
-        expect(() => metrics.headerRequiredPx({ label: 'A', menuButton: true, sortable: true, display: 'dense' as never })).toThrow(RangeError);
+        expect(() => metrics.headerRequiredPx({ label: 'A', menuButton: true, sortable: true, display: 'dense' as never }))
+            .toThrow('A header display is \'standard\' or \'compact\', not "dense" (ADR-0500).');
     });
 });
 
@@ -160,13 +170,78 @@ describe('the compact header\'s Header Box', () => {
         expect(menu(root)?.getAttribute('aria-label')).toBe('Notional');
         expect(source.snapshot().sorts).toEqual([{ column: 'Book', direction: 'ascending' }]);
         // Escape closes it, and the keyboard is the grid's again.
-        key(defined(document.activeElement, 'the menu\'s first command'), 'Escape');
+        key(present(document.activeElement, 'the menu\'s first command'), 'Escape');
         expect([menu(root), document.activeElement]).toEqual([null, root]);
 
         mouse(q(root, '.ex-viewport'), 'mousedown', { offsetX: 10, offsetY: 5, buttons: 1 });
         mouse(q(root, '.ex-viewport'), 'mouseup', { offsetX: 10, offsetY: 5 });
         key(root, 'ArrowDown', { altKey: true });
         expect(menu(root)?.getAttribute('aria-label')).toBe('Book');
+    });
+});
+
+describe('what a header\'s gestures mean under either display', () => {
+    // Book 110, Notional 140 and Quantity 120 wide, as grid-column-gestures.test.ts has them.
+    const three: readonly GridColumn<Trade>[] = [
+        { name: 'Book', type: 'text', value: trade => trade.book, width: 110 },
+        { name: 'Notional', type: 'number', value: trade => trade.notional, width: 140 },
+        { name: 'Quantity', type: 'number', value: trade => trade.notional / 10, width: 120 },
+    ];
+
+    /** A reorder by a drag, a resize from a grip, a Shift and a Ctrl click, and a click that selects: what the grid said of each. */
+    async function gestures(headerDisplay: 'standard' | 'compact'): Promise<string[]> {
+        const heard: string[] = [];
+        const options: GridOptions<Trade> = {
+            columns: three, rows: trades(20), ...box, headerHeight: 28, headerDisplay,
+            onSelectionChanged: selection => { heard.push(`selection ${JSON.stringify(selection.ranges)}`); },
+            onColumnOrderChanged: order => { heard.push(`order ${order.join(',')}`); },
+            onColumnWidthChanged: change => { heard.push(`width ${change.column} ${change.widthPx}`); },
+        };
+        const { root, view } = mount<Trade>(options);
+        await painted();
+        const header = q(root, '.ex-header');
+
+        mouse(header, 'mousedown', onBand(55, { buttons: 1 }));
+        mouse(q(root, '.ex-viewport'), 'mousemove', { clientX: 600, clientY: 100, buttons: 1 });
+        mouse(header, 'mouseup', { clientX: 600, clientY: 10 });
+        mouse(header, 'click', onBand(600));
+
+        const grip = defined(root.querySelectorAll('.ex-header-cell .ex-resize-grip')[1], 'Notional\'s grip');
+        mouse(grip, 'mousedown', { clientX: 248, buttons: 1 });
+        mouse(q(root, '.ex-viewport'), 'mousemove', { clientX: 286, clientY: 100, buttons: 1 });
+        mouse(grip, 'mouseup', { clientX: 286, clientY: 10 });
+        mouse(grip, 'click', { clientX: 286 });
+
+        mouse(header, 'click', onBand(50, { shiftKey: true }));
+        mouse(header, 'click', onBand(300, { ctrlKey: true }));
+        await painted();
+        heard.push(`sorted ${cells(root).map(cell => cell.getAttribute('aria-sort')).join(',')}`);
+
+        // A press on a header is one or the other's: the reorder is dropped for the click that selects.
+        const { onColumnOrderChanged: _, ...withoutReorder } = options;
+        view.update({ ...withoutReorder, headerClickSelects: true });
+        await painted();
+        mouse(header, 'mousedown', onBand(150, { buttons: 1 }));
+        mouse(header, 'mouseup', onBand(150));
+        mouse(header, 'click', onBand(150));
+        await painted();
+        heard.push(`sorted ${cells(root).map(cell => cell.getAttribute('aria-sort')).join(',')}`);
+        unmountAll();
+        return heard;
+    }
+
+    it('ADR-0500 / ADR-0011 / ADR-0016: a drag reorders, a grip resizes, Shift and Ctrl select columns and headerClickSelects selects, the same under compact as under standard', async () => {
+        const standard = await gestures('standard');
+        // Book and Quantity whole by Shift and Ctrl, told once they are painted; then Notional whole by the click that selects.
+        expect(standard).toEqual([
+            'order Notional,Quantity,Book',
+            'width Notional 178',
+            'selection [{"topRow":0,"leftColumn":0,"rowCount":20,"columnCount":1},{"topRow":0,"leftColumn":2,"rowCount":20,"columnCount":1}]',
+            'sorted none,none,none',
+            'selection [{"topRow":0,"leftColumn":1,"rowCount":20,"columnCount":1}]',
+            'sorted none,none,none',
+        ]);
+        expect(await gestures('compact')).toEqual(standard);
     });
 });
 
@@ -252,6 +327,31 @@ describe('changing the display on a grid in use', () => {
         expect(changes).toEqual([]);
     });
 
+    it('ADR-0500 / ADR-0016: an Auto column keeps what its values taught it, and only its header\'s part follows the display', async () => {
+        const learning: readonly GridColumn<Trade>[] = [
+            { name: 'Ccy', type: 'text', value: () => 'USD' },
+            { name: 'Note', type: 'text', value: trade => trade.book },
+        ];
+        const long = trades(30).map(trade => ({ ...trade, book: 'A desk whose name runs far past its header' }));
+        const options: GridOptions<Trade> = { columns: learning, rows: long, ...box };
+        const { root, view } = mount<Trade>(options);
+        await painted();
+        const [ccy, note] = widths(root);
+        // The rows that grew Note leave the Window: an Auto width only ever grows, so it stands (ADR-0016).
+        const short = trades(30);
+        view.update({ ...options, rows: short });
+        await painted();
+        expect(widths(root)).toEqual([ccy, note]);
+        // The display changes what a header needs and nothing a value needs: Ccy, which its header decides, gives
+        // back the header's 28px, and Note is not measured down to the rows that happen to stand now.
+        view.update({ ...options, rows: short, headerDisplay: 'compact' });
+        await painted();
+        expect(widths(root)).toEqual([defined(ccy, 'Ccy') - 28, note]);
+        view.update({ ...options, rows: short });
+        await painted();
+        expect(widths(root)).toEqual([ccy, note]);
+    });
+
     it('ADR-0500: the Sort, the Filter, the Selection, the scroll and the rows stand', async () => {
         const source = GridSource.from(trades(400));
         const selections: string[] = [];
@@ -294,7 +394,7 @@ describe('changing the display on a grid in use', () => {
         if (!mouse(q(root, '.ex-viewport'), 'mousedown', { offsetX: 10, offsetY: 53, buttons: 1 }).defaultPrevented) q(root, '.ex-scroller').focus();
         mouse(q(root, '.ex-viewport'), 'mouseup', { offsetX: 10, offsetY: 53 });
         await painted();
-        key(defined(document.activeElement, 'the Keyboard Field'), 'F2');
+        key(present(document.activeElement, 'the Keyboard Field'), 'F2');
         await painted();
         const editor = q(root, 'input.ex-editor') as HTMLInputElement;
         editor.value = 'typed';

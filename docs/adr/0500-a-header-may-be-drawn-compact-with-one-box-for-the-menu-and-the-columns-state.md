@@ -1,15 +1,22 @@
 # A header may be drawn compact, with one box for the menu and the column's state
 
-*Asked for by the user on 2026-11-10 in the project thread "ヘッダーのコンパクト表示モードを追加" ("Add a
-compact display for the header"). The user's specification settled the frame: two displays chosen for the
+*Asked for by the user on 2026-11-10 in the project thread "Add a compact display for the header" (its
+title and the specification were written in Japanese; they are given here in English). The user's
+specification settled the frame: two displays chosen for the
 whole grid, `standard` being the header as it is and the default, `compact` needing less width; the state
 of a sorted or filtered column visible at rest, never by colour, hover or the menu alone; the meaning of
 a header click untouched; widths the user or a saved view set never overwritten; and the choice
-independent of Density. It left the design inside that frame to this ADR ("通常の設計判断は自律的に進めてください",
-"make the ordinary design decisions yourself"), and asked for two or three designs to be compared. The
+independent of Density. It left the design inside that frame to this ADR ("make the ordinary design decisions yourself"), and
+asked for two or three designs to be compared. The
 comparison is under "Considered". The option's name and the two points marked **for the user** below were
 not put to the user before the implementation; they are stated in the pull request, and a different
 answer is a rewrite of this ADR.*
+
+*(Rewritten the same day, before the pull request, after a review against the specification: section 4
+first had an Auto width measured afresh on a change of display, which let a column its values had
+widened come back narrower, a fit nobody asked for. An Auto width now keeps what its values taught it.
+What a standard header shows at a width fitted under a compact one, and what gives way in a column too
+narrow for both the label and the box, were implied and are now said, in sections 2 and 4.)*
 
 This amends [ADR-0016](./0016-column-width-and-overflow.md) ("What a fit counts in the header"),
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) and
@@ -110,6 +117,15 @@ instead of beside it.
 - **A level of a multi-column Sort** shows its own direction on its own column, as in the standard
   header. Neither display numbers the levels.
 
+- **In a column narrower than its header's charge the box stays and the label gives way.** A width
+  somebody dragged below the charge is kept (section 4), so the header has to choose: the Header Box is
+  painted whole at the right edge, at its own size, and the label is cut with an ellipsis in the room
+  left of it, down to no label at all. So the order is the state and the way to the menu first, then
+  the label; a Sort and a Filter together are one picture in the one box (the funnel and the arrow side
+  by side, each smaller than alone), never two boxes, and neither is dropped for the other. A label that
+  is cut is read whole by widening the column: a drag of the grip, or Size to fit, which gives the width
+  that paints it whole. The header has no tooltip in either display, and this decision adds none.
+
 The compact header does not shrink the type, the ▾ or the button's box, and does not cut the label
 sooner: see section 3.
 
@@ -152,17 +168,30 @@ stands takes it.
   therefore narrows nothing in a grid whose widths are all set: the room it frees is taken by the user
   with Size to fit (the grip's double-click or the menu), or by the Consumer dropping the widths it
   saved.
-- **An Auto width is measured again, afresh, under the display the header now has**, exactly as it is
-  when `hideColumnMenu` or the Grid Metrics change (ADR-0016). Auto is the width the grid computes for
-  what it paints and is never persisted, and what it paints has changed; the result is the width a new
-  grid in that display would give the same rows, in either direction. This is not a new trigger for a
-  fit of the user's columns: nothing `Fixed` moves, and nothing is reported. **For the user:** the
-  specification asked that a change of display should not become an implicit fit of the columns. Read as "a width
-  that was set is not refitted", that holds. Read as "an Auto column keeps the width it had", it would
-  leave Auto columns 28px too wide after a change to compact, and a label cut after a change back to
-  standard; so Auto follows the display. If the second reading was meant, Auto could hold its width on the
-  way to compact and grow only on the way back, at the cost of a grid whose widths depend on the order of
-  its settings.
+- **An Auto width keeps what its values taught it, and takes its header's new need in place of the
+  old one.** Auto is the wider of what the header needs and the widest value the grid has seen, and
+  only the first of those is a fact of how the header is drawn. So a column its header decided is 28px
+  narrower under `compact` and 28px wider again under `standard`; a column its values decided does not
+  move in either direction; and the way back is the width the column had, whatever the order the
+  settings came in. The same now holds when `hideColumnMenu` changes, which before this decision
+  measured the column afresh. Nothing is measured, nothing `Fixed` moves and nothing is reported: the
+  change of display is not a fit. *(Rewritten 2026-11-10, see the note at the top: measured afresh, a
+  column whose values had grown it under earlier rows came back at the width of the rows now painted,
+  which is the implicit fit the specification refused.)* **For the user:** the specification asked
+  that a change of display should not become an implicit fit of the columns, and allowed the table to
+  narrow where the Consumer's own policy says so. An Auto column is that policy, declared by the
+  Consumer, so its header's part follows the display. If Auto columns were meant to hold their width
+  too, they could keep it on the way to compact and grow only on the way back, at the cost of a grid
+  whose widths depend on the order of its settings.
+- **Back to `standard`, a header is the standard one again, at the widths that stand.** Nothing is
+  dropped from it by rule: the ▾ is in its band and the sort mark in its box. What it can lose is room.
+  A `Fixed` width that was fitted under `compact` is up to 28px short of the standard charge, and the
+  standard header does there what it does in any column narrower than its charge: the ▾ stays, the
+  label is cut with an ellipsis, and the sort mark, which follows the label, is cut with it, so the
+  Sort is then read from `aria-sort`, from the column menu, or after the column is widened. The Filter
+  has no mark in a standard header at any width (see Consequences). The user's way out is the one that
+  made the width: Size to fit under `standard` gives the standard charge. The grid does not widen the
+  column for them, because that width was set.
 
 ### 5. Nothing new crosses to the browser's layout, and nothing per cell
 

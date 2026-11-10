@@ -20,6 +20,11 @@ already open. Hide, pin and Size to fit stay in the command list. Excel keeps th
 header's own menu, and this grid has only the one menu to put them in. A column that cannot be
 filtered shows the commands alone.
 
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md): under the
+Compact Header Display "the header's ▾" is the Header Box, the same button showing a ▾, an arrow for a
+Sort, a funnel for a Filter, or both. A press on it opens this one popover whatever it shows, and Alt+↓
+is unchanged.)*
+
 **The two seams stay two seams.** `IGridChrome` still supplies the column menu and the filter
 panel separately, each with its own context (ADR-0009/0010), and the core stacks what the two
 return inside the one popover it places ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)).

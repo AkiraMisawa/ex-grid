@@ -105,10 +105,11 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>How every header lays out what stands beside its label (ADR-0500):
     /// <see cref="GridHeaderDisplay.Standard"/> unless set, which is the header an untouched grid always drew.
     /// <see cref="GridHeaderDisplay.Compact"/> puts the ▾ and the marks of the column's Sort and filter in one Header
-    /// Slot inside the cell's right padding, so a header needs less width. It moves no meaning, and is chosen apart
+    /// Box inside the cell's right padding, so a header needs less width. It moves no meaning, and is chosen apart
     /// from <see cref="Density"/>, <see cref="RowHeight"/> and <see cref="HeaderHeight"/>. Changing it on a grid in use
-    /// keeps the rows, the Sort, the Filter, the Selection, an open edit and every declared width; a column whose
-    /// width is Auto is measured again under the header it now has (ADR-0016).</summary>
+    /// keeps the rows, the Sort, the Filter, the Selection, an open edit and every declared width. A column whose
+    /// width is Auto keeps what its values taught it and takes its header's new need in place of the old one
+    /// (ADR-0016): one its header decided follows the display, one its values decided does not move.</summary>
     [Parameter] public GridHeaderDisplay HeaderDisplay { get; set; }
 
     /// <summary>Whether the menus leave out Copy with headers, and Ctrl+Shift+C is left to the page (ADR-0036,

@@ -399,9 +399,11 @@ the mark with the same number.)*
 this is what a header is charged in the Standard Header Display, which is the default. In the Compact
 one the ▾ and the marks of the column's Sort and Filter share one Header Box inside the cell's padding,
 and a header is charged its label, the em of slack below, and only what that box is wider than the
-padding, 14px at the default metrics where the band and the indicator's box are 42px. The reason for
-counting it always is the same: nothing a column comes to hold moves a column. A change of the display
-measures an Auto width again, as a change of `hideColumnMenu` does, and leaves a Fixed one alone.)*
+padding, 14px at the default metrics where the band and the sort mark's box are 42px. The reason for
+counting it always is the same: nothing a column comes to hold moves a column. An Auto width holds what
+its header needs apart from what its values taught it, so a change of the display, or of
+`hideColumnMenu`, replaces the header's part and keeps the values': a column its header decided follows
+the header, a column its values decided does not move, and a Fixed one is left alone.)*
 
 **Full-width characters are a fourth class, charged at 1em** — the font size. These are the
 characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so

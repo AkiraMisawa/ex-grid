@@ -13,7 +13,7 @@ public enum GridHeaderDisplay
 
     /// <summary>One Header Box inside the cell's right padding for both: the ▾ while the
     /// column has neither a Sort nor a filter, and the mark of what it has while it has one.
-    /// A header needs less width, and a press on the slot opens the column menu either
+    /// A header needs less width, and a press on the box opens the column menu either
     /// way.</summary>
     Compact,
 }

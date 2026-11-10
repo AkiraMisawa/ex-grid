@@ -155,7 +155,7 @@ public sealed record GridMetrics
     }
 
     /// <summary>What the Header Box takes off a compact header's label, past the cell's own
-    /// right padding (ADR-0500): the slot stands inside that padding, so only what the menu
+    /// right padding (ADR-0500): the box stands inside that padding, so only what the menu
     /// button's band is wider than it is charged.</summary>
     internal double HeaderBoxRoomPx => Math.Max(0, MenuButtonBandPx - CellPaddingXPx);
 

@@ -45,7 +45,7 @@ import {
 } from './pending-commit';
 import { HeldTextCommit } from './held-text-commit';
 import { EditHistory, isHistoryInput, type EditState } from './edit-history';
-import { GridMetrics, type GridDensity, type GridHeaderDisplay } from '../grid-metrics';
+import { checkedHeaderDisplay, GridMetrics, type GridDensity, type GridHeaderDisplay } from '../grid-metrics';
 import { GridPresentationDefaults } from '../grid-presentation-defaults';
 import { CellTextMetrics } from '../columns/cell-text-metrics';
 import { inScope, matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
@@ -516,8 +516,9 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * neither, the mark of what it has while it has one, and a press on either opens the column menu. It moves no
      * meaning: a click on a header still sorts, and what can be sorted, filtered or hidden is declared as before. It
      * is chosen apart from `density`, `rowHeight` and `headerHeight`. Changing it on a grid in use keeps the rows,
-     * the Sort, the Filter, the Selection, an open edit and every declared width; a column whose width is Auto is
-     * measured again under the header it now has, as it is when the ▾ comes or goes (ADR-0016).
+     * the Sort, the Filter, the Selection, an open edit and every declared width. A column whose width is Auto keeps
+     * what its values taught it and takes its header's new need in place of the old one, as it does when the ▾
+     * comes or goes (ADR-0016): one its header decided follows the display, one its values decided does not move.
      */
     readonly headerDisplay?: GridHeaderDisplay;
     /** Hears "Hide this column" from the column menu, with the column's `name` (ADR-0010). The grid changes
@@ -2664,14 +2665,12 @@ export class GridView<Row> {
         // array on every render, and nothing about them changed (ADR-0003).
         // The list is compared with the copy taken when it was last handed, never with the Consumer's own array: the
         // same array changed in place and handed again is another list (FN-22, ADR-0003's note of 2026-10-13).
-        // A ▾ that comes or goes changes what a header needs, so every Auto width is measured afresh (ADR-0016).
-        // So does the header's display, which says how wide the ▾ and the marks stand beside the label (ADR-0500).
-        const { headerDisplay = 'standard' }: { readonly headerDisplay?: unknown } = options;
-        if (headerDisplay !== 'standard' && headerDisplay !== 'compact') {
-            throw new RangeError(`headerDisplay is 'standard' or 'compact', not ${JSON.stringify(headerDisplay)} (ADR-0500).`);
-        }
-        const menusChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu || headerDisplay !== this.#headerDisplay;
-        const columnsChanged = metricsChanged || menusChanged || !sameItems(options.columns, this.#declared);
+        // A ▾ that comes or goes changes what a header needs, and so does the header's display, which says how
+        // wide the ▾ and the marks stand beside the label: an Auto width takes its header's new need in place of
+        // the old one, and keeps what its values taught it (ADR-0016, ADR-0500).
+        const headerDisplay = checkedHeaderDisplay(options.headerDisplay);
+        const headerNeedChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu || headerDisplay !== this.#headerDisplay;
+        const columnsChanged = metricsChanged || headerNeedChanged || !sameItems(options.columns, this.#declared);
         if (columnsChanged) {
             const previous = this.#columns;
             const previousWidths = this.#autoWidths;
@@ -2682,15 +2681,15 @@ export class GridView<Row> {
             const at = new Map(previous.map(({ column }, i) => [column.name, i]));
             autoWidths = columns.map(({ column, spec, header, actions }) => {
                 const was = at.get(column.name);
-                if (!metricsChanged && !menusChanged && was !== undefined && itemAt(previous, was).column === column) {
-                    return itemAt(previousWidths, was);
-                }
+                const carried = !metricsChanged && was !== undefined && itemAt(previous, was).column === column ? itemAt(previousWidths, was) : undefined;
+                if (carried !== undefined && !headerNeedChanged) return carried;
                 // The header is content the column paints too: unobserved, a short Auto column would
                 // stand with its label chopped (ADR-0016).
-                if (!spec.width.isAuto) return AutoWidth.of(spec);
-                const auto = AutoWidth.of(spec).observe(metrics.headerRequiredPx({
+                if (!spec.width.isAuto) return carried ?? AutoWidth.of(spec);
+                const auto = (carried ?? AutoWidth.of(spec)).underHeader(metrics.headerRequiredPx({
                     label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false, display: headerDisplay,
                 }));
+                if (carried !== undefined) return auto;
                 // An Action Column paints no value, so the rows never grow it and its header is usually empty:
                 // what it declares is its labels, measured once, side by side, each with its button's box, and
                 // the cell's own padding once (ADR-0016, ADR-0020). A label is text (ticket 83).

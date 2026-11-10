@@ -56,6 +56,12 @@ closes. A seam's contents may open **Inner Popups** — a select's options, a pi
 that their design system draws outside the root; ADR-0039 records what each of the three
 dismissals does while one is open. The three dismissals themselves are unchanged.)*
 
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md): the ▾ is the
+core's, not a seam, and under the Compact Header Display the same button stands inside the cell's
+padding as the Header Box, where it also shows the mark of the column's Sort and Filter. It is still
+the toggle of the first dismissal above, whatever it shows, and the menu it opens is unchanged. A Chrome
+draws none of it.)*
+
 ## Loading indicator — receive and render
 
 ```csharp

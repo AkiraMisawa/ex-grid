@@ -30,7 +30,7 @@ export interface GridMetricsOptions {
 /**
  * How a header lays out what stands beside its label (ADR-0500). `standard` gives the column-menu button a band
  * of its own and the sort mark a box of its own, as an untouched grid always did. `compact` gives both one Header
- * Slot, inside the cell's right padding and a button's width past it: the ▾ while the column has neither a Sort
+ * Box, inside the cell's right padding and a button's width past it: the ▾ while the column has neither a Sort
  * nor a filter, and the mark of what it has while it has one. Neither word is a {@link GridDensity}: the rows'
  * height and the cells' padding are chosen apart from it.
  */
@@ -79,7 +79,12 @@ const fourteen = { font: 14, wide: 14.04, digit: 9.75, narrow: 6.41, other: 15.4
 const chrome = { actionPad: 6, actionBorder: 1, actionGap: 4, menuWidth: 16, menuInset: 6, sortMark: 20, groupToggle: 20 } as const;
 
 const densities: ReadonlySet<string> = new Set<GridDensity>(['compact', 'comfortable', 'standard', 'excel']);
-const headerDisplays: ReadonlySet<string> = new Set<GridHeaderDisplay>(['standard', 'compact']);
+/** `display` as a Header Display, `'standard'` where none is given: anything else is refused by name (ADR-0500). */
+export function checkedHeaderDisplay(display: unknown): GridHeaderDisplay {
+    if (display === undefined || display === 'standard') return 'standard';
+    if (display === 'compact') return 'compact';
+    throw new RangeError(`A header display is 'standard' or 'compact', not ${JSON.stringify(display)} (ADR-0500).`);
+}
 
 function presetOf(density: GridDensity): Preset {
     switch (density) {
@@ -284,10 +289,7 @@ export class GridMetrics {
      * nothing a column comes to hold moves its label either.
      */
     headerRequiredPx(header: HeaderOptions): number {
-        const { display = 'standard' }: { readonly display?: unknown } = header;
-        if (typeof display !== 'string' || !headerDisplays.has(display)) {
-            throw new RangeError(`Unknown header display '${String(display)}' (ADR-0500).`);
-        }
+        const display = checkedHeaderDisplay(header.display);
         const label = this.cellMetrics.for('text').estimatePx(header.label) + this.cellMetrics.fullWidthPx;
         if (display === 'compact') return label + (header.menuButton || header.sortable ? this.headerBoxRoomPx : 0);
         return label

@@ -161,15 +161,24 @@
             <code>HideColumnMenu</code>, a compact header keeps the box as a mark, with nothing to press.
         </p>
         <p>
+            In a column the user has dragged narrower than its header needs, the box stays whole and the label
+            gives way: it is cut with an ellipsis in the room left of the box. A sort and a filter together are
+            one picture in the one box, never two. A label that is cut is read whole by widening the column, and
+            <em>Size to fit</em> gives exactly the width that paints it whole; the header has no tooltip in
+            either display.
+        </p>
+        <p>
             A compact header needs 28&nbsp;px less than a standard one on a column that can be sorted and has the
             menu, at the default <code>Density</code>, which it is chosen apart from. What that does to a column
             depends on its width:
         </p>
         <ul>
             <li>
-                <strong>An Auto column is measured under the display its header has</strong>, so it comes out
-                narrower wherever the header decided its width. Changing the display on a grid in use measures the
-                Auto columns again, as a new grid in that display would.
+                <strong>An Auto column counts the header its display draws</strong>, so it comes out narrower
+                wherever the header decided its width. Changing the display on a grid in use replaces only the
+                header's part of an Auto width: a column its header decided follows the display, in both
+                directions, and a column its values decided does not move. Nothing is measured again.
+                The same holds when <code>HideColumnMenu</code> changes.
             </li>
             <li>
                 <strong>A Fixed width is never changed</strong>: one you declared, one the user dragged or fitted,
@@ -178,6 +187,13 @@
                 header, or by your application handing back the columns without the saved widths.
             </li>
         </ul>
+        <p>
+            Going back to <code>Standard</code> works the same way, and a width that was fitted under
+            <code>Compact</code> is then up to 28&nbsp;px short of what a standard header needs. The standard header
+            keeps its ▾ and cuts the label with an ellipsis, and a sort mark, which follows the label, is cut with
+            it. <em>Size to fit</em> under <code>Standard</code> gives the column its standard width again; the grid
+            does not widen a width that was set.
+        </p>
         <p>
             Changing the display keeps the rows, the sort, the filter, the selection, the scroll position and an
             open edit. In ExGrid for React the option is <code>headerDisplay</code>, <code>'standard'</code> or

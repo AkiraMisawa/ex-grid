@@ -102,29 +102,31 @@ test('FN-12f: under a compact header a click sorts and a press on the box opens 
     await expect(tenor.locator('.ex-menu-button')).toHaveAccessibleName('Column menu, filtered');
     expect(await boxOf(tenor)).toEqual({ picture: true, glyph: '""', strength: '1' });
 
+    // The pointer rests on another header, and the grid has painted all it owes before the widths are read.
     await header(grid, 'CCY').hover({ force: true });
+    await settled(grid);
     expect(await widthsOf(grid), 'a Sort, a Filter and a pointer move no column').toEqual(declared);
 });
 
-test('FN-12f: Blazor\'s HeaderDisplay changes the header of the grid that stands, and each grid\'s Auto widths are its own display\'s (ADR-0500) @blazor', async ({ page }) => {
+// What a header is charged and what it paints are the Script Core's, judged above on the React host. Blazor's own
+// part is the crossing: a parameter that changes is an update of the grid that stands, never another grid, and
+// raises no event in .NET.
+test('FN-12h: Blazor\'s HeaderDisplay, changed, is taken by the grid that stands, and .NET hears no width (ADR-0500) @blazor', async ({ page }) => {
     await open(page);
     const grid = gridIn(page, 'held-grid');
-    const declared = await widthsOf(grid);
     const root = await grid.elementHandle();
 
     await page.locator('#header-display-compact').click();
     await expect(page.locator('#header-display-status')).toHaveText('Display: compact');
     await expect(grid.locator('.ex-header')).toHaveAttribute('data-ex-header-display', 'compact');
     await settled(grid);
-
     expect(await root.evaluate((el) => el.isConnected), 'the grid that stood is the grid that stands').toBe(true);
-    expect(await widthsOf(grid)).toEqual(declared);
     await expect(page.locator('#width-status')).toHaveText('Changes:');
 
-    const standard = await widthsOf(gridIn(page, 'standard-grid'));
-    const compact = await widthsOf(gridIn(page, 'compact-grid'));
-    for (const label of HEADER_DECIDED) {
-        expect(standard[label] - compact[label], label).toBeGreaterThan(27);
-        expect(standard[label] - compact[label], label).toBeLessThan(29);
-    }
+    await page.locator('#header-display-standard').click();
+    await expect(page.locator('#header-display-status')).toHaveText('Display: standard');
+    await expect(grid.locator('.ex-header')).not.toHaveAttribute('data-ex-header-display');
+    await settled(grid);
+    expect(await root.evaluate((el) => el.isConnected), 'and back').toBe(true);
+    await expect(page.locator('#width-status')).toHaveText('Changes:');
 });
