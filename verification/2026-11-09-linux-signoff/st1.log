@@ -1,0 +1,11 @@
+node v26.12.1, dotnet 10.0.203
+
+ RUN  v5.0.5 /home/claude/ex-grid/.claude/worktrees/signoff/packages/core
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  12:43:15
+   Duration  56.86s (tests 99%, environment 1%)
+
+ST1 exit 0

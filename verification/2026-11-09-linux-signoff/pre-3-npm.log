@@ -1,0 +1,642 @@
+node v26.12.1, dotnet 10.0.203
+
+added 270 packages, and audited 304 packages in 20s
+
+39 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> ex-grid@0.0.0 build
+> npm run build -w packages
+
+
+> @ex-grid/data@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/data-xlsx@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/core@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/chart@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/pivot-engine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/pivot@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/board@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/react@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/chart-react@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/mantine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/chart-mantine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/mui@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/chart-mui@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/blazor@0.0.0-dev build
+> node ../../tools/scripts/build-blazor.mjs --ships-shared
+
+dist/ex-grid-core.min.js: 53038 bytes from 10 sources, version 9c089fccef5c
+dist/ex-grid-script.min.js: 700953 bytes from 173 sources, version 5a1a37d4fb4c
+
+> @ex-grid/pivot-react@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/pivot-mantine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/pivot-mui@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/pivot-blazor@0.0.0-dev build
+> node ../../tools/scripts/build-blazor.mjs --name ex-pivot
+
+dist/ex-pivot.min.js: 453598 bytes from 83 sources, version 6744b0106823
+
+> @ex-grid/chart-blazor@0.0.0-dev build
+> node ../../tools/scripts/build-blazor.mjs --name ex-chart-core
+
+dist/ex-chart-core.min.js: 186271 bytes from 48 sources, version 0e505ec44625
+
+> @ex-grid/board-react@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/board-blazor@0.0.0-dev build
+> node ../../tools/scripts/build-blazor.mjs --name ex-board
+
+dist/ex-board.min.js: 696896 bytes from 146 sources, version d8abab16735c
+
+> @ex-grid/sheet-engine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/sheet-xlsx@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/sheet@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/sheet-react@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/sheet-blazor@0.0.0-dev build
+> node ../../tools/scripts/build-blazor.mjs --name ex-sheet
+
+dist/ex-sheet.min.js: 550231 bytes from 112 sources, version f08c22ddd8be
+
+> @ex-grid/sheet-mantine@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+
+> @ex-grid/sheet-mui@0.0.0-dev build
+> node ../../tools/scripts/build.mjs
+
+Analysis will use the bundled TypeScript version 5.9.3
+== pack 0.0.0-smoke.1794227764581
+npm notice
+npm notice package: @ex-grid/data@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.2kB README.md
+npm notice 37.7kB dist/index.d.ts
+npm notice 230.1kB dist/index.js
+npm notice 529.3kB dist/index.js.map
+npm notice 701B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/data
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-data-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 192.7 kB
+npm notice unpacked size: 800.0 kB
+npm notice shasum: e69590ddf6d931664e253c3c3e815d0d483cc209
+npm notice integrity: sha512-Ay/xhR9W7FsAB[...]V+aA7rX8makqg==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/core@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.5kB README.md
+npm notice 326.4kB dist/index.d.ts
+npm notice 1.3MB dist/index.js
+npm notice 3.0MB dist/index.js.map
+npm notice 37.1kB ex-grid.min.css
+npm notice 135.9kB ex-grid.min.css.map
+npm notice 840B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/core
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-core-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 1.2 MB
+npm notice unpacked size: 4.8 MB
+npm notice shasum: 09852ecec6dcfb869581c2b7c11375621403fbb7
+npm notice integrity: sha512-FtaToR675TRPU[...]RqjIE9xe2UIwg==
+npm notice total files: 8
+npm notice
+npm notice
+npm notice package: @ex-grid/chart@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 115.3kB dist/index.d.ts
+npm notice 412.9kB dist/index.js
+npm notice 976.3kB dist/index.js.map
+npm notice 11.5kB ex-chart.min.css
+npm notice 22.7kB ex-chart.min.css.map
+npm notice 1.1kB package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/chart
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-chart-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 366.8 kB
+npm notice unpacked size: 1.5 MB
+npm notice shasum: 8952888ee5cfe951f058d6c900017e0cbf9c6212
+npm notice integrity: sha512-0/SHOQysOnAb/[...]viWi6YwSjvLqQ==
+npm notice total files: 8
+npm notice
+npm notice
+npm notice package: @ex-grid/pivot-engine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.3kB README.md
+npm notice 121.6kB dist/index.d.ts
+npm notice 624.4kB dist/index.js
+npm notice 1.4MB dist/index.js.map
+npm notice 836B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/pivot-engine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-pivot-engine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 456.7 kB
+npm notice unpacked size: 2.1 MB
+npm notice shasum: c67a90e1d7f579f33351d9b2480359db8e5cf994
+npm notice integrity: sha512-FkhlsMna53wiO[...]HRouuRfaDNi6w==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/pivot@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.5kB README.md
+npm notice 46.7kB dist/index.d.ts
+npm notice 258.6kB dist/index.js
+npm notice 605.9kB dist/index.js.map
+npm notice 12.6kB ex-pivot.min.css
+npm notice 29.2kB ex-pivot.min.css.map
+npm notice 906B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/pivot
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-pivot-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 229.8 kB
+npm notice unpacked size: 956.5 kB
+npm notice shasum: f1753848e39ad14214e4fe9dca85c6d3395bd1fa
+npm notice integrity: sha512-TI0J0tRIvt+1R[...]uc5bX6a2vwokg==
+npm notice total files: 8
+npm notice
+npm notice
+npm notice package: @ex-grid/board@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 61.4kB dist/index.d.ts
+npm notice 145.7kB dist/index.js
+npm notice 317.3kB dist/index.js.map
+npm notice 1.0kB package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/board
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-board-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 125.1 kB
+npm notice unpacked size: 528.2 kB
+npm notice shasum: b55e50722b4a403ea1f3d148a6f6e893b8f0ca4f
+npm notice integrity: sha512-Db6jHI8BQl/yM[...]fkVzL26+1i4kg==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/react@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 19.0kB dist/index.d.ts
+npm notice 13.3kB dist/index.js
+npm notice 45.5kB dist/index.js.map
+npm notice 837B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/react
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-react-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 20.7 kB
+npm notice unpacked size: 81.3 kB
+npm notice shasum: f3075bcf4bf1c116baa849fe80a772a3f67e9dd6
+npm notice integrity: sha512-yZEzFTHoOPdPl[...]fR6T2QoA4Moxg==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/chart-react@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 10.1kB dist/index.d.ts
+npm notice 9.0kB dist/index.js
+npm notice 30.1kB dist/index.js.map
+npm notice 897B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/chart-react
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-chart-react-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 13.6 kB
+npm notice unpacked size: 52.9 kB
+npm notice shasum: 60da3ddfba86f6ae10577495ff0dd77f5cfd85e2
+npm notice integrity: sha512-4Lro8GmxnUcsT[...]YHWeQNBZ+0Z0A==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/pivot-react@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 9.8kB dist/index.d.ts
+npm notice 6.1kB dist/index.js
+npm notice 23.1kB dist/index.js.map
+npm notice 896B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/pivot-react
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-pivot-react-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 10.8 kB
+npm notice unpacked size: 42.7 kB
+npm notice shasum: 4f962d93e776a69db8c51674fe2a008f98e70e8a
+npm notice integrity: sha512-aVdqjdOd4Hq8i[...]ectbMhWc3T+8Q==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/board-react@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.8kB README.md
+npm notice 2.2kB dist/index.d.ts
+npm notice 3.2kB dist/index.js
+npm notice 10.0kB dist/index.js.map
+npm notice 1.1kB package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/board-react
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-board-react-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 6.1 kB
+npm notice unpacked size: 19.4 kB
+npm notice shasum: 7ba67f2eb4d628ac2417152df3f690ec6286a60d
+npm notice integrity: sha512-qG51qQqsy5Uvo[...]OC+rxxjkAqXMA==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/mantine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.8kB README.md
+npm notice 5.5kB dist/index.d.ts
+npm notice 25.1kB dist/index.js
+npm notice 61.7kB dist/index.js.map
+npm notice 1.0kB package.json
+npm notice 13.8kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/mantine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-mantine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 25.6 kB
+npm notice unpacked size: 110.0 kB
+npm notice shasum: df4fc0cf8dbfea4201f303d088f9ab0fcb9ca869
+npm notice integrity: sha512-DkMrCuYE0dVI0[...]V0rrYOircXcJQ==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/chart-mantine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.0kB README.md
+npm notice 3.1kB dist/index.d.ts
+npm notice 8.5kB dist/index.js
+npm notice 18.5kB dist/index.js.map
+npm notice 1.3kB package.json
+npm notice 2.8kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/chart-mantine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-chart-mantine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 10.3 kB
+npm notice unpacked size: 37.3 kB
+npm notice shasum: 1d37af30fc62a646685dfd4f64e0be3671d94f60
+npm notice integrity: sha512-oEXmiKjXEQX4y[...]nfgbD02epD2bw==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/mui@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.9kB README.md
+npm notice 5.6kB dist/index.d.ts
+npm notice 26.0kB dist/index.js
+npm notice 64.0kB dist/index.js.map
+npm notice 1.1kB package.json
+npm notice 11.7kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/mui
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-mui-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 26.3 kB
+npm notice unpacked size: 111.3 kB
+npm notice shasum: cff82348edd046a7b4eab9b773e4eadc4603de10
+npm notice integrity: sha512-2Z3k4+IdKPKSC[...]YCh3YLyGI6IwQ==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/chart-mui@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.1kB README.md
+npm notice 3.2kB dist/index.d.ts
+npm notice 9.6kB dist/index.js
+npm notice 21.2kB dist/index.js.map
+npm notice 1.3kB package.json
+npm notice 3.6kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/chart-mui
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-chart-mui-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 11.6 kB
+npm notice unpacked size: 42.0 kB
+npm notice shasum: 3534ed6c1d0972e91930c34f5002279dbe1161f5
+npm notice integrity: sha512-3o1dhiqpk3ICK[...]eqrxPBNcJ+TtA==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/data-xlsx@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.3kB README.md
+npm notice 40.5kB dist/index.d.ts
+npm notice 154.8kB dist/index.js
+npm notice 357.5kB dist/index.js.map
+npm notice 853B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/data-xlsx
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-data-xlsx-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 133.8 kB
+npm notice unpacked size: 556.0 kB
+npm notice shasum: b075669b3df4c6d5d89b76eb28225e0741ea732d
+npm notice integrity: sha512-CroXssDX4RkFV[...]l57ckcERbeHoQ==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/pivot-mantine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.1kB README.md
+npm notice 2.3kB dist/index.d.ts
+npm notice 20.4kB dist/index.js
+npm notice 42.3kB dist/index.js.map
+npm notice 1.3kB package.json
+npm notice 11.5kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/pivot-mantine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-pivot-mantine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 18.2 kB
+npm notice unpacked size: 80.9 kB
+npm notice shasum: 79b8cb3a127c7a239dacb1760875a34359acdf33
+npm notice integrity: sha512-VWmtbz5Xy7qon[...]PRAQOWI38mcgg==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/pivot-mui@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.1kB README.md
+npm notice 2.5kB dist/index.d.ts
+npm notice 23.1kB dist/index.js
+npm notice 48.0kB dist/index.js.map
+npm notice 1.3kB package.json
+npm notice 12.4kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/pivot-mui
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-pivot-mui-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 21.1 kB
+npm notice unpacked size: 90.5 kB
+npm notice shasum: 37c46da7091237f4fae67226d61100189e68b6e4
+npm notice integrity: sha512-H3TpCLsTk00LV[...]oBx0WdcC9MrzA==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet-engine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.2kB README.md
+npm notice 186.7kB dist/index.d.ts
+npm notice 730.2kB dist/index.js
+npm notice 1.6MB dist/index.js.map
+npm notice 760B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet-engine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-engine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 574.7 kB
+npm notice unpacked size: 2.5 MB
+npm notice shasum: 9c15fa1cc3e325b73b8219de01178b09d70d204d
+npm notice integrity: sha512-hVrxhgkbkshVC[...]/sA/JIuSoJijw==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.6kB README.md
+npm notice 103.5kB dist/index.d.ts
+npm notice 394.4kB dist/index.js
+npm notice 835.7kB dist/index.js.map
+npm notice 13.8kB ex-sheet.min.css
+npm notice 39.3kB ex-sheet.min.css.map
+npm notice 998B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 334.6 kB
+npm notice unpacked size: 1.4 MB
+npm notice shasum: 470bacc0a332380e24334e2b57c47ee3371401a0
+npm notice integrity: sha512-m5RxPydRoYTpm[...]o41B75dG9mVow==
+npm notice total files: 8
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet-react@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.md
+npm notice 12.4kB dist/index.d.ts
+npm notice 14.2kB dist/index.js
+npm notice 44.8kB dist/index.js.map
+npm notice 944B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet-react
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-react-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 20.2 kB
+npm notice unpacked size: 75.1 kB
+npm notice shasum: 9b0d8371b902d3893d8ad573a06f8bf0ab53f066
+npm notice integrity: sha512-rN9AjP5ky0O14[...]6/P9WMpKxp7rA==
+npm notice total files: 6
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet-mantine@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.0kB README.md
+npm notice 2.2kB dist/index.d.ts
+npm notice 27.0kB dist/index.js
+npm notice 54.2kB dist/index.js.map
+npm notice 1.2kB package.json
+npm notice 6.3kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet-mantine
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-mantine-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 23.5 kB
+npm notice unpacked size: 94.0 kB
+npm notice shasum: 5404b15e814634eae12e608fbb3636c97892b3d8
+npm notice integrity: sha512-RgSDCJdCzDHZ3[...]kvaOWEq1Ede7g==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet-mui@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 2.0kB README.md
+npm notice 2.3kB dist/index.d.ts
+npm notice 28.2kB dist/index.js
+npm notice 58.9kB dist/index.js.map
+npm notice 1.3kB package.json
+npm notice 7.5kB styles.css
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet-mui
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-mui-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 26.3 kB
+npm notice unpacked size: 101.3 kB
+npm notice shasum: 6d090180568e6950fdfeb570fa21cda87d79969d
+npm notice integrity: sha512-RK/SnV6hGqX8O[...]wjvS3Ieem9ffQ==
+npm notice total files: 7
+npm notice
+npm notice
+npm notice package: @ex-grid/sheet-xlsx@0.0.0-smoke.1794227764581
+npm notice Tarball Contents
+npm notice 1.1kB LICENSE
+npm notice 1.4kB README.md
+npm notice 20.6kB dist/index.d.ts
+npm notice 105.7kB dist/index.js
+npm notice 255.9kB dist/index.js.map
+npm notice 973B package.json
+npm notice Tarball Details
+npm notice name: @ex-grid/sheet-xlsx
+npm notice version: 0.0.0-smoke.1794227764581
+npm notice filename: ex-grid-sheet-xlsx-0.0.0-smoke.1794227764581.tgz
+npm notice package size: 101.2 kB
+npm notice unpacked size: 385.7 kB
+npm notice shasum: e652caf5672ee14e5431d4ac46eb235449644d2c
+npm notice integrity: sha512-eojTJ1TYd4fM+[...]XDq/gE7WH/iZQ==
+npm notice total files: 6
+npm notice
+   ex-grid-data-0.0.0-smoke.1794227764581.tgz
+   ex-grid-core-0.0.0-smoke.1794227764581.tgz
+   ex-grid-chart-0.0.0-smoke.1794227764581.tgz
+   ex-grid-pivot-engine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-pivot-0.0.0-smoke.1794227764581.tgz
+   ex-grid-board-0.0.0-smoke.1794227764581.tgz
+   ex-grid-react-0.0.0-smoke.1794227764581.tgz
+   ex-grid-chart-react-0.0.0-smoke.1794227764581.tgz
+   ex-grid-pivot-react-0.0.0-smoke.1794227764581.tgz
+   ex-grid-board-react-0.0.0-smoke.1794227764581.tgz
+   ex-grid-mantine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-chart-mantine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-mui-0.0.0-smoke.1794227764581.tgz
+   ex-grid-chart-mui-0.0.0-smoke.1794227764581.tgz
+   ex-grid-data-xlsx-0.0.0-smoke.1794227764581.tgz
+   ex-grid-pivot-mantine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-pivot-mui-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-engine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-react-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-mantine-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-mui-0.0.0-smoke.1794227764581.tgz
+   ex-grid-sheet-xlsx-0.0.0-smoke.1794227764581.tgz
+== what each tarball holds
+== an application that takes them from the tarballs alone
+
+added 127 packages in 10s
+npm package check: the packed data and sheet engine packages ran on Node.
+npm package check: 23 packages at 0.0.0-smoke.1794227764581, taken as a Consumer takes them.
+PRE-3 npm exit 0

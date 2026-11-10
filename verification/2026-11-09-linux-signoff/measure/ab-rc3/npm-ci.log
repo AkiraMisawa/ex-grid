@@ -1,0 +1,13 @@
+node v26.12.1, dotnet 10.0.203
+
+added 270 packages, and audited 304 packages in 8s
+
+39 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.

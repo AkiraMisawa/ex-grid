@@ -1,0 +1,173 @@
+node v26.12.1, dotnet 10.0.203
+
+Running 2 tests using 1 worker
+
+Rows TradeDate; Columns Product: 1,350 combinations, run 1
+Rows TradeDate; Columns Product: 1,350 combinations, run 2
+Rows TradeDate; Columns Product: 1,350 combinations, run 3
+Rows TradeDate; Columns Product: 1,350 combinations, run 4
+Rows TradeDate, Book; Columns Product: 13,500 combinations, run 1
+Rows TradeDate, Book; Columns Product: 13,500 combinations, run 2
+Rows TradeDate, Book; Columns Product: 13,500 combinations, run 3
+Rows TradeDate, Book; Columns Product: 13,500 combinations, run 4
+Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations, run 1
+Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations, run 2
+Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations, run 3
+Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations, run 4
+PV-21 below the cap {
+ "Rows TradeDate; Columns Product: 1,350 combinations": {
+  "first": {
+   "answerMs": 260.9,
+   "longestTaskMs": 0,
+   "firstVisualAnswerMs": 37.2
+  },
+  "runs": 3,
+  "firstVisualAnswerMs": {
+   "median": 35.4,
+   "min": 34.6,
+   "max": 43.4
+  },
+  "answerMs": {
+   "median": 179.5,
+   "min": 176.8,
+   "max": 225.3
+  },
+  "longestTaskMs": {
+   "median": 0,
+   "min": 0,
+   "max": 0
+  },
+  "longestTaskSettlingMs": {
+   "median": 0,
+   "min": 0,
+   "max": 0
+  },
+  "inputDelayMs": {
+   "median": 0.7,
+   "min": 0.4,
+   "max": 2.7
+  },
+  "reportRows": 271,
+  "notice": ""
+ },
+ "Rows TradeDate, Book; Columns Product: 13,500 combinations": {
+  "first": {
+   "answerMs": 340.3,
+   "longestTaskMs": 66,
+   "firstVisualAnswerMs": 35.4
+  },
+  "runs": 3,
+  "firstVisualAnswerMs": {
+   "median": 37.1,
+   "min": 34.9,
+   "max": 76.9
+  },
+  "answerMs": {
+   "median": 321.9,
+   "min": 241,
+   "max": 334.8
+  },
+  "longestTaskMs": {
+   "median": 0,
+   "min": 0,
+   "max": 76
+  },
+  "longestTaskSettlingMs": {
+   "median": 0,
+   "min": 0,
+   "max": 76
+  },
+  "inputDelayMs": {
+   "median": 0.4,
+   "min": 0.4,
+   "max": 0.6
+  },
+  "reportRows": 2971,
+  "notice": ""
+ },
+ "Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations": {
+  "first": {
+   "answerMs": 624.7,
+   "longestTaskMs": 94,
+   "firstVisualAnswerMs": 81.4
+  },
+  "runs": 3,
+  "firstVisualAnswerMs": {
+   "median": 35.1,
+   "min": 34.1,
+   "max": 36.8
+  },
+  "answerMs": {
+   "median": 488.8,
+   "min": 443.4,
+   "max": 617
+  },
+  "longestTaskMs": {
+   "median": 83,
+   "min": 80,
+   "max": 89
+  },
+  "longestTaskSettlingMs": {
+   "median": 83,
+   "min": 80,
+   "max": 89
+  },
+  "inputDelayMs": {
+   "median": 0.4,
+   "min": 0.3,
+   "max": 0.4
+  },
+  "reportRows": 8371,
+  "notice": ""
+ }
+}
+  ✓  1 [chrome] › measure-pivot.spec.mjs:379:1 › PV-21: questions of a thousand to thirty thousand leaves, over a million trades on /pivot @blazor (26.5s)
+Rows TradeDate, Quantity; Columns Product: 66,150 combinations, run 1
+Rows TradeDate, Quantity; Columns Product: 66,150 combinations, run 2
+Rows TradeDate, Quantity; Columns Product: 66,150 combinations, run 3
+Rows TradeDate, Quantity; Columns Product: 66,150 combinations, run 4
+Rows TradeDate, Notional: 134,730 combinations, run 1
+Rows TradeDate, Notional: 134,730 combinations, run 2
+Rows TradeDate, Notional: 134,730 combinations, run 3
+Rows TradeDate, Notional: 134,730 combinations, run 4
+Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations, run 1
+Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations, run 2
+Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations, run 3
+Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations, run 4
+Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused, run 1
+Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused, run 2
+input-journal {"script":[{"root":"ex1-root","journal":null}]}
+  ✘  2 [chrome] › measure-pivot.spec.mjs:416:1 › PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot @blazor (1.8m)
+
+
+  1) [chrome] › measure-pivot.spec.mjs:416:1 › PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot @blazor 
+
+    Error: expect(locator).toBeHidden() failed
+
+    Locator:  locator('.ex-pivot-refusal-notice')
+    Expected: hidden
+    Received: visible
+    Timeout:  60000ms
+
+    Call log:
+      - Expect "toBeHidden" with timeout 60000ms
+      - waiting for locator('.ex-pivot-refusal-notice')
+        123 × locator resolved to <div role="alert" class="ex-pivot-refusal-notice">Currency in Columns makes more than 200,000 combi…</div>
+            - unexpected value "visible"
+
+
+      358 |             await page.locator('#pivot-reset').click();
+      359 |             await expect(page.locator(REPORT)).toHaveAttribute('aria-rowcount', firstRows, { timeout: 300_000 });
+    > 360 |             await expect(page.locator('.ex-pivot-refusal-notice')).toBeHidden();
+          |                                                                    ^
+      361 |             await quiet(page);
+      362 |             await layout.build();
+      363 |             await expect(update).toBeEnabled();
+        at questions (/home/claude/ex-grid/.claude/worktrees/signoff/tests/browser/measure-pivot.spec.mjs:360:68)
+        at /home/claude/ex-grid/.claude/worktrees/signoff/tests/browser/measure-pivot.spec.mjs:466:21
+
+    Error Context: test-results/measure-pivot-PV-21-a-ques-2ee83-lion-trades-on-pivot-blazor-chrome/error-context.md
+
+  1 failed
+    [chrome] › measure-pivot.spec.mjs:416:1 › PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot @blazor 
+  1 passed (2.3m)

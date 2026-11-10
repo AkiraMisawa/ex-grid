@@ -1,0 +1,115 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.Engine/ExChart.Engine.csproj (in 444 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart/ExChart.csproj (in 559 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet/ExSheet.csproj (in 573 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj (in 442 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExBoard/ExBoard.csproj (in 32 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj (in 4 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 5 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj (in 3 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid/ExGrid.csproj (in 8 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot/ExPivot.csproj (in 12 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 12 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data/ExGrid.Data.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj (in 3 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 4 ms).
+  Restored /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 9 ms).
+  29 of 45 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+  ExGrid.Release -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tools/release/ExGrid.Release/bin/Debug/net10.0/ExGrid.Release.dll
+  ExGrid.Release.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll' [net10.0|x64]
+  ExSheet.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExSheet.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 594, Skipped: 2, Total: 596, Duration: 11s 875ms - ExGrid.Data.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+  ExGrid -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExGrid.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 215, Skipped: 0, Total: 215, Duration: 15s 473ms - ExGrid.Release.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 319, Skipped: 0, Total: 319, Duration: 3s 559ms - ExGrid.Components.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+  ExGrid.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 6302, Skipped: 3, Total: 6305, Duration: 27s 428ms - ExSheet.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+  ExChart.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExPivot.Engine -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Arrow.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 164, Skipped: 1, Total: 165, Duration: 1s 870ms - ExGrid.Data.Arrow.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+  ExPivot.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 1897, Skipped: 0, Total: 1897, Duration: 16s 882ms - ExGrid.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+  ExGrid.Data.Xlsx.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 151, Skipped: 0, Total: 151, Duration: 6s 328ms - ExGrid.Data.Xlsx.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll' [net10.0|x64]
+  ExSheet.Xlsx.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 688, Skipped: 4, Total: 692, Duration: 21s 117ms - ExPivot.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+  ExGrid.Docs.Generator -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+  Passed! - Failed: 0, Passed: 669, Skipped: 0, Total: 669, Duration: 10s 900ms - ExSheet.Xlsx.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll' [net10.0|x64]
+  ExChart.Engine.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 597, Skipped: 0, Total: 597, Duration: 2s 961ms - ExChart.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll' [net10.0|x64]
+  ExGrid.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExGrid.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+  ExPivot -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExGrid.DemoApi -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExChart -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExSheet -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExGrid.DemoApi.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 196, Skipped: 0, Total: 196, Duration: 3s 457ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+  ExSheet.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 38, Skipped: 0, Total: 38, Duration: 3s 439ms - ExSheet.Components.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 159, Skipped: 0, Total: 159, Duration: 23s 769ms - ExGrid.DemoApi.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+  ExGrid.Docs.Generator.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll' [net10.0|x64]
+  ExBoard -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExPivot.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 23, Skipped: 0, Total: 23, Duration: 2s 435ms - ExPivot.Components.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|x64]
+  ExSheet.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 431, Skipped: 0, Total: 431, Duration: 5s 859ms - ExGrid.Docs.Generator.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll' [net10.0|x64]
+  ExPivot.MudBlazor.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 2s 337ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 1s 937ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+  ExBoard.Tests -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll' [net10.0|x64]
+  ExChart.Components -> /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+  Run tests: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 2s 379ms - ExChart.Components.Tests.dll (net10.0|x64)
+  Passed! - Failed: 0, Passed: 219, Skipped: 0, Total: 219, Duration: 2s 582ms - ExBoard.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+  Tests succeeded: '/home/claude/ex-grid/.claude/worktrees/signoff/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll' [net10.0|x64]
+STEP1 exit 0

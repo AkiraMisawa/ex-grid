@@ -1,0 +1,680 @@
+﻿2026-11-09T13:42:19.6703249Z Current runner version: '2.338.2'
+2026-11-09T13:42:19.6946877Z ##[group]Runner Image Provisioner
+2026-11-09T13:42:19.6947736Z Hosted Compute Agent
+2026-11-09T13:42:19.6948331Z Version: 20261103.629
+2026-11-09T13:42:19.6948960Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-09T13:42:19.6949748Z Build Date: 2026-11-03T17:26:59Z
+2026-11-09T13:42:19.6950432Z Worker ID: {bbf89476-43c3-497d-aaad-dd3e717a38f4}
+2026-11-09T13:42:19.6951185Z Region: southcentralus
+2026-11-09T13:42:19.6951857Z Cloud: Azure
+2026-11-09T13:42:19.6952542Z ##[endgroup]
+2026-11-09T13:42:19.6954082Z ##[group]Operating System
+2026-11-09T13:42:19.6954741Z Microsoft Windows Server 2025
+2026-11-09T13:42:19.6955332Z 10.0.26100
+2026-11-09T13:42:19.6955958Z Datacenter
+2026-11-09T13:42:19.6956500Z ##[endgroup]
+2026-11-09T13:42:19.6957075Z ##[group]Runner Image
+2026-11-09T13:42:19.6957672Z Image: windows-2025-vs2026
+2026-11-09T13:42:19.6958258Z Version: 20261103.298.1
+2026-11-09T13:42:19.6960088Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261103.298/images/windows/Windows2025-VS2026-Readme.md
+2026-11-09T13:42:19.6961862Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261103.298
+2026-11-09T13:42:19.6962852Z ##[endgroup]
+2026-11-09T13:42:19.6963921Z ##[group]GITHUB_TOKEN Permissions
+2026-11-09T13:42:19.6966196Z Contents: read
+2026-11-09T13:42:19.6966792Z Metadata: read
+2026-11-09T13:42:19.6967386Z ##[endgroup]
+2026-11-09T13:42:19.6969410Z Secret source: Actions
+2026-11-09T13:42:19.6970393Z Cache mode: write
+2026-11-09T13:42:19.6971263Z Prepare workflow directory
+2026-11-09T13:42:19.8165749Z Prepare all required actions
+2026-11-09T13:42:19.8213806Z Getting action download info
+2026-11-09T13:42:20.0914132Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-09T13:42:20.2691046Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-11-09T13:42:20.8425262Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-09T13:42:21.3521397Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.2.0-rc.4 (0326ce27ff7f179f98aa1525f794c4630a48a8d5)
+2026-11-09T13:42:21.3526347Z ##[group] Inputs
+2026-11-09T13:42:21.3526918Z   version: 0.2.0-rc.4
+2026-11-09T13:42:21.3527772Z   long: true
+2026-11-09T13:42:21.3528249Z ##[endgroup]
+2026-11-09T13:42:21.3529258Z Complete job name: Every layer, and the packages / The Windows desktop rows (VZ-14, VZ-16, FN-12e, SH-42, SH-51, SH-52)
+2026-11-09T13:42:22.0040571Z ##[group]Run actions/checkout@v7
+2026-11-09T13:42:22.0041766Z with:
+2026-11-09T13:42:22.0042218Z   repository: AkiraMisawa/ex-grid
+2026-11-09T13:42:22.0046400Z   token: ***
+2026-11-09T13:42:22.0046839Z   ssh-strict: true
+2026-11-09T13:42:22.0047287Z   ssh-user: git
+2026-11-09T13:42:22.0047742Z   persist-credentials: true
+2026-11-09T13:42:22.0048244Z   clean: true
+2026-11-09T13:42:22.0048745Z   sparse-checkout-cone-mode: true
+2026-11-09T13:42:22.0049280Z   fetch-depth: 1
+2026-11-09T13:42:22.0049707Z   fetch-tags: false
+2026-11-09T13:42:22.0050152Z   show-progress: true
+2026-11-09T13:42:22.0050602Z   lfs: false
+2026-11-09T13:42:22.0050999Z   submodules: false
+2026-11-09T13:42:22.0051434Z   set-safe-directory: true
+2026-11-09T13:42:22.0051936Z   allow-unsafe-pr-checkout: false
+2026-11-09T13:42:22.0052665Z env:
+2026-11-09T13:42:22.0053087Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:22.0053612Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:22.0054033Z   LONG_RUN: true
+2026-11-09T13:42:22.0054542Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:22.0055108Z ##[endgroup]
+2026-11-09T13:42:22.1857885Z Syncing repository: AkiraMisawa/ex-grid
+2026-11-09T13:42:22.1859723Z ##[group]Getting Git version info
+2026-11-09T13:42:22.1860382Z Working directory is 'D:\a\ex-grid\ex-grid'
+2026-11-09T13:42:22.2798303Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-09T13:42:22.6293214Z git version 2.56.0.windows.4
+2026-11-09T13:42:22.6342683Z ##[endgroup]
+2026-11-09T13:42:22.6377637Z Temporarily overriding HOME='D:\a\_temp\897a65e5-65ff-4e66-8b07-7bc624115229' before making global git config changes
+2026-11-09T13:42:22.6381495Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-09T13:42:22.6385107Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\ex-grid\ex-grid
+2026-11-09T13:42:22.7030148Z Deleting the contents of 'D:\a\ex-grid\ex-grid'
+2026-11-09T13:42:22.7036018Z ##[group]Determining repository object format
+2026-11-09T13:42:22.7038978Z ##[endgroup]
+2026-11-09T13:42:22.7041336Z ##[group]Initializing the repository
+2026-11-09T13:42:22.7048932Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\ex-grid\ex-grid
+2026-11-09T13:42:22.7896967Z Initialized empty Git repository in D:/a/ex-grid/ex-grid/.git/
+2026-11-09T13:42:22.7943121Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-11-09T13:42:22.8650833Z ##[endgroup]
+2026-11-09T13:42:22.8652778Z ##[group]Disabling automatic garbage collection
+2026-11-09T13:42:22.8659810Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-11-09T13:42:22.9027733Z ##[endgroup]
+2026-11-09T13:42:22.9030513Z ##[group]Setting up auth
+2026-11-09T13:42:22.9032584Z Removing SSH command configuration
+2026-11-09T13:42:22.9040051Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-09T13:42:22.9425123Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-09T13:42:24.4523220Z Removing HTTP extra header
+2026-11-09T13:42:24.4532388Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-09T13:42:24.4903262Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-09T13:42:25.0019755Z Removing includeIf entries pointing to credentials config files
+2026-11-09T13:42:25.0034956Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-09T13:42:25.0419720Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-09T13:42:25.6507816Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-11-09T13:42:25.6883633Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/ex-grid/ex-grid/.git.path D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:42:25.7276881Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/ex-grid/ex-grid/.git/worktrees/*.path D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:42:25.7745369Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:42:25.8117104Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:42:25.8488922Z ##[endgroup]
+2026-11-09T13:42:25.8489576Z ##[group]Fetching the repository
+2026-11-09T13:42:25.8501595Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.2.0-rc.4:refs/tags/v0.2.0-rc.4
+2026-11-09T13:42:30.2756517Z From https://github.com/AkiraMisawa/ex-grid
+2026-11-09T13:42:30.2757553Z  * [new tag]         v0.2.0-rc.4 -> v0.2.0-rc.4
+2026-11-09T13:42:30.2866293Z [command]"C:\Program Files\Git\bin\git.exe" tag --list v0.2.0-rc.4
+2026-11-09T13:42:30.3296852Z v0.2.0-rc.4
+2026-11-09T13:42:30.3341833Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse refs/tags/v0.2.0-rc.4^{commit}
+2026-11-09T13:42:30.3724834Z 0326ce27ff7f179f98aa1525f794c4630a48a8d5
+2026-11-09T13:42:30.3760194Z ##[endgroup]
+2026-11-09T13:42:30.3761022Z ##[group]Determining the checkout info
+2026-11-09T13:42:30.3761992Z ##[endgroup]
+2026-11-09T13:42:30.3769771Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-11-09T13:42:30.4232964Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-11-09T13:42:30.4597867Z ##[group]Checking out the ref
+2026-11-09T13:42:30.4615546Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/tags/v0.2.0-rc.4
+2026-11-09T13:42:31.5441957Z Updating files:  17% (2809/15954)
+2026-11-09T13:42:31.5886318Z Updating files:  18% (2872/15954)
+2026-11-09T13:42:31.6382816Z Updating files:  19% (3032/15954)
+2026-11-09T13:42:31.6837584Z Updating files:  20% (3191/15954)
+2026-11-09T13:42:31.7297953Z Updating files:  21% (3351/15954)
+2026-11-09T13:42:31.7771399Z Updating files:  22% (3510/15954)
+2026-11-09T13:42:31.8213767Z Updating files:  23% (3670/15954)
+2026-11-09T13:42:31.8892217Z Updating files:  24% (3829/15954)
+2026-11-09T13:42:31.9394571Z Updating files:  25% (3989/15954)
+2026-11-09T13:42:31.9968445Z Updating files:  26% (4149/15954)
+2026-11-09T13:42:32.0352755Z Updating files:  27% (4308/15954)
+2026-11-09T13:42:32.0855180Z Updating files:  28% (4468/15954)
+2026-11-09T13:42:32.1326903Z Updating files:  29% (4627/15954)
+2026-11-09T13:42:32.2003283Z Updating files:  30% (4787/15954)
+2026-11-09T13:42:32.2931510Z Updating files:  31% (4946/15954)
+2026-11-09T13:42:32.3680550Z Updating files:  32% (5106/15954)
+2026-11-09T13:42:32.5998984Z Updating files:  33% (5265/15954)
+2026-11-09T13:42:32.6465083Z Updating files:  33% (5355/15954)
+2026-11-09T13:42:32.7286213Z Updating files:  34% (5425/15954)
+2026-11-09T13:42:32.8074332Z Updating files:  35% (5584/15954)
+2026-11-09T13:42:32.8781671Z Updating files:  36% (5744/15954)
+2026-11-09T13:42:32.9634775Z Updating files:  37% (5903/15954)
+2026-11-09T13:42:33.0180445Z Updating files:  38% (6063/15954)
+2026-11-09T13:42:33.0649634Z Updating files:  39% (6223/15954)
+2026-11-09T13:42:33.1141386Z Updating files:  40% (6382/15954)
+2026-11-09T13:42:33.1589885Z Updating files:  41% (6542/15954)
+2026-11-09T13:42:33.2056929Z Updating files:  42% (6701/15954)
+2026-11-09T13:42:33.2646781Z Updating files:  43% (6861/15954)
+2026-11-09T13:42:33.3446111Z Updating files:  44% (7020/15954)
+2026-11-09T13:42:33.4028321Z Updating files:  45% (7180/15954)
+2026-11-09T13:42:33.4644403Z Updating files:  46% (7339/15954)
+2026-11-09T13:42:33.5392041Z Updating files:  47% (7499/15954)
+2026-11-09T13:42:33.5475420Z Updating files:  48% (7658/15954)
+2026-11-09T13:42:33.5881927Z Updating files:  48% (7685/15954)
+2026-11-09T13:42:33.6326970Z Updating files:  49% (7818/15954)
+2026-11-09T13:42:33.6778109Z Updating files:  50% (7977/15954)
+2026-11-09T13:42:33.7242016Z Updating files:  51% (8137/15954)
+2026-11-09T13:42:33.8062271Z Updating files:  52% (8297/15954)
+2026-11-09T13:42:33.9918729Z Updating files:  53% (8456/15954)
+2026-11-09T13:42:34.0499092Z Updating files:  54% (8616/15954)
+2026-11-09T13:42:34.1354331Z Updating files:  55% (8775/15954)
+2026-11-09T13:42:34.2493724Z Updating files:  56% (8935/15954)
+2026-11-09T13:42:34.2937726Z Updating files:  57% (9094/15954)
+2026-11-09T13:42:34.3385314Z Updating files:  58% (9254/15954)
+2026-11-09T13:42:34.3854288Z Updating files:  59% (9413/15954)
+2026-11-09T13:42:34.4387353Z Updating files:  60% (9573/15954)
+2026-11-09T13:42:34.4742390Z Updating files:  61% (9732/15954)
+2026-11-09T13:42:34.5094111Z Updating files:  62% (9892/15954)
+2026-11-09T13:42:34.5447858Z Updating files:  63% (10052/15954)
+2026-11-09T13:42:34.5483184Z Updating files:  64% (10211/15954)
+2026-11-09T13:42:34.5808389Z Updating files:  64% (10227/15954)
+2026-11-09T13:42:34.6145897Z Updating files:  65% (10371/15954)
+2026-11-09T13:42:34.7647571Z Updating files:  66% (10530/15954)
+2026-11-09T13:42:34.8437489Z Updating files:  67% (10690/15954)
+2026-11-09T13:42:34.9001637Z Updating files:  68% (10849/15954)
+2026-11-09T13:42:34.9745185Z Updating files:  69% (11009/15954)
+2026-11-09T13:42:35.0607575Z Updating files:  70% (11168/15954)
+2026-11-09T13:42:35.1119143Z Updating files:  71% (11328/15954)
+2026-11-09T13:42:35.1659610Z Updating files:  72% (11487/15954)
+2026-11-09T13:42:35.3839938Z Updating files:  73% (11647/15954)
+2026-11-09T13:42:35.4278191Z Updating files:  74% (11806/15954)
+2026-11-09T13:42:35.4788120Z Updating files:  75% (11966/15954)
+2026-11-09T13:42:35.5610968Z Updating files:  76% (12126/15954)
+2026-11-09T13:42:35.5689702Z Updating files:  76% (12272/15954)
+2026-11-09T13:42:35.6519643Z Updating files:  77% (12285/15954)
+2026-11-09T13:42:35.7186047Z Updating files:  78% (12445/15954)
+2026-11-09T13:42:35.7831961Z Updating files:  79% (12604/15954)
+2026-11-09T13:42:35.8296725Z Updating files:  80% (12764/15954)
+2026-11-09T13:42:35.8809341Z Updating files:  81% (12923/15954)
+2026-11-09T13:42:35.9449059Z Updating files:  82% (13083/15954)
+2026-11-09T13:42:35.9862836Z Updating files:  83% (13242/15954)
+2026-11-09T13:42:36.0321756Z Updating files:  84% (13402/15954)
+2026-11-09T13:42:36.0704143Z Updating files:  85% (13561/15954)
+2026-11-09T13:42:36.1202010Z Updating files:  86% (13721/15954)
+2026-11-09T13:42:36.2119103Z Updating files:  87% (13880/15954)
+2026-11-09T13:42:36.3758195Z Updating files:  88% (14040/15954)
+2026-11-09T13:42:36.4620351Z Updating files:  89% (14200/15954)
+2026-11-09T13:42:36.5513339Z Updating files:  90% (14359/15954)
+2026-11-09T13:42:36.5753708Z Updating files:  91% (14519/15954)
+2026-11-09T13:42:36.6171621Z Updating files:  91% (14572/15954)
+2026-11-09T13:42:36.7321149Z Updating files:  92% (14678/15954)
+2026-11-09T13:42:36.8292752Z Updating files:  93% (14838/15954)
+2026-11-09T13:42:36.8944562Z Updating files:  94% (14997/15954)
+2026-11-09T13:42:36.9977018Z Updating files:  95% (15157/15954)
+2026-11-09T13:42:37.1012712Z Updating files:  96% (15316/15954)
+2026-11-09T13:42:37.1786761Z Updating files:  97% (15476/15954)
+2026-11-09T13:42:37.2392094Z Updating files:  98% (15635/15954)
+2026-11-09T13:42:37.3292751Z Updating files:  99% (15795/15954)
+2026-11-09T13:42:37.3293507Z Updating files: 100% (15954/15954)
+2026-11-09T13:42:37.3293792Z Updating files: 100% (15954/15954), done.
+2026-11-09T13:42:37.3562281Z Note: switching to 'refs/tags/v0.2.0-rc.4'.
+2026-11-09T13:42:37.3562676Z 
+2026-11-09T13:42:37.3563061Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-09T13:42:37.3563915Z changes and commit them, and you can discard any commits you make in this
+2026-11-09T13:42:37.3564778Z state without impacting any branches by switching back to a branch.
+2026-11-09T13:42:37.3565291Z 
+2026-11-09T13:42:37.3565616Z If you want to create a new branch to retain commits you create, you may
+2026-11-09T13:42:37.3566404Z do so (now or later) by using -c with the switch command. Example:
+2026-11-09T13:42:37.3566874Z 
+2026-11-09T13:42:37.3567035Z   git switch -c <new-branch-name>
+2026-11-09T13:42:37.3567345Z 
+2026-11-09T13:42:37.3567851Z Or undo this operation with:
+2026-11-09T13:42:37.3568159Z 
+2026-11-09T13:42:37.3568319Z   git switch -
+2026-11-09T13:42:37.3568516Z 
+2026-11-09T13:42:37.3568877Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-09T13:42:37.3569440Z 
+2026-11-09T13:42:37.3570378Z HEAD is now at 0326ce2 Cut 0.2.0-rc.4 from main: a refusal's sentence goes with the Consumer's next question, and the version's surface moves into its shipped baseline (#544)
+2026-11-09T13:42:37.3835449Z ##[endgroup]
+2026-11-09T13:42:37.4255132Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-11-09T13:42:37.4592155Z 0326ce27ff7f179f98aa1525f794c4630a48a8d5
+2026-11-09T13:42:37.5147740Z Prepare all required actions
+2026-11-09T13:42:37.5148372Z Getting action download info
+2026-11-09T13:42:37.6238347Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-09T13:42:37.7950664Z ##[group]Run ./.github/actions/dotnet
+2026-11-09T13:42:37.7950922Z with:
+2026-11-09T13:42:37.7951091Z   fallback: true
+2026-11-09T13:42:37.7951270Z env:
+2026-11-09T13:42:37.7951443Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:37.7951675Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:37.7951851Z   LONG_RUN: true
+2026-11-09T13:42:37.7952056Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:37.7952300Z ##[endgroup]
+2026-11-09T13:42:37.8010686Z ##[start-action display=global.json rolls forward across feature bands;id=__self.__run]
+2026-11-09T13:42:37.8186339Z ##[group]Run set -euo pipefail
+2026-11-09T13:42:37.8186653Z [36;1mset -euo pipefail[0m
+2026-11-09T13:42:37.8186996Z [36;1mroll=$(jq -r '.sdk.rollForward' global.json)[0m
+2026-11-09T13:42:37.8187848Z [36;1m[[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }[0m
+2026-11-09T13:42:37.8208418Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-11-09T13:42:37.8208810Z env:
+2026-11-09T13:42:37.8208990Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:37.8209216Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:37.8209394Z   LONG_RUN: true
+2026-11-09T13:42:37.8209592Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:37.8209836Z ##[endgroup]
+2026-11-09T13:42:38.1691109Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=367]
+2026-11-09T13:42:38.1693600Z ##[start-action display=Run set -euo pipefail;id=__self.install]
+2026-11-09T13:42:38.1826544Z ##[group]Run set -euo pipefail
+2026-11-09T13:42:38.1826812Z [36;1mset -euo pipefail[0m
+2026-11-09T13:42:38.1827128Z [36;1mfeed=https://builds.dotnet.microsoft.com/dotnet[0m
+2026-11-09T13:42:38.1827588Z [36;1mchannel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)[0m
+2026-11-09T13:42:38.1828145Z [36;1mversion=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')[0m
+2026-11-09T13:42:38.1828951Z [36;1m[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }[0m
+2026-11-09T13:42:38.1829741Z [36;1mscript="$RUNNER_TEMP/dotnet-install.sh"[0m
+2026-11-09T13:42:38.1830156Z [36;1mcurl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"[0m
+2026-11-09T13:42:38.1830633Z [36;1mbash "$script" --version "$version" --install-dir "$HOME/.dotnet"[0m
+2026-11-09T13:42:38.1831033Z [36;1mecho "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"[0m
+2026-11-09T13:42:38.1831360Z [36;1mecho "$HOME/.dotnet" >> "$GITHUB_PATH"[0m
+2026-11-09T13:42:38.1831665Z [36;1mecho "version=$version" >> "$GITHUB_OUTPUT"[0m
+2026-11-09T13:42:38.1846773Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-11-09T13:42:38.1847151Z env:
+2026-11-09T13:42:38.1847328Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:38.1847555Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:38.1847731Z   LONG_RUN: true
+2026-11-09T13:42:38.1847936Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:38.1848175Z ##[endgroup]
+2026-11-09T13:42:38.9001447Z dotnet_install: Error: OS name could not be detected: UName = MINGW64_NT-10.0-26100
+2026-11-09T13:42:38.9078870Z ##[error]Process completed with exit code 1.
+2026-11-09T13:42:38.9091241Z ##[end-action id=__self.install;outcome=failure;conclusion=success;duration_ms=739]
+2026-11-09T13:42:38.9095297Z ##[start-action display=The SDK global.json resolves;id=__self.__run_2]
+2026-11-09T13:42:38.9222393Z ##[group]Run set -euo pipefail
+2026-11-09T13:42:38.9222671Z [36;1mset -euo pipefail[0m
+2026-11-09T13:42:38.9225269Z [36;1mif [[ -z "$INSTALLED" ]]; then[0m
+2026-11-09T13:42:38.9225632Z [36;1m  if [[ "$FALLBACK" != true ]]; then[0m
+2026-11-09T13:42:38.9226281Z [36;1m    echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."[0m
+2026-11-09T13:42:38.9226882Z [36;1m    exit 1[0m
+2026-11-09T13:42:38.9227066Z [36;1m  fi[0m
+2026-11-09T13:42:38.9227771Z [36;1m  resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }[0m
+2026-11-09T13:42:38.9228893Z [36;1m  echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."[0m
+2026-11-09T13:42:38.9229485Z [36;1melse[0m
+2026-11-09T13:42:38.9229683Z [36;1m  resolved=$(dotnet --version)[0m
+2026-11-09T13:42:38.9229964Z [36;1m  if [[ "$resolved" != "$INSTALLED" ]]; then[0m
+2026-11-09T13:42:38.9230409Z [36;1m    echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."[0m
+2026-11-09T13:42:38.9230814Z [36;1m    exit 1[0m
+2026-11-09T13:42:38.9230988Z [36;1m  fi[0m
+2026-11-09T13:42:38.9231164Z [36;1mfi[0m
+2026-11-09T13:42:38.9231333Z [36;1mecho ".NET SDK $resolved"[0m
+2026-11-09T13:42:38.9231720Z [36;1m# The compiler's errors and warnings as annotations on the lines they name, as[0m
+2026-11-09T13:42:38.9232181Z [36;1m# actions/setup-dotnet registered them (its csc.json).[0m
+2026-11-09T13:42:38.9232552Z [36;1mecho "::add-matcher::$GITHUB_ACTION_PATH/csc.json"[0m
+2026-11-09T13:42:38.9247921Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-11-09T13:42:38.9248296Z env:
+2026-11-09T13:42:38.9248474Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:38.9248716Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:38.9248886Z   LONG_RUN: true
+2026-11-09T13:42:38.9249078Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:38.9249321Z   INSTALLED: 
+2026-11-09T13:42:38.9249485Z   FALLBACK: true
+2026-11-09T13:42:38.9249652Z ##[endgroup]
+2026-11-09T13:42:41.6155247Z ##[warning]The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own 10.0.403.
+2026-11-09T13:42:41.6155882Z .NET SDK 10.0.403
+2026-11-09T13:42:41.6187922Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=2709]
+2026-11-09T13:42:41.6190170Z ##[start-action display=Run actions/setup-node@v7;id=__self.__actions_setup-node]
+2026-11-09T13:42:41.6369529Z ##[group]Run actions/setup-node@v7
+2026-11-09T13:42:41.6369771Z with:
+2026-11-09T13:42:41.6369968Z   node-version-file: .node-version
+2026-11-09T13:42:41.6370194Z   cache: npm
+2026-11-09T13:42:41.6370397Z   cache-dependency-path: package-lock.json
+2026-11-09T13:42:41.6370678Z   check-latest: false
+2026-11-09T13:42:41.6373139Z   token: ***
+2026-11-09T13:42:41.6373332Z   package-manager-cache: true
+2026-11-09T13:42:41.6373543Z env:
+2026-11-09T13:42:41.6373732Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:41.6373948Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:41.6374120Z   LONG_RUN: true
+2026-11-09T13:42:41.6374311Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:41.6374556Z ##[endgroup]
+2026-11-09T13:42:41.7924375Z Node version file is not JSON file
+2026-11-09T13:42:41.7930373Z Node version file is not TOML file
+2026-11-09T13:42:41.7931892Z Resolved .node-version as 26.12.1
+2026-11-09T13:42:41.7947477Z Attempting to download 26.12.1...
+2026-11-09T13:42:42.6295159Z Acquiring 26.12.1 - x64 from https://github.com/actions/node-versions/releases/download/26.12.1-39618969937/node-26.12.1-win32-x64.7z
+2026-11-09T13:42:43.1697720Z Extracting ...
+2026-11-09T13:42:46.1399782Z Adding to the cache ...
+2026-11-09T13:42:50.4708851Z ##[group]Environment details
+2026-11-09T13:42:51.2808932Z node: v26.12.1
+2026-11-09T13:42:51.2809269Z npm: 11.20.0
+2026-11-09T13:42:51.2809445Z yarn: 1.22.22
+2026-11-09T13:42:51.2809957Z ##[endgroup]
+2026-11-09T13:42:51.3511486Z [command]C:\Windows\system32\cmd.exe /D /S /C "C:\hostedtoolcache\windows\node\26.12.1\x64\npm.cmd config get cache"
+2026-11-09T13:42:51.6247090Z C:\npm\cache
+2026-11-09T13:42:51.9660753Z Cache hit for: node-cache-Windows-x64-npm-fd3096c3cc5b499cfdb155bdd877b085b4d0f25c2c4849c78cb60ab9420b4e61
+2026-11-09T13:42:52.9130776Z Received 71627104 of 71627104 (100.0%), 86.5 MBs/sec
+2026-11-09T13:42:52.9131488Z Cache Size: ~68 MB (71627104 B)
+2026-11-09T13:42:52.9133458Z [command]"C:\Program Files\Git\usr\bin\tar.exe" -xf D:/a/_temp/3864e71f-c62b-467c-994c-d5731c87cd76/cache.tzst -P -C D:/a/ex-grid/ex-grid --force-local --use-compress-program "zstd -d"
+2026-11-09T13:42:56.1223774Z Cache restored successfully
+2026-11-09T13:42:56.1272656Z Cache restored from key: node-cache-Windows-x64-npm-fd3096c3cc5b499cfdb155bdd877b085b4d0f25c2c4849c78cb60ab9420b4e61
+2026-11-09T13:42:56.1456354Z ##[end-action id=__self.__actions_setup-node;outcome=success;conclusion=success;duration_ms=14526]
+2026-11-09T13:42:56.1458801Z ##[start-action display=The npm workspace's dependencies;id=__self.__run_3]
+2026-11-09T13:42:56.1598184Z ##[group]Run npm ci --no-audit --no-fund
+2026-11-09T13:42:56.1598468Z [36;1mnpm ci --no-audit --no-fund[0m
+2026-11-09T13:42:56.1615645Z shell: C:\Program Files\Git\bin\bash.EXE --noprofile --norc -e -o pipefail {0}
+2026-11-09T13:42:56.1616041Z env:
+2026-11-09T13:42:56.1616228Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:42:56.1616464Z   DOTNET_NOLOGO: 1
+2026-11-09T13:42:56.1616652Z   LONG_RUN: true
+2026-11-09T13:42:56.1616852Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:42:56.1617108Z ##[endgroup]
+2026-11-09T13:43:10.0080094Z 
+2026-11-09T13:43:10.0088416Z added 267 packages in 13s
+2026-11-09T13:43:11.0794667Z ##[end-action id=__self.__run_3;outcome=success;conclusion=success;duration_ms=14933]
+2026-11-09T13:43:11.0973861Z ##[group]Run (Get-Item "${env:ProgramFiles}/Google/Chrome/Application/chrome.exe").VersionInfo.ProductVersion
+2026-11-09T13:43:11.0974749Z [36;1m(Get-Item "${env:ProgramFiles}/Google/Chrome/Application/chrome.exe").VersionInfo.ProductVersion[0m
+2026-11-09T13:43:11.0975952Z [36;1m(Get-Item "${env:ProgramFiles(x86)}/Microsoft/Edge/Application/msedge.exe").VersionInfo.ProductVersion[0m
+2026-11-09T13:43:11.1620025Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-09T13:43:11.1620478Z env:
+2026-11-09T13:43:11.1620734Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:43:11.1621045Z   DOTNET_NOLOGO: 1
+2026-11-09T13:43:11.1621297Z   LONG_RUN: true
+2026-11-09T13:43:11.1621567Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:43:11.1621906Z ##[endgroup]
+2026-11-09T13:43:11.6486089Z 156.0.8078.80
+2026-11-09T13:43:11.6500306Z 156.0.4314.58
+2026-11-09T13:43:11.7145978Z ##[group]Run actions/download-artifact@v8
+2026-11-09T13:43:11.7146559Z with:
+2026-11-09T13:43:11.7146750Z   name: layer3-hosts
+2026-11-09T13:43:11.7146962Z   path: hosts
+2026-11-09T13:43:11.7147161Z   merge-multiple: false
+2026-11-09T13:43:11.7147387Z   repository: AkiraMisawa/ex-grid
+2026-11-09T13:43:11.7147622Z   run-id: 42627293063
+2026-11-09T13:43:11.7147826Z   skip-decompress: false
+2026-11-09T13:43:11.7148043Z   digest-mismatch: error
+2026-11-09T13:43:11.7148244Z env:
+2026-11-09T13:43:11.7148430Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:43:11.7148667Z   DOTNET_NOLOGO: 1
+2026-11-09T13:43:11.7148850Z   LONG_RUN: true
+2026-11-09T13:43:11.7149058Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:43:11.7149310Z ##[endgroup]
+2026-11-09T13:43:11.8944552Z Downloading single artifact
+2026-11-09T13:43:12.0841712Z Preparing to download the following artifacts:
+2026-11-09T13:43:12.0843300Z - layer3-hosts (ID: 13679256325, Size: 79887370, Expected Digest: sha256:b5b3ce751fcf4d1083df05dfda7f9e6a2d1b074d5ef58ce6b15fe48e822ae5e5)
+2026-11-09T13:43:12.4320838Z Redirecting to blob download url: https://productionresultssa13.blob.core.windows.net/actions-results/5afa78d8-b461-8ea8-b75b-290d5bdce830/workflow-job-run-75f53e6d-7ff5-556d-958c-401ce1d6bc66/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-11-09T13:43:12.4323542Z Starting download of artifact to: D:\a\ex-grid\ex-grid\hosts
+2026-11-09T13:43:12.6337449Z (node:8544) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-11-09T13:43:12.6339110Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-09T13:43:17.4340975Z SHA256 digest of downloaded artifact is b5b3ce751fcf4d1083df05dfda7f9e6a2d1b074d5ef58ce6b15fe48e822ae5e5
+2026-11-09T13:43:17.4342389Z Artifact download completed successfully.
+2026-11-09T13:43:17.4343108Z Total of 1 artifact(s) downloaded
+2026-11-09T13:43:17.4351123Z Download artifact has finished successfully
+2026-11-09T13:43:17.4655287Z ##[group]Run Set-DisplayResolution -Width 1920 -Height 1080 -Force
+2026-11-09T13:43:17.4655843Z [36;1mSet-DisplayResolution -Width 1920 -Height 1080 -Force[0m
+2026-11-09T13:43:17.4724407Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-09T13:43:17.4724765Z env:
+2026-11-09T13:43:17.4724962Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:43:17.4725201Z   DOTNET_NOLOGO: 1
+2026-11-09T13:43:17.4725392Z   LONG_RUN: true
+2026-11-09T13:43:17.4725606Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:43:17.4725868Z ##[endgroup]
+2026-11-09T13:43:21.3663114Z s e t r e s   w i l l   n o w   a t t e m p t   t o   a p p l y   t h e   f o l l o w i n g   d i s p l a y   s e t t i n g s :   
+2026-11-09T13:43:21.3670840Z  
+2026-11-09T13:43:21.3671518Z  
+2026-11-09T13:43:21.3672489Z      W i d t h :                     1 9 2 0 
+2026-11-09T13:43:21.3675464Z  
+2026-11-09T13:43:21.3678826Z  
+2026-11-09T13:43:21.3681141Z      H e i g h t :                   1 0 8 0 
+2026-11-09T13:43:21.3682578Z  
+2026-11-09T13:43:21.3684173Z  
+2026-11-09T13:43:21.3686034Z  T h e   n e w   d i s p l a y   s e t t i n g s   h a v e   b e e n   s a v e d . 
+2026-11-09T13:43:21.3686948Z  
+2026-11-09T13:43:21.3688305Z  
+2026-11-09T13:43:21.3689878Z  
+2026-11-09T13:43:21.5071307Z ##[group]Run ./windows/display-scale.ps1 -Set 100
+2026-11-09T13:43:21.5071791Z [36;1m./windows/display-scale.ps1 -Set 100[0m
+2026-11-09T13:43:21.5072124Z [36;1m$env:EXGRID_DISPLAY_SCALE = '100'[0m
+2026-11-09T13:43:21.5072418Z [36;1m$env:EXGRID_HOSTING = 'react'[0m
+2026-11-09T13:43:21.5073060Z [36;1mnpx playwright test windows-desktop.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "ADR-0450|FN-12e" --project=chrome --project=msedge[0m
+2026-11-09T13:43:21.5073725Z [36;1mif ($LASTEXITCODE) { exit $LASTEXITCODE }[0m
+2026-11-09T13:43:21.5074029Z [36;1m$env:EXGRID_HOSTING = 'wasm'[0m
+2026-11-09T13:43:21.5074503Z [36;1mnpx playwright test windows-desktop.spec.mjs --grep "SH-52" --project=chrome --project=msedge[0m
+2026-11-09T13:43:21.5075043Z [36;1mif ($LASTEXITCODE) { exit $LASTEXITCODE }[0m
+2026-11-09T13:43:21.5142734Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-09T13:43:21.5143085Z env:
+2026-11-09T13:43:21.5143316Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:43:21.5143554Z   DOTNET_NOLOGO: 1
+2026-11-09T13:43:21.5143742Z   LONG_RUN: true
+2026-11-09T13:43:21.5143960Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:43:21.5144219Z ##[endgroup]
+2026-11-09T13:43:25.6796375Z paths=1 systemDpi=96
+2026-11-09T13:43:25.6797188Z  path 0: recommended=100% current=100% max=175% set=100%
+2026-11-09T13:43:27.7778085Z [WebServer] Serving D:\a\ex-grid\ex-grid\hosts\react at http://localhost:5297
+2026-11-09T13:43:30.2435527Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:43:30.2437085Z [DemoApi]       Generating 20000 trades into C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\trades-v1-20000.sqlite: the first start for this count.
+2026-11-09T13:43:30.5423582Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:43:30.5424742Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-11-09T13:43:30.6384428Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:43:30.6385440Z [DemoApi]       Generated 20000 trades in 0.4 s: 1.6 MB.
+2026-11-09T13:43:30.7521978Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:43:30.7523551Z [DemoApi]       Serving 20000 trades at version 24cdd3a9-0 from C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.5444.24cdd3a9.sqlite.
+2026-11-09T13:43:30.7908399Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-09T13:43:30.7909388Z [DemoApi]       Now listening on: http://localhost:8297
+2026-11-09T13:43:30.7917857Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:43:30.7918724Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-09T13:43:30.7919506Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:43:30.7920350Z [DemoApi]       Hosting environment: Development
+2026-11-09T13:43:30.7920979Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:43:30.7921745Z [DemoApi]       Content root path: D:\a\ex-grid\ex-grid\hosts\api
+2026-11-09T13:43:32.1813391Z 
+2026-11-09T13:43:32.1814124Z Running 16 tests using 1 worker
+2026-11-09T13:43:32.1814480Z 
+2026-11-09T13:43:41.8534992Z   ok  1 [chrome] › part-c.spec.mjs:487:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) @behaviour (1.5s)
+2026-11-09T13:43:43.6365415Z   ok  2 [chrome] › sizing.spec.mjs:65:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) @behaviour (1.7s)
+2026-11-09T13:43:45.1817916Z   ok  3 [chrome] › windows-desktop.spec.mjs:45:1 › ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the next key @behaviour (1.5s)
+2026-11-09T13:43:52.4425470Z   ok  4 [chrome] › windows-desktop.spec.mjs:72:1 › SH-42/ADR-0071/ADR-0450: Ctrl+1 to Ctrl+5 through the OS reach /sheet before the browser switches tabs @behaviour (7.2s)
+2026-11-09T13:43:55.7527407Z   ok  5 [chrome] › windows-desktop.spec.mjs:104:1 › SH-51/ADR-0100/ADR-0450: Ctrl+F1 through the OS hides the toolbar and shows it again @behaviour (3.3s)
+2026-11-09T13:43:59.2674319Z   ok  6 [chrome] › windows-desktop.spec.mjs:122:5 › SH-52/ADR-0100/ADR-0450: Alt released alone, and F10, through the OS show the KeyTips and leave the browser's menu shut (builtin) @behaviour (3.5s)
+2026-11-09T13:44:02.6329329Z   ok  7 [chrome] › windows-desktop.spec.mjs:141:5 › SH-52/ADR-0100/ADR-0450: while an edit is open, Alt and F10 through the OS start no KeyTips, and the edit keeps the keyboard (builtin) @behaviour (3.3s)
+2026-11-09T13:44:02.8831864Z   -   8 [chrome] › windows-desktop.spec.mjs:207:1 › VZ-16/ADR-0090/ADR-0450: a real browser zoom is told to the grid as it changes, and at a real 2.25 a thin line is one Device Pixel and a gridline two @behaviour
+2026-11-09T13:44:08.7372788Z   ok  9 [msedge] › part-c.spec.mjs:487:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) @behaviour (1.6s)
+2026-11-09T13:44:10.3036719Z   ok 10 [msedge] › sizing.spec.mjs:65:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) @behaviour (1.5s)
+2026-11-09T13:44:11.2863406Z   ok 11 [msedge] › windows-desktop.spec.mjs:45:1 › ADR-0450: keys through the OS meet the browser first: Ctrl+2 on a page that leaves it switches tabs, and Alt left to the browser takes the next key @behaviour (948ms)
+2026-11-09T13:44:18.6357417Z   ok 12 [msedge] › windows-desktop.spec.mjs:72:1 › SH-42/ADR-0071/ADR-0450: Ctrl+1 to Ctrl+5 through the OS reach /sheet before the browser switches tabs @behaviour (7.3s)
+2026-11-09T13:44:21.8919885Z   ok 13 [msedge] › windows-desktop.spec.mjs:104:1 › SH-51/ADR-0100/ADR-0450: Ctrl+F1 through the OS hides the toolbar and shows it again @behaviour (3.2s)
+2026-11-09T13:44:25.3032502Z   ok 14 [msedge] › windows-desktop.spec.mjs:122:5 › SH-52/ADR-0100/ADR-0450: Alt released alone, and F10, through the OS show the KeyTips and leave the browser's menu shut (builtin) @behaviour (3.4s)
+2026-11-09T13:44:28.6475860Z   ok 15 [msedge] › windows-desktop.spec.mjs:141:5 › SH-52/ADR-0100/ADR-0450: while an edit is open, Alt and F10 through the OS start no KeyTips, and the edit keeps the keyboard (builtin) @behaviour (3.3s)
+2026-11-09T13:44:28.8849245Z   -  16 [msedge] › windows-desktop.spec.mjs:207:1 › VZ-16/ADR-0090/ADR-0450: a real browser zoom is told to the grid as it changes, and at a real 2.25 a thin line is one Device Pixel and a gridline two @behaviour
+2026-11-09T13:44:29.4376201Z 
+2026-11-09T13:44:29.4382897Z   2 skipped
+2026-11-09T13:44:29.4383256Z   14 passed (1.0m)
+2026-11-09T13:44:31.2989446Z [WebServer] Serving D:\a\ex-grid\ex-grid\hosts\wasm\wwwroot at http://localhost:5299
+2026-11-09T13:44:32.1819380Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:44:32.1820817Z [DemoApi]       Using the 20000 trades generated earlier at C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\trades-v1-20000.sqlite.
+2026-11-09T13:44:32.2310778Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:44:32.2313540Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.5444.24cdd3a9.sqlite, which a server that has stopped left behind.
+2026-11-09T13:44:32.2317712Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:44:32.2319977Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.5444.24cdd3a9.sqlite-shm, which a server that has stopped left behind.
+2026-11-09T13:44:32.2321573Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:44:32.2323405Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.5444.24cdd3a9.sqlite-wal, which a server that has stopped left behind.
+2026-11-09T13:44:32.2699323Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:44:32.2701222Z [DemoApi]       Serving 20000 trades at version 0291d793-0 from C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.6892.0291d793.sqlite.
+2026-11-09T13:44:32.3491216Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-09T13:44:32.3492229Z [DemoApi]       Now listening on: http://localhost:8299
+2026-11-09T13:44:32.3502328Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:44:32.3503325Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-09T13:44:32.3504315Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:44:32.3504985Z [DemoApi]       Hosting environment: Development
+2026-11-09T13:44:32.3505666Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:44:32.3507290Z [DemoApi]       Content root path: D:\a\ex-grid\ex-grid\hosts\api
+2026-11-09T13:44:32.8175415Z 
+2026-11-09T13:44:32.8176127Z Running 4 tests using 1 worker
+2026-11-09T13:44:32.8176497Z 
+2026-11-09T13:44:40.6635384Z   ok 1 [chrome] › windows-desktop.spec.mjs:122:5 › SH-52/ADR-0100/ADR-0450: Alt released alone, and F10, through the OS show the KeyTips and leave the browser's menu shut (mud) @blazor (5.5s)
+2026-11-09T13:44:45.4958750Z   ok 2 [chrome] › windows-desktop.spec.mjs:141:5 › SH-52/ADR-0100/ADR-0450: while an edit is open, Alt and F10 through the OS start no KeyTips, and the edit keeps the keyboard (mud) @blazor (4.8s)
+2026-11-09T13:44:54.1673978Z   ok 3 [msedge] › windows-desktop.spec.mjs:122:5 › SH-52/ADR-0100/ADR-0450: Alt released alone, and F10, through the OS show the KeyTips and leave the browser's menu shut (mud) @blazor (5.4s)
+2026-11-09T13:44:59.0054912Z   ok 4 [msedge] › windows-desktop.spec.mjs:141:5 › SH-52/ADR-0100/ADR-0450: while an edit is open, Alt and F10 through the OS start no KeyTips, and the edit keeps the keyboard (mud) @blazor (4.8s)
+2026-11-09T13:44:59.4632014Z 
+2026-11-09T13:44:59.4636758Z   4 passed (28.7s)
+2026-11-09T13:44:59.5393610Z ##[group]Run ./windows/display-scale.ps1 -Set 125
+2026-11-09T13:44:59.5394230Z [36;1m./windows/display-scale.ps1 -Set 125[0m
+2026-11-09T13:44:59.5394556Z [36;1m$env:EXGRID_DISPLAY_SCALE = '125'[0m
+2026-11-09T13:44:59.5394853Z [36;1m$env:EXGRID_HOSTING = 'react'[0m
+2026-11-09T13:44:59.5395389Z [36;1mnpx playwright test scrollbar.spec.mjs --grep "fractional display scaling" --project=chrome --project=msedge[0m
+2026-11-09T13:44:59.5395963Z [36;1mif ($LASTEXITCODE) { exit $LASTEXITCODE }[0m
+2026-11-09T13:44:59.5464916Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-09T13:44:59.5465259Z env:
+2026-11-09T13:44:59.5465447Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:44:59.5465687Z   DOTNET_NOLOGO: 1
+2026-11-09T13:44:59.5465870Z   LONG_RUN: true
+2026-11-09T13:44:59.5466074Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:44:59.5466326Z ##[endgroup]
+2026-11-09T13:45:00.5006321Z paths=1 systemDpi=96
+2026-11-09T13:45:00.5008056Z  path 0: recommended=100% current=100% max=175% set=125%
+2026-11-09T13:45:02.6951562Z [WebServer] Serving D:\a\ex-grid\ex-grid\hosts\react at http://localhost:5297
+2026-11-09T13:45:03.5891214Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:03.5892844Z [DemoApi]       Using the 20000 trades generated earlier at C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\trades-v1-20000.sqlite.
+2026-11-09T13:45:03.6285011Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:03.6287064Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.6892.0291d793.sqlite, which a server that has stopped left behind.
+2026-11-09T13:45:03.6292086Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:03.6295150Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.6892.0291d793.sqlite-shm, which a server that has stopped left behind.
+2026-11-09T13:45:03.6296774Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:03.6299009Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.6892.0291d793.sqlite-wal, which a server that has stopped left behind.
+2026-11-09T13:45:03.6630634Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:03.6633325Z [DemoApi]       Serving 20000 trades at version bd5a8d47-0 from C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.8692.bd5a8d47.sqlite.
+2026-11-09T13:45:03.7582127Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-09T13:45:03.7583176Z [DemoApi]       Now listening on: http://localhost:8297
+2026-11-09T13:45:03.7593492Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:03.7594607Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-09T13:45:03.7595654Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:03.7596681Z [DemoApi]       Hosting environment: Development
+2026-11-09T13:45:03.7597390Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:03.7598181Z [DemoApi]       Content root path: D:\a\ex-grid\ex-grid\hosts\api
+2026-11-09T13:45:04.0170407Z 
+2026-11-09T13:45:04.0171048Z Running 2 tests using 1 worker
+2026-11-09T13:45:04.0171442Z 
+2026-11-09T13:45:07.5567864Z   ok 1 [chrome] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling @behaviour (1.8s)
+2026-11-09T13:45:11.5948628Z   ok 2 [msedge] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling @behaviour (1.9s)
+2026-11-09T13:45:12.0211528Z 
+2026-11-09T13:45:12.0215945Z   2 passed (9.8s)
+2026-11-09T13:45:12.1037389Z ##[group]Run ./windows/display-scale.ps1 -Set 150
+2026-11-09T13:45:12.1037869Z [36;1m./windows/display-scale.ps1 -Set 150[0m
+2026-11-09T13:45:12.1038201Z [36;1m$env:EXGRID_DISPLAY_SCALE = '150'[0m
+2026-11-09T13:45:12.1038493Z [36;1m$env:EXGRID_HOSTING = 'react'[0m
+2026-11-09T13:45:12.1039370Z [36;1mnpx playwright test scrollbar.spec.mjs windows-desktop.spec.mjs --grep "fractional display scaling|VZ-16" --project=chrome --project=msedge[0m
+2026-11-09T13:45:12.1040075Z [36;1mif ($LASTEXITCODE) { exit $LASTEXITCODE }[0m
+2026-11-09T13:45:12.1109190Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-09T13:45:12.1109545Z env:
+2026-11-09T13:45:12.1109736Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:45:12.1109984Z   DOTNET_NOLOGO: 1
+2026-11-09T13:45:12.1110172Z   LONG_RUN: true
+2026-11-09T13:45:12.1110382Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:45:12.1110667Z ##[endgroup]
+2026-11-09T13:45:12.9325726Z paths=1 systemDpi=120
+2026-11-09T13:45:12.9327227Z  path 0: recommended=100% current=125% max=175% set=150%
+2026-11-09T13:45:15.1370611Z [WebServer] Serving D:\a\ex-grid\ex-grid\hosts\react at http://localhost:5297
+2026-11-09T13:45:16.0199937Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:16.0201578Z [DemoApi]       Using the 20000 trades generated earlier at C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\trades-v1-20000.sqlite.
+2026-11-09T13:45:16.0696319Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:16.0706288Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.8692.bd5a8d47.sqlite, which a server that has stopped left behind.
+2026-11-09T13:45:16.0708502Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:16.0710379Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.8692.bd5a8d47.sqlite-shm, which a server that has stopped left behind.
+2026-11-09T13:45:16.0712099Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:16.0713969Z [DemoApi]       Removing C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.8692.bd5a8d47.sqlite-wal, which a server that has stopped left behind.
+2026-11-09T13:45:16.1067959Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-09T13:45:16.1070180Z [DemoApi]       Serving 20000 trades at version bd3c7c40-0 from C:\Users\runneradmin\AppData\Local\Temp\exgrid-demo-api\runs\trades-v1-20000.9144.bd3c7c40.sqlite.
+2026-11-09T13:45:16.1967692Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-09T13:45:16.1968609Z [DemoApi]       Now listening on: http://localhost:8297
+2026-11-09T13:45:16.1980240Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:16.1981735Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-09T13:45:16.1982893Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:16.1983956Z [DemoApi]       Hosting environment: Development
+2026-11-09T13:45:16.1985554Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-09T13:45:16.1987420Z [DemoApi]       Content root path: D:\a\ex-grid\ex-grid\hosts\api
+2026-11-09T13:45:16.3818683Z 
+2026-11-09T13:45:16.3819338Z Running 4 tests using 1 worker
+2026-11-09T13:45:16.3819703Z 
+2026-11-09T13:45:20.2821877Z   ok 1 [chrome] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling @behaviour (1.8s)
+2026-11-09T13:45:23.8552056Z   ok 2 [chrome] › windows-desktop.spec.mjs:207:1 › VZ-16/ADR-0090/ADR-0450: a real browser zoom is told to the grid as it changes, and at a real 2.25 a thin line is one Device Pixel and a gridline two @behaviour (3.5s)
+2026-11-09T13:45:27.8815994Z   ok 3 [msedge] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling @behaviour (1.9s)
+2026-11-09T13:45:31.3929617Z   ok 4 [msedge] › windows-desktop.spec.mjs:207:1 › VZ-16/ADR-0090/ADR-0450: a real browser zoom is told to the grid as it changes, and at a real 2.25 a thin line is one Device Pixel and a gridline two @behaviour (3.4s)
+2026-11-09T13:45:31.8143790Z 
+2026-11-09T13:45:31.8149877Z   4 passed (17.2s)
+2026-11-09T13:45:31.9013841Z ##[group]Run actions/upload-artifact@v7
+2026-11-09T13:45:31.9014390Z with:
+2026-11-09T13:45:31.9014606Z   name: layer3-records-windows-desktop
+2026-11-09T13:45:31.9014946Z   path: verification/
+tests/browser/test-results/
+
+2026-11-09T13:45:31.9015265Z   if-no-files-found: ignore
+2026-11-09T13:45:31.9015491Z   retention-days: 30
+2026-11-09T13:45:31.9015698Z   compression-level: 6
+2026-11-09T13:45:31.9015914Z   overwrite: false
+2026-11-09T13:45:31.9016124Z   include-hidden-files: false
+2026-11-09T13:45:31.9016345Z   archive: true
+2026-11-09T13:45:31.9016518Z env:
+2026-11-09T13:45:31.9016698Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-09T13:45:31.9016928Z   DOTNET_NOLOGO: 1
+2026-11-09T13:45:31.9017116Z   LONG_RUN: true
+2026-11-09T13:45:31.9017317Z   EXGRID_HOSTS: D:\a\ex-grid\ex-grid/hosts
+2026-11-09T13:45:31.9017599Z ##[endgroup]
+2026-11-09T13:45:34.7307640Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-11-09T13:45:34.7310978Z The least common ancestor is D:\a\ex-grid\ex-grid. This will be the root directory of the artifact
+2026-11-09T13:45:34.7312088Z With the provided path, there will be 11191 files uploaded
+2026-11-09T13:45:34.7318369Z Artifact name is valid!
+2026-11-09T13:45:34.7319855Z Root directory input is valid!
+2026-11-09T13:45:35.1564231Z Uploading artifact: layer3-records-windows-desktop.zip
+2026-11-09T13:45:35.1594080Z Beginning upload of artifact content to blob storage
+2026-11-09T13:45:36.7203940Z Uploaded bytes 8388608
+2026-11-09T13:45:37.2774467Z Uploaded bytes 16777216
+2026-11-09T13:45:37.2913009Z Uploaded bytes 25165824
+2026-11-09T13:45:37.6937394Z Uploaded bytes 33554432
+2026-11-09T13:45:38.3676163Z Uploaded bytes 41943040
+2026-11-09T13:45:39.1253653Z Uploaded bytes 50331648
+2026-11-09T13:45:39.8426792Z Uploaded bytes 58720256
+2026-11-09T13:45:40.6015953Z Uploaded bytes 67108864
+2026-11-09T13:45:41.4333046Z Uploaded bytes 75497472
+2026-11-09T13:45:41.9793986Z Uploaded bytes 83886080
+2026-11-09T13:45:42.6915510Z Uploaded bytes 92274688
+2026-11-09T13:45:43.0612404Z Uploaded bytes 100663296
+2026-11-09T13:45:44.1138449Z Uploaded bytes 109051904
+2026-11-09T13:45:44.8648745Z Uploaded bytes 117440512
+2026-11-09T13:45:45.3951154Z Uploaded bytes 125829120
+2026-11-09T13:45:46.5665047Z Uploaded bytes 134217728
+2026-11-09T13:45:46.9942675Z Uploaded bytes 142606336
+2026-11-09T13:45:47.7086937Z Uploaded bytes 150994944
+2026-11-09T13:45:48.4665276Z Uploaded bytes 159383552
+2026-11-09T13:45:49.7058749Z Uploaded bytes 167772160
+2026-11-09T13:45:50.0783998Z Uploaded bytes 176160768
+2026-11-09T13:45:50.4052575Z Uploaded bytes 184549376
+2026-11-09T13:45:50.9602140Z Uploaded bytes 192937984
+2026-11-09T13:45:51.4228253Z Uploaded bytes 201326592
+2026-11-09T13:45:51.7430141Z Uploaded bytes 209715200
+2026-11-09T13:45:52.4451648Z Uploaded bytes 218103808
+2026-11-09T13:45:52.8911806Z Uploaded bytes 226492416
+2026-11-09T13:45:53.1911047Z Uploaded bytes 234881024
+2026-11-09T13:45:53.6482989Z Uploaded bytes 240843691
+2026-11-09T13:45:53.6958530Z Finished uploading artifact content to blob storage!
+2026-11-09T13:45:53.6962638Z SHA256 digest of uploaded artifact is e0e51a39680c43bb9d8d98031877642b7e650c5488fc1c3ff4c4f5172e703f17
+2026-11-09T13:45:53.6965078Z Finalizing artifact upload
+2026-11-09T13:45:54.2018792Z Artifact layer3-records-windows-desktop successfully finalized. Artifact ID 13678554797
+2026-11-09T13:45:54.2019934Z Artifact layer3-records-windows-desktop has been successfully uploaded! Final size is 240843691 bytes. Artifact ID is 13678554797
+2026-11-09T13:45:54.2029984Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/42627293063/artifacts/13678554797
+2026-11-09T13:45:54.2579288Z Post job cleanup.
+2026-11-09T13:45:54.2582938Z ##[start-action display=Run actions/setup-node@v7;id=__4521d176-4a10-4d34-aeaf-f4917656d8a5.__actions_setup-node]
+2026-11-09T13:45:54.2730471Z Post job cleanup.
+2026-11-09T13:45:54.4157822Z Cache hit occurred on the primary key node-cache-Windows-x64-npm-fd3096c3cc5b499cfdb155bdd877b085b4d0f25c2c4849c78cb60ab9420b4e61, not saving cache.
+2026-11-09T13:45:54.4256934Z ##[end-action id=__4521d176-4a10-4d34-aeaf-f4917656d8a5.__actions_setup-node;outcome=success;conclusion=success;duration_ms=167]
+2026-11-09T13:45:54.4452083Z Post job cleanup.
+2026-11-09T13:45:54.6777467Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-09T13:45:54.7157698Z git version 2.56.0.windows.4
+2026-11-09T13:45:54.7225811Z Temporarily overriding HOME='D:\a\_temp\07eac2d6-50f1-4402-b6c9-695af01c5405' before making global git config changes
+2026-11-09T13:45:54.7228065Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-09T13:45:54.7237587Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\ex-grid\ex-grid
+2026-11-09T13:45:54.7606235Z Removing SSH command configuration
+2026-11-09T13:45:54.7616218Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-09T13:45:54.7991266Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-09T13:45:55.3500525Z Removing HTTP extra header
+2026-11-09T13:45:55.3511051Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-09T13:45:55.3895424Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-09T13:45:55.9307344Z Removing includeIf entries pointing to credentials config files
+2026-11-09T13:45:55.9318170Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-09T13:45:55.9656442Z includeif.gitdir:D:/a/ex-grid/ex-grid/.git.path
+2026-11-09T13:45:55.9657854Z includeif.gitdir:D:/a/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-09T13:45:55.9658936Z includeif.gitdir:/github/workspace/.git.path
+2026-11-09T13:45:55.9659772Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-09T13:45:55.9696966Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/ex-grid/ex-grid/.git.path
+2026-11-09T13:45:56.0025898Z D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:45:56.0067287Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/ex-grid/ex-grid/.git.path D\:\\a\\_temp\\git\-credentials\-39bb0804\-2405\-465e\-b818\-ed80f09b5be8\.config
+2026-11-09T13:45:56.0436353Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-09T13:45:56.0765679Z D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:45:56.0808096Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/ex-grid/ex-grid/.git/worktrees/*.path D\:\\a\\_temp\\git\-credentials\-39bb0804\-2405\-465e\-b818\-ed80f09b5be8\.config
+2026-11-09T13:45:56.1177364Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-09T13:45:56.1505674Z /github/runner_temp/git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:45:56.1545107Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-39bb0804\-2405\-465e\-b818\-ed80f09b5be8\.config
+2026-11-09T13:45:56.1929004Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-09T13:45:56.2339996Z /github/runner_temp/git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config
+2026-11-09T13:45:56.2383815Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-39bb0804\-2405\-465e\-b818\-ed80f09b5be8\.config
+2026-11-09T13:45:56.2768789Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-09T13:45:56.8342422Z Removing credentials config 'D:\a\_temp\git-credentials-39bb0804-2405-465e-b818-ed80f09b5be8.config'
+2026-11-09T13:45:56.8538298Z Cleaning up orphan processes

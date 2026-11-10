@@ -1,0 +1,39 @@
+dotnet 10.0.203 (nix-managed)
+info: ExGrid.DemoApi.TradeStore[0]
+      Generating 1000000 trades into /tmp/claude-0/-home-claude-ex-grid/35fd2175-458d-58c3-a332-3c43374f5fb4/scratchpad/m6/api-data/trades-v1-1000000.sqlite: the first start for this count.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:8440
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/claude/ex-grid/.claude/worktrees/signoff/dotnet/samples/ExGrid.DemoApi/bin/Release/net10.0
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 100000 of 1000000 trades (10%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 200000 of 1000000 trades (20%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 300000 of 1000000 trades (30%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 400000 of 1000000 trades (40%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 500000 of 1000000 trades (50%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 600000 of 1000000 trades (60%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 700000 of 1000000 trades (70%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 800000 of 1000000 trades (80%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 900000 of 1000000 trades (90%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 1000000 trades in 6.8 s: 76.8 MB.
+info: ExGrid.DemoApi.TradeStore[0]
+      Serving 1000000 trades at version 7ebc0d27-0 from /tmp/claude-0/-home-claude-ex-grid/35fd2175-458d-58c3-a332-3c43374f5fb4/scratchpad/m6/api-data/runs/trades-v1-1000000.18843.7ebc0d27.sqlite.
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates on: 20 trades every 250 ms.
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates off.
+info: ExGrid.DemoApi.TradeArrow[0]
+      The trades' Arrow stream at version 7ebc0d27-3: 1000000 trades read into a Snapshot in 6189 ms and written in 394 ms, 81.3 MB.
