@@ -29,8 +29,12 @@ question.** The shape is Find's ([ADR-0055](./0055-find-is-asked-of-the-consumer
   - **`GridSource.Fetch`, through an optional `summarize` delegate** — typically SQL on a server.
     A fetching source must give, question for question, the answer the reference gives over the
     same rows; the demo API server's SQL source is held to that, as PV-22 holds ExPivot's;
-  - a push-mode Consumer, through an `OnSummarize` parameter. `OnSummarize` beside a bound Source
-    is refused by name, as `OnFind` is.
+  - a push-mode Consumer, through an `OnSummarize` parameter. `OnSummarize` beside a Source that
+    summarises is refused by name, since one of the two would have to win quietly. *(2026-11-07, decided
+    with the user at the 0.2.0 sign-off: it read "beside a bound Source … as `OnFind` is". The Script Core
+    and the Blazor adapter refuse it only beside a Source that summarises, and the code stands. A Source that cannot summarise
+    gives no answer for `OnSummarize`'s to contradict, and over `Rows` the grid makes its own source, which
+    `OnSummarize` answers in place of, as the core's `onSummarize` does over rows it holds (ADR-0440).)*
 - **The answer is dropped unless it answers the current question.** A change of selection clears
   the figures at once and shows a pending mark; the question in flight is cancelled and its late
   answer discarded (ADR-0025's rule). An answer under a stale Row Sequence Version shows nothing.

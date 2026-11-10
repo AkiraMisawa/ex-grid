@@ -40,7 +40,9 @@
                 typed then still closes the panel.
                 Escape closes it, a panel's changes are discarded unless OK applied them, and the keyboard goes
                 back to what opened it, with the keys typed as it closes: Enter typed straight after Escape opens the
-                menu again rather than running one of its commands. Both hold over Blazor Server too.
+                menu again rather than running one of its commands. Both hold over Blazor Server too. Escape and Tab typed on a
+                button while its menu or panel opens, and the keys typed on a report filter while it opens with no report
+                shown, are not yet checked by a test over the Script Core, a known limitation of <code>0.2.0</code>.
             </li>
             <li>
                 <strong>Input is taken in the order it was made.</strong> A press, a key or a tick in the pane, its
