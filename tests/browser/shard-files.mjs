@@ -3,7 +3,8 @@
 //   EXGRID_SHARD=<k>/<n> node shard-files.mjs [files…]
 //
 // Prints `--test-list=<path>` for counted-run.sh and Playwright, having written that shard's tests to <path>,
-// or nothing when the shard takes none. What it chose goes to stderr, a line per file.
+// or nothing when the shard takes none. What it chose goes to stderr, a line per file. (It once printed whole spec
+// files, and keeps its name.)
 //
 // Playwright's own --shard cuts the list of tests after --repeat-each has multiplied it, so a shard
 // ran some repetitions of a file and another shard the rest — or, as the first run of hunt.yml showed,
@@ -12,7 +13,7 @@
 // a file's booted app is booted once (ADR-0056) and counted-run.sh can count a shard against what
 // Playwright lists for it.
 //
-// A test tagged `@spread` (SPREAD in fixtures.mjs) is the exception: it is far longer than a shard's
+// A test tagged `@spread` (SPREAD in tags.mjs) is the exception: it is far longer than a shard's
 // share of tests allows for, and its file's tests go round the shards one at a time instead, each shard
 // booting that file for its own few. The differential test is one: it runs its scenario twice behind a
 // 150 ms round trip, 15 to 30 seconds a seed, and every product has a test for every fixed seed. Kept
@@ -35,7 +36,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SPREAD } from './fixtures.mjs';
+import { SPREAD } from './tags.mjs';
 
 const shard = /^([1-9]\d*)\/([1-9]\d*)$/.exec(process.env.EXGRID_SHARD ?? '');
 const [k, n] = shard === null ? [NaN, NaN] : [Number(shard[1]), Number(shard[2])];
@@ -49,7 +50,8 @@ const named = process.argv.slice(2);
 // Playwright's listing of these arguments, as JSON. It is the same whichever browser runs it; chrome-150 has a
 // --grep of its own and is not the hunt's.
 const list = (args) => {
-    const listing = JSON.parse(execFileSync('npx', ['playwright', 'test', '--list', '--reporter=json', '--project=chrome', ...args], {
+    // --pass-with-no-tests: files named whose tests are all the other host's list none here, and the shard takes none.
+    const listing = JSON.parse(execFileSync('npx', ['playwright', 'test', '--list', '--reporter=json', '--project=chrome', '--pass-with-no-tests', ...args], {
         cwd: here,
         encoding: 'utf8',
         maxBuffer: 256 * 1024 * 1024,
@@ -109,7 +111,8 @@ for (const [file, count] of [...mine.files].sort(([a], [b]) => order(a, b))) {
     console.error(`  ${file}: ${count}${spreadFiles.has(file) ? ` of ${tests.filter((test) => test.file === file).length}, spread` : ''}`);
 }
 if (mine.tests.length > 0) {
-    const file = path.join(os.tmpdir(), `exgrid-shard-${k}-of-${n}.txt`);
+    // A directory of its own, so two checkouts on one machine never read each other's list.
+    const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'exgrid-shard-')), `${k}-of-${n}.txt`);
     fs.writeFileSync(file, `${mine.tests.join('\n')}\n`);
     // A line Playwright does not match is a test no shard runs, and counted-run.sh, which counts what Playwright
     // lists for the same list, would not see it go: the list is read back before it is handed on.

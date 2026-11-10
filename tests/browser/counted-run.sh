@@ -18,6 +18,20 @@ if ! [[ "${repeat}" =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
+# A spec file named as such, `pivot.spec.mjs` or `pivot.spec.mjs:316`, is that file alone. Playwright reads
+# a file argument as a pattern, so `pivot.spec.mjs` also ran `script-pivot.spec.mjs` and
+# `measure-pivot.spec.mjs`, and a shard or a changed spec's repeat ran tests it did not name (2026-11-10).
+args=()
+for arg in "$@"; do
+    if [[ "${arg}" =~ ^([A-Za-z0-9_-]+)\.spec\.mjs(:[0-9]+(:[0-9]+)?)?$ ]]; then
+        # The file's own name to its end, or to the line Playwright reads after it.
+        args+=("/${BASH_REMATCH[1]}\\.spec\\.mjs${BASH_REMATCH[2]:-\$}")
+    else
+        args+=("${arg}")
+    fi
+done
+set -- "${args[@]}"
+
 # The tests these arguments choose, each once: Playwright's own listing, which applies --project,
 # --shard, --grep and the files named exactly as the run does. Playwright exits 1 when it lists no
 # test, so its status is kept and read below with the count rather than ending the script here.
@@ -53,56 +67,48 @@ report=test-results/counted.json
 status=0
 PLAYWRIGHT_JSON_OUTPUT_FILE="${report}" npx playwright test "$@" --repeat-each="${repeat}" --reporter=list,json || status=$?
 
-# Every repetition the report holds an outcome for: passed, failed or timed out, and skipped where the
-# test skipped itself by decision, which it says in an annotation — it ran, and said so. A repetition the
-# run never reached, because it was stopped or ran out of its --global-timeout, has no result, or one
-# marked skipped with no such annotation, though the report's stats count it as skipped.
-ran=$(node -e '
+# One reading of the report. Every repetition it holds an outcome for: passed, failed or timed out, and
+# skipped where the test skipped itself by decision, which it says in an annotation — it ran, and said so.
+# A repetition the run never reached, because it was stopped or ran out of its --global-timeout, has no
+# result, or one marked skipped with no such annotation, though the report's stats count it as skipped.
+# Then what Playwright reported outside any test, such as that --global-timeout, and where the run's time
+# went, a line per spec file, the longest first: a shard that outgrows its job's time names the file
+# that took it (hunt.yml, 2026-11-10).
+read_report='
     const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
     let ran = 0;
+    const spent = new Map();
     const walk = (suite) => {
         for (const spec of suite.specs ?? []) {
             for (const test of spec.tests) {
                 const decided = test.annotations.some((annotation) => annotation.type === "skip" || annotation.type === "fixme");
                 ran += test.results.filter((result) => result.status !== "skipped" || decided).length;
+                spent.set(spec.file, test.results.reduce((sum, result) => sum + result.duration, spent.get(spec.file) ?? 0));
             }
         }
         for (const inner of suite.suites ?? []) walk(inner);
     };
     for (const suite of report.suites ?? []) walk(suite);
     console.log(ran);
-' "${report}" 2>/dev/null || echo 0)
-# What stopped the run as a whole, such as its --global-timeout: the run is red, and this says why.
-stopped=$(node -e '
-    const { errors } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
-    for (const error of errors ?? []) console.log(error.message.replace(/\x1b\[[0-9;]*m/g, ""));
-' "${report}" 2>/dev/null || true)
-# Where the run's time went, a line per spec file, the longest first: a shard that outgrows its job's
-# time names the file that took it (hunt.yml, 2026-11-10).
-minutes=$(node -e '
-    const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
-    const spent = new Map();
-    const walk = (suite) => {
-        for (const spec of suite.specs ?? []) {
-            for (const test of spec.tests) {
-                for (const result of test.results) spent.set(spec.file, (spent.get(spec.file) ?? 0) + result.duration);
-            }
-        }
-        for (const inner of suite.suites ?? []) walk(inner);
-    };
-    for (const suite of report.suites ?? []) walk(suite);
-    for (const [file, ms] of [...spent].sort(([, a], [, b]) => b - a)) console.log(`${file}: ${(ms / 60000).toFixed(1)} min`);
-' "${report}" 2>/dev/null || echo 'no report to read the time from')
-failed=$(node -e '
-    const { stats } = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
-    console.log(stats.unexpected);
-' "${report}" 2>/dev/null || echo '?')
+    console.log(report.stats.unexpected);
+    for (const error of report.errors ?? []) console.log(`error: ${error.message.replace(/\x1b\[[0-9;]*m/g, "").split("\n")[0]}`);
+    for (const [file, ms] of [...spent].sort(([, a], [, b]) => b - a)) console.log(`time: ${file}: ${(ms / 60000).toFixed(1)} min`);
+'
+if read=$(node -e "${read_report}" "${report}" 2>&1); then
+    ran=$(printf '%s\n' "${read}" | sed -n 1p)
+    failed=$(printf '%s\n' "${read}" | sed -n 2p)
+    reported=$(printf '%s\n' "${read}" | sed -n 's/^error: //p')
+    minutes=$(printf '%s\n' "${read}" | sed -n 's/^time: //p')
+else
+    echo "counted-run.sh: the run's report, ${report}, could not be read: ${read}" >&2
+    exit 1
+fi
 
 line="${listed} tests listed, repeated ${repeat}×: ${expected} expected, ${ran} ran, ${failed} failed."
 echo "counted-run.sh: ${line}"
-if [ -n "${stopped}" ]; then
-    line="${line} The run did not finish: ${stopped//$'\n'/; }."
-    echo "counted-run.sh: the run did not finish: ${stopped}" >&2
+if [ -n "${reported}" ]; then
+    line="${line} Playwright reported, outside any test: ${reported//$'\n'/; }."
+    echo "counted-run.sh: Playwright reported, outside any test: ${reported}" >&2
 fi
 printf 'counted-run.sh: the time each spec file took:\n%s\n' "${minutes}"
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
@@ -110,7 +116,7 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     printf '\n%s\n' "$(printf '%s\n' "${minutes}" | sed 's/^/- /')" >> "${GITHUB_STEP_SUMMARY}"
 fi
 
-if [ -n "${stopped}" ] && [ "${status}" -eq 0 ]; then
+if [ -n "${reported}" ] && [ "${status}" -eq 0 ]; then
     exit 1
 fi
 if [ "${ran}" != "${expected}" ]; then

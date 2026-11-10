@@ -450,15 +450,19 @@ so does the daily hunt, `.github/workflows/hunt.yml`, which gates nothing:
   handed to it as `--test-list`, never Playwright's `--shard`: that one cuts the tests after
   `--repeat-each` has multiplied them, and the hunt's first run took a third of a shard's repetitions
   that way, which `counted-run.sh` refused. A file's tests stay in one shard, except a file whose test
-  is tagged `SPREAD` (`{ tag: SPREAD }`, from `fixtures.mjs`), whose tests go round the shards one at a
+  is tagged `SPREAD` (`{ tag: SPREAD }`, from `tags.mjs`, which `fixtures.mjs` passes on), whose tests go round the shards one at a
   time: the differential test's, each of which takes 15 to 30 seconds on the Server host. Each job
-  stops its run with `--global-timeout` half an hour before the job's own limit, and `counted-run.sh`
-  writes the time each spec file took to the summary, so a shard that outgrows its job says which file
-  took the time. To see what a shard takes:
+  stops its run with `--global-timeout` about half an hour before the job's own limit, and
+  `counted-run.sh` writes the time each spec file took to the summary, so a shard that outgrows its job
+  says which file took the time. To see what a night's shard took, with the seed that night's run drew
+  (its run id):
 
 ```sh
-EXGRID_HOSTING=server EXGRID_SHARD=4/10 node shard-files.mjs
+EXGRID_HOSTING=server EXGRID_SHARD=4/10 EXGRID_DIFF_SEED=<run id> node shard-files.mjs
 ```
+
+  `counted-run.sh` hands a spec file named on its command line to Playwright as that file alone:
+  Playwright reads a file argument as a pattern, so `pivot.spec.mjs` would also run `script-pivot.spec.mjs`.
 - **The widened run** runs it once more, slowed (§5): `EXGRID_RTT_FLOOR=<ms>` makes the latency
   proxy add that round trip to every chunk, on top of what a test sets, 0 included, and
   `EXGRID_CPU_THROTTLE=<rate>` makes every page the fixture's contexts open run that many times

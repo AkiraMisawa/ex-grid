@@ -10,9 +10,9 @@
 #
 # Every job runs through counted-run.sh, which fails unless every repetition of every test
 # Playwright lists ran, so "ten times" is a count the run's summary shows, not a flag it was given.
-# A run that would outlast its job is stopped by Playwright's --global-timeout first, half an hour
-# before the job's, so it ends red with its records kept and the time each spec file took in its
-# summary, never cancelled with nothing said (2026-11-10, ADR-0451).
+# A run that would outlast its job is stopped by Playwright's --global-timeout first (RUN_BUDGET),
+# about half an hour before the job's, so it ends red with its records kept and the time each spec
+# file took in its summary, never cancelled with nothing said (2026-11-10, ADR-0451).
 # chrome-150 is CI's (ci.yml): a display scale, not a race.
 #
 # A pull request that changes this workflow, or the pieces it runs through, runs one small spec
@@ -51,6 +51,7 @@ on:
       - tests/browser/counted-run.sh
       - tests/browser/shard-files.mjs
       - tests/browser/fixtures.mjs
+      - tests/browser/tags.mjs
       - tests/browser/latency-proxy.mjs
 
 permissions:
@@ -65,9 +66,13 @@ env:
   DOTNET_NOLOGO: '1'
   # The hunt's repeat: ten to start with (ADR-0220 §4); a pull request's check of the jobs, three.
   REPEAT: ${{ github.event_name == 'pull_request' && 3 || inputs.repeat || 10 }}
-  # A pull request's check runs one small file: the harness's own readings, which read the circuit
-  # and the pictures the way every other spec does.
-  SPECS: ${{ github.event_name == 'pull_request' && 'harness-reading.spec.mjs' || inputs.specs || '' }}
+  # A pull request's check runs one small file, the harness's own readings, which read the circuit
+  # and the pictures the way every other spec does; and the differential test, whose tests go round
+  # every shard (shard-files.mjs), so each shard's list is drawn and read back as the night's is.
+  SPECS: ${{ github.event_name == 'pull_request' && 'harness-reading.spec.mjs differential.spec.mjs' || inputs.specs || '' }}
+  # How long a job's run may take, in ms: 120 minutes of the jobs' 150, the rest for the runner, the
+  # hosts and the records. Move it with their timeout-minutes.
+  RUN_BUDGET: 7200000
   # The widened run's starting values (ADR-0220 §5). The ADR has them chosen from the hunt's
   # failures; this job is built before the hunt has run, so these start where the suite's own
   # circuit tests already put a round trip (150 ms, ED-22 and ticket 202) and at DevTools' "4x
@@ -160,27 +165,27 @@ jobs:
         working-directory: tests/browser
         shell: bash
         run: |
-          args=$(node shard-files.mjs ${SPECS})
-          echo "args=${args}" >> "$GITHUB_OUTPUT"
-          if [ -z "${args}" ] && [ -z "${SPECS}" ]; then
+          tests=$(node shard-files.mjs ${SPECS})
+          echo "tests=${tests}" >> "$GITHUB_OUTPUT"
+          if [ -z "${tests}" ] && [ -z "${SPECS}" ]; then
             echo "Shard ${EXGRID_SHARD} of all of layer 3 takes no test: the sharding is broken, not empty." >&2
             exit 1
-          elif [ -z "${args}" ]; then
+          elif [ -z "${tests}" ]; then
             echo "Shard ${EXGRID_SHARD} of \`${SPECS}\` takes no test." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Layer 3, each test ${{ env.REPEAT }} times, headed under xvfb
-        if: steps.shard.outputs.args != ''
+        if: steps.shard.outputs.tests != ''
         working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh ${REPEAT} ${{ steps.shard.outputs.args }} --project=${{ matrix.project }}
-          --global-timeout=7200000
+          ./counted-run.sh ${REPEAT} ${{ steps.shard.outputs.tests }} --project=${{ matrix.project }}
+          --global-timeout=${RUN_BUDGET}
 
       - name: Keep the run's records
-        if: always() && steps.shard.outputs.args != ''
+        if: always() && steps.shard.outputs.tests != ''
         uses: actions/upload-artifact@v7
         with:
           name: hunt-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
@@ -224,17 +229,17 @@ jobs:
         working-directory: tests/browser
         shell: bash
         run: |
-          args=$(node shard-files.mjs ${SPECS})
-          echo "args=${args}" >> "$GITHUB_OUTPUT"
-          if [ -z "${args}" ] && [ -z "${SPECS}" ]; then
+          tests=$(node shard-files.mjs ${SPECS})
+          echo "tests=${tests}" >> "$GITHUB_OUTPUT"
+          if [ -z "${tests}" ] && [ -z "${SPECS}" ]; then
             echo "Shard ${EXGRID_SHARD} of all of layer 3 takes no test: the sharding is broken, not empty." >&2
             exit 1
-          elif [ -z "${args}" ]; then
+          elif [ -z "${tests}" ]; then
             echo "Shard ${EXGRID_SHARD} of \`${SPECS}\` takes no test." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Layer 3 widened, headed under xvfb
-        if: steps.shard.outputs.args != ''
+        if: steps.shard.outputs.tests != ''
         working-directory: tests/browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
@@ -242,11 +247,11 @@ jobs:
           EXGRID_CPU_THROTTLE: ${{ env.CPU_THROTTLE }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh 1 ${{ steps.shard.outputs.args }} --project=${{ matrix.project }}
-          --global-timeout=7200000
+          ./counted-run.sh 1 ${{ steps.shard.outputs.tests }} --project=${{ matrix.project }}
+          --global-timeout=${RUN_BUDGET}
 
       - name: Keep the run's records
-        if: always() && steps.shard.outputs.args != ''
+        if: always() && steps.shard.outputs.tests != ''
         uses: actions/upload-artifact@v7
         with:
           name: widened-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
@@ -312,7 +317,7 @@ jobs:
           EXGRID_DIFF_SEEDS: ${{ steps.seeds.outputs.range }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh 1 differential.spec.mjs --project=chrome
+          ./counted-run.sh 1 differential.spec.mjs --project=chrome --global-timeout=${RUN_BUDGET}
 
       - name: Keep the run's records
         if: always() && steps.seeds.outputs.range != ''

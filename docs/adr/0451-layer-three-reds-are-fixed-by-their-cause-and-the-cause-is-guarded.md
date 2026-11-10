@@ -295,14 +295,18 @@ cause, and a second found beside it:
 2. **A shard ran tests of files it did not name.** Playwright reads a file argument as a pattern, so a shard given
    `pivot.spec.mjs` also ran `script-pivot.spec.mjs` and `measure-pivot.spec.mjs`: thirty tests a pass on the Server
    host ran in two shards each, and `counted-run.sh`, counting what Playwright listed for the same arguments, could
-   not see it. A shard is now handed on as a list of tests (`--test-list`), which names each test exactly.
+   not see it. CI's repeat of a changed spec (`browser-repeat`) met the same. A shard is now handed on as a list of
+   tests (`--test-list`), which names each test exactly, and `counted-run.sh`, which every repeated run goes through,
+   hands a spec file named on its command line to Playwright as that file alone.
 
 The guards: `shard-files.mjs` reads its list back through Playwright and refuses one whose every line does not match
-exactly one test, so a test cannot fall out of every shard unseen; `counted-run.sh` says what stopped a run that
-did not finish, since Playwright counts what it never reached as skipped, and writes the time each spec file took
-to the job's summary; and every Hunt job stops its run
-with `--global-timeout` half an hour before the job's own limit, so a shard that outgrows its job ends red with its
-records kept and the file that took the time named, never cancelled with nothing said.
+exactly one test, so a test cannot fall out of every shard unseen, and the Hunt's own pull-request check now runs the
+differential test, so every shard's list is drawn and read back there too. A long test nobody tags `SPREAD` is not
+prevented; it is found: every Hunt job, the seed sweep included, stops its run with `--global-timeout` about half an
+hour before the job's own limit, and `counted-run.sh` counts only the repetitions that ran (Playwright's stats count
+what it never reached as skipped), says what Playwright reported outside any test, and writes the time each spec
+file took to the job's summary. A shard that outgrows its job ends red with its records kept and the file that took
+the time named, never cancelled with nothing said.
 
 ## Still open
 

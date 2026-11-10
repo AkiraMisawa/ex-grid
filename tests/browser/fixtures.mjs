@@ -1338,9 +1338,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
 // a host by default and none is left out by default.
 export const BEHAVIOUR = '@behaviour';
 export const BLAZOR = '@blazor';
-// A test far longer than a shard's share of tests allows for, given as `test(title, { tag: SPREAD }, …)`: the daily
-// hunt sends its file's tests round its shards one at a time instead of keeping the file in one (shard-files.mjs).
-export const SPREAD = '@spread';
+export { SPREAD } from './tags.mjs';
 
 /** A test run under each Chrome, named `mud` or `MudBlazor` for ExGrid.MudBlazor's: the built-in one is a behaviour spec, the MudBlazor one a Blazor one. */
 export const chromeHost = (chrome) => (/mud/i.test(chrome) ? BLAZOR : BEHAVIOUR);
