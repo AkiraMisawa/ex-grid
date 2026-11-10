@@ -102,6 +102,15 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
     [Parameter] public bool HideColumnMenu { get; set; }
 
+    /// <summary>How every header lays out what stands beside its label (ADR-0500):
+    /// <see cref="GridHeaderDisplay.Standard"/> unless set, which is the header an untouched grid always drew.
+    /// <see cref="GridHeaderDisplay.Compact"/> puts the ▾ and the marks of the column's Sort and filter in one Header
+    /// Slot inside the cell's right padding, so a header needs less width. It moves no meaning, and is chosen apart
+    /// from <see cref="Density"/>, <see cref="RowHeight"/> and <see cref="HeaderHeight"/>. Changing it on a grid in use
+    /// keeps the rows, the Sort, the Filter, the Selection, an open edit and every declared width; a column whose
+    /// width is Auto is measured again under the header it now has (ADR-0016).</summary>
+    [Parameter] public GridHeaderDisplay HeaderDisplay { get; set; }
+
     /// <summary>Whether the menus leave out Copy with headers, and Ctrl+Shift+C is left to the page (ADR-0036,
     /// ADR-0005).</summary>
     [Parameter] public bool HideCopyWithHeaders { get; set; }
@@ -1142,6 +1151,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if (Presentation is { } presentation)
             ScriptMetricsJson.WritePresentationDefaults(json, "presentationDefaults", presentation);
         json.WriteBoolean("hideColumnMenu", HideColumnMenu);
+        json.WriteString("headerDisplay", ScriptJson.Camel(HeaderDisplay));
         json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
         json.WriteBoolean("headerClickSelects", HeaderClickSelects);
         json.WriteBoolean("pasteMaySpill", PasteMaySpill);

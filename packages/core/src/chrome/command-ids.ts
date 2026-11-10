@@ -45,6 +45,10 @@ export const gridLabelIds = Object.freeze({
     formulaBar: 'formula-bar',
     /** A header's ▾, which opens the column menu (ADR-0044). */
     columnMenu: 'column-menu',
+    /** A compact header's ▾ on a column the Filter holds a spec for, which shows the filter's mark (ADR-0500). */
+    columnMenuFiltered: 'column-menu-filtered',
+    /** The filter's mark on a compact header that has no ▾ (ADR-0500). */
+    columnFiltered: 'column-filtered',
     /** A collapsed Header Group's toggle, its group's label at `{label}` (ADR-0400 section 8). */
     headerGroupExpand: 'header-group-expand',
     /** An expanded Header Group's toggle, its group's label at `{label}` (ADR-0400 section 8). */

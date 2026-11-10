@@ -63,6 +63,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028).',
     },
     {
+        route: 'header-display', title: 'Header display', group: 'Layout',
+        description: 'The header\'s standard and compact displays over the same rows: the same declared widths under either, and Auto widths in each, so what a compact header gives back is read from the columns (ADR-0500).',
+    },
+    {
         route: 'mantine', title: 'Mantine Wrapper', group: 'Layout',
         description: 'ExGrid inside @ex-grid/mantine\'s Paper under a MantineProvider: Mantine\'s components in the Chrome slots, the theme\'s colours in both schemes, and the Density picking the components\' size (ADR-0390).',
     },

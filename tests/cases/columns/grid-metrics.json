@@ -107,6 +107,14 @@
       ]
     },
     {
+      "name": "ADR-0500: a compact header is its label, the em of slack and one Header Box's room, whichever of the menu button and the sort it has",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "headerBoxRoomPx", "is": 14}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false, "display": "compact"}, "is": 88.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": false, "display": "compact"}, "is": 102.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true, "display": "compact"}, "is": 102.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "compact"}, "is": 102.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "standard"}, "is": 130.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true}, "is": 130.5, "near": 1e-09}]},
+        {"static": "resolve", "args": {"density": "excel"}, "then": [{"get": "headerBoxRoomPx", "is": 14}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "compact"}, "is": 84.16, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "standard"}, "is": 104.16, "near": 1e-09}]},
+        {"static": "resolve", "args": {"density": "comfortable"}, "then": [{"get": "headerBoxRoomPx", "is": 10}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "compact"}, "is": 106.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "standard"}, "is": 138.5, "near": 1e-09}]}
+      ]
+    },
+    {
       "name": "ADR-0016: DejaVu Sans Bold paints \"Amount\" at 61.7px, \"MARKET VALUE\" at 120.5px and \"評価額\" at 42px; none is cut",
       "expect": [
         {"static": "resolve", "args": {"density": "compact"}, "then": [{"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false}, "atLeast": 77.7}, {"call": "headerRequiredPx", "args": {"label": "MARKET VALUE", "menuButton": false, "sortable": false}, "atLeast": 136.5}, {"call": "headerRequiredPx", "args": {"label": "評価額", "menuButton": false, "sortable": false}, "atLeast": 58}]}

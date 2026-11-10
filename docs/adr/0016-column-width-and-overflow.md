@@ -395,6 +395,13 @@ stylesheet literal, `content: " ▲"`, beside a C# charge for it — the pairing
 stands in a box C# sizes, `--ex-sort-mark-width`, as the menu button's ▾ does: an em for the
 glyph and a 6px gap, 20px at 14px. The header estimate charges that box, and the stylesheet sizes
 the mark with the same number.)*
+*(2026-11-10, [ADR-0500](./0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md):
+this is what a header is charged in the Standard Header Display, which is the default. In the Compact
+one the ▾ and the marks of the column's Sort and Filter share one Header Box inside the cell's padding,
+and a header is charged its label, the em of slack below, and only what that box is wider than the
+padding, 14px at the default metrics where the band and the indicator's box are 42px. The reason for
+counting it always is the same: nothing a column comes to hold moves a column. A change of the display
+measures an Auto width again, as a change of `hideColumnMenu` does, and leaves a Fixed one alone.)*
 
 **Full-width characters are a fourth class, charged at 1em** — the font size. These are the
 characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so

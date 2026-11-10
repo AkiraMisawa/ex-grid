@@ -27,6 +27,15 @@ export interface GridMetricsOptions {
     readonly defaults?: GridPresentationDefaults;
 }
 
+/**
+ * How a header lays out what stands beside its label (ADR-0500). `standard` gives the column-menu button a band
+ * of its own and the sort mark a box of its own, as an untouched grid always did. `compact` gives both one Header
+ * Slot, inside the cell's right padding and a button's width past it: the ▾ while the column has neither a Sort
+ * nor a filter, and the mark of what it has while it has one. Neither word is a {@link GridDensity}: the rows'
+ * height and the cells' padding are chosen apart from it.
+ */
+export type GridHeaderDisplay = 'standard' | 'compact';
+
 /** What {@link GridMetrics.headerRequiredPx} takes: a label, and what stands beside it in the header. */
 export interface HeaderOptions {
     /** The header's text. */
@@ -35,6 +44,8 @@ export interface HeaderOptions {
     readonly menuButton: boolean;
     /** Whether the column can be sorted, sorted now or not. */
     readonly sortable: boolean;
+    /** How the header lays the two out (ADR-0500); `standard` unless given. */
+    readonly display?: GridHeaderDisplay;
 }
 
 interface Preset {
@@ -68,6 +79,7 @@ const fourteen = { font: 14, wide: 14.04, digit: 9.75, narrow: 6.41, other: 15.4
 const chrome = { actionPad: 6, actionBorder: 1, actionGap: 4, menuWidth: 16, menuInset: 6, sortMark: 20, groupToggle: 20 } as const;
 
 const densities: ReadonlySet<string> = new Set<GridDensity>(['compact', 'comfortable', 'standard', 'excel']);
+const headerDisplays: ReadonlySet<string> = new Set<GridHeaderDisplay>(['standard', 'compact']);
 
 function presetOf(density: GridDensity): Preset {
     switch (density) {
@@ -254,14 +266,31 @@ export class GridMetrics {
     }
 
     /**
+     * What the Header Box takes off a compact header's label, past the cell's own right padding (ADR-0500): the
+     * box stands inside that padding, so only what the menu button's band is wider than it is charged.
+     */
+    get headerBoxRoomPx(): number {
+        return Math.max(0, this.menuButtonBandPx - this.cellPaddingXPx);
+    }
+
+    /**
      * The full cell width a header needs (ADR-0016, 2026-09-25): its label charged as text, one full-width
      * em of slack (a label is proportional letters no per-class charge can bound), the menu button's band
      * when there is one, and the sort mark's box when the column can be sorted, sorted now or not, so a
      * header click never chops its label nor moves the columns to its right.
+     *
+     * A `compact` header (ADR-0500) is charged its label, the same em of slack, and the Header Box's room where
+     * the header has a menu button or can be sorted: one box for the ▾ and for the marks, whichever it shows, so
+     * nothing a column comes to hold moves its label either.
      */
     headerRequiredPx(header: HeaderOptions): number {
-        return this.cellMetrics.for('text').estimatePx(header.label)
-            + this.cellMetrics.fullWidthPx
+        const { display = 'standard' }: { readonly display?: unknown } = header;
+        if (typeof display !== 'string' || !headerDisplays.has(display)) {
+            throw new RangeError(`Unknown header display '${String(display)}' (ADR-0500).`);
+        }
+        const label = this.cellMetrics.for('text').estimatePx(header.label) + this.cellMetrics.fullWidthPx;
+        if (display === 'compact') return label + (header.menuButton || header.sortable ? this.headerBoxRoomPx : 0);
+        return label
             + (header.menuButton ? this.menuButtonBandPx : 0)
             + (header.sortable ? this.sortMarkWidthPx : 0);
     }

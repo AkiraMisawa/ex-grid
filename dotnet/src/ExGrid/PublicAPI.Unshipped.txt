@@ -1,1 +1,7 @@
 #nullable enable
+ExGrid.Components.ExGrid<TRow>.HeaderDisplay.get -> ExGrid.GridHeaderDisplay
+ExGrid.Components.ExGrid<TRow>.HeaderDisplay.set -> void
+ExGrid.GridHeaderDisplay
+ExGrid.GridHeaderDisplay.Compact = 1 -> ExGrid.GridHeaderDisplay
+ExGrid.GridHeaderDisplay.Standard = 0 -> ExGrid.GridHeaderDisplay
+ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable, ExGrid.GridHeaderDisplay display) -> double

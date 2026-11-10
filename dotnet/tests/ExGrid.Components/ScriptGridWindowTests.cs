@@ -59,6 +59,20 @@ public class ScriptGridWindowTests : BunitContext
         Assert.Equal(3, options.GetProperty("columns").GetArrayLength());
     }
 
+    [Fact] // ADR-0500: the header display crosses by its name, the default as standard, and a change crosses as an update of the grid that stands
+    public void ADR0500_the_header_display_crosses_by_name_and_a_change_is_an_update()
+    {
+        var cut = Grid(100);
+        var attached = Parsed(Assert.Single(_module.Invocations["attach"]).Arguments[2]).GetProperty("options");
+        Assert.Equal("standard", attached.GetProperty("headerDisplay").GetString());
+
+        cut.Render(ps => ps.Add(g => g.HeaderDisplay, GridHeaderDisplay.Compact));
+
+        var updated = Parsed(_grid.Invocations["update"][^1].Arguments[0]).GetProperty("options");
+        Assert.Equal("compact", updated.GetProperty("headerDisplay").GetString());
+        Assert.Single(_module.Invocations["attach"]);
+    }
+
     [Fact] // ADR-0004: before the grid asks, the first screens cross, and the count says how many rows there are
     public void ADR0350_the_attach_sends_the_first_rows_and_the_whole_count()
     {

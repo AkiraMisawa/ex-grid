@@ -71,7 +71,7 @@ export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export { foldCase } from './query/text-casing';
 export type { CellAlign, CellState, CellTone } from './paint/cell-classes';
-export { GridMetrics, type GridDensity, type GridMetricsOptions, type HeaderOptions } from './grid-metrics';
+export { GridMetrics, type GridDensity, type GridHeaderDisplay, type GridMetricsOptions, type HeaderOptions } from './grid-metrics';
 export {
     CellTextMetrics, type CellTextMetricsOptions, type CellWidthsEveryClass, type CellWidthsFourClasses, type CellWidthsThreeClasses, type CellWidthsUniform,
     type CellWidthsWithBold,

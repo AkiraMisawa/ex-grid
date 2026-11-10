@@ -62,7 +62,8 @@ block on `main` before it uses the first number.
 | 0470–0479 | `claude/project-thread-v6bw1r` | Find All: Excel's list of every match, asked of the Consumer in pages (ADR-0470, the user put it in 0.2.0 on 2026-11-03) |
 | 0480–0489 | `claude/project-thread-rbcyag` | Dragging a Reference Outline by its edge or corner square to move or resize its Reference, ticket 31 (ADR-0480, the user put it into 0.2.0 on 2026-11-03). 0470–0479 were taken by the Find All branch the same day |
 | 0490–0499 | `claude/project-thread-7jhvvd` | A cell's Fill split diagonally between two colours, for a Consumer comparing two sides against a base (quant-workspace's XVA what-if page; the user agreed to the direction 2026-11-07) |
-| 0500– | free | reserve a block of ten |
+| 0500–0509 | `claude/project-thread-plcwbp` | The Header Display: a compact header with one box for the column menu and the column's state (ADR-0500, asked for by the user 2026-11-10). Reserved in the branch's own pull request, whose session could not push to `main`: a branch that takes 0500 before it merges moves to its own block |
+| 0510– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
