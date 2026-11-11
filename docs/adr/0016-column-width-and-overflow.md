@@ -410,6 +410,12 @@ counting it always is the same: nothing a column comes to hold moves a column. A
 its header needs apart from what its values taught it, so a change of the display, or of
 `hideColumnMenu`, replaces the header's part and keeps the values': a column its header decided follows
 the header, a column its values decided does not move, and a Fixed one is left alone.)*
+*(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+"nothing a column comes to hold moves a column" holds of every header that has a box for what it holds.
+A header with no box, a standard one without the ▾ or a compact one with neither the ▾ nor a Sort, takes
+one for the funnel while its column is filtered and is charged for it only then, so there an Auto column
+its header decides widens when its Filter is set and narrows when it is cleared. The alternative was the
+box charged to every such column at every moment, or no mark.)*
 
 **Full-width characters are a fourth class, charged at 1em** — the font size. These are the
 characters whose East Asian Width is Wide or Fullwidth. CJK fonts are drawn on the em square, so

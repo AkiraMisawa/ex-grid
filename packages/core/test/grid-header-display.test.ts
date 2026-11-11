@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // Layer 2 (ADR-0350 section 13): the header's display (ADR-0500). `standard` is the header an untouched grid always
-// drew, to the attribute, until a Filter marks a column's ▾ (ADR-0501); `compact` gives the ▾ and the marks of the column's Sort and filter one Header Box,
+// drew, to the attribute, until a Filter marks a column's ▾ (ADR-0501), or the box a header with no ▾ takes for it (ADR-0502); `compact` gives the ▾ and the marks of the column's Sort and filter one Header Box,
 // charges a header that box and no more, and changes neither a declared width nor anything the grid holds when it
 // is switched on a grid in use.
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import type { GridOptions } from '../src/dom/grid-view';
 import { GridMetrics } from '../src/grid-metrics';
 import { japaneseGridWords } from '../src/chrome/japanese-grid-words';
 import { GridSource } from '../src/source/grid-source';
+import type { GridFilter } from '../src/query/filter';
 import { gridHeaderRequiredPx } from '../src/text-geometry';
 import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
@@ -83,6 +84,33 @@ const said = (root: HTMLElement): string[] => cells(root).map(cell => {
 const menu = (root: HTMLElement): HTMLElement | null => root.querySelector<HTMLElement>(':scope > .ex-popover > .ex-popover-commands[role=menu]');
 const notBlank = { clauses: [{ operator: 'isNotBlank' }] } as const;
 
+/**
+ * A Consumer's own source over `rows`, which narrows its rows by means of its own and says which columns by: the
+ * Filter it holds is whatever `hold` is handed, a column the grid's own query would refuse included (ADR-0501: the
+ * header follows the Filter the grid is given).
+ */
+function heldFilter(rows: readonly Trade[]): { readonly source: GridSource<Trade>; readonly hold: (filter: GridFilter | undefined) => void } {
+    const inner = GridSource.from(rows);
+    const listeners = new Set<() => void>();
+    let state = inner.snapshot();
+    return {
+        source: {
+            subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
+            snapshot: () => state,
+            setColumns: columns => { inner.setColumns(columns); },
+            setSorts: sorts => { inner.setSorts(sorts); },
+            setFilter: () => { throw new Error('This source takes its Filter from its Consumer alone.'); },
+            needRange: () => Promise.resolve(),
+            rows: range => Promise.resolve(rows.slice(range.start, range.start + range.count)),
+            distinctValues: () => Promise.resolve({ kind: 'tooMany' }),
+        },
+        hold: filter => {
+            state = { ...state, filter };
+            for (const listener of listeners) listener();
+        },
+    };
+}
+
 describe('the standard header', () => {
     it('ADR-0500: a grid given no headerDisplay draws the header it always drew, and so does one given standard', async () => {
         const source = GridSource.from(trades(50));
@@ -136,12 +164,120 @@ describe('the standard header', () => {
         expect(heard).toEqual([]);
     });
 
-    it('ADR-0501: with the column menu hidden a standard header has no ▾ and no box, and shows no mark of a Filter', async () => {
+    it('ADR-0502: with the column menu hidden a standard header takes a box for the funnel while its column is filtered, a mark and nothing to press, and is the header it was once the Filter is cleared', async () => {
         const source = GridSource.from(trades(50));
-        const { root } = mount<Trade>({ columns: fixed, source, ...box, hideColumnMenu: true });
+        const { root } = mount<Trade>({ columns: fixed, source, ...box, hideColumnMenu: true, commandLabel: japaneseGridWords });
+        await painted();
+        const unfiltered = q(root, '.ex-header').outerHTML;
+        expect(said(root)).toEqual(['none unfiltered no box', 'none unfiltered no box']);
+
         source.setFilter({ columns: { Book: notBlank } });
         await painted();
-        expect(said(root)).toEqual(['none filtered no box', 'none unfiltered no box']);
+        // The mark is an image named in the Consumer's words, never a button: there is no menu for it to open.
+        expect(said(root)).toEqual(['none filtered span:フィルター適用中', 'none unfiltered no box']);
+        expect(q(root, '.ex-header-state').getAttribute('role')).toBe('img');
+        expect(root.querySelector('.ex-menu-button')).toBeNull();
+        // The band is still the standard one.
+        expect(q(root, '.ex-header').hasAttribute('data-ex-header-display')).toBe(false);
+
+        // Sorted too, the column says both: the Sort where it always did, the Filter in its box.
+        source.setSorts([{ column: 'Book', direction: 'descending' }]);
+        await painted();
+        expect(said(root)).toEqual(['descending filtered span:フィルター適用中', 'none unfiltered no box']);
+
+        source.setSorts([]);
+        source.setFilter(undefined);
+        await painted();
+        expect(q(root, '.ex-header').outerHTML).toBe(unfiltered);
+    });
+
+    it('ADR-0502: with the column menu hidden, an Auto column its header decides is wider by the funnel\'s band while it is filtered and is back when the Filter is cleared, and nothing is reported', async () => {
+        const heard: GridColumnWidthChange[] = [];
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: auto, source, ...box, hideColumnMenu: true, onColumnWidthChanged: change => { heard.push(change); } });
+        await painted();
+        const before = widths(root);
+        const [ccy, tag, book] = before;
+
+        source.setFilter({ columns: { Ccy: notBlank, Book: notBlank } });
+        await painted();
+        expect(said(root).map(cell => cell.split(' ')[1])).toEqual(['filtered', 'unfiltered', 'filtered']);
+        // The ▾'s band, 22px, on the column its header decides; the one its values decide has the room already,
+        // and a column that is not filtered is charged nothing.
+        expect(widths(root)).toEqual([defined(ccy, 'Ccy') + 22, tag, book]);
+        const need = metrics.headerRequiredPx({ label: 'Ccy', menuButton: false, sortable: true, filtered: true });
+        expect(need).toBe(101.25);
+        expect(Math.abs(defined(widths(root)[0], 'Ccy') - need) < 1).toBe(true);
+        // The entry a Consumer charges a header by, beside the grid, answers the same.
+        expect(gridHeaderRequiredPx('Ccy', { menuButton: false, sortable: true, filtered: true })).toBe(101.25);
+        expect(gridHeaderRequiredPx('Ccy', { menuButton: false, sortable: true })).toBe(79.25);
+
+        // Another column filtered in its place: the room goes with the mark.
+        source.setFilter({ columns: { Book: notBlank } });
+        await painted();
+        expect(widths(root)).toEqual(before);
+        source.setFilter(undefined);
+        await painted();
+        expect(widths(root)).toEqual(before);
+        expect(heard).toEqual([]);
+    });
+
+    it('ADR-0502: a width somebody set stands when its column is filtered, and Size to fit charges the header as it stands, funnel and all', async () => {
+        const heard: GridColumnWidthChange[] = [];
+        const source = GridSource.from(trades(50));
+        const set: readonly GridColumn<Trade>[] = [{ name: 'Ccy', type: 'text', value: () => 'USD', width: 200 }, ...auto.slice(1)];
+        const { root } = mount<Trade>({ columns: set, source, ...box, hideColumnMenu: true, onColumnWidthChanged: change => { heard.push(change); } });
+        await painted();
+        const grip = (): Element => q(root, '.ex-header-cell > .ex-resize-grip');
+        mouse(grip(), 'dblclick', { clientX: 198 });
+
+        source.setFilter({ columns: { Ccy: notBlank } });
+        await painted();
+        expect(widths(root)[0]).toBe(200);
+        mouse(grip(), 'dblclick', { clientX: 198 });
+        // Fitted before the Filter, the label, the slack and the sort mark's box; fitted under it, the funnel's band too.
+        expect(heard).toEqual([{ column: 'Ccy', widthPx: 79.25 }, { column: 'Ccy', widthPx: 101.25 }]);
+    });
+
+    it('ADR-0502: the widths follow the Filter the grid holds, whenever it came and whenever the column menu was hidden', async () => {
+        const filter = { columns: { Ccy: notBlank } };
+        const late = GridSource.from(trades(50));
+        const options: GridOptions<Trade> = { columns: auto, source: late, ...box };
+        const { root, view } = mount<Trade>(options);
+        await painted();
+        const shown = widths(root);
+        // Filtered while the ▾ stands, which moves nothing (ADR-0501); then the ▾ goes, and its band stays for the funnel.
+        late.setFilter(filter);
+        view.update({ ...options, hideColumnMenu: true });
+        await painted();
+        // And a grid that opens on a source already filtered, as a restored view is.
+        const early = GridSource.from(trades(50));
+        early.setColumns(auto);
+        early.setFilter(filter);
+        const { root: opened } = mount<Trade>({ columns: auto, source: early, ...box, hideColumnMenu: true });
+        await painted();
+        expect(widths(root)).toEqual(widths(opened));
+        // Ccy keeps the band and gives up nothing but what the ▾ of an unfiltered header gives up: Tag's 22px.
+        expect(widths(root)).toEqual([shown[0], defined(shown[1], 'Tag') - 22, shown[2]]);
+        view.update(options);
+        await painted();
+        expect(widths(root)).toEqual(shown);
+    });
+
+    it('ADR-0502: a grid that hides its header paints no funnel, so a Filter charges its columns nothing', async () => {
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: auto, source, ...box, hideColumnMenu: true, hideHeader: true });
+        await painted();
+        /** Each column's width, as the grid writes it inline on the first row's cells. */
+        const cellWidths = (): number[] => [...q(root, '.ex-viewport > .ex-row').querySelectorAll<HTMLElement>('.ex-cell')].map(cell => {
+            const width = /(?:^|; )width: ([\d.]+)px/u.exec(present(cell.getAttribute('style'), 'a cell\'s style'));
+            return Number(present(width, 'a cell\'s width')[1]);
+        });
+        const before = cellWidths();
+        expect(before).toHaveLength(3);
+        source.setFilter({ columns: { Ccy: notBlank } });
+        await painted();
+        expect(cellWidths()).toEqual(before);
     });
 
     it('ADR-0500: a headerDisplay that is neither is refused by name, on a new grid and on one in use', async () => {
@@ -201,6 +337,20 @@ describe('the compact header\'s Header Box', () => {
         expect(said(root)).toEqual(['ascending unfiltered span:null', 'null unfiltered no box', 'none filtered span:Filtered']);
         const [sorted, , filtered] = cells(root).map(cell => cell.querySelector('.ex-header-state'));
         expect([sorted?.getAttribute('aria-hidden'), filtered?.getAttribute('role')]).toEqual(['true', 'img']);
+    });
+
+    it('ADR-0502: with the column menu hidden, a column that cannot be sorted has no box until the Consumer\'s own Filter names it, and then the box says so', async () => {
+        const consumers = heldFilter(trades(50));
+        const { root } = mount<Trade>({ columns: auto, source: consumers.source, ...box, headerDisplay: 'compact', hideColumnMenu: true });
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered span:null', 'null unfiltered no box', 'none unfiltered span:null']);
+        consumers.hold({ columns: { Tag: notBlank } });
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered span:null', 'null filtered span:Filtered', 'none unfiltered span:null']);
+        expect(defined(cells(root)[1], 'Tag').querySelector('.ex-header-state')?.getAttribute('role')).toBe('img');
+        consumers.hold(undefined);
+        await painted();
+        expect(said(root)).toEqual(['none unfiltered span:null', 'null unfiltered no box', 'none unfiltered span:null']);
     });
 
     it('ADR-0500 / ADR-0012: a click on a compact header still sorts, a press on its box opens the menu and sorts nothing, and Alt+↓ opens the Focus\'s', async () => {
@@ -342,6 +492,21 @@ describe('what a compact header needs', () => {
         await painted();
         const [ccy, tag] = widths(standard);
         expect(widths(compact).slice(0, 2)).toEqual([defined(ccy, 'Ccy') - 6, tag]);
+    });
+
+    it('ADR-0502: a compact header with neither a ▾ nor a Sort is charged the Header Box while its column is filtered, and no other compact header is', async () => {
+        const consumers = heldFilter(trades(30));
+        const { root } = mount<Trade>({ columns: auto, source: consumers.source, ...box, headerDisplay: 'compact', hideColumnMenu: true });
+        await painted();
+        const before = widths(root);
+        const [ccy, tag, book] = before;
+        consumers.hold({ columns: { Ccy: notBlank, Tag: notBlank } });
+        await painted();
+        // The box's 14px past the padding on Tag; Ccy, which can be sorted, had its box already.
+        expect(widths(root)).toEqual([ccy, defined(tag, 'Tag') + 14, book]);
+        consumers.hold(undefined);
+        await painted();
+        expect(widths(root)).toEqual(before);
     });
 
     it('ADR-0500 / ADR-0016: a Sort or a filter taken or dropped moves no width', async () => {

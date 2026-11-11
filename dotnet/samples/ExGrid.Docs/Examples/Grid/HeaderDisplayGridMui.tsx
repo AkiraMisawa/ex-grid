@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
-import { Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { GridSource, type GridColumn, type GridHeaderDisplay } from '@ex-grid/core';
+import { Button, FormControlLabel, Stack, Switch, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { GridSource, type GridColumn, type GridFilter, type GridHeaderDisplay } from '@ex-grid/core';
 import { MuiExGrid } from '@ex-grid/mui';
 import { samplePositions, type Position } from './Positions';
 
@@ -22,9 +22,16 @@ const columns: readonly GridColumn<Position>[] = [
 
 const displays: readonly GridHeaderDisplay[] = ['standard', 'compact'];
 
+// A filter from the page's own controls: the only way to filter a grid that hides its column menu. The header of a
+// filtered column shows the funnel either way; without the ▾ a standard header takes a box for it meanwhile.
+const usdOnly: GridFilter = { columns: { Currency: { clauses: [{ operator: 'equals', value: 'USD' }] } } };
+const onlyUsd = (): void => { source.setFilter(usdOnly); };
+const clearFilter = (): void => { source.setFilter(undefined); };
+
 // The Wrapper passes headerDisplay to the grid with its other props; the header's box is the core's under every Wrapper.
 export default function HeaderDisplayGridMui(): ReactElement {
     const [display, setDisplay] = useState<GridHeaderDisplay>('compact');
+    const [hideColumnMenu, setHideColumnMenu] = useState(false);
     return (
         <>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1.5 }}>
@@ -32,8 +39,13 @@ export default function HeaderDisplayGridMui(): ReactElement {
                     onChange={(_, value: GridHeaderDisplay | null) => { if (value !== null) setDisplay(value); }}>
                     {displays.map(name => <ToggleButton key={name} value={name}>{name}</ToggleButton>)}
                 </ToggleButtonGroup>
+                <FormControlLabel label="Hide the column menu"
+                    control={<Switch size="small" checked={hideColumnMenu} onChange={event => { setHideColumnMenu(event.target.checked); }} />} />
+                <Button size="small" variant="outlined" onClick={onlyUsd}>Filter Ccy to USD</Button>
+                <Button size="small" onClick={clearFilter}>Clear the filter</Button>
             </Stack>
-            <MuiExGrid highlightHoverRow source={source} columns={columns} headerDisplay={display} viewportHeight={300} viewportWidth="stretch" />
+            <MuiExGrid highlightHoverRow source={source} columns={columns} headerDisplay={display} hideColumnMenu={hideColumnMenu}
+                viewportHeight={300} viewportWidth="stretch" />
         </>
     );
 }

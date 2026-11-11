@@ -102,10 +102,16 @@ export function gridTextGeometry(options: GridTextOptions = {}): GridTextGeometr
 
 /** The cell width a header needs in a grid drawn with `options`, as an Auto width charges it (ADR-0016): its label,
  * an em of slack, the column-menu button's band when `menuButton`, and the sort mark's box when `sortable`; under
- * `headerDisplay: 'compact'`, its label, the slack and the one Header Box's room when either (ADR-0500). A
- * Consumer that fixes a column's width beside the grid's own charges its header alike. */
+ * `headerDisplay: 'compact'`, its label, the slack and the one Header Box's room when either (ADR-0500). While the
+ * column is `filtered`, a header with no box for the funnel is charged one: the button's band where a standard
+ * header has no button, and the Header Box where a compact one has neither (ADR-0502). A Consumer that fixes a
+ * column's width beside the grid's own charges its header alike. */
 export function gridHeaderRequiredPx(label: string,
-    options: GridTextOptions & { readonly menuButton: boolean; readonly sortable: boolean; readonly headerDisplay?: GridHeaderDisplay }): number {
-    const { menuButton, sortable, headerDisplay } = options;
-    return metricsAt(options).headerRequiredPx({ label, menuButton, sortable, ...(headerDisplay === undefined ? {} : { display: headerDisplay }) });
+    options: GridTextOptions & {
+        readonly menuButton: boolean; readonly sortable: boolean; readonly headerDisplay?: GridHeaderDisplay; readonly filtered?: boolean;
+    }): number {
+    const { menuButton, sortable, headerDisplay, filtered } = options;
+    return metricsAt(options).headerRequiredPx({
+        label, menuButton, sortable, ...(headerDisplay === undefined ? {} : { display: headerDisplay }), ...(filtered === undefined ? {} : { filtered }),
+    });
 }

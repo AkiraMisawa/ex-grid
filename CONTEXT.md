@@ -949,6 +949,8 @@ values taught it
 ([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
 Under either, the menu button of a column the **Filter** holds a spec for is painted as a funnel
 ([ADR-0501](./docs/adr/0501-a-filtered-columns-menu-button-is-a-funnel-in-the-standard-header-too.md)).
+A header that has no box for it takes one while its column is filtered, and is charged for it only then
+([ADR-0502](./docs/adr/0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md)).
 _Avoid_: compact mode, header mode, header density (Density is heights, type and padding)
 
 **Header Box**:
@@ -958,6 +960,9 @@ Sort, a funnel for a Filter, both for both. It is always there and always the sa
 moves when the column's state or the pointer does; a press on it opens the column menu, and where there
 is no menu it is a mark alone
 ([ADR-0500](./docs/adr/0500-a-header-may-be-drawn-compact-with-one-box-for-the-menu-and-the-columns-state.md)).
+The one header without it is that of a column with neither a menu nor a Sort, which takes it only while
+the Filter names the column
+([ADR-0502](./docs/adr/0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md)).
 _Avoid_: slot (a Chrome's), badge, indicator, sort button (it does not sort)
 
 **Pinned Column**:

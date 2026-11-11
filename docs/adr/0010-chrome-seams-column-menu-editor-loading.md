@@ -66,6 +66,10 @@ draws none of it.)*
 either Header Display the ▾ of a column the Filter holds a spec for is painted as a funnel and named
 *Column menu, filtered*. It is the same button and the same toggle.)*
 
+*(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+where the Consumer hides the ▾, a filtered column's header shows the funnel in a box of the same size and
+place that is a mark and no button. It opens nothing and toggles nothing; a press there is the header's.)*
+
 ## Loading indicator — receive and render
 
 ```csharp

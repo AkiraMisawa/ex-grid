@@ -122,6 +122,9 @@ instead of beside it.
 - **With `hideColumnMenu`** a column that can be sorted keeps the box as a mark and nothing to press: a
   `span` that takes no pointer, so a click there is the header's. A column that cannot be sorted and has
   no menu has no box.
+  *(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+  until a Filter names it. The grid's own query never filters such a column, but a Consumer's source may,
+  and its header then takes the box for the funnel and is charged it for as long.)*
 - **For assistive technology** the Sort is the column header's `aria-sort`, as before. The Filter is said
   by the button's name, *Column menu, filtered* (`gridLabelIds.columnMenuFiltered`), or, where there is
   no button, by the mark as an image named *Filtered* (`gridLabelIds.columnFiltered`). Both go through
@@ -169,6 +172,12 @@ taken as a saving.
 Auto and Size to fit both charge this (`GridMetrics.headerRequiredPx`, which takes the display; the C#
 `GridMetrics.HeaderRequiredPx` has the same overload and the shared case holds the two together). Neither
 reads the pointer, the keyboard or whether a menu is open.
+
+*(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+the two lines above are a header's charge while its column is not filtered. A filtered column's header is
+charged a box where it has none: the menu band under `standard` without the ▾, and the Header Box's room
+under `compact` with neither the ▾ nor a Sort. Every header that has its box is charged what the table
+says, filtered or not.)*
 
 ### 4. Changing the display on a grid in use
 

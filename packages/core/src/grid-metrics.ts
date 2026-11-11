@@ -46,6 +46,12 @@ export interface HeaderOptions {
     readonly sortable: boolean;
     /** How the header lays the two out (ADR-0500); `standard` unless given. */
     readonly display?: GridHeaderDisplay;
+    /**
+     * Whether the Filter holds a spec for the column now; false unless given. It is charged only where the header
+     * has no box the funnel can stand in (ADR-0502): a standard header without the menu button takes the button's
+     * band while it is filtered, and a compact one with neither the button nor a Sort takes its Header Box.
+     */
+    readonly filtered?: boolean;
 }
 
 interface Preset {
@@ -287,13 +293,19 @@ export class GridMetrics {
      * A `compact` header (ADR-0500) is charged its label, the same em of slack, and the Header Box's room where
      * the header has a menu button or can be sorted: one box for the ▾ and for the marks, whichever it shows, so
      * nothing a column comes to hold moves its label either.
+     *
+     * A header that has no box for a Filter's funnel is charged one while its column is `filtered`, and only then
+     * (ADR-0502): the menu button's band under `standard` where there is no button, and the Header Box under
+     * `compact` where there is neither a button nor a Sort. A header that has the box already is charged nothing
+     * more, so there a Filter moves no column.
      */
     headerRequiredPx(header: HeaderOptions): number {
         const display = checkedHeaderDisplay(header.display);
+        const filtered = header.filtered === true;
         const label = this.cellMetrics.for('text').estimatePx(header.label) + this.cellMetrics.fullWidthPx;
-        if (display === 'compact') return label + (header.menuButton || header.sortable ? this.headerBoxRoomPx : 0);
+        if (display === 'compact') return label + (header.menuButton || header.sortable || filtered ? this.headerBoxRoomPx : 0);
         return label
-            + (header.menuButton ? this.menuButtonBandPx : 0)
+            + (header.menuButton || filtered ? this.menuButtonBandPx : 0)
             + (header.sortable ? this.sortMarkWidthPx : 0);
     }
 }

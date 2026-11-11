@@ -158,9 +158,19 @@
             a label that was painted whole is still painted whole. A screen reader hears the sort from the column
             header as before, and the filter in the button's name. A filtered column says so at a glance in
             either display: the standard header paints its ▾ as the same funnel, beside the sort mark's own box,
-            and no width changes for it. With <code>HideColumnMenu</code>, a compact header keeps the box as a
-            mark, with nothing to press; a standard header has no ▾ then and no room kept for one, so it shows
-            no mark of a filter.
+            and no width changes for it.
+        </p>
+        <p>
+            With <code>HideColumnMenu</code> there is nothing to press, and a filter can only come from your own
+            controls or a saved view. A compact header keeps its box as a mark. A standard header has no ▾ then
+            and keeps no room for one, so it takes the ▾'s band for the funnel only while its column is filtered:
+            the funnel stands at the header's right edge, where it stands under every other setting, and a click
+            on it is a click on the header. This is the one header a filter can widen. An Auto column whose
+            header decides its width is 22&nbsp;px wider while it is filtered and returns when the filter is
+            cleared; a column its values decide does not move, and a Fixed width is never changed, so there the
+            label gives way to the funnel as it does in any column narrower than its header needs.
+            <em>Size to fit</em> counts the funnel while it is shown. The same holds for the one compact header
+            that has no box, a column that can be neither sorted nor opened, when your own source filters it.
         </p>
         <p>
             In a column the user has dragged narrower than its header needs, the box stays whole and the label
@@ -204,7 +214,10 @@
             Changing the display keeps the rows, the sort, the filter, the selection, the scroll position and an
             open edit. In ExGrid for React the option is <code>headerDisplay</code>, <code>'standard'</code> or
             <code>'compact'</code>. Switch the display below, then click a header to sort and filter <em>Ccy</em> or
-            <em>Desk</em> from its menu: the widths stay where they are.
+            <em>Desk</em> from its menu: the widths stay where they are. Then hide the column menu and filter
+            <em>Ccy</em> from the button beside it: under <code>Standard</code> the header takes the funnel's
+            band and <em>Ccy</em> is 22&nbsp;px wider until the filter is cleared, and under <code>Compact</code>
+            the funnel is in the box the header already had.
         </p>
         <DocsExample Title="Standard and compact headers over Auto widths" Builtin="typeof(HeaderDisplayGrid)" Mud="typeof(HeaderDisplayGridMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />

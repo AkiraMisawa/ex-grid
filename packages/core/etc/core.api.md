@@ -1196,6 +1196,7 @@ export function gridHeaderRequiredPx(label: string, options: GridTextOptions & {
     readonly menuButton: boolean;
     readonly sortable: boolean;
     readonly headerDisplay?: GridHeaderDisplay;
+    readonly filtered?: boolean;
 }): number;
 
 // @public
@@ -1809,6 +1810,7 @@ export interface HeaderGroupToggle {
 // @public
 export interface HeaderOptions {
     readonly display?: GridHeaderDisplay;
+    readonly filtered?: boolean;
     readonly label: string;
     readonly menuButton: boolean;
     readonly sortable: boolean;

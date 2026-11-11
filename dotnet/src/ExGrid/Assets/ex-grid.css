@@ -977,8 +977,9 @@
    told by shape and by weight, never by colour alone, and it moves nothing: the box is the one the
    ▾ had. A standard header keeps the sort mark in its own box after the label, so a column that is
    sorted and filtered shows both; the compact header's rules below give its one box a picture for
-   a Sort and for both, and outrank these. Its box without a ▾ (.ex-header-state) takes the funnel
-   from here too; a standard header has no such box. */
+   a Sort and for both, and outrank these. The box without a ▾ (.ex-header-state) takes the funnel
+   from here too: a compact header's, and the one a standard header with no ▾ takes while its
+   column is filtered (ADR-0502). */
 .ex-header-cell[data-ex-filtered] > :is(.ex-menu-button, .ex-header-state)::after {
     content: "";
     position: absolute;
@@ -996,8 +997,9 @@
 /* A header cell that carries the button keeps its label out from under it: the
    button's band is added to the right padding, the same band the Auto header estimate
    adds. A left-aligned label does not move; a right-aligned one ends where the button
-   begins instead of beneath it. */
-.ex-header-cell:has(> .ex-menu-button) {
+   begins instead of beneath it. The box a header with no ▾ takes for a filtered column's
+   funnel stands in the same band, charged the same number (ADR-0502). */
+.ex-header-cell:has(> :is(.ex-menu-button, .ex-header-state)) {
     padding-right: calc(var(--ex-cell-padding-x, 8px) + var(--ex-menu-button-width, 16px) + var(--ex-menu-button-inset, 6px));
 }
 /* The compact header (ADR-0500), which the core marks on the band: the ▾ and the marks of the
@@ -1012,7 +1014,9 @@
 /* The sort mark moves into the box, so the cell paints none after its label. */
 .ex-header[data-ex-header-display="compact"] .ex-header-cell[aria-sort]::after { content: none; }
 /* With no ▾ (hideColumnMenu) the box is a mark and nothing to press: the button's box, taking no
-   pointer, so a click there is the header's as it is anywhere else on the cell. */
+   pointer, so a click there is the header's as it is anywhere else on the cell. A compact header
+   keeps it for a column that can be sorted; any header without one takes it while its column is
+   filtered, and a standard header then holds the funnel in it and nothing else (ADR-0502). */
 .ex-header-state {
     position: absolute;
     top: 0;
