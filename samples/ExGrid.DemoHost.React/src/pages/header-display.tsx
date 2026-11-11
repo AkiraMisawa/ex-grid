@@ -107,7 +107,7 @@ function useQueryStatus(source: InMemoryGridSource<HeaderRow>): { readonly sorts
 const displays: readonly GridHeaderDisplay[] = Object.freeze(['standard', 'compact']);
 
 /** The filter the page sets from a button of its own, where the grid shows no column menu to set one from. */
-const usdOnly: GridFilter = Object.freeze({ columns: { Ccy: { clauses: [{ operator: 'equals', value: 'USD' }] } } });
+const usdOnly: GridFilter = { columns: { Ccy: { clauses: [{ operator: 'equals', value: 'USD' }] } } };
 
 /**
  * The page /header-display: the header's two displays over the same rows (ADR-0500). The first grid keeps its
