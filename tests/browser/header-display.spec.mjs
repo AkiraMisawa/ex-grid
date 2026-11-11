@@ -44,7 +44,7 @@ const boxOf = (cell) => cell.locator('.ex-menu-button').evaluate((button) => {
 async function open(page) {
     await page.setViewportSize(WIDE);
     await page.goto('/header-display');
-    for (const id of ['held-grid', 'standard-grid', 'compact-grid', 'menuless-grid']) {
+    for (const id of ['held-grid', 'standard-grid', 'compact-grid']) {
         await expect(gridIn(page, id).locator('.ex-row').first()).toBeVisible();
         // A header band painted before the widths are all told is built again once they are (ADR-0220).
         await settled(gridIn(page, id));
@@ -145,7 +145,10 @@ test('FN-12i: a standard header paints a filtered column\'s ▾ as the funnel, b
 
 test('FN-12j: with the column menu hidden a filtered column\'s standard header takes a box for the funnel, charged to its Auto width while it shows, and a press on it is the header\'s (ADR-0502) @behaviour', async ({ page }) => {
     await open(page);
+    // The React host's page alone has this grid: the box and its charge are the Script Core's, judged once.
     const grid = gridIn(page, 'menuless-grid');
+    await expect(grid.locator('.ex-row').first()).toBeVisible();
+    await settled(grid);
     const before = await widthsOf(grid);
     const ccy = header(grid, 'CCY');
     await expect(grid.locator('.ex-menu-button, .ex-header-state')).toHaveCount(0);
@@ -179,8 +182,8 @@ test('FN-12j: with the column menu hidden a filtered column\'s standard header t
     // The box takes no pointer: a click on it is the header's, and sorts. The Sort keeps its own mark beside it.
     await page.mouse.click(box.x + (box.width / 2), box.y + (box.height / 2));
     await expect(page.locator('#menuless-sort-status')).toHaveText('Sorts: Ccy ascending');
-    expect(await ccy.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"▲"');
     await settled(grid);
+    expect(await ccy.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"▲"');
     expect((await labelOf(ccy)).cut, 'CCY is cut once sorted').toBe(false);
     expect(await widthsOf(grid), 'a Sort moves no column').toEqual(filtered);
 

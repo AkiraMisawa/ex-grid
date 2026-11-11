@@ -264,6 +264,22 @@ describe('the standard header', () => {
         expect(widths(root)).toEqual(shown);
     });
 
+    it('ADR-0502: a grid that hides its header paints no funnel, so a Filter charges its columns nothing', async () => {
+        const source = GridSource.from(trades(50));
+        const { root } = mount<Trade>({ columns: auto, source, ...box, hideColumnMenu: true, hideHeader: true });
+        await painted();
+        /** Each column's width, as the grid writes it inline on the first row's cells. */
+        const cellWidths = (): number[] => [...q(root, '.ex-viewport > .ex-row').querySelectorAll<HTMLElement>('.ex-cell')].map(cell => {
+            const width = /(?:^|; )width: ([\d.]+)px/u.exec(present(cell.getAttribute('style'), 'a cell\'s style'));
+            return Number(present(width, 'a cell\'s width')[1]);
+        });
+        const before = cellWidths();
+        expect(before).toHaveLength(3);
+        source.setFilter({ columns: { Ccy: notBlank } });
+        await painted();
+        expect(cellWidths()).toEqual(before);
+    });
+
     it('ADR-0500: a headerDisplay that is neither is refused by name, on a new grid and on one in use', async () => {
         const options = { columns: fixed, rows: trades(5), ...box };
         expect(() => mount<Trade>({ ...options, headerDisplay: 'dense' as never })).toThrow('A header display is \'standard\' or \'compact\', not "dense" (ADR-0500).');

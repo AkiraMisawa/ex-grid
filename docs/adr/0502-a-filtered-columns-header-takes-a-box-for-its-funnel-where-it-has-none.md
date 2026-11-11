@@ -75,7 +75,9 @@ compact:   text + 2·padding + em + (▾ or sortable or filtered ? max(0, menu b
 
 `GridMetrics.headerRequiredPx` takes `filtered`, and it changes the answer only for the two headers in
 bold above: 22px for the standard one at every Density, and 14px for the compact one (10px at
-Comfortable). `gridHeaderRequiredPx`, the entry a Consumer charges a header by, takes it too.
+Comfortable). `gridHeaderRequiredPx`, the entry a Consumer charges a header by, takes it too, and the C#
+`GridMetrics.HeaderRequiredPx` has an overload that takes it, held to the Script Core's answer by the
+shared case as ADR-0500's overload is.
 
 - **An Auto width takes the header's new need while the column is filtered, and gives it back when the
   Filter is cleared.** This is the rule ADR-0500 section 4 made for a change of display: what the header
@@ -94,6 +96,8 @@ Comfortable). `gridHeaderRequiredPx`, the entry a Consumer charges a header by, 
   everywhere.
 - **Size to fit charges the header as it stands**: fitted while filtered, the column is fixed at a width
   that holds the funnel, and keeps it after the Filter is cleared, because that width was set.
+- **A grid that paints no header (`hideHeader`) is charged nothing for it**: there is no funnel, so a
+  Filter moves none of its columns.
 - **The width follows the Filter, never the order things happened in.** The same columns, values and
   Filter give the same widths however they were arrived at (the spine's sixth rule).
 

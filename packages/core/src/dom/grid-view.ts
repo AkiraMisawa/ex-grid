@@ -1885,9 +1885,10 @@ export class GridView<Row> {
     #styles: ColumnStyles;
     #scrollable: ColumnRange | undefined;
     #autoWidths: readonly AutoWidth[] = [];
-    // What the Auto widths' headers were last charged under (#chargeHeaders): `filtered` is the names the Filter held.
+    // What the Auto widths' headers were last charged under (#chargeHeaders). `filtered` is the names the Filter
+    // held, as one string to compare, as the painted header keeps them.
     #chargedHeaders: {
-        readonly columns: readonly ResolvedColumn<Row>[]; readonly metrics: GridMetrics; readonly menus: boolean;
+        readonly columns: readonly ResolvedColumn<Row>[]; readonly metrics: GridMetrics; readonly hideColumnMenu: boolean;
         readonly display: GridHeaderDisplay; readonly filtered: string;
     } | undefined;
     #measuredWindow: readonly Row[] | undefined;
@@ -2674,13 +2675,12 @@ export class GridView<Row> {
         // array on every render, and nothing about them changed (ADR-0003).
         // The list is compared with the copy taken when it was last handed, never with the Consumer's own array: the
         // same array changed in place and handed again is another list (FN-22, ADR-0003's note of 2026-10-13).
-        // A ▾ that comes or goes changes what a header needs, and so does the header's display, which says how
-        // wide the ▾ and the marks stand beside the label: an Auto width takes its header's new need in place of
-        // the old one, and keeps what its values taught it (ADR-0016, ADR-0500). The need itself is charged where
-        // the grid lays its columns out (#chargeHeaders), which also knows the Filter's columns (ADR-0502).
+        // What a header needs is not charged here. A ▾ that comes or goes changes it, and so do the header's
+        // display and the Filter's columns; it is charged where the grid lays its columns out (#chargeHeaders),
+        // which knows all three, and an Auto width carried from here keeps what its values taught it (ADR-0016,
+        // ADR-0500, ADR-0502).
         const headerDisplay = checkedHeaderDisplay(options.headerDisplay);
-        const headerNeedChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu || headerDisplay !== this.#headerDisplay;
-        const columnsChanged = metricsChanged || headerNeedChanged || !sameItems(options.columns, this.#declared);
+        const columnsChanged = metricsChanged || !sameItems(options.columns, this.#declared);
         if (columnsChanged) {
             const previous = this.#columns;
             const previousWidths = this.#autoWidths;
@@ -3578,11 +3578,18 @@ export class GridView<Row> {
     // that has no box already (ADR-0500, ADR-0502). Read from what the grid is told, never from a layout.
     #headerNeedPx(index: number): number {
         const { column, header } = itemAt(this.#columns, index);
-        const filter = this.#state.filter;
         return this.#metrics.headerRequiredPx({
             label: header, menuButton: !this.#hideColumnMenu, sortable: column.queryable !== false, display: this.#headerDisplay,
-            filtered: filter !== undefined && Object.hasOwn(filter.columns, column.name),
+            filtered: this.#filteredColumns().includes(column.name),
         });
+    }
+
+    // The names of the columns whose header marks a Filter: those the Filter the grid is given holds a spec for
+    // (ADR-0501), and none while the grid paints no header. It is what a header with no box for the mark is charged
+    // for, so a mark that is not painted is never charged (ADR-0502).
+    #filteredColumns(): readonly string[] {
+        const filter = this.#state.filter;
+        return filter === undefined || this.#hideHeader ? [] : Object.keys(filter.columns);
     }
 
     // The header is content an Auto column paints too: unobserved, a short one would stand with its label chopped
@@ -3591,14 +3598,13 @@ export class GridView<Row> {
     // the Filter holds, which widen only a header with no box for the funnel and only while it shows one (ADR-0502).
     // So the widths follow what the grid holds now, whatever order it came in, and nothing is charged twice.
     #chargeHeaders(): void {
-        const filter = this.#state.filter;
-        const filtered = filter === undefined ? '' : JSON.stringify(Object.keys(filter.columns));
+        const filtered = JSON.stringify(this.#filteredColumns());
         const charged = this.#chargedHeaders;
-        if (charged?.columns === this.#columns && charged.metrics === this.#metrics && charged.menus === !this.#hideColumnMenu
+        if (charged?.columns === this.#columns && charged.metrics === this.#metrics && charged.hideColumnMenu === this.#hideColumnMenu
             && charged.display === this.#headerDisplay && charged.filtered === filtered) {
             return;
         }
-        this.#chargedHeaders = { columns: this.#columns, metrics: this.#metrics, menus: !this.#hideColumnMenu, display: this.#headerDisplay, filtered };
+        this.#chargedHeaders = { columns: this.#columns, metrics: this.#metrics, hideColumnMenu: this.#hideColumnMenu, display: this.#headerDisplay, filtered };
         this.#autoWidths = this.#columns.map(({ spec }, c) => {
             const width = itemAt(this.#autoWidths, c);
             return spec.width.isAuto ? width.underHeader(this.#headerNeedPx(c)) : width;
@@ -3606,7 +3612,8 @@ export class GridView<Row> {
     }
 
     // A new geometry only when something it is made of moved, so an unchanged layout keeps its instance and
-    // the rows keep skipping (ADR-0003).
+    // the rows keep skipping (ADR-0003). The Auto widths it reads take their headers' charge first, here, so
+    // no geometry is ever resolved from a width whose header was not counted.
     #resolveColumnGeometry(viewportWidthPx: number): void {
         this.#chargeHeaders();
         const widths = this.#columns.map(({ spec }, c) => spec.resolveWidthPx(itemAt(this.#autoWidths, c)));
@@ -12001,8 +12008,7 @@ export class GridView<Row> {
         // Filter holds a spec for are painted too.
         const display = this.#headerDisplay;
         const compact = display === 'compact';
-        const filter = this.#state.filter;
-        const filteredNames = filter === undefined ? [] : Object.keys(filter.columns);
+        const filteredNames = this.#filteredColumns();
         const filtered = JSON.stringify(filteredNames);
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout

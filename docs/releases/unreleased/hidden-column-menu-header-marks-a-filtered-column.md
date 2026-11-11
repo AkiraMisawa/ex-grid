@@ -9,5 +9,5 @@ its column: a mark named `Filtered` for a screen reader, with nothing to press. 
 given a filter will look different on its filtered columns, and an Auto column whose header decides its width is 22 px
 wider for as long as it is filtered; a width that was declared, dragged, fitted or restored is not changed, and no width is
 reported. The compact header already marked such a column in its box; its one header without a box, a column that cannot
-be sorted, takes the box the same way. `GridMetrics.headerRequiredPx` and `gridHeaderRequiredPx` take `filtered` and
-charge it only for these headers.
+be sorted, takes the box the same way. `GridMetrics.HeaderRequiredPx` has an overload that takes `filtered`
+(`headerRequiredPx` and `gridHeaderRequiredPx` take it in `@ex-grid/core`), and charges it only for these headers.

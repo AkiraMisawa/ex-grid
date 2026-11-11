@@ -143,13 +143,25 @@ public sealed record GridMetrics
     /// moves its label either.
     /// </summary>
     public double HeaderRequiredPx(string label, bool menuButton, bool sortable, GridHeaderDisplay display)
+        => HeaderRequiredPx(label, menuButton, sortable, display, filtered: false);
+
+    /// <summary>
+    /// The full cell width a header needs under <paramref name="display"/> while its column is
+    /// <paramref name="filtered"/> or not (ADR-0502). Not filtered, it is what the four-argument
+    /// overload answers. A filtered column's header is charged a box for the funnel where it has
+    /// none, and only there: the menu button's band under <see cref="GridHeaderDisplay.Standard"/>
+    /// where there is no button, and the Header Box's room under
+    /// <see cref="GridHeaderDisplay.Compact"/> where there is neither a button nor a Sort. A header
+    /// that has the box already is charged nothing more, so there a Filter moves no column.
+    /// </summary>
+    public double HeaderRequiredPx(string label, bool menuButton, bool sortable, GridHeaderDisplay display, bool filtered)
     {
         ArgumentNullException.ThrowIfNull(label);
         var text = CellMetrics.For(ColumnType.Text).EstimatePx(label) + CellMetrics.FullWidthPx;
         return display switch
         {
-            GridHeaderDisplay.Standard => text + (menuButton ? MenuButtonBandPx : 0) + (sortable ? SortMarkWidthPx : 0),
-            GridHeaderDisplay.Compact => text + (menuButton || sortable ? HeaderBoxRoomPx : 0),
+            GridHeaderDisplay.Standard => text + (menuButton || filtered ? MenuButtonBandPx : 0) + (sortable ? SortMarkWidthPx : 0),
+            GridHeaderDisplay.Compact => text + (menuButton || sortable || filtered ? HeaderBoxRoomPx : 0),
             _ => throw new ArgumentOutOfRangeException(nameof(display), display, "Unknown header display (ADR-0500)."),
         };
     }
