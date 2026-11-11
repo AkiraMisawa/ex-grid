@@ -1,0 +1,18 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/spikes/render-bench/Bench.Client/Bench.Client.csproj (in 330 ms).
+  Restored /home/claude/ex-grid/spikes/render-bench/Bench.Live/Bench.Live.csproj (in 330 ms).
+  6 of 8 projects are up-to-date for restore.
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  Bench.Live -> /home/claude/ex-grid/spikes/render-bench/Bench.Live/bin/Release/net10.0/Bench.Live.dll
+  Bench.Client -> /home/claude/ex-grid/spikes/render-bench/Bench.Client/bin/Release/net10.0/Bench.Client.dll
+  Bench.Client (Blazor output) -> /home/claude/ex-grid/spikes/render-bench/Bench.Client/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  Bench.Client -> /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/bench-client/
