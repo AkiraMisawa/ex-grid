@@ -2513,3 +2513,10 @@ ExGrid.InMemoryGridSource<TRow>.FindAllRowLabel.get -> System.Func<TRow, string!
 ExGrid.InMemoryGridSource<TRow>.FindAllRowLabel.set -> void
 ExGrid.Cells.CellAppearance.LowerRightFill.get -> ExGrid.Cells.RgbColour?
 ExGrid.Cells.CellAppearance.LowerRightFill.init -> void
+ExGrid.Components.ExGrid<TRow>.HeaderDisplay.get -> ExGrid.GridHeaderDisplay
+ExGrid.Components.ExGrid<TRow>.HeaderDisplay.set -> void
+ExGrid.GridHeaderDisplay
+ExGrid.GridHeaderDisplay.Compact = 1 -> ExGrid.GridHeaderDisplay
+ExGrid.GridHeaderDisplay.Standard = 0 -> ExGrid.GridHeaderDisplay
+ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable, ExGrid.GridHeaderDisplay display) -> double
+ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable, ExGrid.GridHeaderDisplay display, bool filtered) -> double
