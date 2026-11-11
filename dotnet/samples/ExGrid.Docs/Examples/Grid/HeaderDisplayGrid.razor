@@ -1,5 +1,7 @@
 @using System.Globalization
 @using ExGrid.Chrome
+@* MudBlazor has a FilterOperator of its own. *@
+@using FilterOperator = global::ExGrid.FilterOperator
 
 <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 14px">
     <label>
@@ -11,16 +13,32 @@
             }
         </select>
     </label>
+    <label><input type="checkbox" @bind="_hideColumnMenu" /> Hide the column menu</label>
+    <button type="button" @onclick="OnlyUsd">Filter Ccy to USD</button>
+    <button type="button" @onclick="ClearFilter">Clear the filter</button>
 </div>
 
 @* No width is declared, so every column is Auto and is measured under the display its header has. *@
-<ExGrid TRow="Position" Source="_source" Columns="_columns" HeaderDisplay="_display" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+<ExGrid TRow="Position" Source="_source" Columns="_columns" HeaderDisplay="_display" HideColumnMenu="_hideColumnMenu" ViewportHeight="300"
+        ViewportWidth="ViewportSize.Stretch" />
 
 @code {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
     private GridHeaderDisplay _display = GridHeaderDisplay.Compact;
+    private bool _hideColumnMenu;
+
+    // A filter from the page's own controls: the only way to filter a grid that hides its column menu. The header of
+    // a filtered column shows the funnel either way; without the ▾ a standard header takes a box for it meanwhile.
+    private static readonly GridFilter UsdOnly = new(new Dictionary<string, FilterSpec>
+    {
+        ["Currency"] = new([new FilterClause(FilterOperator.Equals, "USD")]),
+    });
+
+    private void OnlyUsd() => _source.OnFilterChanged(UsdOnly);
+
+    private void ClearFilter() => _source.OnFilterChanged(null);
 
     private readonly GridColumn<Position>[] _columns =
     [

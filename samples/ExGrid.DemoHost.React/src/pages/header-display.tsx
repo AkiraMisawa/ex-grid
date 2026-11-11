@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import {
-    GridSource, type GridColumn, type GridColumnWidthChange, type GridEditIntent, type GridHeaderDisplay, type GridSelection,
+    GridSource, type GridColumn, type GridColumnWidthChange, type GridEditIntent, type GridFilter, type GridHeaderDisplay, type GridSelection,
     type InMemoryGridSource,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
@@ -106,10 +106,14 @@ function useQueryStatus(source: InMemoryGridSource<HeaderRow>): { readonly sorts
 
 const displays: readonly GridHeaderDisplay[] = Object.freeze(['standard', 'compact']);
 
+/** The filter the page sets from a button of its own, where the grid shows no column menu to set one from. */
+const usdOnly: GridFilter = Object.freeze({ columns: { Ccy: { clauses: [{ operator: 'equals', value: 'USD' }] } } });
+
 /**
  * The page /header-display: the header's two displays over the same rows (ADR-0500). The first grid keeps its
  * declared widths while its display changes; the two below declare every width Auto, one in each display, so what
- * each header needs is read from the columns themselves.
+ * each header needs is read from the columns themselves. The last hides the column menu and is filtered from the
+ * page's own buttons, so its header has to take a box for the funnel (ADR-0502).
  */
 export function HeaderDisplay(): ReactElement {
     const [display, setDisplay] = useState<GridHeaderDisplay>('standard');
@@ -122,6 +126,7 @@ export function HeaderDisplay(): ReactElement {
     const source = useMemo(() => GridSource.from(rows), []);
     const standardSource = useMemo(() => GridSource.from(rows), []);
     const compactSource = useMemo(() => GridSource.from(rows), []);
+    const menulessSource = useMemo(() => GridSource.from(rows), []);
     const columns = useMemo(() => {
         const declared = columnsAt(name => widthsHeld[name]);
         return Object.freeze(order.map(name => {
@@ -131,6 +136,7 @@ export function HeaderDisplay(): ReactElement {
         }));
     }, [widthsHeld, order]);
     const status = useQueryStatus(source);
+    const menulessStatus = useQueryStatus(menulessSource);
     const onWidth = useCallback(({ column, widthPx }: GridColumnWidthChange) => {
         setChanges(before => {
             const entry = `${column}=${Number(widthPx.toFixed(3))}`;
@@ -153,6 +159,7 @@ export function HeaderDisplay(): ReactElement {
     const held = useHeaderWidths([display, widthsHeld, order, pinned]);
     const standard = useHeaderWidths([]);
     const compact = useHeaderWidths([]);
+    const menuless = useHeaderWidths([menulessStatus.filtered]);
     return (
         <>
             <DemoNav route="header-display" />
@@ -214,6 +221,23 @@ export function HeaderDisplay(): ReactElement {
             </p>
             <div id="compact-grid" ref={compact.ref}>
                 <ExGrid columns={autoColumns} source={compactSource} headerDisplay="compact" viewportHeight={200} viewportWidth="stretch" />
+            </div>
+            <h2>No column menu, filtered from the page</h2>
+            <p>
+                This grid hides the column menu, so a standard header has no ▾ and keeps no room for one. The buttons
+                below set a filter from the page. While a column is filtered its header takes the ▾&apos;s band for a
+                funnel, a mark with nothing to press, and an Auto column its header decides is that band wider until
+                the filter is cleared (ADR-0502).
+            </p>
+            <p className="demo-status">
+                <button id="menuless-filter" type="button" onClick={() => { menulessSource.setFilter(usdOnly); }}>Filter CCY to USD</button>{' '}
+                <button id="menuless-clear" type="button" onClick={() => { menulessSource.setFilter(undefined); }}>Clear the filter</button>{' '}
+                <span id="menuless-sort-status">Sorts: {menulessStatus.sorts}</span>{' '}
+                <span id="menuless-filter-status">Filtered: {menulessStatus.filtered}</span>{' '}
+                <span id="menuless-widths-status">Widths: {menuless.widths}</span>
+            </p>
+            <div id="menuless-grid" ref={menuless.ref}>
+                <ExGrid columns={autoColumns} source={menulessSource} hideColumnMenu viewportHeight={200} viewportWidth="stretch" />
             </div>
         </>
     );

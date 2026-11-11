@@ -100,8 +100,10 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     [CascadingParameter] public GridPresentationDefaults? Presentation { get; set; }
 
     /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044). The ▾ is also where a header marks a
-    /// filtered column, so a <see cref="GridHeaderDisplay.Standard"/> header without it shows no mark of the Filter;
-    /// a <see cref="GridHeaderDisplay.Compact"/> one keeps its box as a mark (ADR-0501).</summary>
+    /// filtered column. Without it a <see cref="GridHeaderDisplay.Compact"/> header keeps its box as a mark
+    /// (ADR-0500), and a header that has no box takes one for the funnel while its column is filtered, a mark with
+    /// nothing to press: an Auto column its header decides is that much wider while the Filter names it, and a
+    /// width that was set stands (ADR-0502).</summary>
     [Parameter] public bool HideColumnMenu { get; set; }
 
     /// <summary>How every header lays out what stands beside its label (ADR-0500):

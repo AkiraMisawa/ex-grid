@@ -584,6 +584,9 @@ class, **internal**, and no token.
   cell wears `data-ex-filtered` under either display, and the stylesheet paints the funnel on its
   `ex-menu-button` from it. The band's `data-ex-header-display` is still the Compact display's alone. Both
   remain internal: a Consumer reads the Filter it handed the grid, not the attribute.)*
+  *(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+  `ex-header-state` is also drawn in a Standard header that has no menu button, only while its column is
+  filtered, to hold the funnel. Still internal, and still no token.)*
 - **No Visual Token and no Geometry Token is added.** The marks are pictures painted as masks in the
   header's colour, in the box `--ex-menu-button-width` and `--ex-menu-button-inset` already size; under
   forced colours they are painted in `CanvasText`. A Wrapper sets nothing for them.

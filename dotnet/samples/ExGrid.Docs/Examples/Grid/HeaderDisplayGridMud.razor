@@ -1,14 +1,19 @@
 @using System.Globalization
 @using ExGrid.Chrome
+@* MudBlazor has a FilterOperator of its own. *@
+@using FilterOperator = global::ExGrid.FilterOperator
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Dense="true" Hover="true">
     <ToolBarContent>
         <MudSwitch T="bool" @bind-Value="_compact" Label="Compact header" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="_hideColumnMenu" Label="Hide the column menu" Color="Color.Primary" />
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="ml-2" OnClick="OnlyUsd">Filter Ccy to USD</MudButton>
+        <MudButton Size="Size.Small" Class="ml-2" OnClick="ClearFilter">Clear the filter</MudButton>
     </ToolBarContent>
     <ChildContent>
         @* No width is declared, so every column is Auto and is measured under the display its header has. *@
         <ExGrid TRow="Position" Source="_source" Columns="_columns" HeaderDisplay="@(_compact ? GridHeaderDisplay.Compact : GridHeaderDisplay.Standard)"
-                Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+                HideColumnMenu="_hideColumnMenu" Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
     </ChildContent>
 </MudExGridPaper>
 
@@ -18,6 +23,18 @@
 
     private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
     private bool _compact = true;
+    private bool _hideColumnMenu;
+
+    // A filter from the page's own controls: the only way to filter a grid that hides its column menu. The header of
+    // a filtered column shows the funnel either way; without the ▾ a standard header takes a box for it meanwhile.
+    private static readonly GridFilter UsdOnly = new(new Dictionary<string, FilterSpec>
+    {
+        ["Currency"] = new([new FilterClause(FilterOperator.Equals, "USD")]),
+    });
+
+    private void OnlyUsd() => _source.OnFilterChanged(UsdOnly);
+
+    private void ClearFilter() => _source.OnFilterChanged(null);
 
     private readonly GridColumn<Position>[] _columns =
     [

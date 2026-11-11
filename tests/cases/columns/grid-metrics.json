@@ -115,6 +115,13 @@
       ]
     },
     {
+      "name": "ADR-0502: a header with no box for a Filter's funnel is charged one while its column is filtered, and no other header is charged for it",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true, "filtered": true}, "is": 130.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false, "filtered": true}, "is": 110.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true, "filtered": false}, "is": 108.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "filtered": true}, "is": 130.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false, "display": "compact", "filtered": true}, "is": 102.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true, "display": "compact", "filtered": true}, "is": 102.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": true, "display": "compact", "filtered": true}, "is": 102.5, "near": 1e-09}]},
+        {"static": "resolve", "args": {"density": "comfortable"}, "then": [{"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true, "filtered": true}, "is": 138.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false, "display": "compact", "filtered": true}, "is": 106.5, "near": 1e-09}]}
+      ]
+    },
+    {
       "name": "ADR-0016: DejaVu Sans Bold paints \"Amount\" at 61.7px, \"MARKET VALUE\" at 120.5px and \"評価額\" at 42px; none is cut",
       "expect": [
         {"static": "resolve", "args": {"density": "compact"}, "then": [{"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false}, "atLeast": 77.7}, {"call": "headerRequiredPx", "args": {"label": "MARKET VALUE", "menuButton": false, "sortable": false}, "atLeast": 136.5}, {"call": "headerRequiredPx", "args": {"label": "評価額", "menuButton": false, "sortable": false}, "atLeast": 58}]}

@@ -7,6 +7,12 @@ mark and no change; the ▾ becoming a funnel while the column is filtered, at t
 a mark of its own with room charged for it. The user chose the second, and took ADR-0500's other points
 as it had them (recorded there).*
 
+*(2026-11-11, decided with the user: section 3 is replaced by
+[ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md). A
+standard header with no column menu now takes a box for the funnel while its column is filtered, and is
+charged for it only then. Section 2 still holds of every header that has the ▾. Where this text says such
+a header shows no mark, read it with the notes of this date below.)*
+
 This amends ADR-0500 (section 1's "the DOM an earlier version drew", section 4 and its Consequences),
 [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md) and
 [ADR-0044](./0044-alt-down-opens-one-popover-the-commands-above-the-filter.md) (the ▾ and what it shows)
@@ -59,6 +65,10 @@ Filter set or cleared moves no label, cuts no label and changes no Auto width, a
 The Filter repaints the header band, where before this decision it repainted nothing of a standard
 header. No layout is read and no listener is added.
 
+*(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+said of a header that has the ▾, or under the Compact display a Header Box. A header with no box takes
+one while its column is filtered, and there `headerRequiredPx` answers more for a filtered column.)*
+
 ### 3. A standard header with no column menu shows no mark
 
 With `hideColumnMenu` the standard header has no ▾ and no box for one: its charge is the label, the
@@ -67,6 +77,12 @@ third option, not the one chosen. So a Consumer that hides the column menu and f
 the standard display, the header it had before: no mark. The compact header does mark it, in the Header
 Box it keeps without the button (ADR-0500 section 2), and the page that documents `hideColumnMenu` says
 so. This is a limit stated, not a mark quietly dropped.
+
+*(2026-11-11, [ADR-0502](./0502-a-filtered-columns-header-takes-a-box-for-its-funnel-where-it-has-none.md):
+the limit is lifted. "Room charged to every such column" was the price weighed here, and it is still
+refused; what was not weighed is room charged to a column only while it is filtered. The user chose
+that: the header takes the ▾'s band for the funnel while the Filter names its column, an Auto column its
+header decides is 22px wider for as long, and a width somebody set stands.)*
 
 ### 4. What is written to the DOM
 

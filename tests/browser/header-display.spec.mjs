@@ -6,7 +6,9 @@ import { test, expect, settled, setTicked } from './fixtures.mjs';
 // layout and a real pointer show: that the room charged is the room the stylesheet keeps, so no label lies under the
 // box or is cut; that a press on the box and a click beside it land on different things; that the marks are painted;
 // and that nothing a column comes to hold moves a column on screen. A standard header paints a filtered column's ▾
-// as the same funnel (ADR-0501), and that picture, beside the Sort's own mark, is a browser's to show too.
+// as the same funnel (ADR-0501), and that picture, beside the Sort's own mark, is a browser's to show too. So is the
+// box a header with no ▾ takes for the funnel (ADR-0502): that the room charged for it is the room the stylesheet
+// keeps, and that a press on it is the header's.
 
 const WIDE = { width: 1600, height: 1000 };
 
@@ -42,7 +44,7 @@ const boxOf = (cell) => cell.locator('.ex-menu-button').evaluate((button) => {
 async function open(page) {
     await page.setViewportSize(WIDE);
     await page.goto('/header-display');
-    for (const id of ['held-grid', 'standard-grid', 'compact-grid']) {
+    for (const id of ['held-grid', 'standard-grid', 'compact-grid', 'menuless-grid']) {
         await expect(gridIn(page, id).locator('.ex-row').first()).toBeVisible();
         // A header band painted before the widths are all told is built again once they are (ADR-0220).
         await settled(gridIn(page, id));
@@ -139,6 +141,55 @@ test('FN-12i: a standard header paints a filtered column\'s ▾ as the funnel, b
     await settled(grid);
     expect(await widthsOf(grid), 'a Filter moves no column').toEqual(declared);
     await expect(page.locator('#width-status')).toHaveText('Changes:');
+});
+
+test('FN-12j: with the column menu hidden a filtered column\'s standard header takes a box for the funnel, charged to its Auto width while it shows, and a press on it is the header\'s (ADR-0502) @behaviour', async ({ page }) => {
+    await open(page);
+    const grid = gridIn(page, 'menuless-grid');
+    const before = await widthsOf(grid);
+    const ccy = header(grid, 'CCY');
+    await expect(grid.locator('.ex-menu-button, .ex-header-state')).toHaveCount(0);
+
+    // Filtered from the page, which is the only place this grid can be filtered from.
+    await page.locator('#menuless-filter').click();
+    await expect(page.locator('#menuless-filter-status')).toHaveText('Filtered: Ccy');
+    const mark = ccy.locator('.ex-header-state');
+    await expect(mark).toHaveAccessibleName('Filtered');
+    await settled(grid);
+
+    // The funnel is painted at full strength in the box the ▾ would have: 16px wide, 6px from the cell's edge.
+    const after = await mark.evaluate((el) => {
+        const painted = getComputedStyle(el, '::after');
+        return { picture: painted.maskImage !== 'none', strength: painted.opacity };
+    });
+    expect(after).toEqual({ picture: true, strength: '1' });
+    const [cell, box] = [await ccy.boundingBox(), await mark.boundingBox()];
+    expect(box.width).toBe(16);
+    expect(cell.x + cell.width - (box.x + box.width)).toBeCloseTo(6, 1);
+
+    // Its column, which its header decides, is the band wider, the label whole and clear of the box; no other moves.
+    const filtered = await widthsOf(grid);
+    expect(filtered.CCY - before.CCY).toBeGreaterThan(21);
+    expect(filtered.CCY - before.CCY).toBeLessThan(23);
+    expect({ ...filtered, CCY: before.CCY }).toEqual(before);
+    const label = await labelOf(ccy);
+    expect(label.cut, 'CCY is cut').toBe(false);
+    expect(label.clearOfBox, 'CCY lies under its box').toBeGreaterThanOrEqual(0);
+
+    // The box takes no pointer: a click on it is the header's, and sorts. The Sort keeps its own mark beside it.
+    await page.mouse.click(box.x + (box.width / 2), box.y + (box.height / 2));
+    await expect(page.locator('#menuless-sort-status')).toHaveText('Sorts: Ccy ascending');
+    expect(await ccy.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('"▲"');
+    await settled(grid);
+    expect((await labelOf(ccy)).cut, 'CCY is cut once sorted').toBe(false);
+    expect(await widthsOf(grid), 'a Sort moves no column').toEqual(filtered);
+
+    // Cleared, the header gives the band back and is the width it was.
+    await page.locator('#menuless-clear').click();
+    await expect(page.locator('#menuless-filter-status')).toHaveText('Filtered: none');
+    await expect(mark).toHaveCount(0);
+    await settled(grid);
+    expect(await widthsOf(grid)).toEqual(before);
 });
 
 // What a header is charged and what it paints are the Script Core's, judged above on the React host. Blazor's own

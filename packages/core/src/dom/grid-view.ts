@@ -507,8 +507,10 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * standing keeps the contents it opened with. */
     readonly chrome?: GridChrome<Row>;
     /** Leaves the ▾ off every header, and Alt+↓ with it (ADR-0050, item 12): the column menu, the column's
-     * commands, is shown unless given. The ▾ is also where a header marks a filtered column, so a standard header
-     * without it shows no mark of the Filter; a compact header keeps its box as a mark (ADR-0501 section 3). */
+     * commands, is shown unless given. The ▾ is also where a header marks a filtered column. Without it a compact
+     * header keeps its box as a mark (ADR-0500), and a header that has no box takes one for the funnel while its
+     * column is filtered, a mark with nothing to press: an Auto column its header decides is that much wider while
+     * the Filter names it, and a width that was set stands (ADR-0502). */
     readonly hideColumnMenu?: boolean;
     /**
      * How every header lays out what stands beside its label (ADR-0500); `'standard'` unless given, which is the
@@ -1883,6 +1885,11 @@ export class GridView<Row> {
     #styles: ColumnStyles;
     #scrollable: ColumnRange | undefined;
     #autoWidths: readonly AutoWidth[] = [];
+    // What the Auto widths' headers were last charged under (#chargeHeaders): `filtered` is the names the Filter held.
+    #chargedHeaders: {
+        readonly columns: readonly ResolvedColumn<Row>[]; readonly metrics: GridMetrics; readonly menus: boolean;
+        readonly display: GridHeaderDisplay; readonly filtered: string;
+    } | undefined;
     #measuredWindow: readonly Row[] | undefined;
     #measuredWindowStart = -1;
     #measuredVisible: RowRange | undefined;
@@ -2669,7 +2676,8 @@ export class GridView<Row> {
         // same array changed in place and handed again is another list (FN-22, ADR-0003's note of 2026-10-13).
         // A ▾ that comes or goes changes what a header needs, and so does the header's display, which says how
         // wide the ▾ and the marks stand beside the label: an Auto width takes its header's new need in place of
-        // the old one, and keeps what its values taught it (ADR-0016, ADR-0500).
+        // the old one, and keeps what its values taught it (ADR-0016, ADR-0500). The need itself is charged where
+        // the grid lays its columns out (#chargeHeaders), which also knows the Filter's columns (ADR-0502).
         const headerDisplay = checkedHeaderDisplay(options.headerDisplay);
         const headerNeedChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu || headerDisplay !== this.#headerDisplay;
         const columnsChanged = metricsChanged || headerNeedChanged || !sameItems(options.columns, this.#declared);
@@ -2681,23 +2689,16 @@ export class GridView<Row> {
             // metrics, as the C# core carries it, and measured afresh otherwise: two equal declarations may
             // paint differently (ADR-0016; ADR-0003's note of 2026-10-11).
             const at = new Map(previous.map(({ column }, i) => [column.name, i]));
-            autoWidths = columns.map(({ column, spec, header, actions }) => {
+            autoWidths = columns.map(({ column, spec, actions }) => {
                 const was = at.get(column.name);
                 const carried = !metricsChanged && was !== undefined && itemAt(previous, was).column === column ? itemAt(previousWidths, was) : undefined;
-                if (carried !== undefined && !headerNeedChanged) return carried;
-                // The header is content the column paints too: unobserved, a short Auto column would
-                // stand with its label chopped (ADR-0016).
-                if (!spec.width.isAuto) return carried ?? AutoWidth.of(spec);
-                const auto = (carried ?? AutoWidth.of(spec)).underHeader(metrics.headerRequiredPx({
-                    label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false, display: headerDisplay,
-                }));
                 // An Action Column paints no value, so the rows never grow it and its header is usually empty:
                 // what it declares is its labels, measured once, side by side, each with its button's box, and
                 // the cell's own padding once (ADR-0016, ADR-0020). A label is text (ticket 83). A width
                 // carried has them already, among what its values taught it.
-                if (carried !== undefined || actions.length === 0) return auto;
+                if (carried !== undefined || !spec.width.isAuto || actions.length === 0) return carried ?? AutoWidth.of(spec);
                 const asText = metrics.cellMetrics.for('text');
-                return auto.observe(actions.reduce((required, action) => required + asText.textWidthPx(action.label) + metrics.actionButtonChromePx,
+                return AutoWidth.of(spec).observe(actions.reduce((required, action) => required + asText.textWidthPx(action.label) + metrics.actionButtonChromePx,
                     asText.estimatePx('')));
             });
         }
@@ -3572,9 +3573,42 @@ export class GridView<Row> {
         this.#autoWidths = widths;
     }
 
+    // What the header of the column at `index` needs now (ADR-0016): its label and what stands beside it under the
+    // grid's Header Display, and a box for the funnel while the Filter names the column, charged only to a header
+    // that has no box already (ADR-0500, ADR-0502). Read from what the grid is told, never from a layout.
+    #headerNeedPx(index: number): number {
+        const { column, header } = itemAt(this.#columns, index);
+        const filter = this.#state.filter;
+        return this.#metrics.headerRequiredPx({
+            label: header, menuButton: !this.#hideColumnMenu, sortable: column.queryable !== false, display: this.#headerDisplay,
+            filtered: filter !== undefined && Object.hasOwn(filter.columns, column.name),
+        });
+    }
+
+    // The header is content an Auto column paints too: unobserved, a short one would stand with its label chopped
+    // (ADR-0016). Its need is a fact of how the header is drawn, held apart from what the values taught the column
+    // and replaced when that fact moves (ADR-0500): the columns or the metrics, the ▾, the display, and the names
+    // the Filter holds, which widen only a header with no box for the funnel and only while it shows one (ADR-0502).
+    // So the widths follow what the grid holds now, whatever order it came in, and nothing is charged twice.
+    #chargeHeaders(): void {
+        const filter = this.#state.filter;
+        const filtered = filter === undefined ? '' : JSON.stringify(Object.keys(filter.columns));
+        const charged = this.#chargedHeaders;
+        if (charged?.columns === this.#columns && charged.metrics === this.#metrics && charged.menus === !this.#hideColumnMenu
+            && charged.display === this.#headerDisplay && charged.filtered === filtered) {
+            return;
+        }
+        this.#chargedHeaders = { columns: this.#columns, metrics: this.#metrics, menus: !this.#hideColumnMenu, display: this.#headerDisplay, filtered };
+        this.#autoWidths = this.#columns.map(({ spec }, c) => {
+            const width = itemAt(this.#autoWidths, c);
+            return spec.width.isAuto ? width.underHeader(this.#headerNeedPx(c)) : width;
+        });
+    }
+
     // A new geometry only when something it is made of moved, so an unchanged layout keeps its instance and
     // the rows keep skipping (ADR-0003).
     #resolveColumnGeometry(viewportWidthPx: number): void {
+        this.#chargeHeaders();
         const widths = this.#columns.map(({ spec }, c) => spec.resolveWidthPx(itemAt(this.#autoWidths, c)));
         const geometry = this.#styles.geometry;
         const width = Math.max(1, viewportWidthPx);
@@ -10640,11 +10674,10 @@ export class GridView<Row> {
     };
 
     #fittedPx(index: number): number {
-        const { column, header, spec } = itemAt(this.#columns, index);
+        const { column, spec } = itemAt(this.#columns, index);
         const metrics = this.#metrics.cellMetrics.for(column.type);
-        let required = this.#metrics.headerRequiredPx({
-            label: header, menuButton: !this.#hideColumnMenu, sortable: column.queryable !== false, display: this.#headerDisplay,
-        });
+        // The header as it stands, its funnel's box included where it takes one for a Filter (ADR-0502).
+        let required = this.#headerNeedPx(index);
         for (const row of this.#state.window) required = Math.max(required, metrics.estimatePx(textFor(column, column.value(row))));
         return spec.sizeToFit(required).fixedPx;
     }
@@ -12022,7 +12055,8 @@ export class GridView<Row> {
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
             // A filtered column's header says so, and the stylesheet paints the funnel from it: on the ▾ under
-            // either display, and on a compact header's box where there is no ▾ (ADR-0500, ADR-0501).
+            // either display, and on the box that stands in its place where there is no ▾ (ADR-0500, ADR-0501,
+            // ADR-0502).
             const marksFilter = filteredNames.includes(column.name);
             if (marksFilter) cell.setAttribute('data-ex-filtered', '');
             cell.textContent = label;
@@ -12041,10 +12075,11 @@ export class GridView<Row> {
                 button.setAttribute('data-ex-claims', 'click');
                 cell.append(button);
                 this.#menuButtons.set(button, column.name);
-            } else if (compact && column.queryable !== false) {
+            } else if (marksFilter || (compact && column.queryable !== false)) {
                 // With no ▾, the Header Box still shows what the column holds (ADR-0500): a mark and nothing to
-                // press, named only while it says something the header's aria-sort does not. A standard header
-                // has no box without its ▾, and there a Filter has no mark (ADR-0501 section 3).
+                // press, named only while it says something the header's aria-sort does not. A header that has no
+                // such box, a standard one or a compact one whose column cannot be sorted, takes it while its
+                // column is filtered and only then, so that no filtered column's header is silent (ADR-0502).
                 const state = doc.createElement('span');
                 state.className = 'ex-header-state';
                 if (marksFilter) {
