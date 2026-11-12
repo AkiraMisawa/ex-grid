@@ -298,6 +298,48 @@ nix develop .#browser -c bash -c 'npm ci && npm test'           # layers 1 and 2
   grow with the row count, rows still skip their render, and nothing per-cell reaches JavaScript
   (P1-P9 in ADR-0027; the Definition of Done states them as criteria you can run).
 
+## A pull request shows what it changes
+
+**A feature or a fix is checked by looking at it, and its pull request carries what was looked at**
+(decided with the user, 2026-11-12: a feature added or a defect fixed is checked with a picture or a
+GIF, and the pull request shows it). A passing suite says a criterion holds. A picture is how the
+author first, and the reviewer after, see that the screen is right.
+
+- **A change that adds or alters something a user sees** (a header, a menu, a dialog, a mark, a
+  Selection as painted, a figure in a cell, a message, an Example on the Docs Site) gives its
+  description a `Screens` section: a screenshot of each new or changed screen, a GIF where the
+  change is a gesture or a flow, each with one line on what to look at. A fix shows before and
+  after.
+- **Looking at the picture is the check.** Open every frame before it is attached and read it
+  against what the change claims. A picture that shows something else (a clipped menu, the wrong
+  mark, a figure the caption does not name) is a finding to fix, not a picture to retake until it
+  looks right.
+- **No picture, no pull request.** A change a user can see that was not looked at this way is not
+  opened as a pull request and is not reported as done. If it cannot be captured, say what
+  prevented it and stop there.
+- **Take them in a real browser, from a host of this repository**: the Docs Site's Example for the
+  change, or a DemoHost page, with the data those hosts already carry and never a Consumer's. Add
+  the other Chrome (Built-in beside MudBlazor, Mantine or MUI), the other colour scheme or a touch
+  width where the change looks different there. A difference too small to see at full size, such
+  as a device pixel, is cropped and magnified without smoothing, and its caption gives the figure
+  measured in the capture.
+- **A change with nothing to see** (a refactor, a test, a CI script, a document) says so in one
+  line under `Screens`, naming why.
+- **The pictures are not part of the change, and `main` never holds them.** They live on the branch
+  `claude/pr-media`, which is never merged: a folder per pull request, named after its branch,
+  pushed before the pull request opens. Pushing pictures there is part of opening the pull request
+  and needs no asking; no workflow runs on it. The description links each picture by its commit,
+  `https://github.com/<owner>/<repo>/blob/<sha>/<folder>/<file>?raw=true`, so a later push cannot
+  change what a merged pull request shows. Nothing on that branch is rewritten or removed once a
+  description shows it: a push refused because another pull request's pictures arrived first is
+  rebased onto them and pushed again, never forced. Keep the folder's and the file's names short,
+  because an image link over 150 characters was seen to arrive as a plain link.
+  *(Decided with the user, 2026-11-12: the place qube keeps its pictures, chosen over committing
+  them on the pull request's own branch and removing them in the next commit, as #566 and #567
+  did.)*
+- **A background agent's brief carries this too**, and its report lists the pictures it took and
+  what each shows.
+
 ## Tests
 
 **Three layers, and all three gate in CI (`.github/workflows/ci.yml`, ADR-0041): layers 1 and
@@ -494,6 +536,9 @@ onto this repo as follows:
   Examples are written and run before the review step, and `/code-review`'s Standards axis checks
   the diff against that section like any other rule here — a Consumer-visible change with no
   `dotnet/samples/ExGrid.Docs` hunk and no stated reason is a finding.
+- **"Done" includes the pictures** ("A pull request shows what it changes"): a change a user can
+  see is captured and looked at before the work is reported, and the pictures go into the pull
+  request when one is opened.
 - **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
   background agent, return the proposal), as in "Working in parallel".
 

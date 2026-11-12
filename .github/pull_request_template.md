@@ -8,6 +8,12 @@
 
 <!-- Layers 1 and 2, the targeted layer-3 run, anything run by hand. -->
 
+## Screens
+
+<!-- A screenshot of each new or changed screen, a GIF where the change is a gesture or a flow,
+     before and after for a fix, each with one line on what to look at (AGENTS.md, "A pull request
+     shows what it changes"). Or one line: why there is nothing to see. -->
+
 ## Docs Site
 
 <!-- The pages and Examples under dotnet/samples/ExGrid.Docs this changes, and that the site was run
