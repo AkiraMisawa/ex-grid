@@ -149,15 +149,17 @@ their place: nothing has asked for more there.*
 
 *Measured before it was offered (CLAUDE.md, "Measure before claiming anything about performance"),
 since a condition over a hundred thousand rows hands ranges by the ten thousand, which no gesture
-could: ten thousand one-row ranges took 2.4 seconds to their first paint, all of it in the
-Selection Summary's bands (`summaryBands`, and C#'s `GridSummary.Bands`), which walked every range
-for every band. They are swept now, each range entering at its top edge and leaving at its bottom,
-and are held to the old definition by a property test on each platform. The same placement then
-took 81 ms to its first paint and about 7 ms a paint while scrolling; fifty thousand ranges, 350 ms
-and about 30 ms; two hundred thousand, 1.4 s and about 120 ms (Node with happy-dom, 2026-11-12,
-400,000 rows of two columns with the Selection Summary on: a trend, never a gate). What is left
-grows with the number of ranges and is paid on each paint, so a Consumer hands a run of
-neighbouring rows as one range. Nothing is capped: a Selection is cheap, and a cap belongs on what
+could: ten thousand one-row ranges took 2.1 seconds to their first paint, and twenty thousand 8.1,
+nearly all of it in the Selection Summary's bands (`summaryBands`, and C#'s `GridSummary.Bands`),
+which walked every range for every band. They are swept now, each range entering at its top edge
+and leaving at its bottom, and are held to the old definition by a property test on each platform.
+The same ten thousand then took 71 ms to their first paint, fifty thousand 231 ms and two hundred
+thousand 973 ms, where one range takes 33 ms, the two frames the measurement waits for; a paint
+while scrolling stayed at that floor up to fifty thousand ranges and took 56 ms at two hundred
+thousand (headless Chrome on Linux, 2026-11-12, 400,000 rows of two columns with the Selection
+Summary on: a trend, never a gate; `spikes/render-bench`'s `/core/ranges`, with the numbers in
+`results/20261112-ranges/`). What is left grows with the number of ranges, so a Consumer hands a
+run of neighbouring rows as one range. Nothing is capped: a Selection is cheap, and a cap belongs on what
 cannot be executed.*
 
 ## 5. The fill handle: the gesture is the core's, the meaning is the Consumer's

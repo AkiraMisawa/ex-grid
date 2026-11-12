@@ -145,7 +145,10 @@ export class Selection implements GridSelection {
         if (this.isEmpty) {
             return undefined;
         }
-        const last = Math.max(...this.#origins);
+        // Walked, not spread into one call: a Consumer places as many ranges as rows meet its condition (ADR-0050,
+        // item 4), more than a call takes arguments.
+        let last = -1;
+        for (const origin of this.#origins) last = Math.max(last, origin);
         let first: CellPosition | undefined;
         this.ranges.forEach((range, i) => {
             if (this.#origins[i] !== last) {

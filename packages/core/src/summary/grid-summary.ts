@@ -172,10 +172,10 @@ export interface SummaryBand {
     readonly columns: readonly number[];
 }
 
-// Notes a range among those that change the sweep at an edge.
-function noted(at: Map<number, SelectionRange[]>, edge: number, range: SelectionRange): void {
-    const there = at.get(edge);
-    if (there === undefined) at.set(edge, [range]);
+// Adds a range to those that enter, or leave, the sweep at an edge.
+function addAtEdge(byEdge: Map<number, SelectionRange[]>, edge: number, range: SelectionRange): void {
+    const there = byEdge.get(edge);
+    if (there === undefined) byEdge.set(edge, [range]);
     else there.push(range);
 }
 
@@ -196,8 +196,8 @@ export function summaryBands(ranges: readonly SelectionRange[], rowCount: number
         const top = clamp(range.topRow);
         const bottom = clamp(range.topRow + range.rowCount);
         if (top < bottom) {
-            noted(entering, top, range);
-            noted(leaving, bottom, range);
+            addAtEdge(entering, top, range);
+            addAtEdge(leaving, bottom, range);
         }
     }
     const edges = [...new Set([...entering.keys(), ...leaving.keys()])].toSorted((a, b) => a - b);

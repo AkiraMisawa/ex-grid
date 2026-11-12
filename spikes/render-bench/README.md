@@ -361,6 +361,34 @@ core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`
 `csharp-wasm` column is the build output's (see above); a published client's, with the Engine Host
 Worker's and a TypeScript engine's beside it, are in `spikes/engine-host/results/20261025-engine-host/`.
 
+### Many ranges (`/core/ranges`, ADR-0050 item 4's note of 2026-11-12)
+
+What a Consumer's placement of many ranges costs: no gesture makes ranges by the ten thousand, and a
+condition over a large source does. The React host's `/core/ranges` draws a Book column and one measure
+over 400,000 rows, the Selection Summary on as it is by default, and `rangesBench.run` in the page places
+one-row ranges on every other row, the most a condition can find among so many rows. For each count it
+times the call (`placeMs`), the call to the second animation frame after it (`firstPaintMs`), and five
+scrolls of forty rows each to their second frame (`scrollPaintMs`). The first count is one range: two
+frames of the browser's, the floor every other count is read against. `tools/cdp-ranges.mjs` drives it:
+
+```sh
+cd Bench.React && npm ci && npx vite build && npx vite preview --port 5496 --strictPort
+RESULTS_DIR=results/ranges-run CDP_PORT=9333 node tools/cdp-ranges.mjs http://127.0.0.1:5496 sweep    # [counts]
+```
+
+The numbers of 2026-11-12 are in `results/20261112-ranges/` (headless Chrome on Linux, so a trend and
+never a gate): `sweep` is the Selection Summary's bands swept by edge, and `before-sweep` the same page
+built with `packages/core/src/summary/grid-summary.ts` as it was, when every band walked every range.
+
+| One-row ranges | First paint, before | First paint, swept | A scrolled paint, swept (median) |
+|---:|---:|---:|---:|
+| 1 | 33 ms | 33 ms | 33 ms |
+| 1,000 | 68 ms | 33 ms | 33 ms |
+| 10,000 | 2,099 ms | 71 ms | 33 ms |
+| 20,000 | 8,148 ms | not run | not run |
+| 50,000 | not run | 231 ms | 33 ms |
+| 200,000 | not run | 973 ms | 56 ms |
+
 ## Running it
 
 ```sh

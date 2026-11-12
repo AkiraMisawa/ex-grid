@@ -129,7 +129,7 @@ public static class GridSummary
         // What each edge changes: the ranges that end there leave before those that start there enter, since
         // neither covers the other's band.
         var changes = new SortedDictionary<int, (List<SelectionRange> Leaving, List<SelectionRange> Entering)>();
-        (List<SelectionRange> Leaving, List<SelectionRange> Entering) At(int edge)
+        (List<SelectionRange> Leaving, List<SelectionRange> Entering) ChangesAt(int edge)
         {
             if (!changes.TryGetValue(edge, out var there))
                 changes[edge] = there = ([], []);
@@ -141,8 +141,8 @@ public static class GridSummary
             var bottom = Math.Clamp(range.TopRow + range.RowCount, 0, rowCount);
             if (top < bottom)
             {
-                At(top).Entering.Add(range);
-                At(bottom).Leaving.Add(range);
+                ChangesAt(top).Entering.Add(range);
+                ChangesAt(bottom).Leaving.Add(range);
             }
         }
         // How many of the ranges over the band cover each column, and the band's columns in order, kept from
@@ -164,23 +164,25 @@ public static class GridSummary
                     columns = null;
             }
         }
-        (int Top, int[]? Columns)? open = null;
+        // The edge before this one, and the columns covered from it to this one: none where no range covers them.
+        int? bandTop = null;
+        int[]? bandColumns = null;
         foreach (var (edge, (leaving, entering)) in changes)
         {
-            if (open is { Columns: { } over } band)
-                yield return (band.Top, edge, over);
+            if (bandTop is { } top && bandColumns is not null)
+                yield return (top, edge, bandColumns);
             foreach (var range in leaving)
                 Cover(range, -1);
             foreach (var range in entering)
                 Cover(range, 1);
-            int[]? own = null;
+            bandTop = edge;
+            bandColumns = null;
             if (covering.Count > 0)
             {
                 columns ??= [.. covering.Keys.Order()];
                 // Each band is handed columns of its own: a caller may keep or write to what it was handed.
-                own = [.. columns];
+                bandColumns = [.. columns];
             }
-            open = (edge, own);
         }
     }
 }

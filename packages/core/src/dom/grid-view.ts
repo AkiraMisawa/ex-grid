@@ -2464,13 +2464,11 @@ export class GridView<Row> {
         if (extent.rowCount === 0 || extent.columnCount === 0) {
             throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
         }
-        // The list as it was handed: a handler the open edit's commit calls below may write to the Consumer's own.
-        const place = isRangeList(ranges) ? [...ranges] : ranges;
-        const placedOn = (selection: Selection, on: GridExtent): Selection =>
-            isRangeList(place) ? selection.placeRanges(place, focus, on) : selection.place(place, focus, on);
         // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
-        // else holds, and commits nothing.
-        placedOn(this.#held.selection, extent);
+        // else holds, and commits nothing. The Selection is made here, once, from what was handed as the call was
+        // made: a handler the open edit's commit calls below may write to the Consumer's own list, ranges or Focus.
+        const placed = isRangeList(ranges) ? this.#held.selection.placeRanges(ranges, focus, extent) : this.#held.selection.place(ranges, focus, extent);
+        const target = defined(placed.focus, 'the Focus placed');
         // The version the grid hands, which is the source's own and the one a Consumer reads.
         if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
@@ -2507,16 +2505,14 @@ export class GridView<Row> {
         // The commit may have changed how many rows there are under the same order, as a fetching source's total
         // can: a place that no longer fits names rows that are not there, which the order moving says.
         const now = this.#extent;
-        const outside = (range: SelectionRange): boolean =>
-            range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount;
-        if (isRangeList(place) ? place.some(outside) : outside(place)) {
+        if (placed.ranges.some(range => range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount)) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
         // Revealed in the Viewport; the page is not moved for it, as a Consumer's placement is no move the grid made
         // (ADR-0204): a Name Box's Go To scrolls the grid, never the page under it.
-        if (this.#apply(placedOn(this.#held.selection, now))) {
-            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+        if (this.#apply(placed)) {
+            this.#revealOwed = { target, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
         }
         return true;

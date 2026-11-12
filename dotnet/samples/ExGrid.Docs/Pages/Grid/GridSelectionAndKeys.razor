@@ -81,7 +81,7 @@
             Ctrl+clicks would have left them. Under React the grid's ref has one member for both:
             <code>placeSelection(range, focus, rowSequenceVersion)</code> takes a range or an array of ranges. The
             grid then does what it does after a click: an open edit commits first, and the Focus is scrolled into
-            view.
+            view. Placing the Selection the grid already has moves nothing, so nothing is scrolled.
         </p>
         <p>
             A list is placed <strong>as you hand it</strong>. Its order is the order Enter and Tab walk the ranges.
@@ -98,7 +98,9 @@
             call answers false, and <code>OnRefused</code> hears a refusal of kind <code>placement</code>. An open
             edit whose value is rejected holds the placement too. A placement that names cells the grid does not
             have is your mistake, not a refusal: no range, a range reaching outside the grid, or a Focus in none of
-            the ranges throws, and changes nothing.
+            the ranges throws, and changes nothing. That is judged against the grid as it is when you call, before
+            the version is read, so ranges read from a source that has since lost rows throw too: place a Selection
+            in the turn you read its rows in.
         </p>
         <DocsExample Title="Selecting rows by a condition" Builtin="typeof(SelectWhere)" Mud="typeof(SelectWhereMud)"
                      Files="@(["Examples/Grid/MatchingRows.cs", "Examples/Data/Trade.cs"])">
