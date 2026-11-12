@@ -2374,6 +2374,12 @@ export class GridView<Row> {
                 () => { root.removeEventListener('mouseleave', this.#onRestLeave); },
                 () => { root.removeEventListener('copy', this.#onCopy); },
                 () => { root.removeEventListener('paste', this.#onPaste); },
+                // First of the reports: it refuses a root that no window shows, and a report begun before a
+                // refusal here would not be among what the grid takes back.
+                reports.observeDevicePixel(root, ratio => {
+                    this.#devicePixelRatio = ratio;
+                    this.#invalidate();
+                }),
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
                     this.#nameParentWithoutHeight(report.contentHeightPx);
@@ -2381,10 +2387,6 @@ export class GridView<Row> {
                 }),
                 reports.observeCeiling(tallest, ceilingPx => {
                     this.#ceilingPx = ceilingPx;
-                    this.#invalidate();
-                }),
-                reports.observeDevicePixel(ratio => {
-                    this.#devicePixelRatio = ratio;
                     this.#invalidate();
                 }),
             );

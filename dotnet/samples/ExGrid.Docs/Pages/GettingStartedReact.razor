@@ -70,6 +70,31 @@
                      Files="@(["Examples/Data/Trade.cs"])" CodeOpen="true" />
     </DocsSection>
 
+    <DocsSection Title="A grid in a window your page opens">
+        <p>
+            A docking layout that pops a panel out draws it in a second window the page opened with
+            <code>window.open</code>, through a portal: the component's script runs in the first window, and its
+            elements live in the second. A grid drawn there is told that window's Device Pixel, not the opener's. It
+            follows the display the window stands on and the window's own zoom, so the grid's column edges and lines
+            stay on whole device pixels when the window is dragged to a display of another scale.
+        </p>
+        <p>Two things are yours:</p>
+        <ul>
+            <li>
+                <b>The window's document needs the stylesheets.</b> It starts empty, and a grid reads its rules from
+                the document it is in: copy the opener's <code>&lt;style&gt;</code> and
+                <code>&lt;link rel="stylesheet"&gt;</code> elements into its head, or link the same files there.
+            </li>
+            <li>
+                <b>A grid is created in the window it is drawn in.</b> It reads its window once, as it is created. If
+                your layout moves a mounted grid's element into the other window's document, the browser tells nobody,
+                and the grid keeps the first window's Device Pixel. Create the grid again there: under React, give it a
+                <code>key</code> that changes with the window.
+            </li>
+        </ul>
+        <CodeBlock Path="Examples/Setup/PoppedOutGrid.tsx" />
+    </DocsSection>
+
     <DocsSection Title="In a Mantine or MUI application">
         <p>
             Set the design system up as usual: Mantine's <code>MantineProvider</code>, or MUI's

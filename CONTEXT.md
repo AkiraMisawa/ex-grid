@@ -240,8 +240,9 @@ _Avoid_: max height, scroll limit (VZ-8's refusal is a different, fixed ceiling)
 **Device Pixel**:
 One point of the screen. How many of them a CSS pixel covers depends on the display scale and the
 page zoom: one and a half at 150%, two and a quarter at 150% zoomed to 150%. Excel's lines are
-counted in them, so a thin line is one Device Pixel at every scale. The browser reports it when it
-changes, and the grid puts its column edges on it
+counted in them, so a thin line is one Device Pixel at every scale. Each browser window has its own.
+The browser reports the one of the window the grid is in when it changes, and the grid puts its column
+edges on it
 ([ADR-0090](./docs/adr/0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).
 _Avoid_: screen pixel, physical pixel, pixel on its own (a pixel with no qualifier is a CSS pixel)
 

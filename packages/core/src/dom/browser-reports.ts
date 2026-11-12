@@ -27,8 +27,11 @@ export interface BrowserReports {
     observeViewport(scroller: HTMLElement, tell: (report: ViewportReport) => void): () => void;
     /** Hears the height the probe's tallest element is laid out at: the Layout Ceiling. */
     observeCeiling(probe: HTMLElement, tell: (ceilingPx: number) => void): () => void;
-    /** Hears the Device Pixel's size: at once, then whenever the scale or the zoom moves it. */
-    observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void;
+    /** Hears the Device Pixel's size in `element`'s window, which need not be the script's (a window the page
+     * opened has a scale of its own): at once, then whenever that window's scale or zoom moves it. The window is
+     * the one `element` is in as this is called, which is as the grid is created: a grid moved into another
+     * document is destroyed and created again there (ADR-0090). */
+    observeDevicePixel(element: HTMLElement, tell: (devicePixelRatio: number) => void): () => void;
     /** The clock the settle delay after a fling runs on (ADR-0004), the announcement's (ADR-0033), and the Change Highlight's (ADR-0068). */
     readonly clock: GridClock;
     /** Calls `callback` before the next frame of `element`'s window is painted; the answer cancels the call
@@ -119,13 +122,15 @@ export const browserReports: BrowserReports = Object.freeze({
         observer.observe(probe);
         return () => { observer.disconnect(); };
     },
-    observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void {
+    observeDevicePixel(element: HTMLElement, tell: (devicePixelRatio: number) => void): () => void {
+        const view = element.ownerDocument.defaultView;
+        if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no Device Pixel.');
         let query: MediaQueryList | undefined;
         let told = -1;
         const arm = (): void => {
             query?.removeEventListener('change', arm);
-            const ratio = window.devicePixelRatio;
-            query = window.matchMedia(`(resolution: ${ratio}dppx)`);
+            const ratio = view.devicePixelRatio;
+            query = view.matchMedia(`(resolution: ${ratio}dppx)`);
             query.addEventListener('change', arm);
             if (ratio === told) return;
             told = ratio;

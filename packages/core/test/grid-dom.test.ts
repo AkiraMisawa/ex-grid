@@ -154,8 +154,8 @@ describe('createGrid', () => {
             override observeCeiling(probe: HTMLElement, tell: (px: number) => void): () => void {
                 return counted('ceiling', super.observeCeiling(probe, tell));
             }
-            override observeDevicePixel(tell: (ratio: number) => void): () => void {
-                return counted('device pixel', super.observeDevicePixel(tell));
+            override observeDevicePixel(element: HTMLElement, tell: (ratio: number) => void): () => void {
+                return counted('device pixel', super.observeDevicePixel(element, tell));
             }
             override observeClipboard(element: HTMLElement, tell: (change: object) => void): (() => void) | undefined {
                 return counted('clipboard', super.observeClipboard(element, tell));
