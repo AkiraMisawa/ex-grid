@@ -1359,6 +1359,25 @@ describe('what the Consumer calls on the grid (ADR-0441)', () => {
         expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 2, columnCount: 1 }]);
     });
 
+    it('ADR-0050 item 4 (2026-11-12): a list of ranges .NET hands is placed as handed, judged against the state .NET sent before it asked', async () => {
+        const dotnet = new FakeDotNet();
+        const { grid } = mount({ options: options({ rowHeight: 24, hears: ['selectionChanged'] }) }, dotnet);
+        await turns();
+        // The state crosses just ahead of the request, as .NET sends them, and has not been taken in a pass yet.
+        grid.state(JSON.stringify(state(2, [credit, rates], { rowSequenceVersion: 1 })));
+        const handed = [{ topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 2 }, { topRow: 0, leftColumn: 1, rowCount: 2, columnCount: 1 }];
+        expect(grid.placeSelection(handed, { row: 1, column: 1 }, 1)).toBe(true);
+        await turns();
+        // Neither sorted nor joined, and the range handed last of the two that hold the Focus holds it.
+        expect(lastRanges(dotnet)).toEqual(handed);
+        const heard = dotnet.heard('selectionChanged').at(-1) as object;
+        expect([Reflect.get(heard, 'focus'), Reflect.get(heard, 'focusRangeIndex')]).toEqual([{ row: 1, column: 1 }, 1]);
+        // One range alone is still the one-range request.
+        expect(grid.placeSelection({ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 0, column: 0 }, 1)).toBe(true);
+        await turns();
+        expect(lastRanges(dotnet)).toEqual([{ topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
+    });
+
     it('ADR-0441 section 2: the open edit\'s text is read as typed, and none is null', async () => {
         const { root, grid } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) });
         await turns();

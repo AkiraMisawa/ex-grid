@@ -2,10 +2,10 @@
 // CoreGrid.razor draws on the Blazor hosts, over the Script Core under React. The same ids, the same rows
 // from CoreData's formula, the same columns and geometry (README, "Where the Script Core plugs in"), so
 // core-bench.js measures it unchanged. A template cell is a React component in the slot the core gives it.
-import { useCallback, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { GridColumn, GridTemplateCell } from '@ex-grid/core';
-import { ExGrid, templateColumn } from '@ex-grid/react';
+import { ExGrid, templateColumn, type ExGridApi } from '@ex-grid/react';
 import '../../Bench.Client/wwwroot/css/app.css';
 import '../../../../dotnet/src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../Bench.Live/wwwroot/core-bench.css';
@@ -118,11 +118,72 @@ function CoreGrid({ templates }: { readonly templates: boolean }): ReactElement 
     );
 }
 
+// /core/ranges: what a Consumer's placement of many ranges costs (ADR-0050 item 4's note of 2026-11-12, README,
+// "Many ranges"). Book and one measure over 400,000 rows, the Selection Summary on as it is by default, and the
+// ranges one row each on every other row, which is the most ranges a condition can find among so many rows.
+const rangeRows = 400_000;
+const rangeColumns: readonly GridColumn<CoreRow>[] = Object.freeze([book, measure(0)]);
+
+interface RangesRound {
+    readonly ranges: number;
+    /** The call itself. */
+    readonly placeMs: number;
+    /** From the call to the second frame after it: the paint that shows the Selection has been made by then. */
+    readonly firstPaintMs: number;
+    /** Each of five jumps of 600 rows, from the scroll to the second frame after it. */
+    readonly scrollPaintMs: readonly number[];
+}
+
+const frame = (): Promise<void> => new Promise(resolve => { requestAnimationFrame(() => { resolve(); }); });
+const twoFrames = async (): Promise<void> => { await frame(); await frame(); };
+
+function RangesBench(): ReactElement {
+    const grid = useRef<ExGridApi<CoreRow>>(null);
+    const rows = useMemo(() => windowOf(rangeRows, 0), []);
+    useEffect(() => {
+        const run = async (counts: readonly number[]): Promise<readonly RangesRound[]> => {
+            const api = grid.current;
+            const scroller = document.querySelector<HTMLElement>('#core-bench .ex-scroller');
+            if (api === null || scroller === null) throw new Error('The grid is not drawn yet.');
+            const rounds: RangesRound[] = [];
+            for (const count of counts) {
+                if (count * 2 > rangeRows) throw new Error(`${count} ranges on every other row need ${count * 2} rows.`);
+                scroller.scrollTop = 0;
+                api.placeSelection({ topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 }, { row: 1, column: 0 }, 0);
+                await twoFrames();
+                const ranges = Array.from({ length: count }, (_, i) => ({ topRow: i * 2, leftColumn: 0, rowCount: 1, columnCount: 2 }));
+                const start = performance.now();
+                if (!api.placeSelection(ranges, { row: 0, column: 0 }, 0)) throw new Error('The placement was refused.');
+                const placeMs = performance.now() - start;
+                await twoFrames();
+                const firstPaintMs = performance.now() - start;
+                const scrollPaintMs: number[] = [];
+                for (let jump = 1; jump <= 5; jump++) {
+                    const from = performance.now();
+                    scroller.scrollTop = jump * 600 * 22;
+                    await twoFrames();
+                    scrollPaintMs.push(performance.now() - from);
+                }
+                rounds.push({ ranges: count, placeMs, firstPaintMs, scrollPaintMs });
+            }
+            return rounds;
+        };
+        Object.assign(window, { rangesBench: { ready: () => document.querySelector('#core-bench .ex-cell') !== null, run } });
+    }, []);
+    return (
+        <div id="core-bench" style={{ width: 1200 }}>
+            <ExGrid<CoreRow> ref={grid} rows={rows} columns={rangeColumns} rowHeight={22} viewportHeight={600} viewportWidth={1200} />
+        </div>
+    );
+}
+
 const scenario = location.pathname.replace(/\/$/, '').split('/').pop();
 const app = document.getElementById('app');
 if (app === null) throw new Error('index.html has no #app.');
-if (scenario !== 'grid' && scenario !== 'template') {
-    app.textContent = 'This host serves /core/grid and /core/template.';
+if (scenario === 'ranges') {
+    createRoot(app).render(<div className="content"><RangesBench /></div>);
+} else if (scenario !== 'grid' && scenario !== 'template') {
+    app.textContent = 'This host serves /core/grid, /core/template and /core/ranges.';
 } else {
     createRoot(app).render(<div className="content"><CoreGrid templates={scenario === 'template'} /></div>);
 }

@@ -12,7 +12,7 @@ import type { GridColumn } from '../src/dom/grid-column';
 import type { GridContextMenuContext } from '../src/dom/grid-command';
 import type { GridOptions } from '../src/dom/grid-view';
 import type { GridRefusal } from '../src/dom/grid-refusal';
-import type { GridSelection } from '../src/selection/selection';
+import { Selection, type GridSelection } from '../src/selection/selection';
 import { GridSource } from '../src/source/grid-source';
 import { mount, painted, q, trades, type Trade } from './grid-harness';
 
@@ -221,6 +221,113 @@ describe('a placement of the Selection', () => {
         await painted();
         expect([listener.refusals, defined(listener.selections.at(-1), 'the Selection heard').focus])
             .toEqual([[], { row: 25, column: 0 }]);
+    });
+
+    it('ADR-0050 (2026-11-12): several ranges are placed as handed, in their order, heard once, and the Focus named is scrolled into view', async () => {
+        const listener = heard();
+        const { root, view } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        // Rows that meet a condition, as a Consumer's `select where` finds them: runs that do not touch.
+        const matching = [range(3, 0, 1, 2), range(500, 0, 2, 2), range(730, 0, 1, 2)];
+        expect(view.placeSelection(matching, { row: 500, column: 0 }, 0)).toBe(true);
+        await painted();
+        const selection = defined(listener.selections.at(-1), 'the Selection heard');
+        expect([selection.ranges, selection.focus, selection.focusRange, listener.selections.length])
+            .toEqual([matching, { row: 500, column: 0 }, range(500, 0, 2, 2), 1]);
+        expect(q(root, 'input.ex-key-field').getAttribute('aria-activedescendant')).toMatch(/r500c0$/);
+        expect(q(root, '.ex-scroller').scrollTop).toBeGreaterThan(0);
+        expect(listener.refusals).toEqual([]);
+        // What was placed is what the grid reads back, under the version it was placed with.
+        const read = view.readView();
+        expect([read.selection.ranges, read.selection.focus, read.rowSequenceVersion]).toEqual([matching, { row: 500, column: 0 }, 0]);
+    });
+
+    it('ADR-0050 (2026-11-12): ranges that overlap are placed as handed, and a list of one range is the one-range placement', async () => {
+        const listener = heard();
+        const { view } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        const overlapping = [range(0, 0, 3, 2), range(2, 0, 3, 2)];
+        expect(view.placeSelection(overlapping, { row: 2, column: 1 }, 0)).toBe(true);
+        await painted();
+        const placed = defined(listener.selections.at(-1), 'the Selection heard');
+        // Row 2 is in both: the range handed last of them holds the Focus (ADR-0055), and its cells count twice (ADR-0014).
+        expect([placed.ranges, placed.focusRange, placed.cellCount]).toEqual([overlapping, range(2, 0, 3, 2), 12]);
+        // The reason they are not joined: the Selection read back is the one placed.
+        const read = view.readView().selection;
+        expect([read.ranges, read.focus, read.focusRange]).toEqual([overlapping, { row: 2, column: 1 }, range(2, 0, 3, 2)]);
+        expect(view.placeSelection([range(5, 0, 2, 2)], { row: 6, column: 1 }, 0)).toBe(true);
+        await painted();
+        const one = defined(listener.selections.at(-1), 'the Selection heard');
+        expect([one.ranges, one.focus]).toEqual([[range(5, 0, 2, 2)], { row: 6, column: 1 }]);
+    });
+
+    it('ADR-0050 (2026-11-12), ADR-0014: a list as long as a condition finds is placed, and one value pasted over it still finds the range made last', () => {
+        // More ranges than a call takes arguments: nothing about a Selection spreads its ranges into one.
+        const many = Array.from({ length: 200_000 }, (_, i) => range(i * 2, 0, 1, 2));
+        const placed = Selection.empty.placeRanges(many, { row: 0, column: 0 }, { rowCount: 400_000, columnCount: 2 });
+        expect([placed.ranges.length, placed.cellCount, placed.topLeftOfRangeMadeLast]).toEqual([200_000, 400_000, { row: 399_998, column: 0 }]);
+    });
+
+    it('ADR-0050 (2026-11-12), ADR-0011: several ranges under another Row Sequence Version place nothing and are refused as the order moved', async () => {
+        const listener = heard();
+        const source = GridSource.from(trades(20), { rowKey: trade => trade.book });
+        const { view } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        source.replaceAll(trades(20).slice(1));
+        await painted();
+        expect(view.placeSelection([range(2, 0, 1, 2), range(9, 0, 1, 2)], { row: 2, column: 0 }, 0)).toBe(false);
+        await painted();
+        expect([listener.refusals, listener.selections]).toEqual([[{ kind: 'placement', reason: 'orderMoved' }], []]);
+    });
+
+    it('ADR-0050 (2026-11-12): no range, one range of several outside the grid, or a Focus in none of them throws and changes nothing', async () => {
+        const listener = heard();
+        const { view } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        expect(() => view.placeSelection([], { row: 0, column: 0 }, 0)).toThrow(RangeError);
+        expect(() => view.placeSelection([range(0, 0, 1, 2), range(19, 0, 2, 2)], { row: 0, column: 0 }, 0)).toThrow(/range at 1 reaches outside/);
+        expect(() => view.placeSelection([range(0, 0, 1, 2), range(4, 0, 1, 2)], { row: 2, column: 0 }, 0)).toThrow(/inside one of the ranges/);
+        // Whatever else holds: a stale version does not hide the Consumer's mistake behind a refusal.
+        expect(() => view.placeSelection([range(0, 0, 1, 2), range(19, 0, 2, 2)], { row: 0, column: 0 }, 7)).toThrow(RangeError);
+        await painted();
+        expect([listener.selections, listener.refusals]).toEqual([[], []]);
+    });
+
+    it('ADR-0050 (2026-11-12): the list, its ranges and the Focus are read as the call is made, whatever the open edit\'s commit writes to them', async () => {
+        const handed = [{ ...range(5, 0, 1, 2) }, { ...range(9, 0, 1, 2) }];
+        const focus = { row: 9, column: 1 };
+        const selections: GridSelection[] = [];
+        const { root, view } = mount({
+            columns, rows: trades(20), rowHeight: 24, viewportHeight: 480,
+            onSelectionChanged: selection => { selections.push(selection); },
+            // The Consumer's own objects, written to while the grid commits the edit the placement closes.
+            onEdit: () => {
+                handed.push(range(1, 0, 1, 1));
+                Object.assign(defined(handed[0], 'the first range handed'), range(15, 1, 1, 1));
+                Object.assign(focus, { row: 15, column: 1 });
+            },
+        });
+        await painted();
+        press(root, 10, rowY(1));
+        await painted();
+        key('N');
+        expect(view.placeSelection(handed, focus, 0)).toBe(true);
+        await painted();
+        const placed = defined(selections.at(-1), 'the Selection heard');
+        expect([placed.ranges, placed.focus]).toEqual([[range(5, 0, 1, 2), range(9, 0, 1, 2)], { row: 9, column: 1 }]);
+    });
+
+    it('ADR-0050 (2026-11-12), ADR-0034: a Reject that holds the open edit holds a placement of several ranges too', async () => {
+        const listener = heard();
+        const { root, view } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, 130, rowY(0));
+        await painted();
+        key('a');
+        expect(view.placeSelection([range(5, 0, 1, 2), range(9, 0, 1, 2)], { row: 5, column: 0 }, 0)).toBe(false);
+        await painted();
+        expect([listener.edits, hasEditor(root), listener.refusals]).toEqual([[], true, []]);
+        expect(defined(listener.selections.at(-1), 'the Selection heard').focus).toEqual({ row: 0, column: 1 });
     });
 
     it('ADR-0050: a grid with no rows has no cell to place on, and says so', async () => {

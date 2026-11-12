@@ -148,7 +148,7 @@ public sealed partial class ExGrid<TRow>
     /// <summary>
     /// Shows <paramref name="view"/> as <see cref="ShowViewWith(GridView)"/> does, with <paramref name="range"/> placed
     /// as its Selection and the Focus on <paramref name="focus"/>, revealed from the view's offsets, as
-    /// <see cref="PlaceSelectionAsync"/> places them (ADR-0050 item 4, ADR-0441). A Consumer that shows other rows to go
+    /// <see cref="PlaceSelectionAsync(SelectionRange, CellPosition, int)"/> places them (ADR-0050 item 4, ADR-0441). A Consumer that shows other rows to go
     /// to a place among them hands the place with the rows, so it is placed under the version that brings them. A range
     /// reaching outside the rows and columns shown once the version is taken is not placed.
     /// </summary>

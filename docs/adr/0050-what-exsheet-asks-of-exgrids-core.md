@@ -113,6 +113,55 @@ Name Box (ADR-0051) needs to: a user types `D200` and the Focus goes there.
   A request made under an older version is dropped, because it names positions that no longer
   mean what they did.
 
+*(2026-11-12, decided with the user, [issue #561](https://github.com/AkiraMisawa/ex-grid/issues/561):
+**a Consumer can place several ranges.** The request above takes one range, and a Selection of
+several could be made with Ctrl+click and Shift+F8 and read back, but not placed. A Consumer whose
+command line selects rows by a condition (`select where ccy=USD`) met it: the rows that meet a
+condition rarely stand together, so it had to refuse the line unless they formed one run. Three
+things were decided, each against an alternative.*
+
+- ***The same member takes them.** `placeSelection` takes one range or a list of ranges, and
+  `PlaceSelectionAsync` has an overload that takes a list. A second member beside it was the
+  alternative: it was not taken because placing the Selection is one request, and no call written
+  against the one-range form changes. One range handed alone is still "what a click leaves".*
+- ***The ranges are placed as handed.** In their order, which is the order Enter and Tab walk them
+  ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)), each made in its own turn, as Ctrl+clicks would
+  have left them. Ranges that overlap are neither joined nor refused. Joining was not taken because
+  the Selection read back would not be the one placed, and a Consumer that compares the two would
+  see a difference nobody made. Refusing was not taken because the grid's own gestures make such
+  Selections (a Ctrl+drag across a selected cell) and hand them to the Consumer, who could then
+  not place what it had read. An overlapping Selection is still refused where it always was: a
+  copy of it ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)).
+  The grid joins nothing either: rows that stand together are one range where the Consumer hands
+  them as one.*
+- ***The Consumer names the Focus**, as in the one-range form, and it lies inside one of the ranges.
+  Where several hold it, the one handed last holds the Focus, which is the rule a Find step
+  already follows ([ADR-0055](./0055-find-is-asked-of-the-consumer-like-sort-and-filter.md)).
+  A Focus the grid picks, the first cell of the last range as a Ctrl+click leaves it, was not
+  taken: the Focus is what the grid scrolls into view, and a Consumer that selects by a condition
+  wants the first match shown.*
+
+*Everything else is the one-range request's: no range, a range reaching outside the grid, or a
+Focus in none of the ranges is the Consumer's mistake and throws, changing nothing; a request under
+another Row Sequence Version is refused (`onRefused`, kind `placement`); an open edit commits
+first, and its Reject holds the placement. `showViewWith` and `showNewView` still take one range as
+their place: nothing has asked for more there.*
+
+*Measured before it was offered (CLAUDE.md, "Measure before claiming anything about performance"),
+since a condition over a hundred thousand rows hands ranges by the ten thousand, which no gesture
+could: ten thousand one-row ranges took 2.1 seconds to their first paint, and twenty thousand 8.1,
+nearly all of it in the Selection Summary's bands (`summaryBands`, and C#'s `GridSummary.Bands`),
+which walked every range for every band. They are swept now, each range entering at its top edge
+and leaving at its bottom, and are held to the old definition by a property test on each platform.
+The same ten thousand then took 71 ms to their first paint, fifty thousand 231 ms and two hundred
+thousand 973 ms, where one range takes 33 ms, the two frames the measurement waits for; a paint
+while scrolling stayed at that floor up to fifty thousand ranges and took 56 ms at two hundred
+thousand (headless Chrome on Linux, 2026-11-12, 400,000 rows of two columns with the Selection
+Summary on: a trend, never a gate; `spikes/render-bench`'s `/core/ranges`, with the numbers in
+`results/20261112-ranges/`). What is left grows with the number of ranges, so a Consumer hands a
+run of neighbouring rows as one range. Nothing is capped: a Selection is cheap, and a cap belongs on what
+cannot be executed.*
+
 ## 5. The fill handle: the gesture is the core's, the meaning is the Consumer's
 
 *(2026-10-19, responsive/touch Q10, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): touch Fill

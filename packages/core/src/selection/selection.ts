@@ -145,7 +145,10 @@ export class Selection implements GridSelection {
         if (this.isEmpty) {
             return undefined;
         }
-        const last = Math.max(...this.#origins);
+        // Walked, not spread into one call: a Consumer places as many ranges as rows meet its condition (ADR-0050,
+        // item 4), more than a call takes arguments.
+        let last = -1;
+        for (const origin of this.#origins) last = Math.max(last, origin);
         let first: CellPosition | undefined;
         this.ranges.forEach((range, i) => {
             if (this.#origins[i] !== last) {
@@ -563,6 +566,37 @@ export class Selection implements GridSelection {
             throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
         }
         return new Selection([checked], cell(focus.row, focus.column), 0);
+    }
+
+    /**
+     * A Consumer's placement of several ranges (ADR-0050, item 4's note of 2026-11-12): the ranges become the
+     * selection as handed, in their order, each made in its own turn as Ctrl+clicks would have left them, with
+     * the Focus on `focus`. Ranges that overlap stay as handed, neither merged nor refused: a Ctrl+drag leaves
+     * such ranges too, and what is placed is what is read back. Where several ranges hold the Focus, the one
+     * handed last holds it, as `focusOn` picks (ADR-0055). No range, a range reaching outside the grid, or a
+     * Focus in none of the ranges is refused with a RangeError rather than clamped.
+     */
+    placeRanges(ranges: readonly SelectionRange[], focus: CellPosition, extent: GridExtent): Selection {
+        if (isDegenerate(extent)) {
+            return Selection.empty;
+        }
+        if (ranges.length === 0) {
+            throw new RangeError('A placement names a range at least: nothing selected is not a place (ADR-0050).');
+        }
+        const checked = ranges.map((range, i) => {
+            const whole = selectionRange(range.topRow, range.leftColumn, range.rowCount, range.columnCount);
+            if (bottomRow(whole) >= extent.rowCount || rightColumn(whole) >= extent.columnCount) {
+                throw new RangeError(
+                    `The range at ${i} reaches outside the grid (${extent.rowCount} rows × ${extent.columnCount} columns) (ADR-0050).`);
+            }
+            return whole;
+        });
+        requireWholeCell(focus);
+        const holder = checked.findLastIndex(range => rangeContains(range, focus));
+        if (holder < 0) {
+            throw new RangeError('The Focus is placed inside one of the ranges placed (ADR-0050, ADR-0052).');
+        }
+        return new Selection(checked, cell(focus.row, focus.column), holder, checked.map((_, i) => i));
     }
 
     /**

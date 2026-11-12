@@ -137,6 +137,39 @@ public class ScriptGridHandleTests : BunitContext
             shown[2].GetProperty("place").GetProperty("focus").GetProperty("row").GetInt32()));
     }
 
+    [Fact] // ADR-0050 item 4 (2026-11-12): a list of ranges crosses to the browser as handed, in its order, with the Focus and the version, behind the source's state
+    public async Task ADR0050_a_list_of_ranges_is_placed_as_handed_behind_the_sources_state()
+    {
+        var source = new TestSource();
+        source.Push(_rows, totalCount: _rows.Length, rowSequenceVersion: 4);
+        var cut = Grid(ps => ps.Add(g => g.Source, source));
+        _grid.Setup<bool>("placeSelection", _ => true).SetResult(true);
+        SelectionRange[] matching = [new(7, 0, 1, 2), new(1, 0, 2, 2), new(1, 0, 2, 2)];
+
+        var placed = false;
+        var statesBefore = 0;
+        await cut.InvokeAsync(async () =>
+        {
+            statesBefore = StatesSent();
+            // A change the Consumer made just before: the browser judges the version against it, so it crosses first.
+            source.Push(_rows, totalCount: _rows.Length, rowSequenceVersion: 5);
+            placed = await cut.Instance.PlaceSelectionAsync(matching, new CellPosition(2, 1), 5);
+        });
+
+        Assert.True(placed);
+        var asked = Assert.Single(_grid.Invocations["placeSelection"]);
+        var sent = Json(JsonSerializer.Serialize(asked.Arguments));
+        // Neither sorted nor joined: the order and the range handed twice are the Consumer's.
+        Assert.Equal([(7, 0, 1, 2), (1, 0, 2, 2), (1, 0, 2, 2)], sent[0].EnumerateArray().Select(range => (
+            range.GetProperty("topRow").GetInt32(), range.GetProperty("leftColumn").GetInt32(),
+            range.GetProperty("rowCount").GetInt32(), range.GetProperty("columnCount").GetInt32())));
+        Assert.Equal((2, 1, 5), (sent[1].GetProperty("row").GetInt32(), sent[1].GetProperty("column").GetInt32(), sent[2].GetInt32()));
+        var calls = _grid.Invocations.Select(invocation => invocation.Identifier).ToList();
+        Assert.True(calls.LastIndexOf("state") < calls.LastIndexOf("placeSelection") && StatesSent() > statesBefore,
+            "The source's state crosses before the placement that is judged against it.");
+        await Assert.ThrowsAsync<ArgumentNullException>(() => cut.Instance.PlaceSelectionAsync((IReadOnlyList<SelectionRange>)null!, new CellPosition(0, 0), 5));
+    }
+
     [Fact] // ADR-0441 section 3: work placed from outside the grid's events runs when the browser reaches its turn, and work placed from inside it runs there
     public async Task ADR0441_work_runs_in_the_turn_the_browser_reaches_and_nested_work_runs_inside_it()
     {

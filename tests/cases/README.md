@@ -40,7 +40,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, `documentChanges`, ExPivot's (`pivot/`), `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core), `sheetKeys`, no runner's: the keys ExSheet takes, which `@ex-grid/sheet` and the Docs Site's Keyboard page are both held to (`sheet/sheet-keys.json`), and `keyboardReference`, no runner's either: the keys the Script Core's table takes and answers, which the Docs Site's Keyboard page is held to (`keys/keyboard-reference.json`) |
+| `kind` | Which runner reads it: `selection`, `scriptSelection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `xlsxRead`, `xlsxWrite`, `xlsxReference`, `xlsxEscape`, `xlsxColor`, `sheetXlsx`, `sheetXlsxCall`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, `documentChanges`, ExPivot's (`pivot/`), `scriptCalls`, read as `calls` by the Script Core's runner alone (a behaviour new to the Script Core), `sheetKeys`, no runner's: the keys ExSheet takes, which `@ex-grid/sheet` and the Docs Site's Keyboard page are both held to (`sheet/sheet-keys.json`), and `keyboardReference`, no runner's either: the keys the Script Core's table takes and answers, which the Docs Site's Keyboard page is held to (`keys/keyboard-reference.json`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -81,6 +81,10 @@ or `expect`, `save` or `restore`.
 | `{"place": range, "focus": cell}` | A Consumer's placement |
 | `{"selectColumn": column, "focusRow": row}` | Click on a column header that selects |
 | `{"selectRow": row, "focusColumn": column}` | Click on a Row Heading |
+| `{"placeRanges": ranges, "focus": cell}` | A Consumer's placement of a list of ranges (`scriptSelection` alone) |
+
+A file of kind `scriptSelection` is read as a `selection` file is, by Vitest alone: the cases of behaviour new to the
+Script Core, which the C# `GridSelection` does not take (`placed-ranges.json`, ADR-0050 item 4's note of 2026-11-12).
 
 `cycle` and `nextCorner` take `"times"`, how often the key is pressed, and `"focuses"`, the Focus
 expected after each press (which also sets how often, when `times` is absent). With neither, the key is

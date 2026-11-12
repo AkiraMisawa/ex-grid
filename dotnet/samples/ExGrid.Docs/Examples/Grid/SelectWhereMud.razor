@@ -1,0 +1,58 @@
+@using ExGrid.Selection
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.body2" Class="mr-2">Select where Currency is</MudText>
+        <MudButtonGroup Size="Size.Small" Variant="Variant.Outlined">
+            @foreach (var currency in Currencies)
+            {
+                <MudButton OnClick="() => SelectAsync(currency)">@currency</MudButton>
+            }
+        </MudButtonGroup>
+        <MudSpacer />
+        <MudText Typo="Typo.body2">@_status</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid @ref="_grid" TRow="Trade" Source="_source" Columns="_columns" Chrome="_chrome"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly string[] Currencies = ["USD", "EUR", "JPY", "GBP"];
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Currency", ColumnType.Text, t => t.Currency),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+    ];
+
+    private ExGrid<Trade>? _grid;
+    private string _status = "";
+
+    // The rows are read in the order the grid shows now, and placed under the version that order has: a sort or a
+    // filter in between would make the positions name other rows, and the grid would refuse them.
+    private async Task SelectAsync(string currency)
+    {
+        var version = _source.RowSequenceVersion;
+        var ranges = MatchingRows.Ranges(_source.Window, trade => trade.Currency == currency, _columns.Length);
+        if (ranges.Count == 0 || _grid is null)
+        {
+            _status = $"No trade shown is in {currency}.";
+            return;
+        }
+        // The first match takes the Focus, which the grid scrolls into view.
+        var placed = await _grid.PlaceSelectionAsync(ranges, new CellPosition(ranges[0].TopRow, 0), version);
+        _status = placed
+            ? $"{ranges.Sum(range => range.RowCount)} trades in {ranges.Count} range(s)"
+            : "The grid placed nothing: the order moved, or an open edit was held.";
+    }
+}

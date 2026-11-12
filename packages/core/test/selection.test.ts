@@ -86,7 +86,9 @@ function holdsMarks(selection: Selection, expected: Record<string, unknown>, ext
     }
 }
 
-for (const file of caseFiles<SelectionCase>('selection', 'selection')) {
+// `scriptSelection` is read the same way, here alone: the cases of behaviour new to the Script Core
+// (tests/cases/README.md, ADR-0350 section 5's note of 2026-10-27).
+for (const file of [...caseFiles<SelectionCase>('selection', 'selection'), ...caseFiles<SelectionCase>('selection', 'scriptSelection')]) {
     describe(`selection/${file.file}`, () => {
         for (const c of file.cases) {
             it(c.name, () => {
