@@ -2374,22 +2374,22 @@ export class GridView<Row> {
                 () => { root.removeEventListener('mouseleave', this.#onRestLeave); },
                 () => { root.removeEventListener('copy', this.#onCopy); },
                 () => { root.removeEventListener('paste', this.#onPaste); },
-                // First of the reports: it refuses a root that no window shows, and a report begun before a
-                // refusal here would not be among what the grid takes back.
-                reports.observeDevicePixel(root, ratio => {
-                    this.#devicePixelRatio = ratio;
-                    this.#invalidate();
-                }),
-                reports.observeViewport(this.#scroller, report => {
-                    this.#viewportReport = report;
-                    this.#nameParentWithoutHeight(report.contentHeightPx);
-                    this.#invalidate();
-                }),
-                reports.observeCeiling(tallest, ceilingPx => {
-                    this.#ceilingPx = ceilingPx;
-                    this.#invalidate();
-                }),
             );
+            // Each report is held as it begins, after the listeners' removal above: one that refuses the root,
+            // as the Device Pixel's refuses a document no window shows, leaves nothing the grid cannot take back.
+            this.#stops.push(reports.observeViewport(this.#scroller, report => {
+                this.#viewportReport = report;
+                this.#nameParentWithoutHeight(report.contentHeightPx);
+                this.#invalidate();
+            }));
+            this.#stops.push(reports.observeCeiling(tallest, ceilingPx => {
+                this.#ceilingPx = ceilingPx;
+                this.#invalidate();
+            }));
+            this.#stops.push(reports.observeDevicePixel(root, ratio => {
+                this.#devicePixelRatio = ratio;
+                this.#invalidate();
+            }));
             const stopClipboard = reports.observeClipboard(root, this.#onClipboardChange);
             this.#clipboardWatched = stopClipboard !== undefined;
             if (stopClipboard !== undefined) {

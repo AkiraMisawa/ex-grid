@@ -30,8 +30,9 @@ export default function PoppedOutGrid(): ReactElement {
         opened.addEventListener('pagehide', () => { setPopped(undefined); });
         setPopped(opened);
     };
-    // The key names the window, so the grid is created again in the window it is drawn in. A grid whose element
-    // was only moved to the other document would keep the first window's Device Pixel.
+    // One grid for each window. React already makes a new one here, because the portal is another place in the
+    // tree; the key says so on purpose, and keeps it true however the tree is arranged. A grid whose element was
+    // only moved to the other document would keep the first window's Device Pixel.
     const grid = <ExGrid key={popped === undefined ? 'page' : 'popped'} source={source} columns={columns} viewportHeight={320} />;
     return (
         <>

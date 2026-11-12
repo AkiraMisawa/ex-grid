@@ -63,7 +63,9 @@ stops matching, the display scale or the page zoom has moved, and the listener r
     outcome never depends on timing). The Device Pixel is not all that is bound when a grid is
     created: the Copied Range's ledger is its document's (ADR-0170). A grid that is moved and not
     created again keeps the first window's Device Pixel, as it did before this note. A grid drawn in
-    the second window through a portal is created there, and needs nothing more.
+    the second window through a portal is created there, and its Device Pixel needs nothing more.
+    What else such a grid hears through the opener's script (its ResizeObservers are the opener's) is
+    not judged by this note.
   - **Considered: a call by which the Consumer tells the grid it was moved.** It adds a member to the
     core, to both adapters and to C#, and a Consumer who forgets it is where one who forgets to create
     the grid again is. Left out until a Consumer cannot afford the new grid.

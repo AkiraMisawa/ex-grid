@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { Temporal } from 'temporal-polyfill';
 import { ExGrid } from '@ex-grid/react';
@@ -21,9 +21,8 @@ const closed: PoppedOut = Object.freeze({ opened: undefined, mounted: false });
  * is told its Device Pixel there, not here (ADR-0090's note of 2026-11-12). */
 export function Popout(): ReactElement {
     const [{ opened, mounted }, setPoppedOut] = useState<PoppedOut>(closed);
-    const held = useRef<Window | undefined>(undefined);
     // The window goes with the page that opened it.
-    useEffect(() => () => { held.current?.close(); }, []);
+    useEffect(() => () => { opened?.close(); }, [opened]);
 
     const open = (): void => {
         const made = window.open('', 'ex-popout', 'popup,width=760,height=440');
@@ -31,11 +30,7 @@ export function Popout(): ReactElement {
         // The window's document starts empty, and a grid reads its stylesheet from the document it is in.
         for (const sheet of document.querySelectorAll('style, link[rel="stylesheet"]')) made.document.head.append(sheet.cloneNode(true));
         made.document.title = 'ExGrid in a window the page opened';
-        made.addEventListener('pagehide', () => {
-            held.current = undefined;
-            setPoppedOut(closed);
-        });
-        held.current = made;
+        made.addEventListener('pagehide', () => { setPoppedOut(closed); });
         setPoppedOut({ opened: made, mounted: false });
     };
     const toggle = (): void => { setPoppedOut(before => ({ opened: before.opened, mounted: !before.mounted })); };
