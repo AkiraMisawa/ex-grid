@@ -53,18 +53,18 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/11/2026 - 22:41:28 |
+| Generated on: | 11/12/2026 - 00:21:08 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
 | Files: | 500 |
-| **Line coverage:** | 86.9% (60701 of 69793) |
-| Covered lines: | 60701 |
-| Uncovered lines: | 9092 |
+| **Line coverage:** | 86.9% (60700 of 69793) |
+| Covered lines: | 60700 |
+| Uncovered lines: | 9093 |
 | Coverable lines: | 69793 |
 | Total lines: | 106396 |
-| **Branch coverage:** | 82.8% (36574 of 44147) |
-| Covered branches: | 36574 |
+| **Branch coverage:** | 82.8% (36572 of 44147) |
+| Covered branches: | 36572 |
 | Total branches: | 44147 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -637,7 +637,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -989,8 +989,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.3%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
