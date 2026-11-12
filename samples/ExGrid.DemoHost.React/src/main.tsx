@@ -37,6 +37,7 @@ import { PivotMantineDemo } from './pages/pivot-mantine';
 import { PivotMuiDemo } from './pages/pivot-mui';
 import { PivotRisk } from './pages/pivot-risk';
 import { PointingDemo } from './pages/pointing';
+import { Popout } from './pages/popout';
 import { SheetDemo } from './pages/sheet';
 import { SheetsDemo } from './pages/sheets';
 import { WorkbookDemo } from './pages/workbook';
@@ -88,6 +89,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, 'grid-live
     density: Density,
     'header-display': HeaderDisplay,
     lifecycle: Lifecycle,
+    popout: Popout,
     stretch: Stretch,
     sizing: Sizing,
     board: Board,

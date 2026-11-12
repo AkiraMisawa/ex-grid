@@ -27,8 +27,11 @@ export interface BrowserReports {
     observeViewport(scroller: HTMLElement, tell: (report: ViewportReport) => void): () => void;
     /** Hears the height the probe's tallest element is laid out at: the Layout Ceiling. */
     observeCeiling(probe: HTMLElement, tell: (ceilingPx: number) => void): () => void;
-    /** Hears the Device Pixel's size: at once, then whenever the scale or the zoom moves it. */
-    observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void;
+    /** Hears the Device Pixel's size in `element`'s window, which need not be the script's (a window the page
+     * opened has a scale of its own): at once, then whenever that window's scale or zoom moves it. The window is
+     * the one `element` is in as this is called, which is as the grid is created: a grid moved into another
+     * document is destroyed and created again there (ADR-0090). */
+    observeDevicePixel(element: HTMLElement, tell: (devicePixelRatio: number) => void): () => void;
     /** The clock the settle delay after a fling runs on (ADR-0004), the announcement's (ADR-0033), and the Change Highlight's (ADR-0068). */
     readonly clock: GridClock;
     /** Calls `callback` before the next frame of `element`'s window is painted; the answer cancels the call
@@ -69,6 +72,15 @@ function toldAfterTheObservation(tell: () => void): () => void {
             tell();
         }, 0);
     };
+}
+
+/** The window `element` is in, which need not be the one this script runs in: a page may draw a grid in a window
+ * it opened. A document that no window shows has none, and is refused, saying `lacking` what it leaves the grid
+ * without. */
+function windowOf(element: HTMLElement, lacking: string): Window & typeof globalThis {
+    const view = element.ownerDocument.defaultView;
+    if (view === null) throw new Error(`The grid's element is in a document with no window: ${lacking}.`);
+    return view;
 }
 
 /** The browser's own reports. */
@@ -119,13 +131,14 @@ export const browserReports: BrowserReports = Object.freeze({
         observer.observe(probe);
         return () => { observer.disconnect(); };
     },
-    observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void {
+    observeDevicePixel(element: HTMLElement, tell: (devicePixelRatio: number) => void): () => void {
+        const view = windowOf(element, 'it has no Device Pixel');
         let query: MediaQueryList | undefined;
         let told = -1;
         const arm = (): void => {
             query?.removeEventListener('change', arm);
-            const ratio = window.devicePixelRatio;
-            query = window.matchMedia(`(resolution: ${ratio}dppx)`);
+            const ratio = view.devicePixelRatio;
+            query = view.matchMedia(`(resolution: ${ratio}dppx)`);
             query.addEventListener('change', arm);
             if (ratio === told) return;
             told = ratio;
@@ -136,8 +149,7 @@ export const browserReports: BrowserReports = Object.freeze({
     },
     clock: systemClock,
     writeClipboard(element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean> {
-        const view = element.ownerDocument.defaultView;
-        if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no clipboard.');
+        const view = windowOf(element, 'it has no clipboard');
         const flavour = (type: string, pick: (copy: CopyFlavours) => string): Promise<Blob> => flavours.then(copy => {
             // Nothing to write rejects the item, and with it the whole write: never a part of the copy.
             if (copy === undefined) throw new Error('The copy was refused.');
@@ -156,8 +168,7 @@ export const browserReports: BrowserReports = Object.freeze({
         });
     },
     observeClipboard(element: HTMLElement, tell: (change: object) => void): (() => void) | undefined {
-        const view = element.ownerDocument.defaultView;
-        if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no clipboard.');
+        const view = windowOf(element, 'it has no clipboard');
         // A browser before Chrome 143 has no clipboardchange, and an insecure context no clipboard at all.
         const clipboard = view.navigator.clipboard as Clipboard | undefined;
         if (typeof Reflect.get(view, 'ClipboardChangeEvent') !== 'function' || typeof clipboard?.addEventListener !== 'function') {
@@ -168,8 +179,7 @@ export const browserReports: BrowserReports = Object.freeze({
         return () => { clipboard.removeEventListener('clipboardchange', heard); };
     },
     nextFrame(element: HTMLElement, callback: () => void): () => void {
-        const view = element.ownerDocument.defaultView;
-        if (view === null) throw new Error('The grid\'s element is in a document with no window: nothing paints it.');
+        const view = windowOf(element, 'nothing paints it');
         const frame = view.requestAnimationFrame(callback);
         return () => { view.cancelAnimationFrame(frame); };
     },

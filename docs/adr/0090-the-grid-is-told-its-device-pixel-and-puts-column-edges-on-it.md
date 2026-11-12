@@ -46,6 +46,33 @@ stops matching, the display scale or the page zoom has moved, and the listener r
   because emulation moves the scale and the zoom apart. It does say how many Device Pixels a CSS pixel
   is painted on, which is the only thing this entry is used for. The Layout Ceiling keeps its own
   observer.
+- **The window is the grid's own.** *(Added 2026-11-12, issue #565; what a move to another document
+  asks of the Consumer was decided with the user the same day.)* The listener reads
+  `devicePixelRatio` and `matchMedia` from the window the grid's root is in
+  (`ownerDocument.defaultView`), as the clipboard and the frame's callbacks are reached, never from the
+  window its script runs in. The two differ when a page draws a grid in a second window it opened
+  (`window.open`, as a docking layout pops a panel out): that window stands on a display of its own,
+  at a zoom of its own. Until this note the listener read the script's window. A grid in such a window
+  drew its lines on the opener's Device Pixel and never heard its own window's change; nothing failed,
+  and with both windows at one scale nothing showed. It was found by reading the code, not on screen.
+  - **The window is read once, as the grid is created.** A root in a document that no window shows is
+    refused there, as the clipboard's and the frame's reports refuse it.
+  - **A grid moved into another document is destroyed and created again there.** The browser tells
+    nobody that an element changed documents, so the grid cannot be told of the move, and a grid that
+    looked for it when it next paints would follow it at whatever paint came next, or at none (an
+    outcome never depends on timing). The Device Pixel is not all that is bound when a grid is
+    created: the Copied Range's ledger is its document's (ADR-0170). A grid that is moved and not
+    created again keeps the first window's Device Pixel, as it did before this note. A grid drawn in
+    the second window through a portal is created there, and its Device Pixel needs nothing more.
+    What else such a grid hears through the opener's script (its ResizeObservers are the opener's) is
+    not judged by this note.
+  - **Considered: a call by which the Consumer tells the grid it was moved.** It adds a member to the
+    core, to both adapters and to C#, and a Consumer who forgets it is where one who forgets to create
+    the grid again is. Left out until a Consumer cannot afford the new grid.
+  - **Considered: a custom element inside the root, whose `adoptedCallback` the browser calls when its
+    document changes.** It is the one notice of a move the browser gives. It takes a name in the
+    page's custom element registry, which every copy of the package on the page shares and a second
+    window does not, so it is a decision of its own, with its measurement, and is not taken here.
 
 ### 2. The Device Pixel is written inline on the instance root
 

@@ -79,6 +79,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021).',
     },
     {
+        route: 'popout', title: 'A window the page opened', group: 'Layout',
+        description: 'A grid drawn through a portal in a second window this page opened, told that window\'s Device Pixel and not this one\'s; only this host has the page (ADR-0090).',
+    },
+    {
         route: 'marks', title: 'Row Marks', group: 'Cells and rows',
         description: 'A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043).',
     },

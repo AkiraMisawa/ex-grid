@@ -40,7 +40,7 @@ export class Told implements BrowserReports {
     /** The Device Pixel ratio told once, at attach. */
     devicePixelRatio = 1;
 
-    observeDevicePixel(tell: (ratio: number) => void): () => void {
+    observeDevicePixel(_element: HTMLElement, tell: (ratio: number) => void): () => void {
         tell(this.devicePixelRatio);
         return () => { /* told once: the emulation's resolution never moves */ };
     }
