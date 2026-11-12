@@ -1,0 +1,163 @@
+
+/core/grid
+                                                              script-react  script-blazor-wasm-published                  script-react  script-blazor-wasm-published
+push all 1,000 rows: dom ms                                            3.3                          32.0                           3.2                          36.6
+push all 1,000 rows: frame ms                                         13.5                          32.2                          13.5                          46.9
+push all 1,000 rows: bytes                                               -                             -                             -                             -
+push one of 1,000: dom ms                                              2.2                          11.3                           1.8                           9.6
+push one of 1,000: bytes                                                 -                             -                             -                             -
+tick 1 of 1,000: dom ms p50                                            1.9                           8.0                           2.1                           7.9
+tick 1 of 1,000 per frame: frame p95                                  17.3                          18.9                          17.0                          21.5
+tick 1 of 1,000 per frame: lag ms                                      0.1                           0.1                           0.1                           0.1
+tick 1 of 1,000 per frame: bytes/tick                                    -                             -                             -                             -
+tick 5 of 1,000: dom ms p50                                            2.3                           9.6                           2.0                           8.9
+tick 5 of 1,000 per frame: frame p95                                  17.2                          20.2                          17.0                          19.4
+tick 5 of 1,000 per frame: lag ms                                      0.1                           0.1                           0.1                           0.1
+tick 5 of 1,000 per frame: bytes/tick                                    -                             -                             -                             -
+tick 25 of 1,000: dom ms p50                                           3.3                          12.9                           2.8                          12.2
+tick 25 of 1,000 per frame: frame p95                                 17.3                          25.7                          17.0                          24.4
+tick 25 of 1,000 per frame: lag ms                                     0.1                           0.1                           0.1                           0.1
+tick 25 of 1,000 per frame: bytes/tick                                   -                             -                             -                             -
+push all 10,000 rows: dom ms                                           4.7                          49.2                           4.5                          41.7
+push all 10,000 rows: frame ms                                        13.4                          49.4                          13.6                          46.9
+push all 10,000 rows: bytes                                              -                             -                             -                             -
+push one of 10,000: dom ms                                             4.7                          18.4                           3.6                          21.3
+push one of 10,000: bytes                                                -                             -                             -                             -
+tick 1 of 10,000: dom ms p50                                           4.3                          18.4                           3.8                          18.2
+tick 1 of 10,000 per frame: frame p95                                 17.7                          31.8                          17.0                          30.8
+tick 1 of 10,000 per frame: lag ms                                     0.1                           0.0                           0.1                           0.1
+tick 1 of 10,000 per frame: bytes/tick                                   -                             -                             -                             -
+tick 5 of 10,000: dom ms p50                                           4.4                          17.0                           3.8                          18.5
+tick 5 of 10,000 per frame: frame p95                                 17.4                          35.5                          17.1                          33.9
+tick 5 of 10,000 per frame: lag ms                                     0.2                           0.0                           0.1                           0.1
+tick 5 of 10,000 per frame: bytes/tick                                   -                             -                             -                             -
+tick 25 of 10,000: dom ms p50                                          5.7                          24.8                           4.8                          21.3
+tick 25 of 10,000 per frame: frame p95                                17.0                          40.5                          18.1                          40.3
+tick 25 of 10,000 per frame: lag ms                                    0.1                           0.1                           0.1                           0.1
+tick 25 of 10,000 per frame: bytes/tick                                  -                             -                             -                             -
+push all 100,000 rows: dom ms                                         25.9                         173.2                          23.6                         123.0
+push all 100,000 rows: frame ms                                       26.4                         173.3                          23.8                         123.2
+push all 100,000 rows: bytes                                             -                             -                             -                             -
+push one of 100,000: dom ms                                           27.1                         113.7                          27.4                         111.2
+push one of 100,000: bytes                                               -                             -                             -                             -
+tick 1 of 100,000: dom ms p50                                         27.4                         114.5                          26.1                         112.6
+tick 1 of 100,000 per frame: frame p95                                51.9                         154.3                          45.4                         143.8
+tick 1 of 100,000 per frame: lag ms                                    0.1                           0.1                           0.1                           0.1
+tick 1 of 100,000 per frame: bytes/tick                                  -                             -                             -                             -
+tick 5 of 100,000: dom ms p50                                         29.8                         110.7                          26.0                         110.0
+tick 5 of 100,000 per frame: frame p95                                52.2                         158.0                          49.7                         139.0
+tick 5 of 100,000 per frame: lag ms                                    0.1                           0.1                           0.1                           0.1
+tick 5 of 100,000 per frame: bytes/tick                                  -                             -                             -                             -
+tick 25 of 100,000: dom ms p50                                        28.5                         116.1                          27.2                         106.4
+tick 25 of 100,000 per frame: frame p95                               52.3                         170.2                          48.3                         138.6
+tick 25 of 100,000 per frame: lag ms                                   0.1                           0.0                           0.1                           0.1
+tick 25 of 100,000 per frame: bytes/tick                                 -                             -                             -                             -
+mount over the largest: dom ms                                        36.7                         144.8                          28.6                         149.0
+mount over the largest: bytes                                            -                             -                             -                             -
+40 arrows in one task: dom ms                                          6.3                           6.5                           6.4                           5.9
+40 arrows in one task: bytes                                             -                             -                             -                             -
+an arrow per frame: frame p95                                         17.2                          17.7                          16.9                          16.9
+an arrow per frame: lag ms                                             0.0                           0.0                           0.0                           0.0
+scroll 37 px per frame: frame p95                                     18.0                          18.8                          17.1                          17.4
+scroll 37 px per frame: lag ms                                         3.7                           3.2                           2.8                           3.1
+fling 50 rows per frame: frame p95                                    17.4                          17.3                          17.2                          17.0
+fling 50 rows per frame: lag ms                                      152.1                         196.2                         151.5                         196.3
+
+/core/template
+                                                              script-react  script-blazor-wasm-published                  script-react  script-blazor-wasm-published
+push all 1,000 rows: dom ms                                            3.4                          42.0                           3.1                          34.5
+push all 1,000 rows: frame ms                                         13.2                          46.7                          13.2                          46.6
+push all 1,000 rows: bytes                                               -                             -                             -                             -
+push one of 1,000: dom ms                                              1.9                          10.4                           2.0                          10.6
+push one of 1,000: bytes                                                 -                             -                             -                             -
+tick 1 of 1,000: dom ms p50                                            2.0                           9.0                           1.7                          10.5
+tick 1 of 1,000 per frame: frame p95                                  17.5                          20.6                          16.9                          21.4
+tick 1 of 1,000 per frame: lag ms                                      0.2                           0.1                           0.1                           0.1
+tick 1 of 1,000 per frame: bytes/tick                                    -                             -                             -                             -
+tick 5 of 1,000: dom ms p50                                            1.9                           8.6                           1.8                          10.5
+tick 5 of 1,000 per frame: frame p95                                  17.5                          23.5                          16.9                          20.1
+tick 5 of 1,000 per frame: lag ms                                      0.0                           0.1                           0.1                           0.1
+tick 5 of 1,000 per frame: bytes/tick                                    -                             -                             -                             -
+tick 25 of 1,000: dom ms p50                                           3.6                          13.5                           2.8                          15.4
+tick 25 of 1,000 per frame: frame p95                                 17.3                          28.4                          17.1                          27.3
+tick 25 of 1,000 per frame: lag ms                                     0.1                           0.1                           0.1                           0.1
+tick 25 of 1,000 per frame: bytes/tick                                   -                             -                             -                             -
+push all 10,000 rows: dom ms                                           5.0                          52.5                           4.4                          48.8
+push all 10,000 rows: frame ms                                        13.7                          52.9                          13.4                          49.1
+push all 10,000 rows: bytes                                              -                             -                             -                             -
+push one of 10,000: dom ms                                             4.2                          19.0                           3.6                          16.9
+push one of 10,000: bytes                                                -                             -                             -                             -
+tick 1 of 10,000: dom ms p50                                           4.0                          18.2                           3.5                          16.1
+tick 1 of 10,000 per frame: frame p95                                 17.4                          32.9                          17.0                          30.9
+tick 1 of 10,000 per frame: lag ms                                     0.1                           0.1                           0.1                           0.1
+tick 1 of 10,000 per frame: bytes/tick                                   -                             -                             -                             -
+tick 5 of 10,000: dom ms p50                                           4.0                          19.6                           3.9                          18.5
+tick 5 of 10,000 per frame: frame p95                                 17.5                          33.8                          17.0                          35.3
+tick 5 of 10,000 per frame: lag ms                                     0.1                           0.1                           0.1                           0.1
+tick 5 of 10,000 per frame: bytes/tick                                   -                             -                             -                             -
+tick 25 of 10,000: dom ms p50                                          5.0                          22.0                           4.6                          22.9
+tick 25 of 10,000 per frame: frame p95                                19.7                          43.4                          16.9                          41.9
+tick 25 of 10,000 per frame: lag ms                                    0.1                           0.1                           0.1                           0.1
+tick 25 of 10,000 per frame: bytes/tick                                  -                             -                             -                             -
+push all 100,000 rows: dom ms                                         30.5                         155.5                          24.1                         169.8
+push all 100,000 rows: frame ms                                       30.8                         155.6                          24.3                         169.9
+push all 100,000 rows: bytes                                             -                             -                             -                             -
+push one of 100,000: dom ms                                           26.9                         102.2                          23.6                         105.8
+push one of 100,000: bytes                                               -                             -                             -                             -
+tick 1 of 100,000: dom ms p50                                         30.0                         114.5                          27.5                         117.0
+tick 1 of 100,000 per frame: frame p95                                53.1                         167.4                          37.7                         159.7
+tick 1 of 100,000 per frame: lag ms                                    0.1                           0.1                           0.0                           0.1
+tick 1 of 100,000 per frame: bytes/tick                                  -                             -                             -                             -
+tick 5 of 100,000: dom ms p50                                         28.2                         120.1                          25.9                         111.9
+tick 5 of 100,000 per frame: frame p95                                49.4                         166.8                          40.5                         159.3
+tick 5 of 100,000 per frame: lag ms                                    0.1                           0.1                           0.1                           0.1
+tick 5 of 100,000 per frame: bytes/tick                                  -                             -                             -                             -
+tick 25 of 100,000: dom ms p50                                        31.0                         122.4                          29.6                         113.2
+tick 25 of 100,000 per frame: frame p95                               55.1                         174.5                          44.5                         178.5
+tick 25 of 100,000 per frame: lag ms                                   0.1                           0.1                           0.1                           0.1
+tick 25 of 100,000 per frame: bytes/tick                                 -                             -                             -                             -
+mount over the largest: dom ms                                        27.1                         173.8                          23.8                         158.7
+mount over the largest: bytes                                            -                             -                             -                             -
+40 arrows in one task: dom ms                                          6.5                           6.6                           5.4                           6.7
+40 arrows in one task: bytes                                             -                             -                             -                             -
+an arrow per frame: frame p95                                         16.9                          17.5                          16.9                          17.0
+an arrow per frame: lag ms                                             0.0                           0.1                           0.0                           0.0
+scroll 37 px per frame: frame p95                                     17.4                          17.8                          17.1                          17.3
+scroll 37 px per frame: lag ms                                         3.5                           2.9                           2.6                           4.0
+fling 50 rows per frame: frame p95                                    17.3                          17.3                          17.5                          17.2
+fling 50 rows per frame: lag ms                                      151.6                         213.1                         151.8                         200.6
+
+/core/sheet
+                                              script-blazor-wasm-published  script-blazor-wasm-published
+edit A1 (20,000 recalculated): dom ms p50                            194.0                         225.6
+edit A1 (20,000 recalculated): dom ms p95                            266.1                         250.2
+edit A1 (20,000 recalculated): frame ms p50                          206.8                         242.7
+edit A1 (20,000 recalculated): bytes                                     -                             -
+edit L1 (nothing reads it): dom ms p50                                39.5                          32.5
+edit L1 (nothing reads it): dom ms p95                                45.2                          44.0
+edit L1 (nothing reads it): frame ms p50                              51.6                          44.2
+edit L1 (nothing reads it): bytes                                        -                             -
+scroll 37 px per frame: frame p95                                     28.1                          34.4
+scroll 37 px per frame: lag ms                                        12.2                          13.5
+fling 50 rows per frame: frame p95                                    18.0                          18.0
+fling 50 rows per frame: lag ms                                      163.6                         164.0
+
+/core/pivot
+                                              script-blazor-wasm-published  script-blazor-wasm-published
+one trade amended: dom ms p50                                        103.3                          98.7
+one trade amended: dom ms p95                                        138.0                         137.9
+one trade amended: frame ms p50                                      103.3                          98.8
+one trade amended: bytes                                                 -                             -
+columns swapped: dom ms p50                                          142.8                         123.6
+columns swapped: dom ms p95                                          191.4                         157.2
+columns swapped: frame ms p50                                        142.9                         123.6
+columns swapped: bytes                                                   -                             -
+scroll 37 px per frame: frame p95                                     17.8                          17.5
+scroll 37 px per frame: lag ms                                         1.9                           2.1
+fling 50 rows per frame: frame p95                                    17.0                          17.1
+fling 50 rows per frame: lag ms                                      155.2                         153.9
+
+script-react: 20261109T125704-core-script-react.json, http://127.0.0.1:5496, 2026-11-09T12:57:04.248Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+script-blazor-wasm-published: 20261109T130225-core-script-blazor-wasm-published.json, http://127.0.0.1:5495, 2026-11-09T13:02:25.312Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+script-react: 20261111T230613-core-script-react.json, http://127.0.0.1:5496, 2026-11-11T23:06:13.459Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+script-blazor-wasm-published: 20261111T231128-core-script-blazor-wasm-published.json, http://127.0.0.1:5495, 2026-11-11T23:11:28.550Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1

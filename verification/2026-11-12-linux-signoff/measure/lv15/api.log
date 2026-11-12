@@ -1,0 +1,51 @@
+dotnet 10.0.203 (nix-managed)
+info: ExGrid.DemoApi.TradeStore[0]
+      Using the 1000000 trades generated earlier at /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/trades-v1-1000000.sqlite.
+info: ExGrid.DemoApi.TradeStore[0]
+      Removing /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/runs/trades-v1-1000000.16562.0734441a.sqlite-shm, which a server that has stopped left behind.
+info: ExGrid.DemoApi.TradeStore[0]
+      Removing /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/runs/trades-v1-1000000.16562.0734441a.sqlite-wal, which a server that has stopped left behind.
+info: ExGrid.DemoApi.TradeStore[0]
+      Removing /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/runs/trades-v1-1000000.16562.0734441a.sqlite, which a server that has stopped left behind.
+info: ExGrid.DemoApi.TradeStore[0]
+      Serving 1000000 trades at version 94d6dd63-0 from /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/runs/trades-v1-1000000.17374.94d6dd63.sqlite.
+info: Microsoft.AspNetCore.Server.Kestrel[0]
+      Unable to bind to http://localhost:8440 on the IPv6 loopback interface: 'Address family not supported by protocol'.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:8440
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/claude/ex-grid
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/ - - -
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/ - 404 - application/problem+json 83.7389ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[16]
+      Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:8440/, Response status code: 404
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 200 - application/json;+charset=utf-8 32.4181ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 200 - application/json;+charset=utf-8 3.3369ms

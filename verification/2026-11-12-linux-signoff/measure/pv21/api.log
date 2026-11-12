@@ -1,0 +1,367 @@
+dotnet 10.0.203 (nix-managed)
+info: ExGrid.DemoApi.TradeStore[0]
+      Generating 1000000 trades into /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/trades-v1-1000000.sqlite: the first start for this count.
+info: Microsoft.AspNetCore.Server.Kestrel[0]
+      Unable to bind to http://localhost:8440 on the IPv6 loopback interface: 'Address family not supported by protocol'.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:8440
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/claude/ex-grid
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 100000 of 1000000 trades (10%).
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/ - - -
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/ - 404 - application/problem+json 113.5063ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[16]
+      Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:8440/, Response status code: 404
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 200000 of 1000000 trades (20%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 300000 of 1000000 trades (30%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 400000 of 1000000 trades (40%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 500000 of 1000000 trades (50%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 600000 of 1000000 trades (60%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 700000 of 1000000 trades (70%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 800000 of 1000000 trades (80%).
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 900000 of 1000000 trades (90%).
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 503.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 503 - application/json;+charset=utf-8 46.8948ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 503.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 503 - application/json;+charset=utf-8 2.4142ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 503.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 503 - application/json;+charset=utf-8 0.4364ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.JsonResult[1]
+      Setting HTTP status code 503.
+info: Microsoft.AspNetCore.Http.Result.JsonResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 503 - application/json;+charset=utf-8 0.4846ms
+info: ExGrid.DemoApi.TradeStore[0]
+      Generated 1000000 trades in 5.2 s: 76.8 MB.
+info: ExGrid.DemoApi.TradeStore[0]
+      Serving 1000000 trades at version 0734441a-0 from /tmp/claude-0/-home-claude/aa8e4e7b-56c6-5430-92ce-4de11ed42da8/scratchpad/m/api-data/runs/trades-v1-1000000.16562.0734441a.sqlite.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 200 - application/json;+charset=utf-8 1.2297ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/pivot/fields - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/pivot/fields'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/pivot/fields'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/pivot/fields - 200 - application/json;+charset=utf-8 39.1446ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 OPTIONS http://localhost:8440/hubs/trades/negotiate?negotiateVersion=1 - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 OPTIONS http://localhost:8440/hubs/trades/negotiate?negotiateVersion=1 - 204 - - 1.3915ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/hubs/trades/negotiate?negotiateVersion=1 - - 0
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/trades/negotiate'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/trades/negotiate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/hubs/trades/negotiate?negotiateVersion=1 - 200 - application/json 8.2381ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 OPTIONS http://localhost:8440/api/pivot/aggregate - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 OPTIONS http://localhost:8440/api/pivot/aggregate - 204 - - 0.4372ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - application/json;+charset=utf-8 221
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/hubs/trades?id=I8CLhb61rgMx-7unXwhqFQ - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint '/hubs/trades'
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - 200 - application/json;+charset=utf-8 1621.8370ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 OPTIONS http://localhost:8440/api/live - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 OPTIONS http://localhost:8440/api/live - 204 - - 0.6710ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/live - application/json;+charset=utf-8 47
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/live'
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates on: 20 trades every 250 ms.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'LiveSettings' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/live'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/live - 200 - application/json;+charset=utf-8 16.2482ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - application/json;+charset=utf-8 221
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/live - application/json;+charset=utf-8 48
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/live'
+info: ExGrid.DemoApi.LiveUpdater[0]
+      Live updates off.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'LiveSettings' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/live'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/live - 200 - application/json;+charset=utf-8 1.2137ms
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - 200 - application/json;+charset=utf-8 1584.2578ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - application/json;+charset=utf-8 221
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - 200 - application/json;+charset=utf-8 4966.1369ms
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - 200 - application/json;+charset=utf-8 1351.5821ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - 200 - application/json;+charset=utf-8 4862.2712ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint '/hubs/trades'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/hubs/trades?id=I8CLhb61rgMx-7unXwhqFQ - 101 - - 29514.2196ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/status - - -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[1]
+      Setting HTTP status code 200.
+info: Microsoft.AspNetCore.Http.Result.OkObjectResult[3]
+      Writing value of type 'StatusResponse' as Json.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/status'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/status - 200 - application/json;+charset=utf-8 3.7814ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/pivot/fields - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/pivot/fields'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/pivot/fields'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/pivot/fields - 200 - application/json;+charset=utf-8 0.6617ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 OPTIONS http://localhost:8440/api/pivot/aggregate - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 OPTIONS http://localhost:8440/api/pivot/aggregate - 204 - - 0.2813ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - application/json;+charset=utf-8 221
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: POST /api/pivot/aggregate'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 POST http://localhost:8440/api/pivot/aggregate - 200 - application/json;+charset=utf-8 1468.5928ms
+info: Microsoft.AspNetCore.Http.Result.ContentResult[2]
+      Write content with HTTP Response ContentType of application/json; charset=utf-8
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/pivot/item-counts'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/pivot/item-counts - 200 - application/json;+charset=utf-8 4928.8815ms
+info: ExGrid.DemoApi.TradeArrow[0]
+      The trades' Arrow stream at version 0734441a-3: 1000000 trades read into a Snapshot in 5860 ms and written in 418 ms, 81.3 MB.
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 6736.6864ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 445.6841ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 434.2174ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 451.5894ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 445.5052ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/1.1 GET http://localhost:8440/api/trades.arrows - - -
+info: Microsoft.AspNetCore.Cors.Infrastructure.CorsService[4]
+      CORS policy execution successful.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Http.Result.FileContentResult[5]
+      Sending file with download name ''.
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'HTTP: GET /api/trades.arrows'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/1.1 GET http://localhost:8440/api/trades.arrows - 200 - application/vnd.apache.arrow.stream 433.6739ms

@@ -1,0 +1,496 @@
+﻿2026-11-11T22:40:33.4511579Z Current runner version: '2.338.2'
+2026-11-11T22:40:33.4530997Z ##[group]Runner Image Provisioner
+2026-11-11T22:40:33.4531641Z Hosted Compute Agent
+2026-11-11T22:40:33.4532099Z Version: 20261028.624
+2026-11-11T22:40:33.4532496Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-11T22:40:33.4532937Z Build Date: 2026-10-28T21:51:42Z
+2026-11-11T22:40:33.4533448Z Worker ID: {449b72e1-303e-43b1-a104-13bc631b27ed}
+2026-11-11T22:40:33.4533918Z Region: centralus
+2026-11-11T22:40:33.4534300Z Cloud: Azure
+2026-11-11T22:40:33.4534663Z ##[endgroup]
+2026-11-11T22:40:33.4535934Z ##[group]Operating System
+2026-11-11T22:40:33.4536410Z Ubuntu
+2026-11-11T22:40:33.4536780Z 24.04.5
+2026-11-11T22:40:33.4537134Z LTS
+2026-11-11T22:40:33.4537481Z ##[endgroup]
+2026-11-11T22:40:33.4537838Z ##[group]Runner Image
+2026-11-11T22:40:33.4538251Z Image: ubuntu-24.04
+2026-11-11T22:40:33.4538646Z Version: 20261101.360.1
+2026-11-11T22:40:33.4539744Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-11T22:40:33.4540693Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+2026-11-11T22:40:33.4541306Z ##[endgroup]
+2026-11-11T22:40:33.4542051Z ##[group]GITHUB_TOKEN Permissions
+2026-11-11T22:40:33.4543508Z Contents: read
+2026-11-11T22:40:33.4543874Z Metadata: read
+2026-11-11T22:40:33.4544224Z ##[endgroup]
+2026-11-11T22:40:33.4545953Z Secret source: Actions
+2026-11-11T22:40:33.4546549Z Cache mode: write
+2026-11-11T22:40:33.4547224Z Prepare workflow directory
+2026-11-11T22:40:33.4903064Z Prepare all required actions
+2026-11-11T22:40:33.4938246Z Getting action download info
+2026-11-11T22:40:33.7536143Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-11T22:40:33.8541106Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-11-11T22:40:34.1933432Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-11T22:40:34.3499522Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.2.1-rc.1 (85a7ea0657dd1d7dcfab8fe303d928fc129650da)
+2026-11-11T22:40:34.3502422Z ##[group] Inputs
+2026-11-11T22:40:34.3502723Z   version: 0.2.1-rc.1
+2026-11-11T22:40:34.3503387Z   long: true
+2026-11-11T22:40:34.3503637Z ##[endgroup]
+2026-11-11T22:40:34.3504056Z Complete job name: Every layer, and the packages / Layer 3 on chrome-150, shard 1/1 (Linux, headed)
+2026-11-11T22:40:34.4028230Z ##[group]Run actions/checkout@v7
+2026-11-11T22:40:34.4028712Z with:
+2026-11-11T22:40:34.4029015Z   repository: AkiraMisawa/ex-grid
+2026-11-11T22:40:34.4031125Z   token: ***
+2026-11-11T22:40:34.4031414Z   ssh-strict: true
+2026-11-11T22:40:34.4031705Z   ssh-user: git
+2026-11-11T22:40:34.4032005Z   persist-credentials: true
+2026-11-11T22:40:34.4032325Z   clean: true
+2026-11-11T22:40:34.4032622Z   sparse-checkout-cone-mode: true
+2026-11-11T22:40:34.4032961Z   fetch-depth: 1
+2026-11-11T22:40:34.4033252Z   fetch-tags: false
+2026-11-11T22:40:34.4033571Z   show-progress: true
+2026-11-11T22:40:34.4033868Z   lfs: false
+2026-11-11T22:40:34.4034148Z   submodules: false
+2026-11-11T22:40:34.4034448Z   set-safe-directory: true
+2026-11-11T22:40:34.4034946Z   allow-unsafe-pr-checkout: false
+2026-11-11T22:40:34.4035453Z env:
+2026-11-11T22:40:34.4035739Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:34.4036067Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:34.4036354Z   LONG_RUN: true
+2026-11-11T22:40:34.4036667Z ##[endgroup]
+2026-11-11T22:40:34.6385316Z Syncing repository: AkiraMisawa/ex-grid
+2026-11-11T22:40:34.6386586Z ##[group]Getting Git version info
+2026-11-11T22:40:34.6386963Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-11-11T22:40:34.6387672Z [command]/usr/bin/git version
+2026-11-11T22:40:34.6460556Z git version 2.56.0
+2026-11-11T22:40:34.6473872Z ##[endgroup]
+2026-11-11T22:40:34.6481891Z Temporarily overriding HOME='/home/runner/work/_temp/8803a595-c707-445f-bec8-c29347e29658' before making global git config changes
+2026-11-11T22:40:34.6483327Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-11T22:40:34.6486408Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-11T22:40:34.6534660Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-11-11T22:40:34.6542036Z ##[group]Determining repository object format
+2026-11-11T22:40:34.6542941Z ##[endgroup]
+2026-11-11T22:40:34.6543730Z ##[group]Initializing the repository
+2026-11-11T22:40:34.6544432Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-11-11T22:40:34.6636404Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-11T22:40:34.6637315Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-11T22:40:34.6637913Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-11T22:40:34.6638321Z hint: call:
+2026-11-11T22:40:34.6638560Z hint:
+2026-11-11T22:40:34.6638894Z hint: 	git config --global init.defaultBranch <name>
+2026-11-11T22:40:34.6639228Z hint:
+2026-11-11T22:40:34.6639546Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-11T22:40:34.6640048Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-11T22:40:34.6640617Z hint:
+2026-11-11T22:40:34.6640846Z hint: 	git branch -m <name>
+2026-11-11T22:40:34.6641109Z hint:
+2026-11-11T22:40:34.6641458Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-11T22:40:34.6645662Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-11-11T22:40:34.6654195Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-11-11T22:40:34.6702612Z ##[endgroup]
+2026-11-11T22:40:34.6703064Z ##[group]Disabling automatic garbage collection
+2026-11-11T22:40:34.6703450Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-11T22:40:34.6731726Z ##[endgroup]
+2026-11-11T22:40:34.6732695Z ##[group]Setting up auth
+2026-11-11T22:40:34.6733191Z Removing SSH command configuration
+2026-11-11T22:40:34.6736336Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-11T22:40:34.6768293Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-11T22:40:34.7081366Z Removing HTTP extra header
+2026-11-11T22:40:34.7085954Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-11T22:40:34.7115239Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-11T22:40:34.7313973Z Removing includeIf entries pointing to credentials config files
+2026-11-11T22:40:34.7318878Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-11T22:40:34.7350853Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-11T22:40:34.7545504Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-11T22:40:34.7580995Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:40:34.7611017Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:40:34.7641188Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:40:34.7670456Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:40:34.7697835Z ##[endgroup]
+2026-11-11T22:40:34.7698273Z ##[group]Fetching the repository
+2026-11-11T22:40:34.7703286Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.2.1-rc.1:refs/tags/v0.2.1-rc.1
+2026-11-11T22:40:38.0925317Z From https://github.com/AkiraMisawa/ex-grid
+2026-11-11T22:40:38.0926711Z  * [new tag]         v0.2.1-rc.1 -> v0.2.1-rc.1
+2026-11-11T22:40:38.0933224Z [command]/usr/bin/git tag --list v0.2.1-rc.1
+2026-11-11T22:40:38.0962337Z v0.2.1-rc.1
+2026-11-11T22:40:38.0969769Z [command]/usr/bin/git rev-parse refs/tags/v0.2.1-rc.1^{commit}
+2026-11-11T22:40:38.0995182Z 85a7ea0657dd1d7dcfab8fe303d928fc129650da
+2026-11-11T22:40:38.0999654Z ##[endgroup]
+2026-11-11T22:40:38.1000305Z ##[group]Determining the checkout info
+2026-11-11T22:40:38.1001014Z ##[endgroup]
+2026-11-11T22:40:38.1006702Z [command]/usr/bin/git sparse-checkout disable
+2026-11-11T22:40:38.1053708Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-11T22:40:38.1083946Z ##[group]Checking out the ref
+2026-11-11T22:40:38.1087109Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.2.1-rc.1
+2026-11-11T22:40:39.1460273Z Updating files:  69% (11179/16119)
+2026-11-11T22:40:39.1556520Z Updating files:  70% (11284/16119)
+2026-11-11T22:40:39.1625722Z Updating files:  71% (11445/16119)
+2026-11-11T22:40:39.1757350Z Updating files:  72% (11606/16119)
+2026-11-11T22:40:39.1839758Z Updating files:  73% (11767/16119)
+2026-11-11T22:40:39.1941741Z Updating files:  74% (11929/16119)
+2026-11-11T22:40:39.2056192Z Updating files:  75% (12090/16119)
+2026-11-11T22:40:39.2354158Z Updating files:  76% (12251/16119)
+2026-11-11T22:40:39.2569500Z Updating files:  77% (12412/16119)
+2026-11-11T22:40:39.2714361Z Updating files:  78% (12573/16119)
+2026-11-11T22:40:39.2874364Z Updating files:  79% (12735/16119)
+2026-11-11T22:40:39.2959749Z Updating files:  80% (12896/16119)
+2026-11-11T22:40:39.3194534Z Updating files:  81% (13057/16119)
+2026-11-11T22:40:39.3289785Z Updating files:  82% (13218/16119)
+2026-11-11T22:40:39.3389225Z Updating files:  83% (13379/16119)
+2026-11-11T22:40:39.3463029Z Updating files:  84% (13540/16119)
+2026-11-11T22:40:39.3550070Z Updating files:  85% (13702/16119)
+2026-11-11T22:40:39.3757340Z Updating files:  86% (13863/16119)
+2026-11-11T22:40:39.4637266Z Updating files:  87% (14024/16119)
+2026-11-11T22:40:39.4950671Z Updating files:  88% (14185/16119)
+2026-11-11T22:40:39.5207904Z Updating files:  89% (14346/16119)
+2026-11-11T22:40:39.5384015Z Updating files:  90% (14508/16119)
+2026-11-11T22:40:39.5773942Z Updating files:  91% (14669/16119)
+2026-11-11T22:40:39.5978272Z Updating files:  92% (14830/16119)
+2026-11-11T22:40:39.6183235Z Updating files:  93% (14991/16119)
+2026-11-11T22:40:39.6331114Z Updating files:  94% (15152/16119)
+2026-11-11T22:40:39.6704376Z Updating files:  95% (15314/16119)
+2026-11-11T22:40:39.6922739Z Updating files:  96% (15475/16119)
+2026-11-11T22:40:39.7097194Z Updating files:  97% (15636/16119)
+2026-11-11T22:40:39.7329546Z Updating files:  98% (15797/16119)
+2026-11-11T22:40:39.7893669Z Updating files:  99% (15958/16119)
+2026-11-11T22:40:39.7894162Z Updating files: 100% (16119/16119)
+2026-11-11T22:40:39.7894449Z Updating files: 100% (16119/16119), done.
+2026-11-11T22:40:39.7989690Z Note: switching to 'refs/tags/v0.2.1-rc.1'.
+2026-11-11T22:40:39.7989985Z 
+2026-11-11T22:40:39.7990195Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-11T22:40:39.7990559Z changes and commit them, and you can discard any commits you make in this
+2026-11-11T22:40:39.7990869Z state without impacting any branches by switching back to a branch.
+2026-11-11T22:40:39.7991104Z 
+2026-11-11T22:40:39.7991262Z If you want to create a new branch to retain commits you create, you may
+2026-11-11T22:40:39.7991640Z do so (now or later) by using -c with the switch command. Example:
+2026-11-11T22:40:39.7992147Z 
+2026-11-11T22:40:39.7992255Z   git switch -c <new-branch-name>
+2026-11-11T22:40:39.7992406Z 
+2026-11-11T22:40:39.7992499Z Or undo this operation with:
+2026-11-11T22:40:39.7992639Z 
+2026-11-11T22:40:39.7992719Z   git switch -
+2026-11-11T22:40:39.7992838Z 
+2026-11-11T22:40:39.7993070Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-11T22:40:39.7993493Z 
+2026-11-11T22:40:39.7993697Z HEAD is now at 85a7ea0 Release notes for 0.2.1-rc.1 (#563)
+2026-11-11T22:40:39.8113134Z ##[endgroup]
+2026-11-11T22:40:39.8155191Z [command]/usr/bin/git log -1 --format=%H
+2026-11-11T22:40:39.8180230Z 85a7ea0657dd1d7dcfab8fe303d928fc129650da
+2026-11-11T22:40:39.8523347Z Prepare all required actions
+2026-11-11T22:40:39.8523733Z Getting action download info
+2026-11-11T22:40:39.9492098Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-11T22:40:40.0552821Z ##[group]Run ./.github/actions/dotnet
+2026-11-11T22:40:40.0552990Z with:
+2026-11-11T22:40:40.0553102Z   fallback: true
+2026-11-11T22:40:40.0553215Z env:
+2026-11-11T22:40:40.0553328Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:40.0553467Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:40.0553581Z   LONG_RUN: true
+2026-11-11T22:40:40.0553694Z ##[endgroup]
+2026-11-11T22:40:40.0594128Z ##[start-action display=global.json rolls forward across feature bands;id=__self.__run]
+2026-11-11T22:40:40.0622654Z ##[group]Run set -euo pipefail
+2026-11-11T22:40:40.0622913Z [36;1mset -euo pipefail[0m
+2026-11-11T22:40:40.0623094Z [36;1mroll=$(jq -r '.sdk.rollForward' global.json)[0m
+2026-11-11T22:40:40.0623610Z [36;1m[[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }[0m
+2026-11-11T22:40:40.0643965Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T22:40:40.0644177Z env:
+2026-11-11T22:40:40.0644297Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:40.0644438Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:40.0644553Z   LONG_RUN: true
+2026-11-11T22:40:40.0644669Z ##[endgroup]
+2026-11-11T22:40:40.0729152Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=13]
+2026-11-11T22:40:40.0731127Z ##[start-action display=Run set -euo pipefail;id=__self.install]
+2026-11-11T22:40:40.0745940Z ##[group]Run set -euo pipefail
+2026-11-11T22:40:40.0746122Z [36;1mset -euo pipefail[0m
+2026-11-11T22:40:40.0746351Z [36;1mfeed=https://builds.dotnet.microsoft.com/dotnet[0m
+2026-11-11T22:40:40.0746618Z [36;1mchannel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)[0m
+2026-11-11T22:40:40.0746958Z [36;1mversion=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')[0m
+2026-11-11T22:40:40.0747369Z [36;1m[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }[0m
+2026-11-11T22:40:40.0747712Z [36;1mscript="$RUNNER_TEMP/dotnet-install.sh"[0m
+2026-11-11T22:40:40.0747949Z [36;1mcurl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"[0m
+2026-11-11T22:40:40.0748216Z [36;1mbash "$script" --version "$version" --install-dir "$HOME/.dotnet"[0m
+2026-11-11T22:40:40.0748450Z [36;1mecho "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"[0m
+2026-11-11T22:40:40.0748643Z [36;1mecho "$HOME/.dotnet" >> "$GITHUB_PATH"[0m
+2026-11-11T22:40:40.0748827Z [36;1mecho "version=$version" >> "$GITHUB_OUTPUT"[0m
+2026-11-11T22:40:40.0763927Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T22:40:40.0764106Z env:
+2026-11-11T22:40:40.0764233Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:40.0764372Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:40.0764485Z   LONG_RUN: true
+2026-11-11T22:40:40.0764602Z ##[endgroup]
+2026-11-11T22:40:41.0201585Z dotnet-install: Attempting to download using primary link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-11T22:40:44.5120499Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz size is 243138887 bytes.
+2026-11-11T22:40:44.5122982Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-11T22:40:48.1122371Z dotnet-install: Downloaded file size is 243138887 bytes.
+2026-11-11T22:40:48.1122960Z dotnet-install: The remote and local file sizes are equal.
+2026-11-11T22:40:48.3368286Z dotnet-install: Installed version is 10.0.404
+2026-11-11T22:40:48.3424022Z dotnet-install: Adding to current process PATH: `/home/runner/.dotnet`. Note: This change will be visible only when sourcing script.
+2026-11-11T22:40:48.3424741Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-11-11T22:40:48.3425662Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-11-11T22:40:48.3426150Z dotnet-install: Installation finished successfully.
+2026-11-11T22:40:48.3453088Z ##[end-action id=__self.install;outcome=success;conclusion=success;duration_ms=8272]
+2026-11-11T22:40:48.3460454Z ##[start-action display=The SDK global.json resolves;id=__self.__run_2]
+2026-11-11T22:40:48.4203969Z ##[group]Run set -euo pipefail
+2026-11-11T22:40:48.4204196Z [36;1mset -euo pipefail[0m
+2026-11-11T22:40:48.4204343Z [36;1mif [[ -z "$INSTALLED" ]]; then[0m
+2026-11-11T22:40:48.4204514Z [36;1m  if [[ "$FALLBACK" != true ]]; then[0m
+2026-11-11T22:40:48.4205133Z [36;1m    echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."[0m
+2026-11-11T22:40:48.4205470Z [36;1m    exit 1[0m
+2026-11-11T22:40:48.4205587Z [36;1m  fi[0m
+2026-11-11T22:40:48.4205972Z [36;1m  resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }[0m
+2026-11-11T22:40:48.4206593Z [36;1m  echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."[0m
+2026-11-11T22:40:48.4206931Z [36;1melse[0m
+2026-11-11T22:40:48.4207055Z [36;1m  resolved=$(dotnet --version)[0m
+2026-11-11T22:40:48.4207231Z [36;1m  if [[ "$resolved" != "$INSTALLED" ]]; then[0m
+2026-11-11T22:40:48.4207484Z [36;1m    echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."[0m
+2026-11-11T22:40:48.4207717Z [36;1m    exit 1[0m
+2026-11-11T22:40:48.4207833Z [36;1m  fi[0m
+2026-11-11T22:40:48.4207943Z [36;1mfi[0m
+2026-11-11T22:40:48.4208059Z [36;1mecho ".NET SDK $resolved"[0m
+2026-11-11T22:40:48.4208287Z [36;1m# The compiler's errors and warnings as annotations on the lines they name, as[0m
+2026-11-11T22:40:48.4208566Z [36;1m# actions/setup-dotnet registered them (its csc.json).[0m
+2026-11-11T22:40:48.4208792Z [36;1mecho "::add-matcher::$GITHUB_ACTION_PATH/csc.json"[0m
+2026-11-11T22:40:48.4230110Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T22:40:48.4230299Z env:
+2026-11-11T22:40:48.4230424Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:48.4230568Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:48.4230685Z   LONG_RUN: true
+2026-11-11T22:40:48.4230813Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:40:48.4230958Z   INSTALLED: 10.0.404
+2026-11-11T22:40:48.4231077Z   FALLBACK: true
+2026-11-11T22:40:48.4231191Z ##[endgroup]
+2026-11-11T22:40:48.5014385Z .NET SDK 10.0.404
+2026-11-11T22:40:48.5041811Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=158]
+2026-11-11T22:40:48.5043939Z ##[start-action display=Run actions/setup-node@v7;id=__self.__actions_setup-node]
+2026-11-11T22:40:48.5100825Z ##[group]Run actions/setup-node@v7
+2026-11-11T22:40:48.5100982Z with:
+2026-11-11T22:40:48.5101105Z   node-version-file: .node-version
+2026-11-11T22:40:48.5101415Z   cache: npm
+2026-11-11T22:40:48.5101548Z   cache-dependency-path: package-lock.json
+2026-11-11T22:40:48.5101711Z   check-latest: false
+2026-11-11T22:40:48.5103007Z   token: ***
+2026-11-11T22:40:48.5103135Z   package-manager-cache: true
+2026-11-11T22:40:48.5103291Z env:
+2026-11-11T22:40:48.5103406Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:48.5103544Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:48.5103657Z   LONG_RUN: true
+2026-11-11T22:40:48.5103782Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:40:48.5103924Z ##[endgroup]
+2026-11-11T22:40:48.6018451Z Node version file is not JSON file
+2026-11-11T22:40:48.6021201Z Node version file is not TOML file
+2026-11-11T22:40:48.6022363Z Resolved .node-version as 26.12.1
+2026-11-11T22:40:48.6035998Z Attempting to download 26.12.1...
+2026-11-11T22:40:49.4035633Z Acquiring 26.12.1 - x64 from https://github.com/actions/node-versions/releases/download/26.12.1-39618969937/node-26.12.1-linux-x64.tar.gz
+2026-11-11T22:40:49.8825567Z Extracting ...
+2026-11-11T22:40:49.8928173Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/ad18f885-b49c-41bc-b316-3dbfe69e1424 -f /home/runner/work/_temp/c182bf65-5c29-483d-98d9-83b97cf64165
+2026-11-11T22:40:50.9306548Z Adding to the cache ...
+2026-11-11T22:40:53.6094586Z ##[group]Environment details
+2026-11-11T22:40:53.7766966Z node: v26.12.1
+2026-11-11T22:40:53.7767178Z npm: 11.20.0
+2026-11-11T22:40:53.7767296Z yarn: 1.22.22
+2026-11-11T22:40:53.7767838Z ##[endgroup]
+2026-11-11T22:40:53.7780945Z [command]/opt/hostedtoolcache/node/26.12.1/x64/bin/npm config get cache
+2026-11-11T22:40:53.8448502Z /home/runner/.npm
+2026-11-11T22:40:53.9872419Z Cache hit for: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-11T22:40:54.9840320Z Received 90168603 of 90168603 (100.0%), 104.4 MBs/sec
+2026-11-11T22:40:54.9840659Z Cache Size: ~86 MB (90168603 B)
+2026-11-11T22:40:54.9860372Z [command]/usr/bin/tar -xf /home/runner/work/_temp/8ac9e484-7f4b-43ce-9bc5-aa0525e5eb6c/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-11-11T22:40:55.1935067Z Cache restored successfully
+2026-11-11T22:40:55.1980200Z Cache restored from key: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-11T22:40:55.2186595Z ##[end-action id=__self.__actions_setup-node;outcome=success;conclusion=success;duration_ms=6714]
+2026-11-11T22:40:55.2188769Z ##[start-action display=The npm workspace's dependencies;id=__self.__run_3]
+2026-11-11T22:40:55.2317208Z ##[group]Run npm ci --no-audit --no-fund
+2026-11-11T22:40:55.2317417Z [36;1mnpm ci --no-audit --no-fund[0m
+2026-11-11T22:40:55.2333873Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-11T22:40:55.2334066Z env:
+2026-11-11T22:40:55.2334195Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:55.2334339Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:55.2334457Z   LONG_RUN: true
+2026-11-11T22:40:55.2334594Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:40:55.2334746Z ##[endgroup]
+2026-11-11T22:40:58.7296022Z 
+2026-11-11T22:40:58.7303208Z added 270 packages in 3s
+2026-11-11T22:40:58.7996089Z ##[end-action id=__self.__run_3;outcome=success;conclusion=success;duration_ms=3580]
+2026-11-11T22:40:58.8028058Z ##[group]Run google-chrome --version
+2026-11-11T22:40:58.8028276Z [36;1mgoogle-chrome --version[0m
+2026-11-11T22:40:58.8028437Z [36;1mmicrosoft-edge --version[0m
+2026-11-11T22:40:58.8045131Z shell: /usr/bin/bash -e {0}
+2026-11-11T22:40:58.8045346Z env:
+2026-11-11T22:40:58.8045472Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:58.8045615Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:58.8045733Z   LONG_RUN: true
+2026-11-11T22:40:58.8045857Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:40:58.8046006Z ##[endgroup]
+2026-11-11T22:40:58.9372236Z Google Chrome 156.0.8078.79 
+2026-11-11T22:40:59.0989378Z Microsoft Edge 156.0.4314.58 
+2026-11-11T22:40:59.1067377Z ##[group]Run actions/download-artifact@v8
+2026-11-11T22:40:59.1067706Z with:
+2026-11-11T22:40:59.1067825Z   name: layer3-hosts
+2026-11-11T22:40:59.1067948Z   path: hosts
+2026-11-11T22:40:59.1068070Z   merge-multiple: false
+2026-11-11T22:40:59.1068208Z   repository: AkiraMisawa/ex-grid
+2026-11-11T22:40:59.1068352Z   run-id: 43113296785
+2026-11-11T22:40:59.1068478Z   skip-decompress: false
+2026-11-11T22:40:59.1068615Z   digest-mismatch: error
+2026-11-11T22:40:59.1068739Z env:
+2026-11-11T22:40:59.1068856Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:40:59.1068996Z   DOTNET_NOLOGO: 1
+2026-11-11T22:40:59.1069113Z   LONG_RUN: true
+2026-11-11T22:40:59.1069243Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:40:59.1069391Z ##[endgroup]
+2026-11-11T22:40:59.2038648Z Downloading single artifact
+2026-11-11T22:40:59.3541779Z Preparing to download the following artifacts:
+2026-11-11T22:40:59.3542745Z - layer3-hosts (ID: 13896728739, Size: 79996714, Expected Digest: sha256:b7d458da63cc1d0feb9733a037cbb69f818e907a94ceaf10a19a924e3718521f)
+2026-11-11T22:40:59.6897362Z Redirecting to blob download url: https://productionresultssa12.blob.core.windows.net/actions-results/410ec5a1-11db-8379-acb5-78eb7f83d770/workflow-job-run-61a737fb-6536-51de-9b05-837c1783165c/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-11-11T22:40:59.6898633Z Starting download of artifact to: /home/runner/work/ex-grid/ex-grid/hosts
+2026-11-11T22:40:59.8541080Z (node:2589) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-11-11T22:40:59.8541688Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-11T22:41:01.3769245Z SHA256 digest of downloaded artifact is b7d458da63cc1d0feb9733a037cbb69f818e907a94ceaf10a19a924e3718521f
+2026-11-11T22:41:01.3769900Z Artifact download completed successfully.
+2026-11-11T22:41:01.3770664Z Total of 1 artifact(s) downloaded
+2026-11-11T22:41:01.3776517Z Download artifact has finished successfully
+2026-11-11T22:41:01.3949515Z ##[group]Run xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome-150 --shard=1/1
+2026-11-11T22:41:01.3950035Z [36;1mxvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=chrome-150 --shard=1/1[0m
+2026-11-11T22:41:01.3966779Z shell: /usr/bin/bash -e {0}
+2026-11-11T22:41:01.3966932Z env:
+2026-11-11T22:41:01.3967058Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:41:01.3967207Z   DOTNET_NOLOGO: 1
+2026-11-11T22:41:01.3967330Z   LONG_RUN: true
+2026-11-11T22:41:01.3967463Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:41:01.3967645Z   EXGRID_HOSTS: /home/runner/work/ex-grid/ex-grid/hosts
+2026-11-11T22:41:01.3967886Z   EXGRID_SOAK: 1
+2026-11-11T22:41:01.3968012Z ##[endgroup]
+2026-11-11T22:41:02.8161711Z [WebServer] Serving /home/runner/work/ex-grid/ex-grid/hosts/wasm/wwwroot at http://localhost:5299
+2026-11-11T22:41:04.2009150Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-11T22:41:04.2010479Z [DemoApi]       Generating 20000 trades into /tmp/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-11-11T22:41:04.2818286Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-11T22:41:04.2819141Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-11-11T22:41:04.3168576Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-11T22:41:04.3175992Z [DemoApi]       Now listening on: http://localhost:8299
+2026-11-11T22:41:04.3176468Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-11T22:41:04.3176951Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-11T22:41:04.3177771Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-11T22:41:04.3178165Z [DemoApi]       Hosting environment: Development
+2026-11-11T22:41:04.3178549Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-11T22:41:04.3179045Z [DemoApi]       Content root path: /home/runner/work/ex-grid/ex-grid/hosts/api
+2026-11-11T22:41:04.3302798Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-11T22:41:04.3303391Z [DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+2026-11-11T22:41:04.3372627Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-11T22:41:04.3373979Z [DemoApi]       Serving 20000 trades at version 7d2e7b79-0 from /tmp/exgrid-demo-api/runs/trades-v1-20000.2661.7d2e7b79.sqlite.
+2026-11-11T22:41:06.3368522Z 
+2026-11-11T22:41:06.3369312Z Running 11 tests using 1 worker, shard 1 of 1
+2026-11-11T22:41:06.3369517Z 
+2026-11-11T22:41:10.0404422Z   ✓   1 [chrome-150] › appearance.spec.mjs:270:1 › DC-58: a Split Fill given in C# as LowerRightFill reaches the paint, both halves and its own gridlines (ADR-0490) @blazor (1.4s)
+2026-11-11T22:41:19.4615140Z   ✓   2 [chrome-150] › circuit.spec.mjs:892:1 › a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053) @blazor (9.4s)
+2026-11-11T22:41:23.6978689Z   ✓   3 [chrome-150] › heading-mark.spec.mjs:75:5 › UX-21 (MudBlazor Chrome): on the Sheet the Headings of the columns and rows several ranges hold carry a line of two Device Pixels on their edge toward the cells, in the outline's colour, and the Headings between them none (ADR-0008, 2026-10-13; R4) @blazor (4.2s)
+2026-11-11T22:41:25.3612392Z   ✓   4 [chrome-150] › mud.spec.mjs:169:1 › UX-19/UX-9: among several ranges the Focus's thin border is the Focus outline's colour, the primary in both palettes, with no mapping of its own (ADR-0008, 2026-10-12; ADR-0030) @blazor (1.6s)
+2026-11-11T22:41:26.9733165Z   ✓   5 [chrome-150] › part-c.spec.mjs:134:1 › SH-54/DC-59 (MudBlazor Chrome): the outline is the palette's primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11) @blazor (1.6s)
+2026-11-11T22:41:28.7968211Z   ✓   6 [chrome-150] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): in a Pinned Column, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) @blazor (1.8s)
+2026-11-11T22:41:30.5888700Z   ✓   7 [chrome-150] › part-c.spec.mjs:194:5 › SH-54/DC-59 (MudBlazor Chrome): across the pinned boundary, a black line inside the shade stays black and the shade is the primary mixed into white (ADR-0206, case 11) @blazor (1.8s)
+2026-11-11T22:41:32.3537944Z   ✓   8 [chrome-150] › part-c.spec.mjs:435:5 › DC-59/SH-39 (MudBlazor Chrome, dark scheme): across the pinned boundary the shade is the same on both sides and a black line inside stays black, as in the light scheme (ADR-0206, ADR-0071) @blazor (1.7s)
+2026-11-11T22:41:34.2101255Z   ✓   9 [chrome-150] › sheet-borders.spec.mjs:260:5 › SH-46: Fills and lines beside Excel's › SH-46/DC-59: the Selection's outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11) @blazor (1.8s)
+2026-11-11T22:41:38.8476694Z   ✓  10 [chrome-150] › sheet-paper.spec.mjs:209:5 › UX-19/SH-39 (MudBlazor Chrome): on the Paper the Focus among several ranges is one Device Pixel inside its cell in the Focus outline's colour, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071) @blazor (4.6s)
+2026-11-11T22:41:41.8557729Z   ✓  11 [chrome-150] › sheet-paper.spec.mjs:714:5 › SH-41/VZ-19 (MudBlazor Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090) @blazor (3.0s)
+2026-11-11T22:41:41.9823778Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-11T22:41:41.9824295Z [DemoApi]       Application is shutting down...
+2026-11-11T22:41:42.0160111Z 
+2026-11-11T22:41:42.0163780Z   11 passed (39.9s)
+2026-11-11T22:41:42.0642627Z ##[group]Run actions/upload-artifact@v7
+2026-11-11T22:41:42.0642817Z with:
+2026-11-11T22:41:42.0642949Z   name: layer3-records-chrome-150-1
+2026-11-11T22:41:42.0643139Z   path: verification/
+tests/browser/test-results/
+
+2026-11-11T22:41:42.0643330Z   if-no-files-found: ignore
+2026-11-11T22:41:42.0643472Z   retention-days: 30
+2026-11-11T22:41:42.0643779Z   compression-level: 6
+2026-11-11T22:41:42.0643911Z   overwrite: false
+2026-11-11T22:41:42.0644044Z   include-hidden-files: false
+2026-11-11T22:41:42.0644192Z   archive: true
+2026-11-11T22:41:42.0644311Z env:
+2026-11-11T22:41:42.0644437Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-11T22:41:42.0644589Z   DOTNET_NOLOGO: 1
+2026-11-11T22:41:42.0644710Z   LONG_RUN: true
+2026-11-11T22:41:42.0645173Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-11T22:41:42.0645330Z ##[endgroup]
+2026-11-11T22:41:42.8606429Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-11-11T22:41:42.8607633Z The least common ancestor is /home/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-11-11T22:41:42.8608230Z With the provided path, there will be 11325 files uploaded
+2026-11-11T22:41:42.8608745Z Artifact name is valid!
+2026-11-11T22:41:42.8609023Z Root directory input is valid!
+2026-11-11T22:41:43.2174386Z Uploading artifact: layer3-records-chrome-150-1.zip
+2026-11-11T22:41:43.2175587Z Beginning upload of artifact content to blob storage
+2026-11-11T22:41:44.3541524Z Uploaded bytes 8388608
+2026-11-11T22:41:44.5947036Z Uploaded bytes 16777216
+2026-11-11T22:41:44.6967658Z Uploaded bytes 25165824
+2026-11-11T22:41:44.8152649Z Uploaded bytes 33554432
+2026-11-11T22:41:45.0576648Z Uploaded bytes 41943040
+2026-11-11T22:41:45.5411338Z Uploaded bytes 50331648
+2026-11-11T22:41:45.8994292Z Uploaded bytes 58720256
+2026-11-11T22:41:46.1076612Z Uploaded bytes 67108864
+2026-11-11T22:41:46.6006617Z Uploaded bytes 75497472
+2026-11-11T22:41:46.7275125Z Uploaded bytes 83886080
+2026-11-11T22:41:47.0276451Z Uploaded bytes 92274688
+2026-11-11T22:41:47.1510165Z Uploaded bytes 100663296
+2026-11-11T22:41:47.6525315Z Uploaded bytes 109051904
+2026-11-11T22:41:48.1002199Z Uploaded bytes 117440512
+2026-11-11T22:41:48.3907303Z Uploaded bytes 125829120
+2026-11-11T22:41:48.9616160Z Uploaded bytes 134217728
+2026-11-11T22:41:49.3914733Z Uploaded bytes 142606336
+2026-11-11T22:41:49.5340239Z Uploaded bytes 150994944
+2026-11-11T22:41:49.9628391Z Uploaded bytes 159383552
+2026-11-11T22:41:50.6301789Z Uploaded bytes 167772160
+2026-11-11T22:41:50.9113236Z Uploaded bytes 176160768
+2026-11-11T22:41:51.0105814Z Uploaded bytes 184549376
+2026-11-11T22:41:51.3941243Z Uploaded bytes 192937984
+2026-11-11T22:41:51.7941578Z Uploaded bytes 201326592
+2026-11-11T22:41:51.8840577Z Uploaded bytes 209715200
+2026-11-11T22:41:52.2391881Z Uploaded bytes 218103808
+2026-11-11T22:41:52.5250900Z Uploaded bytes 226492416
+2026-11-11T22:41:52.8217265Z Uploaded bytes 234881024
+2026-11-11T22:41:53.3456484Z Uploaded bytes 243269632
+2026-11-11T22:41:53.4708401Z Uploaded bytes 244800382
+2026-11-11T22:41:53.5113953Z Finished uploading artifact content to blob storage!
+2026-11-11T22:41:53.5115935Z SHA256 digest of uploaded artifact is 93d6139777bd7e876c598b55a0c0802223f38b2c9954cd808eb9ef2764ce0764
+2026-11-11T22:41:53.5117262Z Finalizing artifact upload
+2026-11-11T22:41:53.9751375Z Artifact layer3-records-chrome-150-1 successfully finalized. Artifact ID 13896859310
+2026-11-11T22:41:53.9752303Z Artifact layer3-records-chrome-150-1 has been successfully uploaded! Final size is 244800382 bytes. Artifact ID is 13896859310
+2026-11-11T22:41:53.9755825Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/43113296785/artifacts/13896859310
+2026-11-11T22:41:54.0240310Z Post job cleanup.
+2026-11-11T22:41:54.0242684Z ##[start-action display=Run actions/setup-node@v7;id=__952a336f-ba52-4264-aaa3-53406003dba7.__actions_setup-node]
+2026-11-11T22:41:54.0267247Z Post job cleanup.
+2026-11-11T22:41:54.1097445Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54, not saving cache.
+2026-11-11T22:41:54.1161945Z ##[end-action id=__952a336f-ba52-4264-aaa3-53406003dba7.__actions_setup-node;outcome=success;conclusion=success;duration_ms=91]
+2026-11-11T22:41:54.1208035Z Post job cleanup.
+2026-11-11T22:41:54.1827886Z [command]/usr/bin/git version
+2026-11-11T22:41:54.1860599Z git version 2.56.0
+2026-11-11T22:41:54.1883026Z Temporarily overriding HOME='/home/runner/work/_temp/0834127a-2b49-405c-b8f4-a69f1587d757' before making global git config changes
+2026-11-11T22:41:54.1883881Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-11T22:41:54.1886842Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-11T22:41:54.1917302Z Removing SSH command configuration
+2026-11-11T22:41:54.1921514Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-11T22:41:54.1952538Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-11T22:41:54.2162509Z Removing HTTP extra header
+2026-11-11T22:41:54.2167070Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-11T22:41:54.2201109Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-11T22:41:54.2423994Z Removing includeIf entries pointing to credentials config files
+2026-11-11T22:41:54.2431935Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-11T22:41:54.2462700Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-11T22:41:54.2463528Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-11T22:41:54.2464243Z includeif.gitdir:/github/workspace/.git.path
+2026-11-11T22:41:54.2465397Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-11T22:41:54.2475978Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-11T22:41:54.2509880Z /home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:41:54.2512775Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-c15809da\-b1e9\-4693\-aae0\-4c10776e1b59\.config
+2026-11-11T22:41:54.2542352Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-11T22:41:54.2568229Z /home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:41:54.2576056Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-c15809da\-b1e9\-4693\-aae0\-4c10776e1b59\.config
+2026-11-11T22:41:54.2606491Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-11T22:41:54.2627222Z /github/runner_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:41:54.2633852Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-c15809da\-b1e9\-4693\-aae0\-4c10776e1b59\.config
+2026-11-11T22:41:54.2663275Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-11T22:41:54.2683643Z /github/runner_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config
+2026-11-11T22:41:54.2690742Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-c15809da\-b1e9\-4693\-aae0\-4c10776e1b59\.config
+2026-11-11T22:41:54.2721121Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-11T22:41:54.2933853Z Removing credentials config '/home/runner/work/_temp/git-credentials-c15809da-b1e9-4693-aae0-4c10776e1b59.config'
+2026-11-11T22:41:54.3079249Z Cleaning up orphan processes
