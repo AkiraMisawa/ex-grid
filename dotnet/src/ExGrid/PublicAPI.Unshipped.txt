@@ -1,1 +1,2 @@
 #nullable enable
+ExGrid.Components.ExGrid<TRow>.PlaceSelectionAsync(System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! ranges, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!

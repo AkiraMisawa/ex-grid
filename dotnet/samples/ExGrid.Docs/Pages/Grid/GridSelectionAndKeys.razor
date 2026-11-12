@@ -72,6 +72,42 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="Placing a selection">
+        <p>
+            The Selection is the grid's, and you ask the grid to place it: a Name Box that goes to a cell, a command
+            that selects the rows meeting a condition. <code>await grid.PlaceSelectionAsync(range, focus,
+            rowSequenceVersion)</code> places one range with the Focus inside it, as a click leaves it, and
+            <code>PlaceSelectionAsync(ranges, focus, rowSequenceVersion)</code> places a list of ranges, as
+            Ctrl+clicks would have left them. Under React the grid's ref has one member for both:
+            <code>placeSelection(range, focus, rowSequenceVersion)</code> takes a range or an array of ranges. The
+            grid then does what it does after a click: an open edit commits first, and the Focus is scrolled into
+            view.
+        </p>
+        <p>
+            A list is placed <strong>as you hand it</strong>. Its order is the order Enter and Tab walk the ranges.
+            Ranges that overlap are neither joined nor refused, so the Selection you read back is the one you placed;
+            their cells count twice in <code>CellCount</code>, as in Excel's status bar, and a copy of them is
+            refused, as it is for a Selection made with the pointer. The Focus is a cell of your choosing inside one
+            of the ranges, and where several ranges hold it, the one handed last holds the Focus. The grid joins
+            nothing either: hand rows that stand together as one range. Every range costs a little on each paint, so
+            ten thousand one-row ranges are painted more slowly than the hundred runs they may form.
+        </p>
+        <p>
+            Positions mean something only in the order they were read in, so a placement carries the Row Sequence
+            Version that order had. Where the grid's source says another version by then, nothing is placed, the
+            call answers false, and <code>OnRefused</code> hears a refusal of kind <code>placement</code>. An open
+            edit whose value is rejected holds the placement too. A placement that names cells the grid does not
+            have is your mistake, not a refusal: no range, a range reaching outside the grid, or a Focus in none of
+            the ranges throws, and changes nothing.
+        </p>
+        <DocsExample Title="Selecting rows by a condition" Builtin="typeof(SelectWhere)" Mud="typeof(SelectWhereMud)"
+                     Files="@(["Examples/Grid/MatchingRows.cs", "Examples/Data/Trade.cs"])">
+            Press a currency: every trade in it is selected, each run of neighbouring rows as one range, and the
+            first match is scrolled into view. Sort by Currency and press again: the rows now stand together, and
+            the same trades are one range.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="The keyboard">
         <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
         <p>

@@ -1,0 +1,74 @@
+{
+  "about": "A Consumer's placement of several ranges (ADR-0050 item 4, the note of 2026-11-12, issue #561): the ranges as handed, in their order, each made in its own turn, with the Focus where the Consumer names it. The Script Core's alone: the C# Selection places one range and is not widened.",
+  "kind": "scriptSelection",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): several ranges are placed in the order handed, in place of the selection there was, with the Focus on the cell named",
+      "steps": [
+        { "click": [1, 1] },
+        { "toggleRange": [8, 8] },
+        { "placeRanges": [[2, 0, 1, 26], [5, 0, 2, 26], [40, 0, 1, 26]], "focus": [5, 3] },
+        { "expect": { "ranges": [[2, 0, 1, 26], [5, 0, 2, 26], [40, 0, 1, 26]], "focus": [5, 3], "focusRange": [5, 0, 2, 26], "cellCount": 104 } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): the order handed is kept, not sorted: Enter walks the ranges as they were handed",
+      "steps": [
+        { "placeRanges": "C3,A1,B2", "focus": "C3" },
+        { "expect": { "ranges": "C3,A1,B2", "focus": "C3" } },
+        { "cycle": "enter", "focuses": ["A1", "B2", "C3"] }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): ranges that overlap are placed as handed, neither merged nor refused, and their cells count twice as Excel's status bar counts them (ADR-0014)",
+      "steps": [
+        { "placeRanges": "A1:B2,B2:C3,B2:C3", "focus": "A1" },
+        { "expect": { "ranges": "A1:B2,B2:C3,B2:C3", "rangeCount": 3, "cellCount": 12, "focusRange": "A1:B2" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12), ADR-0055: a Focus that several ranges hold belongs to the one handed last of them",
+      "steps": [
+        { "placeRanges": "A1:B2,B2:C3,E5", "focus": "B2" },
+        { "expect": { "focus": "B2", "focusRange": "B2:C3", "extent": "C3" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12), ADR-0052: each range is made in its own turn, so the range made last is the one handed last, and a take-out puts the Focus there",
+      "steps": [
+        { "placeRanges": "A1:A2,C1:C2,E1:E2", "focus": "A1" },
+        { "expect": { "topLeftOfRangeMadeLast": "E1" } },
+        { "toggleRange": "A1" },
+        { "expect": { "ranges": "A2,C1:C2,E1:E2", "focus": "E1" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): one range in a list is the one-range placement",
+      "steps": [
+        { "placeRanges": [[2, 3, 4, 5]], "focus": [5, 7] },
+        { "save": "listed" },
+        { "place": [2, 3, 4, 5], "focus": [5, 7] },
+        { "expect": { "sameAs": "listed", "extent": [2, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): no range, a range reaching outside the grid, a range of no cell, or a Focus in none of the ranges is refused rather than clamped, and nothing changes",
+      "steps": [
+        { "click": [1, 1] },
+        { "placeRanges": [], "focus": [0, 0], "throws": "outOfRange" },
+        { "placeRanges": [[2, 0, 1, 26], [98, 0, 3, 1]], "focus": [2, 0], "throws": "outOfRange" },
+        { "placeRanges": [[2, 0, 1, 26], [5, 0, 0, 26]], "focus": [2, 0], "throws": "outOfRange" },
+        { "placeRanges": [[2, 0, 1, 26], [5, 0, 1, 26]], "focus": [3, 0], "throws": "outOfRange" },
+        { "expect": { "ranges": [[1, 1, 1, 1]] } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 4 (2026-11-12): a grid with no cells has nothing to place on",
+      "steps": [
+        { "placeRanges": "A1,C3", "focus": "A1", "extent": [0, 26] },
+        { "expect": { "empty": true } }
+      ]
+    }
+  ]
+}

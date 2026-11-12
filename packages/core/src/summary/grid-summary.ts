@@ -172,35 +172,59 @@ export interface SummaryBand {
     readonly columns: readonly number[];
 }
 
+// Notes a range among those that change the sweep at an edge.
+function noted(at: Map<number, SelectionRange[]>, edge: number, range: SelectionRange): void {
+    const there = at.get(edge);
+    if (there === undefined) at.set(edge, [range]);
+    else there.push(range);
+}
+
 /**
  * The selected cells as bands of rows, each with the columns some range covers across the whole band, so a
  * cell under two ranges is visited once and a whole column of a million rows is one band. Rows past
  * `rowCount` and columns past `columnCount` are not cells.
+ *
+ * The ranges' edges are swept in row order, each range entering at its top and leaving at its bottom, so the
+ * cost follows the ranges and the columns they cover, never their number squared: a Consumer places a
+ * Selection of as many ranges as rows meet its condition (ADR-0050 item 4's note of 2026-11-12).
  */
 export function summaryBands(ranges: readonly SelectionRange[], rowCount: number, columnCount: number): readonly SummaryBand[] {
     const clamp = (value: number): number => Math.min(Math.max(value, 0), rowCount);
-    const edges = new Set<number>();
+    const entering = new Map<number, SelectionRange[]>();
+    const leaving = new Map<number, SelectionRange[]>();
     for (const range of ranges) {
         const top = clamp(range.topRow);
         const bottom = clamp(range.topRow + range.rowCount);
         if (top < bottom) {
-            edges.add(top);
-            edges.add(bottom);
+            noted(entering, top, range);
+            noted(leaving, bottom, range);
         }
     }
-    const sorted = [...edges].toSorted((a, b) => a - b);
+    const edges = [...new Set([...entering.keys(), ...leaving.keys()])].toSorted((a, b) => a - b);
+    // How many of the ranges over the band cover each column, and the band's columns in order, kept from band to
+    // band while no column joins or leaves them.
+    const covering = new Map<number, number>();
+    let columns: readonly number[] | undefined;
+    const cover = (range: SelectionRange, by: 1 | -1): void => {
+        const right = Math.min(range.leftColumn + range.columnCount, columnCount);
+        for (let column = Math.max(range.leftColumn, 0); column < right; column++) {
+            const before = covering.get(column);
+            const after = (before === undefined ? 0 : before) + by;
+            if (after === 0) covering.delete(column);
+            else covering.set(column, after);
+            if (before === undefined || after === 0) columns = undefined;
+        }
+    };
     const bands: SummaryBand[] = [];
-    for (let i = 1; i < sorted.length; i++) {
-        const top = itemAt(sorted, i - 1);
-        const columns = new Set<number>();
-        for (const range of ranges) {
-            if (range.topRow <= top && range.topRow + range.rowCount > top) {
-                const right = Math.min(range.leftColumn + range.columnCount, columnCount);
-                for (let column = Math.max(range.leftColumn, 0); column < right; column++) columns.add(column);
-            }
-        }
-        if (columns.size > 0) bands.push(Object.freeze({ top, bottom: itemAt(sorted, i), columns: Object.freeze([...columns].toSorted((a, b) => a - b)) }));
-    }
+    edges.forEach((top, i) => {
+        // Those that end at this edge leave before those that start at it enter: neither covers the other's band.
+        leaving.get(top)?.forEach(range => { cover(range, -1); });
+        entering.get(top)?.forEach(range => { cover(range, 1); });
+        const bottom = edges[i + 1];
+        if (bottom === undefined || covering.size === 0) return;
+        columns ??= Object.freeze([...covering.keys()].toSorted((a, b) => a - b));
+        bands.push(Object.freeze({ top, bottom, columns }));
+    });
     return Object.freeze(bands);
 }
 

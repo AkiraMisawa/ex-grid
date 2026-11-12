@@ -3,7 +3,7 @@
 import { expect } from 'vitest';
 import type { GridDirection, GridExtent } from '../src/selection/cell';
 import type { Selection } from '../src/selection/selection';
-import { readCell, readRange, wholeNumber, type CellText, type RangeText } from './cases';
+import { readCell, readRange, readRanges, wholeNumber, type CellText, type RangeText } from './cases';
 
 export type Step = Record<string, unknown>;
 
@@ -49,6 +49,7 @@ function gesture(selection: Selection, step: Step, extent: GridExtent): Selectio
         return selection.extendToRow(step['extendToRow'] as number, extent, int('focusColumnIfEmpty'));
     }
     if ('place' in step) return selection.place(readRange(step['place'] as RangeText), at('focus'), extent);
+    if ('placeRanges' in step) return selection.placeRanges(readRanges(step['placeRanges'] as readonly RangeText[] | string), at('focus'), extent);
     if ('selectColumn' in step) return selection.selectColumn(step['selectColumn'] as number, extent, int('focusRow'));
     if ('selectRow' in step) return selection.selectRow(step['selectRow'] as number, extent, int('focusColumn'));
     throw new Error(`The step ${JSON.stringify(step)} names no gesture this runner knows.`);

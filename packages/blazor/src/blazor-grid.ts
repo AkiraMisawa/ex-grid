@@ -130,8 +130,8 @@ export interface BlazorGrid {
     update(json: string): void;
     /** Takes the source's {@link WireState}, which .NET sends whenever its source says it changed. */
     state(json: string): void;
-    /** Places the Selection, as the core's handle does (ADR-0050 item 4). */
-    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    /** Places the Selection, one range or a list of them as handed, as the core's handle does (ADR-0050 item 4). */
+    placeSelection(ranges: SelectionRange | readonly SelectionRange[], focus: CellPosition, rowSequenceVersion: number): boolean;
     /** Hands the keyboard to the grid (ADR-0080). */
     focus(): void;
     /** Gives the keyboard back to the grid, from the frame `from` when .NET names one, as the core's handle does
@@ -558,10 +558,10 @@ export function attach(
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
         state: (text: string) => { gate.receive({ state: parsed<WireState>(text) }); },
-        placeSelection: (range: SelectionRange, focus: CellPosition, rowSequenceVersion: number) => {
+        placeSelection: (ranges: SelectionRange | readonly SelectionRange[], focus: CellPosition, rowSequenceVersion: number) => {
             // .NET sent the source's state before it asked: the version is judged against that state.
             gate.flush();
-            return grid.placeSelection(range, focus, rowSequenceVersion);
+            return grid.placeSelection(ranges, focus, rowSequenceVersion);
         },
         focus: () => { grid.focus(); },
         returnKeyboard: (from: Element | null) => { grid.returnKeyboard(from === null ? undefined : from); },

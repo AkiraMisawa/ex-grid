@@ -175,7 +175,7 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// Hears Enter in the Name Box (ADR-0051): the text the user typed there. The Consumer resolves it to a position,
-    /// the grid reads no address, and places the Selection and the Focus with <see cref="PlaceSelectionAsync"/>
+    /// the grid reads no address, and places the Selection and the Focus with <see cref="PlaceSelectionAsync(SelectionRange, CellPosition, int)"/>
     /// (ADR-0050, item 4). The keyboard is the grid's again as Enter is typed.
     /// </summary>
     [Parameter] public EventCallback<string> OnNameBoxEntered { get; set; }
@@ -805,7 +805,8 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     }
 
     /// <summary>Places the Selection as a click leaves it (ADR-0050 item 4), if the source still says
-    /// <paramref name="rowSequenceVersion"/>: true once placed, and otherwise refused through <see cref="OnRefused"/>.</summary>
+    /// <paramref name="rowSequenceVersion"/>: true once placed, and otherwise refused through <see cref="OnRefused"/>.
+    /// Several ranges are placed with <see cref="PlaceSelectionAsync(IReadOnlyList{SelectionRange}, CellPosition, int)"/>.</summary>
     public async Task<bool> PlaceSelectionAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
     {
         var grid = _grid ?? throw new InvalidOperationException("This ExGrid is not attached: a grid not drawn places nothing.");
@@ -813,6 +814,33 @@ public sealed partial class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         // before crosses first, whatever is still waiting to send it (the spine's sixth rule).
         await SendStateAsync();
         return await grid.InvokeAsync<bool>("placeSelection", ScriptJson.Range(range), ScriptJson.Cell(focus), rowSequenceVersion);
+    }
+
+    /// <summary>
+    /// Places a Selection of several ranges (ADR-0050 item 4's note of 2026-11-12), if the source still says
+    /// <paramref name="rowSequenceVersion"/>: rows that meet a condition and do not stand together, say. The
+    /// ranges are placed as handed, in their order, as Ctrl+clicks would have left them. Ranges that overlap are
+    /// neither joined nor refused, so the Selection read back is the one placed, and the grid joins no rows that
+    /// stand together: hand them as one range. Where several ranges hold <paramref name="focus"/>, the one handed
+    /// last holds the Focus.
+    /// </summary>
+    /// <param name="ranges">The ranges, in the order Enter and Tab walk them; at least one.</param>
+    /// <param name="focus">The Focus, inside one of <paramref name="ranges"/>. The grid scrolls it into view.</param>
+    /// <param name="rowSequenceVersion">The Row Sequence Version the positions were written in.</param>
+    /// <returns>True once placed; false when refused through <see cref="OnRefused"/>, or held by an open edit.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="ranges"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">The grid is not attached yet.</exception>
+    /// <exception cref="Microsoft.JSInterop.JSException">The browser refused the place: no range, a range reaching
+    /// outside the grid, or a Focus in none of the ranges. Nothing changed.</exception>
+    public async Task<bool> PlaceSelectionAsync(IReadOnlyList<SelectionRange> ranges, CellPosition focus, int rowSequenceVersion)
+    {
+        ArgumentNullException.ThrowIfNull(ranges);
+        var grid = _grid ?? throw new InvalidOperationException("This ExGrid is not attached: a grid not drawn places nothing.");
+        // The list as it was handed: the send below is awaited, and the Consumer's own may be written to meanwhile.
+        var placed = ranges.Select(ScriptJson.Range).ToArray();
+        // As the one-range form: the version is judged against the state the browser holds (the spine's sixth rule).
+        await SendStateAsync();
+        return await grid.InvokeAsync<bool>("placeSelection", placed, ScriptJson.Cell(focus), rowSequenceVersion);
     }
 
     /// <summary>Hands the keyboard to the grid (ADR-0080).</summary>

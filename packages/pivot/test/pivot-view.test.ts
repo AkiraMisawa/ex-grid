@@ -126,6 +126,7 @@ class GridStandIn {
                 // The real grid refuses a version its source has moved past: the pivot places under the one it holds.
                 const held = this.options?.source?.snapshot().rowSequenceVersion;
                 if (version !== held) throw new Error(`A placement under version ${version}, but the source holds ${String(held)}.`);
+                if (!('topRow' in range)) throw new Error('The pivot places one range, never a list of them.');
                 this.placed.push({ range, focus, version });
                 return true;
             },

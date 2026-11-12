@@ -196,6 +196,9 @@ function paintedKey<Row>(row: Row, index: number, rowKey: RowKeyOf<Row> | undefi
     return key;
 }
 
+// Whether a placement names a list of ranges, placed as handed, and not the one range a click leaves (ADR-0050 item 4).
+const isRangeList = (place: SelectionRange | readonly SelectionRange[]): place is readonly SelectionRange[] => Array.isArray(place);
+
 // A place a Consumer hands is refused by name where it holds no cell, or its Focus lies outside it.
 function checkPlace({ range, focus }: ViewPlace): void {
     if (!Number.isInteger(range.topRow) || !Number.isInteger(range.leftColumn) || range.topRow < 0 || range.leftColumn < 0
@@ -2437,9 +2440,12 @@ export class GridView<Row> {
     }
 
     /**
-     * The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4): `range` becomes the
+     * The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4): one range becomes the
      * one range, with the Focus on `focus` inside it, and the grid then does what it does after a click: an open
-     * edit commits first, a menu closes, and the Focus is scrolled into view. The Selection stays the grid's; the
+     * edit commits first, a menu closes, and the Focus is scrolled into view. A list of ranges is placed as handed
+     * (the note of 2026-11-12): in its order, each range made in its own turn as Ctrl+clicks would have left them,
+     * ranges that overlap neither merged nor refused, and the Focus held by the last range that holds `focus`
+     * (ADR-0055). The Selection stays the grid's; the
      * Consumer asks and the grid places. Positions mean something only under the order they were written in, so
      * a request under another Row Sequence Version than the one the grid's source says (its `snapshot()`) places
      * nothing and is refused (`onRefused`, kind `placement`, reason `orderMoved`), as is one whose edit commit
@@ -2447,9 +2453,10 @@ export class GridView<Row> {
      * version is all a request carries, so one made after the source was replaced is taken as written for the
      * new one, as the C# grid takes it. True once placed; false when refused, or when a Reject or a refusal held
      * the open edit (ADR-0034), which says so itself, or while its commit is pending (ADR-0380). A range reaching outside the grid, a Focus outside the
-     * range, or a grid with no cells throws a RangeError and changes nothing.
+     * range or outside every range of a list, a list of no range, or a grid with no cells throws a RangeError and
+     * changes nothing.
      */
-    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
+    placeSelection(ranges: SelectionRange | readonly SelectionRange[], focus: CellPosition, rowSequenceVersion: number): boolean {
         if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
         // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
         this.#source.publishGathered?.();
@@ -2457,9 +2464,13 @@ export class GridView<Row> {
         if (extent.rowCount === 0 || extent.columnCount === 0) {
             throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
         }
+        // The list as it was handed: a handler the open edit's commit calls below may write to the Consumer's own.
+        const place = isRangeList(ranges) ? [...ranges] : ranges;
+        const placedOn = (selection: Selection, on: GridExtent): Selection =>
+            isRangeList(place) ? selection.placeRanges(place, focus, on) : selection.place(place, focus, on);
         // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
         // else holds, and commits nothing.
-        this.#held.selection.place(range, focus, extent);
+        placedOn(this.#held.selection, extent);
         // The version the grid hands, which is the source's own and the one a Consumer reads.
         if (rowSequenceVersion !== this.#handedVersion()) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
@@ -2496,13 +2507,15 @@ export class GridView<Row> {
         // The commit may have changed how many rows there are under the same order, as a fetching source's total
         // can: a place that no longer fits names rows that are not there, which the order moving says.
         const now = this.#extent;
-        if (range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount) {
+        const outside = (range: SelectionRange): boolean =>
+            range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount;
+        if (isRangeList(place) ? place.some(outside) : outside(place)) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
         // Revealed in the Viewport; the page is not moved for it, as a Consumer's placement is no move the grid made
         // (ADR-0204): a Name Box's Go To scrolls the grid, never the page under it.
-        if (this.#apply(this.#held.selection.place(range, focus, now))) {
+        if (this.#apply(placedOn(this.#held.selection, now))) {
             this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
         }

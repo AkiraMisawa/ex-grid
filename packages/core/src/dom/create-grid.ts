@@ -9,11 +9,21 @@ export interface GridHandle<Row> {
     /** Takes the options again, whole: what did not change costs nothing, and a row that did not change is
      * not touched (ADR-0003). */
     update(options: GridOptions<Row>): void;
-    /** Places `range` as the one range with the Focus on `focus`, as a click leaves it, if the grid's source
-     * still says `rowSequenceVersion` (ADR-0050 item 4): true once placed, and otherwise refused through
-     * `onRefused` (kind `placement`) or held by an open edit's Reject. A range outside the grid throws a
-     * RangeError. */
-    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    /**
+     * Places the Selection with the Focus on `focus`, if the grid's source still says `rowSequenceVersion`
+     * (ADR-0050 item 4): true once placed, and otherwise refused through `onRefused` (kind `placement`) or held
+     * by an open edit's Reject.
+     *
+     * One range is placed as the one range, as a click leaves it. A list of ranges is placed as handed (the
+     * note of 2026-11-12): in its order, as Ctrl+clicks would have left them, for rows that meet a condition
+     * and do not stand together. Ranges that overlap are neither merged nor refused, so what is placed is what
+     * `readView` reads back; where several ranges hold `focus`, the one handed last holds the Focus. The grid
+     * joins nothing: rows that stand together are one range where the Consumer hands them as one.
+     *
+     * @throws RangeError A range outside the grid, a list of no range, or a Focus outside the range, or outside
+     *   every range of a list. Nothing changes.
+     */
+    placeSelection(ranges: SelectionRange | readonly SelectionRange[], focus: CellPosition, rowSequenceVersion: number): boolean;
     /** Places the Selection on `cell` alone and takes it as the current match of a Find step (ADR-0332 §5), as the
      * step's own answer would land, the find panel open: for a Consumer that answers a step by showing other rows,
      * places the match under the version it shows them with, and gives the step up. It wears `ex-match-mark-current`
@@ -167,7 +177,8 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
     const view = new GridView(element, options, browserReports);
     return Object.freeze({
         update: (next: GridOptions<Row>) => { view.update(next); },
-        placeSelection: (range: SelectionRange, focus: CellPosition, rowSequenceVersion: number) => view.placeSelection(range, focus, rowSequenceVersion),
+        placeSelection: (ranges: SelectionRange | readonly SelectionRange[], focus: CellPosition, rowSequenceVersion: number) =>
+            view.placeSelection(ranges, focus, rowSequenceVersion),
         placeMatch: (cell: CellPosition, rowSequenceVersion: number) => view.placeMatch(cell, rowSequenceVersion),
         readView: () => view.readView(),
         writePointedText: (text: string) => view.writePointedText(text),
