@@ -2520,3 +2520,4 @@ ExGrid.GridHeaderDisplay.Compact = 1 -> ExGrid.GridHeaderDisplay
 ExGrid.GridHeaderDisplay.Standard = 0 -> ExGrid.GridHeaderDisplay
 ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable, ExGrid.GridHeaderDisplay display) -> double
 ExGrid.GridMetrics.HeaderRequiredPx(string! label, bool menuButton, bool sortable, ExGrid.GridHeaderDisplay display, bool filtered) -> double
+ExGrid.Components.ExGrid<TRow>.PlaceSelectionAsync(System.Collections.Generic.IReadOnlyList<ExGrid.Selection.SelectionRange>! ranges, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
