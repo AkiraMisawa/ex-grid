@@ -389,9 +389,17 @@ export function caretInField(field) {
         const before = copy.getBoundingClientRect().width;
         copy.remove();
         const layer = input.previousElementSibling;
+        // The content box from the field's own box, its borders and its padding, never from `clientWidth`:
+        // what a text field reports there is not one thing across browsers. Chrome 156 gave an `<input>`'s
+        // padding box, 70 for a content box of 54 with 8 px of padding each side; Chrome 157 gives the
+        // box its text scrolls in, 54, with `scrollWidth` 16 less too, while `scrollLeft` and the caret
+        // are where they were (measured 2026-11-13, 157.0.8103.50 against 153). Read from `clientWidth`,
+        // the box came out 16 px narrow there and a caret at its right edge read as hidden.
+        const box = input.getBoundingClientRect().width
+            - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
         return {
             x: before - input.scrollLeft,
-            width: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+            width: box - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
             scrolled: input.scrollLeft,
             layer: layer !== null && layer.classList.contains('ex-reference-text') ? layer.firstElementChild.scrollLeft : null,
         };
