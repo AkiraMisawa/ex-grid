@@ -1,0 +1,157 @@
+dotnet 10.0.203 (nix-managed)
+== pack 0.0.0-smoke.1794537906
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid/ExGrid.csproj (in 882 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data/ExGrid.Data.csproj (in 879 ms).
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 306 ms).
+  2 of 3 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.MudBlazor.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.MudBlazor.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj (in 267 ms).
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.Engine.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.Engine.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet/ExSheet.csproj (in 314 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 310 ms).
+  5 of 6 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.MudBlazor.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.MudBlazor.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj (in 307 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj (in 307 ms).
+  2 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/bin/Release/net10.0/ExGrid.Data.Xlsx.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/bin/Release/net10.0/ExSheet.Xlsx.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.Xlsx.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExSheet.Xlsx.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 295 ms).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Arrow.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Arrow.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/bin/Release/net10.0/ExGrid.Data.Xlsx.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Xlsx.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExGrid.Data.Xlsx.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj (in 272 ms).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.Engine.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.Engine.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot/ExPivot.csproj (in 297 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 269 ms).
+  5 of 6 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.MudBlazor.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExPivot.MudBlazor.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExChart.Engine/ExChart.Engine.csproj (in 287 ms).
+  1 of 2 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.Engine.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.Engine.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExChart/ExChart.csproj (in 399 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Release/net10.0/ExChart.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj (in 312 ms).
+  5 of 6 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Release/net10.0/ExChart.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Release/net10.0/ExChart.MudBlazor.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.MudBlazor.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExChart.MudBlazor.0.0.0-smoke.1794537906.snupkg'.
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExBoard/ExBoard.csproj (in 241 ms).
+  7 of 8 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Release/net10.0/ExChart.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExBoard -> /home/claude/ex-grid/dotnet/src/ExBoard/bin/Release/net10.0/ExBoard.dll
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExBoard.0.0.0-smoke.1794537906.nupkg'.
+  Successfully created package '/home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.feed/ExBoard.0.0.0-smoke.1794537906.snupkg'.
+== what the packages declare
+== an application that takes them
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/ExGrid.PackageSmoke.csproj (in 9.05 sec).
+  ExGrid.PackageSmoke -> /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/bin/Release/net10.0/PackageSmoke.dll
+  ExGrid.PackageSmoke (Blazor output) -> /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  ExGrid.PackageSmoke -> /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.publish/
+== trimmed packed Consumer: Arrow, xlsx and report protocol round trips
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/RoundTrip/RoundTrip.csproj (in 343 ms).
+  RoundTrip -> /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/RoundTrip/bin/Release/net10.0/linux-x64/PackageSmoke.RoundTrip.dll
+  Optimizing assemblies for size. This process might take a while.
+  RoundTrip -> /home/claude/ex-grid/dotnet/tests/ExGrid.PackageSmoke/.publish/roundtrip/
+Arrow round trip: the Snapshot read back through the packed packages is the one written
+Xlsx round trip: the workbook read back through the packed package is the one written
+Report protocol: trimmed packed Consumer preserves Windows, Window Changes and every versioned operation
+package check: 0.0.0-smoke.1794537906 passed

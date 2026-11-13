@@ -1,0 +1,28 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 346 ms).
+  18 of 19 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Release/net10.0/ExGrid.Data.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Release/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Release/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/bin/Release/net10.0/ExGrid.Data.Xlsx.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Release/net10.0/ExPivot.Engine.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Release/net10.0/ExChart.Engine.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Release/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Release/net10.0/ExGrid.MudBlazor.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Release/net10.0/ExChart.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Release/net10.0/ExChart.MudBlazor.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Release/net10.0/ExSheet.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Release/net10.0/ExPivot.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/bin/Release/net10.0/ExSheet.Xlsx.dll
+  ExBoard -> /home/claude/ex-grid/dotnet/src/ExBoard/bin/Release/net10.0/ExBoard.dll
+  ExChart.Showcases -> /home/claude/ex-grid/dotnet/samples/ExChart.Showcases/bin/Release/net10.0/ExChart.Showcases.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Release/net10.0/ExSheet.MudBlazor.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Release/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.DemoPages -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoPages/bin/Release/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost/bin/Release/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Optimizing assemblies for size. This process might take a while.
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  ExGrid.DemoHost -> /tmp/claude-0/-home-claude/c52578cb-fc8b-5c67-baa8-4a3e1c2048f6/scratchpad/signoff/m/publish/

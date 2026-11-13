@@ -1,0 +1,35 @@
+node v26.12.1, dotnet 10.0.203
+
+Running 1 test using 1 worker
+
+LV-15 {
+ "rows": 1000000,
+ "load": "1,000,000 trades made in 2,966 ms; GridSource.From took 2,039 ms.",
+ "runs": 12,
+ "appliedMs": {
+  "median": 47,
+  "min": 29,
+  "max": 152
+ },
+ "applyToFrameMs": {
+  "median": 86,
+  "min": 55,
+  "max": 192
+ },
+ "taskStartToFrameMs": {
+  "median": 109,
+  "min": 90,
+  "max": 196
+ },
+ "longestTaskMs": {
+  "median": 0,
+  "min": 0,
+  "max": 156
+ },
+ "gridInTheBatchsFrame": 1,
+ "lastStatus": "Batch 14: 1,000 trades amended, applied in 41 ms.",
+ "against": "PV-21: 0.2 s"
+}
+  ✓  1 [chrome] › measure-live.spec.mjs:93:1 › LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them @blazor (9.9s)
+
+  1 passed (12.2s)
