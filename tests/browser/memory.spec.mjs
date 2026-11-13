@@ -1,4 +1,4 @@
-import { test, expect, record } from './fixtures.mjs';
+import { test, expect, record, circuitQuiet } from './fixtures.mjs';
 
 // What a grid leaves behind (Definition of Done §17), read from the browser's own
 // counters over CDP: nodes and event listeners after mounting and disposing it fifty
@@ -134,6 +134,13 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await grid.dispose();
     await expect.poll(moduleOnDocument, { message: 'the warm-up grid let go of the document' }).toEqual([]);
+    // The count is the browser's, and the grid's disposal reaches the browser after the render that takes the
+    // grid out of the DOM: on a circuit, a message later. Read between the two, the count still holds the
+    // listeners of a grid .NET has let go of, 25 of them. Read at once after the grid left the DOM it was 71
+    // in 1 run of 60 on the Server host, and 46 in every run once the wire was quiet (2026-11-13); the same
+    // 25 failed this test in CI at either reading, the baseline or the last. Nothing of the module is on the
+    // document to wait for since the Script grid (the poll above holds trivially), so the wire is what is waited on.
+    await circuitQuiet();
     const baseline = await grid.counters();
 
     await grid.mount();
@@ -169,6 +176,8 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await expect.poll(moduleOnDocument, { message: 'no listener of the module left on the document' }).toEqual([]);
 
     await page.evaluate(() => { delete window.__disposedRoot; });
+    // As for the baseline: the root's listeners are off, and what else the disposal lets go of may still be on the wire.
+    await circuitQuiet();
     expect((await grid.counters()).listeners, 'the listener count is back to its baseline').toBe(baseline.listeners);
 });
 
