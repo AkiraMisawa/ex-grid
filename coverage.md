@@ -5,7 +5,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 | Product | TS line | TS branch | .NET line | .NET branch |
 |---|---|---|---|---|
-| ExGrid | 93.8% | 85% | 88.2% | 78.4% |
+| ExGrid | 93.8% | 84.9% | 88.2% | 78.4% |
 | ExSheet | 93.7% | 85.7% | 86.2% | 85.8% |
 | ExPivot | 93.1% | 82.1% | 86.1% | 82.1% |
 | ExChart | 92.3% | 83.2% | 91.1% | 84.9% |
@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/13/2026 - 02:47:06 |
+| Generated on: | 11/14/2026 - 00:59:20 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
@@ -63,8 +63,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 | Uncovered lines: | 9093 |
 | Coverable lines: | 69828 |
 | Total lines: | 106462 |
-| **Branch coverage:** | 82.8% (36587 of 44163) |
-| Covered branches: | 36587 |
+| **Branch coverage:** | 82.8% (36586 of 44163) |
+| Covered branches: | 36586 |
 | Total branches: | 44163 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -989,8 +989,8 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.3%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
