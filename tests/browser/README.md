@@ -1345,6 +1345,13 @@ Two traps live in that, and the DemoHost has hit both:
 - MudBlazor 9's `MudSelect` takes the value on each arrow while its list is open, and
   Enter leaves the list open; Escape closes it. A test that presses Enter and waits for
   the list to go waits forever.
+- `toBeVisible` says nothing of where. MudBlazor opens a popover (a list, a menu, a picker) in one
+  task and writes its place and its z-index at the next animation frame; until then it stands where
+  MudBlazor's stylesheet parks every popover, 9999px above and left of the window, and Playwright
+  calls it visible there. A reading of where it is, or of what stands at one of its points, waits
+  for `toBeInViewport` first. WR-7's reading of what the pointer meets on the list met nothing, one
+  run in ten on the Server host (Hunt, 2026-11-12 and 2026-11-14, ADR-0451). A click needs no such
+  wait: Playwright presses only once its target is what the point meets.
 - A grid whose Focus has scrolled out of view — a `Stretch` grid narrowed under it, say —
   paints no Focus cell, and `aria-activedescendant` is then rightly empty (ADR-0033).
   Measure a row by its index, not by the Focus's.

@@ -625,7 +625,11 @@ test("WR-7 / ADR-0441: in a grid in a MudDialog, a Consumer popover's MudSelect 
     await page.locator('#dialog-book').click();
     await bookSelect(dialogGrid).click();
     const item = bookList(page).last();
-    await expect(item).toBeVisible();
+    // On the screen, not only visible. MudBlazor opens a list in one task and places it at the next animation
+    // frame: until then it stands where MudBlazor's stylesheet parks a popover, 9999px above and left of the
+    // window, and Playwright calls it visible there. The reading below is of the list as placed; taken between
+    // the two it met nothing at the item's centre (the Hunt, 2026-11-12 and 2026-11-14: ADR-0451).
+    await expect(item).toBeInViewport();
     // What the pointer meets at the item's centre is the item: nothing of the dialog lies over it.
     expect(await item.evaluate((element) => {
         const box = element.getBoundingClientRect();
