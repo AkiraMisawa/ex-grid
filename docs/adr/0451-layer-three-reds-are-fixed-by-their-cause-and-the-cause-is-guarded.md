@@ -308,6 +308,35 @@ what it never reached as skipped), says what Playwright reported outside any tes
 file took to the job's summary. A shard that outgrows its job ends red with its records kept and the file that took
 the time named, never cancelled with nothing said.
 
+## The nights of 2026-11-12 and 2026-11-14
+
+Each night one run of one test failed, in the same job, the Hunt's Server host on Chrome, shard 1: the tenth pass of
+`mud-app.spec.mjs`'s WR-7, the Consumer popover's `MudSelect` in a grid in a `MudDialog`, whose reading of what the
+pointer meets at the centre of the list's last item said it was not the item. Every other job was green both nights,
+and the night between ran green. One cause:
+
+1. **A list read where MudBlazor's stylesheet parks it, before MudBlazor's script placed it.** MudBlazor opens a
+   popover in one task, Blazor's render that gives it `mud-popover-open` and its contents, and writes its place and
+   its z-index at the next animation frame, asked for by the observer that hears the class. Until that frame the list
+   stands where MudBlazor's stylesheet puts every popover, `top: -9999px; left: -9999px`, at the stylesheet's z-index.
+   It has a box there and nothing hides it, so Playwright calls it visible, and the test read as soon as it was. With
+   the page's frames held (`holdFrames`) the reading is decided: the item's box at (-9999, -9891), nothing at its
+   centre, no place written. Let go, the list stood at (552, 472) with its z-index written, and the item was what the
+   pointer met. At its own pace the place came one frame, 10.5 ms, after the task that opened the list. With every
+   frame's work made 300 ms late, the reading as it was failed ten runs of ten with the nights' message, and the
+   reading below passed ten of ten. Not a product race: nothing of the grid's is between the two tasks, and a user
+   cannot press on a list the window does not show.
+
+   The test now reads once the item is in the viewport (`toBeInViewport`), which is the list as placed: MudBlazor
+   writes its place and its z-index in one task, so there is no list on the screen that is not yet above the dialog
+   unless it is drawn so, which is what WR-7 judges. No other test was found to meet it: the specs that name something
+   MudBlazor's provider draws (`.mud-popover-open`, `.mud-menu-item`) read its text or click it, and Playwright
+   clicks only once its target is what the point meets. No lint guards it, since the spec lint cannot tell a design
+   system's popover from the page's own markup; `tests/browser/README.md` names the trap.
+
+The traces were kept on CI and not read: the session that fixed this could not reach the artifact store, so the cause
+was decided by holding the frames, not seen in the nights' own records.
+
 ## Still open
 
 - **Cause 4**, the edit opened on a row its predecessor's write replaced, did not reproduce in 25 local runs
