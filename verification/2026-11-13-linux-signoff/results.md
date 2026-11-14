@@ -196,7 +196,9 @@ WR-10's runs at the Wrappers' MudBlazor floor. Every job, its conclusion and its
   on the first such message.
 - **The rest of the release run.** Its build with layers 1 and 2, the Script Core's layers 1 and 2, and the
   packages taken as a Consumer takes them all concluded `success` at X, and the run went on to publish
-  `0.3.0-rc.1` to nuget.org and npm (`jobs.md`, "The run's other jobs").
+  `0.3.0-rc.1` to nuget.org, at 00:19 UTC on 2026-11-14. Its job that publishes to npm waits on the `npm`
+  environment, which the user approves, and had not run when this record was closed at 00:26 UTC; the Docs
+  Site's job follows it (`jobs.md`, "The run's other jobs"). No criterion rests on either.
 
 ### The rows once checked by hand
 
