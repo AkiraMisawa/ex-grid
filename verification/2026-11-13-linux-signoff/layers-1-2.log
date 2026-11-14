@@ -1,0 +1,115 @@
+path "/home/claude/ex-grid/dotnet" does not contain a 'flake.nix', searching up
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/claude/ex-grid/dotnet/src/ExChart/ExChart.csproj (in 403 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExChart.Engine/ExChart.Engine.csproj (in 413 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj (in 411 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExBoard/ExBoard.csproj (in 326 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj (in 8 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet/ExSheet.csproj (in 8 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 11 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot/ExPivot.csproj (in 4 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 5 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid/ExGrid.csproj (in 3 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data/ExGrid.Data.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 4 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj (in 2 ms).
+  Restored /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 2 ms).
+  29 of 45 projects are up-to-date for restore.
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Xlsx.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll' [net10.0|x64]
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  ExGrid.Release -> /home/claude/ex-grid/dotnet/tools/release/ExGrid.Release/bin/Debug/net10.0/ExGrid.Release.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExGrid.Release.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll' [net10.0|x64]
+  ExChart.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 597, Skipped: 0, Total: 597, Duration: 7s 109ms - ExChart.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 151, Skipped: 0, Total: 151, Duration: 10s 759ms - ExGrid.Data.Xlsx.Tests.dll (net10.0|x64)
+  Passed! - Failed: 0, Passed: 594, Skipped: 2, Total: 596, Duration: 10s 808ms - ExGrid.Data.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll' [net10.0|x64]
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll' [net10.0|x64]
+  ExGrid.Docs.Generator -> /home/claude/ex-grid/dotnet/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Data.Arrow.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 215, Skipped: 0, Total: 215, Duration: 13s 154ms - ExGrid.Release.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 164, Skipped: 1, Total: 165, Duration: 1s 912ms - ExGrid.Data.Arrow.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll' [net10.0|x64]
+  ExSheet.Xlsx -> /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExSheet.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExPivot.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 688, Skipped: 4, Total: 692, Duration: 15s 535ms - ExPivot.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll' [net10.0|x64]
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 6302, Skipped: 3, Total: 6305, Duration: 15s 252ms - ExSheet.Engine.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll' [net10.0|x64]
+  ExSheet.Xlsx.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 669, Skipped: 0, Total: 669, Duration: 6s 508ms - ExSheet.Xlsx.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll' [net10.0|x64]
+  ExGrid.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 1902, Skipped: 0, Total: 1902, Duration: 11s 706ms - ExGrid.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll' [net10.0|x64]
+  ExGrid.DemoApi -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExGrid.DemoApi.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  ExGrid.Components -> /home/claude/ex-grid/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 323, Skipped: 0, Total: 323, Duration: 2s 164ms - ExGrid.Components.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll' [net10.0|x64]
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExGrid.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 1s 764ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+  ExChart.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExBoard -> /home/claude/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExPivot.Components -> /home/claude/ex-grid/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 23, Skipped: 0, Total: 23, Duration: 1s 395ms - ExPivot.Components.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll' [net10.0|x64]
+  ExPivot.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 830ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+  ExGrid.Docs.Generator.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 431, Skipped: 0, Total: 431, Duration: 3s 340ms - ExGrid.Docs.Generator.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll' [net10.0|x64]
+  ExBoard.Tests -> /home/claude/ex-grid/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll' [net10.0|x64]
+  ExSheet.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 1s 054ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 219, Skipped: 0, Total: 219, Duration: 1s 824ms - ExBoard.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 159, Skipped: 0, Total: 159, Duration: 19s 272ms - ExGrid.DemoApi.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll' [net10.0|x64]
+  ExSheet.Components -> /home/claude/ex-grid/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  ExChart.Components -> /home/claude/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]
+  Run tests: '/home/claude/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 475ms - ExChart.Components.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 38, Skipped: 0, Total: 38, Duration: 1s 889ms - ExSheet.Components.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/claude/ex-grid/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll' [net10.0|x64]

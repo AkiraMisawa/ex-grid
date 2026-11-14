@@ -1,0 +1,56 @@
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Docs.Generator -> /home/claude/ex-grid/dotnet/samples/ExGrid.Docs.Generator/bin/Debug/netstandard2.0/ExGrid.Docs.Generator.dll
+  ExGrid.Data -> /home/claude/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid.Release -> /home/claude/ex-grid/dotnet/tools/release/ExGrid.Release/bin/Debug/net10.0/ExGrid.Release.dll
+  ExSheet.Engine -> /home/claude/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExPivot.Engine -> /home/claude/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExChart.Engine -> /home/claude/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExGrid.Release.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Release.Tests/bin/Debug/net10.0/ExGrid.Release.Tests.dll
+  ExGrid.Data.Arrow -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid.Data.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Tests/bin/Debug/net10.0/ExGrid.Data.Tests.dll
+  ExPivot.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExPivot.Engine.Tests/bin/Debug/net10.0/ExPivot.Engine.Tests.dll
+  ExPivot.Oracle -> /home/claude/ex-grid/dotnet/tools/pivot-oracle/bin/Debug/net10.0/ExPivot.Oracle.dll
+  ExChart.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExChart.Engine.Tests/bin/Debug/net10.0/ExChart.Engine.Tests.dll
+  ExGrid.Data.Arrow.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Arrow.Tests/bin/Debug/net10.0/ExGrid.Data.Arrow.Tests.dll
+  ExGrid.Data.Xlsx -> /home/claude/ex-grid/dotnet/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExGrid -> /home/claude/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExSheet.Xlsx -> /home/claude/ex-grid/dotnet/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExGrid.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExSheet.Oracle -> /home/claude/ex-grid/dotnet/tools/sheet-oracle/bin/Debug/net10.0/ExSheet.Oracle.dll
+  ExGrid.Data.Xlsx.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Data.Xlsx.Tests/bin/Debug/net10.0/ExGrid.Data.Xlsx.Tests.dll
+  ExGrid.DemoApi -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+  ExGrid.Components -> /home/claude/ex-grid/dotnet/tests/ExGrid.Components/bin/Debug/net10.0/ExGrid.Components.dll
+  ExGrid.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Tests/bin/Debug/net10.0/ExGrid.Tests.dll
+  ExGrid.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  ExPivot -> /home/claude/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExSheet -> /home/claude/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExGrid.DemoApi.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.DemoApi.Tests/bin/Debug/net10.0/ExGrid.DemoApi.Tests.dll
+  ExSheet.Engine.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.Engine.Tests/bin/Debug/net10.0/ExSheet.Engine.Tests.dll
+  ExSheet.Xlsx.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.Xlsx.Tests/bin/Debug/net10.0/ExSheet.Xlsx.Tests.dll
+  ExSheet.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExSheet.Components -> /home/claude/ex-grid/dotnet/tests/ExSheet.Components/bin/Debug/net10.0/ExSheet.Components.Tests.dll
+  ExPivot.Components -> /home/claude/ex-grid/dotnet/tests/ExPivot.Components/bin/Debug/net10.0/ExPivot.Components.Tests.dll
+  ExPivot.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExPivot.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  ExGrid.Docs.Generator.Tests -> /home/claude/ex-grid/dotnet/tests/ExGrid.Docs.Generator.Tests/bin/Debug/net10.0/ExGrid.Docs.Generator.Tests.dll
+  ExChart -> /home/claude/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExChart.MudBlazor -> /home/claude/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExChart.Components -> /home/claude/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+  ExBoard -> /home/claude/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExChart.Showcases -> /home/claude/ex-grid/dotnet/samples/ExChart.Showcases/bin/Debug/net10.0/ExChart.Showcases.dll
+  ExBoard.Tests -> /home/claude/ex-grid/dotnet/tests/ExBoard.Tests/bin/Debug/net10.0/ExBoard.Tests.dll
+  ExSheet.MudBlazor.Tests -> /home/claude/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  ExGrid.DemoPages -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+  ExGrid.Docs -> /home/claude/ex-grid/dotnet/samples/ExGrid.Docs/bin/Debug/net10.0/ExGrid.Docs.dll
+  ExGrid.Docs (Blazor output) -> /home/claude/ex-grid/dotnet/samples/ExGrid.Docs/bin/Debug/net10.0/wwwroot
+  ExGrid.DemoHost -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot
+  ExGrid.DemoHost.Server -> /home/claude/ex-grid/dotnet/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGrid.DemoHost.Server.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:01:02.45

@@ -1,0 +1,29 @@
+$ grep -n "<TargetFramework" dotnet/src/*/*.csproj   # PRE-2
+dotnet/src/ExBoard/ExBoard.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart.Engine/ExChart.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExChart/ExChart.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data.Xlsx/ExGrid.Data.Xlsx.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.Data/ExGrid.Data.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj:6:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExGrid/ExGrid.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExPivot/ExPivot.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet.Xlsx/ExSheet.Xlsx.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+dotnet/src/ExSheet/ExSheet.csproj:5:    <TargetFramework>net10.0</TargetFramework>
+(exit 0)
+
+$ grep -rn --include=*.csproj --include=*.props --include=*.targets "<LangVersion" dotnet/src/ dotnet/Directory.Build.props   # PRE-2
+(exit 1)
+
+$ grep -n "projects" tests/browser/playwright.config.mjs   # PRE-5
+19:// What starts the hosts. By default the projects themselves, with `dotnet run`: the
+181:    projects: [
+(exit 0)
+
+$ git status --porcelain -- dotnet/src/   # PRE-6
+(exit 0)

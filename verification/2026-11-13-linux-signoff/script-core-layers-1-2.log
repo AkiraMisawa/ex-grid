@@ -1,0 +1,507 @@
+node v26.12.1, dotnet 10.0.203
+
+> ex-grid@0.0.0 typecheck
+> npm run typecheck -w packages
+
+
+> @ex-grid/data@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/data-xlsx@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/core@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/chart@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot-engine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/board@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/react@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/chart-react@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/mantine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/chart-mantine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/mui@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/chart-mui@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/blazor@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot-react@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot-mantine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot-mui@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/pivot-blazor@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/chart-blazor@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/board-react@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/board-blazor@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-engine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-xlsx@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-react@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-blazor@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-mantine@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @ex-grid/sheet-mui@0.0.0-dev typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> ex-grid@0.0.0 lint
+> node tools/lint/check.mjs
+
+
+> ex-grid@0.0.0 test
+> npm run test -w packages
+
+
+> @ex-grid/data@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/data
+
+
+ Test Files  11 passed (11)
+      Tests  411 passed (411)
+   Start at  02:51:06
+   Duration  3.51s (tests 76%, transform 14%, import 9%, worker 1%)
+
+    Isolate  11 workers spawned · ~125ms startup each (spawn + environment, per file)
+             at least ~332ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/data-xlsx@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/data-xlsx
+
+
+ Test Files  3 passed (3)
+      Tests  149 passed (149)
+   Start at  02:51:10
+   Duration  3.38s (tests 81%, transform 15%, import 3%)
+
+
+> @ex-grid/core@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/core
+
+
+ Test Files  102 passed (102)
+      Tests  2936 passed | 1 skipped (2937)
+   Start at  02:51:13
+   Duration  23.41s (tests 47%, environment 26%, import 17%, transform 9%, worker 1%)
+
+    Isolate  102 workers spawned · ~271ms startup each (spawn + environment, per file)
+             at least ~8.93s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/chart@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/chart
+
+
+ Test Files  7 passed (7)
+      Tests  690 passed (690)
+   Start at  02:51:37
+   Duration  4.12s (transform 62%, tests 17%, import 16%, environment 6%)
+
+    Isolate  7 workers spawned · ~235ms startup each (spawn + environment, per file)
+             at least ~314ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/pivot-engine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot-engine
+
+
+ Test Files  21 passed (21)
+      Tests  760 passed (760)
+   Start at  02:51:42
+   Duration  15.14s (tests 86%, import 8%, transform 7%)
+
+    Isolate  21 workers spawned · ~132ms startup each (spawn + environment, per file)
+             at least ~793ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/pivot@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot
+
+
+ Test Files  4 passed (4)
+      Tests  163 passed (163)
+   Start at  02:51:57
+   Duration  7.09s (transform 56%, tests 31%, import 8%, environment 5%)
+
+
+> @ex-grid/board@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/board
+
+
+ Test Files  8 passed (8)
+      Tests  220 passed (220)
+   Start at  02:52:05
+   Duration  4.82s (transform 67%, import 25%, tests 6%, environment 2%)
+
+    Isolate  8 workers spawned · ~154ms startup each (spawn + environment, per file)
+             at least ~257ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/react@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/react
+
+
+ Test Files  2 passed (2)
+      Tests  37 passed (37)
+   Start at  02:52:10
+   Duration  2.54s (transform 56%, tests 19%, import 13%, environment 11%)
+
+
+> @ex-grid/chart-react@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/chart-react
+
+
+ Test Files  4 passed (4)
+      Tests  14 passed (14)
+   Start at  02:52:13
+   Duration  3.16s (transform 62%, import 19%, environment 13%, tests 7%)
+
+
+> @ex-grid/mantine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/mantine
+
+
+ Test Files  4 passed (4)
+      Tests  163 passed (163)
+   Start at  02:52:16
+   Duration  3.33s (transform 59%, import 19%, tests 15%, environment 7%)
+
+
+> @ex-grid/chart-mantine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/chart-mantine
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  02:52:20
+   Duration  3.01s (transform 56%, import 23%, tests 13%, environment 7%)
+
+
+> @ex-grid/mui@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/mui
+
+
+ Test Files  3 passed (3)
+      Tests  188 passed (188)
+   Start at  02:52:23
+   Duration  4.09s (transform 53%, import 27%, tests 15%, environment 6%)
+
+
+> @ex-grid/chart-mui@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/chart-mui
+
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  02:52:28
+   Duration  3.64s (transform 47%, import 32%, tests 15%, environment 6%)
+
+
+> @ex-grid/blazor@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/blazor
+
+
+ Test Files  9 passed (9)
+      Tests  155 passed (155)
+   Start at  02:52:32
+   Duration  3.88s (transform 58%, tests 20%, import 13%, environment 8%, worker 1%)
+
+    Isolate  9 workers spawned · ~203ms startup each (spawn + environment, per file)
+             at least ~406ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+> @ex-grid/pivot-react@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot-react
+
+
+ Test Files  2 passed (2)
+      Tests  19 passed (19)
+   Start at  02:52:36
+   Duration  3.17s (transform 63%, tests 15%, import 14%, environment 8%)
+
+
+> @ex-grid/pivot-mantine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot-mantine
+
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  02:52:40
+   Duration  3.59s (transform 47%, tests 24%, import 22%, environment 7%)
+
+
+> @ex-grid/pivot-mui@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot-mui
+
+
+ Test Files  2 passed (2)
+      Tests  19 passed (19)
+   Start at  02:52:44
+   Duration  4.00s (transform 39%, import 31%, tests 25%, environment 6%)
+
+
+> @ex-grid/pivot-blazor@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/pivot-blazor
+
+
+ Test Files  2 passed (2)
+      Tests  33 passed (33)
+   Start at  02:52:48
+   Duration  3.06s (transform 82%, import 11%, environment 4%, tests 3%)
+
+
+> @ex-grid/chart-blazor@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/chart-blazor
+
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  02:52:51
+   Duration  2.76s (transform 57%, tests 25%, import 11%, environment 8%)
+
+
+> @ex-grid/board-react@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/board-react
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  02:52:55
+   Duration  3.21s (transform 69%, import 15%, tests 8%, environment 7%)
+
+
+> @ex-grid/board-blazor@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/board-blazor
+
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  02:52:58
+   Duration  3.09s (transform 75%, import 15%, environment 9%, tests 1%)
+
+
+> @ex-grid/sheet-engine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-engine
+
+
+ Test Files  12 passed (12)
+      Tests  7136 passed (7136)
+   Start at  02:53:02
+   Duration  12.29s (tests 79%, transform 12%, import 9%)
+
+
+> @ex-grid/sheet-xlsx@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-xlsx
+
+
+ Test Files  2 passed (2)
+      Tests  668 passed (668)
+   Start at  02:53:14
+   Duration  6.54s (tests 82%, transform 15%, import 3%)
+
+
+> @ex-grid/sheet@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet
+
+
+ Test Files  12 passed (12)
+      Tests  327 passed (327)
+   Start at  02:53:21
+   Duration  18.33s (tests 55%, transform 30%, import 12%, environment 2%)
+
+
+> @ex-grid/sheet-react@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-react
+
+
+ Test Files  3 passed (3)
+      Tests  16 passed (16)
+   Start at  02:53:40
+   Duration  3.79s (transform 55%, tests 24%, import 13%, environment 7%)
+
+
+> @ex-grid/sheet-blazor@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-blazor
+
+
+ Test Files  1 passed (1)
+      Tests  32 passed (32)
+   Start at  02:53:44
+   Duration  6.63s (tests 60%, transform 30%, import 6%, environment 4%)
+
+
+> @ex-grid/sheet-mantine@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-mantine
+
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)
+   Start at  02:53:51
+   Duration  4.93s (transform 45%, tests 33%, import 17%, environment 5%)
+
+
+> @ex-grid/sheet-mui@0.0.0-dev test
+> vitest run
+
+
+ RUN  v5.0.5 /home/claude/ex-grid/packages/sheet-mui
+
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  02:53:56
+   Duration  6.24s (tests 37%, transform 35%, import 23%, environment 4%)
+
