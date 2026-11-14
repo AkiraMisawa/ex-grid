@@ -1,0 +1,934 @@
+﻿2026-11-13T23:42:11.1415450Z Current runner version: '2.338.2'
+2026-11-13T23:42:11.1432277Z ##[group]Runner Image Provisioner
+2026-11-13T23:42:11.1433203Z Hosted Compute Agent
+2026-11-13T23:42:11.1433611Z Version: 20261103.629
+2026-11-13T23:42:11.1434115Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-13T23:42:11.1434742Z Build Date: 2026-11-03T17:26:59Z
+2026-11-13T23:42:11.1435247Z Worker ID: {2bd3cf64-0bc5-4ccc-a811-8917eb4dbe40}
+2026-11-13T23:42:11.1435755Z Region: us-east-1
+2026-11-13T23:42:11.1436131Z Cloud: AWS
+2026-11-13T23:42:11.1436530Z ##[endgroup]
+2026-11-13T23:42:11.1438011Z ##[group]Operating System
+2026-11-13T23:42:11.1438465Z Ubuntu
+2026-11-13T23:42:11.1438849Z 24.04.5
+2026-11-13T23:42:11.1439224Z LTS
+2026-11-13T23:42:11.1439600Z ##[endgroup]
+2026-11-13T23:42:11.1440003Z ##[group]Runner Image
+2026-11-13T23:42:11.1440452Z Image: ubuntu-24.04
+2026-11-13T23:42:11.1440860Z Version: 20261111.127.1
+2026-11-13T23:42:11.1441799Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.127/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-13T23:42:11.1443134Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.127
+2026-11-13T23:42:11.1444065Z ##[endgroup]
+2026-11-13T23:42:11.1444883Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T23:42:11.1446606Z Contents: read
+2026-11-13T23:42:11.1447041Z Metadata: read
+2026-11-13T23:42:11.1447421Z ##[endgroup]
+2026-11-13T23:42:11.1448987Z Secret source: Actions
+2026-11-13T23:42:11.1449624Z Cache mode: write
+2026-11-13T23:42:11.1450647Z Prepare workflow directory
+2026-11-13T23:42:11.1804500Z Prepare all required actions
+2026-11-13T23:42:11.1841467Z Getting action download info
+2026-11-13T23:42:11.3395466Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-13T23:42:12.7150798Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.3.0-rc.1 (fb7b872a841ff3dcdba72ec54a95091091c53cd3)
+2026-11-13T23:42:12.7154482Z ##[group] Inputs
+2026-11-13T23:42:12.7155188Z   version: 0.3.0-rc.1
+2026-11-13T23:42:12.7155860Z   long: true
+2026-11-13T23:42:12.7156322Z ##[endgroup]
+2026-11-13T23:42:12.7157084Z Complete job name: Every layer, and the packages / WR-10, the Wrappers' layer 2 at every MudBlazor of their range
+2026-11-13T23:42:12.7763276Z ##[group]Run actions/checkout@v7
+2026-11-13T23:42:12.7764134Z with:
+2026-11-13T23:42:12.7764580Z   repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:12.7767902Z   token: ***
+2026-11-13T23:42:12.7768363Z   ssh-strict: true
+2026-11-13T23:42:12.7768803Z   ssh-user: git
+2026-11-13T23:42:12.7769271Z   persist-credentials: true
+2026-11-13T23:42:12.7769753Z   clean: true
+2026-11-13T23:42:12.7770200Z   sparse-checkout-cone-mode: true
+2026-11-13T23:42:12.7770715Z   fetch-depth: 1
+2026-11-13T23:42:12.7771153Z   fetch-tags: false
+2026-11-13T23:42:12.7771594Z   show-progress: true
+2026-11-13T23:42:12.7772234Z   lfs: false
+2026-11-13T23:42:12.7772830Z   submodules: false
+2026-11-13T23:42:12.7773378Z   set-safe-directory: true
+2026-11-13T23:42:12.7773897Z   allow-unsafe-pr-checkout: false
+2026-11-13T23:42:12.7774606Z env:
+2026-11-13T23:42:12.7775023Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:12.7775498Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:12.7775939Z   LONG_RUN: true
+2026-11-13T23:42:12.7776465Z ##[endgroup]
+2026-11-13T23:42:15.0425416Z Syncing repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:15.0426732Z ##[group]Getting Git version info
+2026-11-13T23:42:15.0427204Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:15.0427831Z [command]/usr/bin/git version
+2026-11-13T23:42:15.3001178Z git version 2.56.1
+2026-11-13T23:42:15.3020122Z ##[endgroup]
+2026-11-13T23:42:15.3029973Z Temporarily overriding HOME='/home/runner/work/_temp/a20568a3-8523-41c1-9701-9a67aaac8820' before making global git config changes
+2026-11-13T23:42:15.3030876Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:42:15.3035176Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:15.3080834Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:15.3082849Z ##[group]Determining repository object format
+2026-11-13T23:42:15.3084152Z ##[endgroup]
+2026-11-13T23:42:15.3084583Z ##[group]Initializing the repository
+2026-11-13T23:42:15.3087108Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:15.3789960Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-13T23:42:15.3790764Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-13T23:42:15.3791239Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-13T23:42:15.3791635Z hint: call:
+2026-11-13T23:42:15.3791956Z hint:
+2026-11-13T23:42:15.3792351Z hint: 	git config --global init.defaultBranch <name>
+2026-11-13T23:42:15.3792972Z hint:
+2026-11-13T23:42:15.3793482Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-13T23:42:15.3793980Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-13T23:42:15.3794345Z hint:
+2026-11-13T23:42:15.3794574Z hint: 	git branch -m <name>
+2026-11-13T23:42:15.3794876Z hint:
+2026-11-13T23:42:15.3795186Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-13T23:42:15.3799038Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-11-13T23:42:15.3806546Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:15.3856032Z ##[endgroup]
+2026-11-13T23:42:15.3856547Z ##[group]Disabling automatic garbage collection
+2026-11-13T23:42:15.3858106Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-13T23:42:15.3878509Z ##[endgroup]
+2026-11-13T23:42:15.3879031Z ##[group]Setting up auth
+2026-11-13T23:42:15.3879392Z Removing SSH command configuration
+2026-11-13T23:42:15.3882526Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:42:15.3908504Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:42:15.7666915Z Removing HTTP extra header
+2026-11-13T23:42:15.7673503Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:42:15.7696703Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:42:15.7840908Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:42:15.7850600Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:42:15.7873059Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:42:15.8021076Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-13T23:42:15.8045596Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:42:15.8065197Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:42:15.8084966Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:42:15.8106682Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:42:15.8125123Z ##[endgroup]
+2026-11-13T23:42:15.8125730Z ##[group]Fetching the repository
+2026-11-13T23:42:15.8129598Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.3.0-rc.1:refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:18.5998959Z From https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:18.6001363Z  * [new tag]         v0.3.0-rc.1 -> v0.3.0-rc.1
+2026-11-13T23:42:18.6007040Z [command]/usr/bin/git tag --list v0.3.0-rc.1
+2026-11-13T23:42:18.6044180Z v0.3.0-rc.1
+2026-11-13T23:42:18.6049809Z [command]/usr/bin/git rev-parse refs/tags/v0.3.0-rc.1^{commit}
+2026-11-13T23:42:18.6069234Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:18.6071706Z ##[endgroup]
+2026-11-13T23:42:18.6072067Z ##[group]Determining the checkout info
+2026-11-13T23:42:18.6072561Z ##[endgroup]
+2026-11-13T23:42:18.6077052Z [command]/usr/bin/git sparse-checkout disable
+2026-11-13T23:42:18.6131654Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-13T23:42:18.6150898Z ##[group]Checking out the ref
+2026-11-13T23:42:18.6153919Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:19.6423785Z Updating files:  65% (10662/16225)
+2026-11-13T23:42:19.6667612Z Updating files:  66% (10709/16225)
+2026-11-13T23:42:19.6826455Z Updating files:  67% (10871/16225)
+2026-11-13T23:42:19.6961485Z Updating files:  68% (11033/16225)
+2026-11-13T23:42:19.7264697Z Updating files:  69% (11196/16225)
+2026-11-13T23:42:19.7348109Z Updating files:  70% (11358/16225)
+2026-11-13T23:42:19.7445363Z Updating files:  71% (11520/16225)
+2026-11-13T23:42:19.7517183Z Updating files:  72% (11682/16225)
+2026-11-13T23:42:19.7569736Z Updating files:  73% (11845/16225)
+2026-11-13T23:42:19.7668063Z Updating files:  74% (12007/16225)
+2026-11-13T23:42:19.7857614Z Updating files:  75% (12169/16225)
+2026-11-13T23:42:19.8218856Z Updating files:  76% (12331/16225)
+2026-11-13T23:42:19.8465527Z Updating files:  77% (12494/16225)
+2026-11-13T23:42:19.8663138Z Updating files:  78% (12656/16225)
+2026-11-13T23:42:19.8741725Z Updating files:  79% (12818/16225)
+2026-11-13T23:42:19.8900791Z Updating files:  80% (12980/16225)
+2026-11-13T23:42:19.9086923Z Updating files:  81% (13143/16225)
+2026-11-13T23:42:19.9150799Z Updating files:  82% (13305/16225)
+2026-11-13T23:42:19.9254715Z Updating files:  83% (13467/16225)
+2026-11-13T23:42:19.9305448Z Updating files:  84% (13629/16225)
+2026-11-13T23:42:19.9447368Z Updating files:  85% (13792/16225)
+2026-11-13T23:42:19.9983402Z Updating files:  86% (13954/16225)
+2026-11-13T23:42:20.0778497Z Updating files:  87% (14116/16225)
+2026-11-13T23:42:20.0975534Z Updating files:  88% (14278/16225)
+2026-11-13T23:42:20.1320206Z Updating files:  89% (14441/16225)
+2026-11-13T23:42:20.1480818Z Updating files:  90% (14603/16225)
+2026-11-13T23:42:20.2019087Z Updating files:  91% (14765/16225)
+2026-11-13T23:42:20.2280860Z Updating files:  92% (14927/16225)
+2026-11-13T23:42:20.2441401Z Updating files:  93% (15090/16225)
+2026-11-13T23:42:20.3002386Z Updating files:  94% (15252/16225)
+2026-11-13T23:42:20.3134624Z Updating files:  95% (15414/16225)
+2026-11-13T23:42:20.3436830Z Updating files:  96% (15576/16225)
+2026-11-13T23:42:20.3547634Z Updating files:  97% (15739/16225)
+2026-11-13T23:42:20.4264936Z Updating files:  98% (15901/16225)
+2026-11-13T23:42:20.4983901Z Updating files:  99% (16063/16225)
+2026-11-13T23:42:20.4984427Z Updating files: 100% (16225/16225)
+2026-11-13T23:42:20.4984760Z Updating files: 100% (16225/16225), done.
+2026-11-13T23:42:20.5109850Z Note: switching to 'refs/tags/v0.3.0-rc.1'.
+2026-11-13T23:42:20.5110261Z 
+2026-11-13T23:42:20.5110535Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-13T23:42:20.5111058Z changes and commit them, and you can discard any commits you make in this
+2026-11-13T23:42:20.5111573Z state without impacting any branches by switching back to a branch.
+2026-11-13T23:42:20.5111837Z 
+2026-11-13T23:42:20.5112061Z If you want to create a new branch to retain commits you create, you may
+2026-11-13T23:42:20.5112516Z do so (now or later) by using -c with the switch command. Example:
+2026-11-13T23:42:20.5113200Z 
+2026-11-13T23:42:20.5113368Z   git switch -c <new-branch-name>
+2026-11-13T23:42:20.5113590Z 
+2026-11-13T23:42:20.5113709Z Or undo this operation with:
+2026-11-13T23:42:20.5113946Z 
+2026-11-13T23:42:20.5114046Z   git switch -
+2026-11-13T23:42:20.5114290Z 
+2026-11-13T23:42:20.5114506Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-13T23:42:20.5114813Z 
+2026-11-13T23:42:20.5115038Z HEAD is now at fb7b872 Release notes for 0.3.0-rc.1 (#569)
+2026-11-13T23:42:20.5169754Z ##[endgroup]
+2026-11-13T23:42:20.5202453Z [command]/usr/bin/git log -1 --format=%H
+2026-11-13T23:42:20.5221709Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:20.5496371Z Prepare all required actions
+2026-11-13T23:42:20.5496890Z Getting action download info
+2026-11-13T23:42:20.6221481Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-13T23:42:20.7707910Z ##[group]Run ./.github/actions/dotnet
+2026-11-13T23:42:20.7708210Z with:
+2026-11-13T23:42:20.7708462Z   fallback: true
+2026-11-13T23:42:20.7708657Z env:
+2026-11-13T23:42:20.7708885Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:20.7709126Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:20.7709395Z   LONG_RUN: true
+2026-11-13T23:42:20.7709604Z ##[endgroup]
+2026-11-13T23:42:20.7758750Z ##[start-action display=global.json rolls forward across feature bands;id=__self.__run]
+2026-11-13T23:42:20.7789997Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:20.7790370Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:20.7790714Z [36;1mroll=$(jq -r '.sdk.rollForward' global.json)[0m
+2026-11-13T23:42:20.7791559Z [36;1m[[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }[0m
+2026-11-13T23:42:20.9583620Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:20.9583981Z env:
+2026-11-13T23:42:20.9584248Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:20.9584510Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:20.9584764Z   LONG_RUN: true
+2026-11-13T23:42:20.9585021Z ##[endgroup]
+2026-11-13T23:42:20.9685245Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=192]
+2026-11-13T23:42:20.9687891Z ##[start-action display=Run set -euo pipefail;id=__self.install]
+2026-11-13T23:42:20.9704566Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:20.9704882Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:20.9705190Z [36;1mfeed=https://builds.dotnet.microsoft.com/dotnet[0m
+2026-11-13T23:42:20.9705604Z [36;1mchannel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)[0m
+2026-11-13T23:42:20.9706079Z [36;1mversion=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')[0m
+2026-11-13T23:42:20.9706691Z [36;1m[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }[0m
+2026-11-13T23:42:20.9707158Z [36;1mscript="$RUNNER_TEMP/dotnet-install.sh"[0m
+2026-11-13T23:42:20.9707565Z [36;1mcurl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"[0m
+2026-11-13T23:42:20.9707990Z [36;1mbash "$script" --version "$version" --install-dir "$HOME/.dotnet"[0m
+2026-11-13T23:42:20.9708349Z [36;1mecho "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"[0m
+2026-11-13T23:42:20.9708671Z [36;1mecho "$HOME/.dotnet" >> "$GITHUB_PATH"[0m
+2026-11-13T23:42:20.9708967Z [36;1mecho "version=$version" >> "$GITHUB_OUTPUT"[0m
+2026-11-13T23:42:20.9733276Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:20.9733596Z env:
+2026-11-13T23:42:20.9733916Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:20.9734173Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:20.9734393Z   LONG_RUN: true
+2026-11-13T23:42:20.9734635Z ##[endgroup]
+2026-11-13T23:42:22.2642853Z dotnet-install: Attempting to download using primary link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-13T23:42:24.4623190Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz size is 243138887 bytes.
+2026-11-13T23:42:24.4624795Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-13T23:42:28.3930724Z dotnet-install: Downloaded file size is 243138887 bytes.
+2026-11-13T23:42:28.3931139Z dotnet-install: The remote and local file sizes are equal.
+2026-11-13T23:42:28.4993428Z dotnet-install: Installed version is 10.0.404
+2026-11-13T23:42:28.5039015Z dotnet-install: Adding to current process PATH: `/home/runner/.dotnet`. Note: This change will be visible only when sourcing script.
+2026-11-13T23:42:28.5039771Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-11-13T23:42:28.5040529Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-11-13T23:42:28.5041252Z dotnet-install: Installation finished successfully.
+2026-11-13T23:42:28.5066967Z ##[end-action id=__self.install;outcome=success;conclusion=success;duration_ms=7537]
+2026-11-13T23:42:28.5073499Z ##[start-action display=The SDK global.json resolves;id=__self.__run_2]
+2026-11-13T23:42:28.5088241Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:28.5088551Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:28.5088797Z [36;1mif [[ -z "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:28.5089090Z [36;1m  if [[ "$FALLBACK" != true ]]; then[0m
+2026-11-13T23:42:28.5089614Z [36;1m    echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."[0m
+2026-11-13T23:42:28.5090100Z [36;1m    exit 1[0m
+2026-11-13T23:42:28.5090339Z [36;1m  fi[0m
+2026-11-13T23:42:28.5090862Z [36;1m  resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }[0m
+2026-11-13T23:42:28.5091800Z [36;1m  echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."[0m
+2026-11-13T23:42:28.5092293Z [36;1melse[0m
+2026-11-13T23:42:28.5092529Z [36;1m  resolved=$(dotnet --version)[0m
+2026-11-13T23:42:28.5093303Z [36;1m  if [[ "$resolved" != "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:28.5093726Z [36;1m    echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."[0m
+2026-11-13T23:42:28.5094109Z [36;1m    exit 1[0m
+2026-11-13T23:42:28.5094317Z [36;1m  fi[0m
+2026-11-13T23:42:28.5094554Z [36;1mfi[0m
+2026-11-13T23:42:28.5094775Z [36;1mecho ".NET SDK $resolved"[0m
+2026-11-13T23:42:28.5095121Z [36;1m# The compiler's errors and warnings as annotations on the lines they name, as[0m
+2026-11-13T23:42:28.5095580Z [36;1m# actions/setup-dotnet registered them (its csc.json).[0m
+2026-11-13T23:42:28.5095939Z [36;1mecho "::add-matcher::$GITHUB_ACTION_PATH/csc.json"[0m
+2026-11-13T23:42:28.5125321Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:28.5125724Z env:
+2026-11-13T23:42:28.5125961Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:28.5126219Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:28.5126453Z   LONG_RUN: true
+2026-11-13T23:42:28.5126696Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:28.5127054Z   INSTALLED: 10.0.404
+2026-11-13T23:42:28.5127346Z   FALLBACK: true
+2026-11-13T23:42:28.5127561Z ##[endgroup]
+2026-11-13T23:42:28.5899860Z .NET SDK 10.0.404
+2026-11-13T23:42:28.5922526Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=84]
+2026-11-13T23:42:28.5925092Z ##[start-action display=Run actions/setup-node@v7;id=__self.__actions_setup-node]
+2026-11-13T23:42:28.5984717Z ##[group]Run actions/setup-node@v7
+2026-11-13T23:42:28.5984999Z with:
+2026-11-13T23:42:28.5985335Z   node-version-file: .node-version
+2026-11-13T23:42:28.5985598Z   cache: npm
+2026-11-13T23:42:28.5985864Z   cache-dependency-path: package-lock.json
+2026-11-13T23:42:28.5986173Z   check-latest: false
+2026-11-13T23:42:28.5988051Z   token: ***
+2026-11-13T23:42:28.5988275Z   package-manager-cache: true
+2026-11-13T23:42:28.5988528Z env:
+2026-11-13T23:42:28.5988772Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:28.5989078Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:28.5989334Z   LONG_RUN: true
+2026-11-13T23:42:28.5989577Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:28.5989819Z ##[endgroup]
+2026-11-13T23:42:28.6948136Z Node version file is not JSON file
+2026-11-13T23:42:28.6951333Z Node version file is not TOML file
+2026-11-13T23:42:28.6951943Z Resolved .node-version as 26.12.1
+2026-11-13T23:42:28.7241406Z Attempting to download 26.12.1...
+2026-11-13T23:42:29.2371531Z Acquiring 26.12.1 - x64 from https://github.com/actions/node-versions/releases/download/26.12.1-39618969937/node-26.12.1-linux-x64.tar.gz
+2026-11-13T23:42:29.6957578Z Extracting ...
+2026-11-13T23:42:29.7053502Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/1c0f25a0-ea69-4ae6-8719-2b160ced1cee -f /home/runner/work/_temp/51d53f21-b63d-4a19-896f-a2097a15e444
+2026-11-13T23:42:30.8494330Z Adding to the cache ...
+2026-11-13T23:42:31.8673763Z ##[group]Environment details
+2026-11-13T23:42:32.1636839Z node: v26.12.1
+2026-11-13T23:42:32.1637147Z npm: 11.20.0
+2026-11-13T23:42:32.1637453Z yarn: 1.22.22
+2026-11-13T23:42:32.1637986Z ##[endgroup]
+2026-11-13T23:42:32.1652016Z [command]/opt/hostedtoolcache/node/26.12.1/x64/bin/npm config get cache
+2026-11-13T23:42:32.2338712Z /home/runner/.npm
+2026-11-13T23:42:32.2906653Z Cache hit for: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:32.6948296Z Received 90168603 of 90168603 (100.0%), 242.9 MBs/sec
+2026-11-13T23:42:32.6949027Z Cache Size: ~86 MB (90168603 B)
+2026-11-13T23:42:32.6968403Z [command]/usr/bin/tar -xf /home/runner/work/_temp/10bc2909-f760-418b-8d9b-0f51d28b409b/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-11-13T23:42:32.7711933Z Cache restored successfully
+2026-11-13T23:42:32.7745401Z Cache restored from key: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:32.7864942Z ##[end-action id=__self.__actions_setup-node;outcome=success;conclusion=success;duration_ms=4193]
+2026-11-13T23:42:32.7867314Z ##[start-action display=The npm workspace's dependencies;id=__self.__run_3]
+2026-11-13T23:42:32.7883589Z ##[group]Run npm ci --no-audit --no-fund
+2026-11-13T23:42:32.7883901Z [36;1mnpm ci --no-audit --no-fund[0m
+2026-11-13T23:42:32.7910478Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:32.7910886Z env:
+2026-11-13T23:42:32.7911119Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:32.7911370Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:32.7911623Z   LONG_RUN: true
+2026-11-13T23:42:32.7911876Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:32.7912157Z ##[endgroup]
+2026-11-13T23:42:36.0831477Z 
+2026-11-13T23:42:36.0837920Z added 270 packages in 3s
+2026-11-13T23:42:36.1137857Z ##[end-action id=__self.__run_3;outcome=success;conclusion=success;duration_ms=3326]
+2026-11-13T23:42:36.1169566Z ##[group]Run versions=$(node tools/scripts/mudblazor-range.mjs "${RANGE}")
+2026-11-13T23:42:36.1170037Z [36;1mversions=$(node tools/scripts/mudblazor-range.mjs "${RANGE}")[0m
+2026-11-13T23:42:36.1170452Z [36;1mecho "${versions}" | tee -a "$GITHUB_STEP_SUMMARY"[0m
+2026-11-13T23:42:36.1170800Z [36;1mecho "versions=$(echo ${versions})" >> "$GITHUB_OUTPUT"[0m
+2026-11-13T23:42:36.1201371Z shell: /usr/bin/bash -e {0}
+2026-11-13T23:42:36.1201710Z env:
+2026-11-13T23:42:36.1201953Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:36.1202224Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:36.1202466Z   LONG_RUN: true
+2026-11-13T23:42:36.1202831Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:36.1203121Z   RANGE: [9.6.0,10.0.0)
+2026-11-13T23:42:36.1203507Z ##[endgroup]
+2026-11-13T23:42:36.3543498Z 9.6.0
+2026-11-13T23:42:36.3543876Z 9.7.0
+2026-11-13T23:42:36.3544133Z 9.8.0
+2026-11-13T23:42:36.3544331Z 9.9.0
+2026-11-13T23:42:36.3544566Z 9.10.0
+2026-11-13T23:42:36.3544773Z 9.11.0
+2026-11-13T23:42:36.3545184Z 9.12.0
+2026-11-13T23:42:36.3545481Z 9.13.0
+2026-11-13T23:42:36.3583770Z ##[group]Run for v in ${VERSIONS}; do
+2026-11-13T23:42:36.3584120Z [36;1mfor v in ${VERSIONS}; do[0m
+2026-11-13T23:42:36.3584611Z [36;1m  for t in ExGrid.MudBlazor.Tests ExSheet.MudBlazor.Tests ExPivot.MudBlazor.Tests ExChart.Components; do[0m
+2026-11-13T23:42:36.3585082Z [36;1m    echo "::group::${t}, MudBlazor ${v}"[0m
+2026-11-13T23:42:36.3585640Z [36;1m    sed -i "s|</Project>|  <ItemGroup><PackageReference Include=\"MudBlazor\" Version=\"${v}\" /></ItemGroup>\n</Project>|" tests/${t}/${t}.csproj[0m
+2026-11-13T23:42:36.3586134Z [36;1m    dotnet test tests/${t}[0m
+2026-11-13T23:42:36.3586541Z [36;1m    loaded=$(strings -el tests/${t}/bin/Debug/net10.0/MudBlazor.dll | grep -A1 '^FileVersion$' | tail -1)[0m
+2026-11-13T23:42:36.3587070Z [36;1m    git checkout -- tests/${t}/${t}.csproj[0m
+2026-11-13T23:42:36.3587476Z [36;1m    test "${loaded}" = "${v}.0" || { echo "::error::${t} loaded MudBlazor ${loaded}, not ${v}"; exit 1; }[0m
+2026-11-13T23:42:36.3588049Z [36;1m    echo "${t} at MudBlazor ${v}: passed, ${loaded} loaded" >> "$GITHUB_STEP_SUMMARY"[0m
+2026-11-13T23:42:36.3588417Z [36;1m    echo "::endgroup::"[0m
+2026-11-13T23:42:36.3588717Z [36;1m  done[0m
+2026-11-13T23:42:36.3588932Z [36;1mdone[0m
+2026-11-13T23:42:36.3615032Z shell: /usr/bin/bash -e {0}
+2026-11-13T23:42:36.3615339Z env:
+2026-11-13T23:42:36.3615672Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:36.3615930Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:36.3616159Z   LONG_RUN: true
+2026-11-13T23:42:36.3616421Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:36.3616755Z   VERSIONS: 9.6.0 9.7.0 9.8.0 9.9.0 9.10.0 9.11.0 9.12.0 9.13.0
+2026-11-13T23:42:36.3617063Z ##[endgroup]
+2026-11-13T23:42:36.3659688Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.6.0
+2026-11-13T23:42:36.9453829Z   Determining projects to restore...
+2026-11-13T23:42:38.2434966Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/ExGrid.Data.csproj (in 906 ms).
+2026-11-13T23:42:38.2471193Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/ExGrid.MudBlazor.csproj (in 910 ms).
+2026-11-13T23:42:38.2694191Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/ExGrid.csproj (in 925 ms).
+2026-11-13T23:42:38.8765086Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 1.58 sec).
+2026-11-13T23:42:39.7487417Z   ../../dotnet/src/ExGrid/wwwroot/ex-grid-core.min.js: 53054 bytes from 10 sources, version 509030be1b32
+2026-11-13T23:42:39.7500851Z   ../../dotnet/src/ExGrid/wwwroot/ex-grid-script.min.js: 703538 bytes from 173 sources, version acc5fd2ce079
+2026-11-13T23:42:43.1529399Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:42:47.0019442Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:42:48.3103852Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:42:48.8280647Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:42:48.8358303Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:42:50.0053270Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 994ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:42:50.0545132Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:42:50.5804160Z ##[endgroup]
+2026-11-13T23:42:50.5804809Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.6.0
+2026-11-13T23:42:50.9431545Z   Determining projects to restore...
+2026-11-13T23:42:52.2513051Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/ExChart.Engine.csproj (in 198 ms).
+2026-11-13T23:42:52.2514822Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/ExChart.MudBlazor.csproj (in 197 ms).
+2026-11-13T23:42:52.2516080Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/ExPivot.Engine.csproj (in 197 ms).
+2026-11-13T23:42:52.2584540Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/ExSheet.Engine.csproj (in 2 ms).
+2026-11-13T23:42:52.2674496Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj (in 6 ms).
+2026-11-13T23:42:52.2704322Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/ExPivot.csproj (in 13 ms).
+2026-11-13T23:42:52.2757063Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/ExSheet.csproj (in 5 ms).
+2026-11-13T23:42:52.2797675Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj (in 3 ms).
+2026-11-13T23:42:52.2818029Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/ExChart.csproj (in 2 ms).
+2026-11-13T23:42:52.5254787Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj (in 245 ms).
+2026-11-13T23:42:52.5264349Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/ExBoard.csproj (in 486 ms).
+2026-11-13T23:42:52.5422225Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 282 ms).
+2026-11-13T23:42:52.5455790Z   3 of 15 projects are up-to-date for restore.
+2026-11-13T23:42:53.3085706Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:42:58.0221545Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:42:58.7164391Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:00.1825561Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:43:01.1354980Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:43:01.7194580Z   ../../dotnet/src/ExChart/wwwroot/ex-chart-core.min.js: 186271 bytes from 48 sources, version 1f8eca285220
+2026-11-13T23:43:01.8853746Z   ../../dotnet/src/ExSheet/wwwroot/ex-sheet.min.js: 550231 bytes from 112 sources, version ae5cbfd3347c
+2026-11-13T23:43:06.3260077Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:06.5124295Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:43:06.5955585Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:43:06.6255670Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:06.9035931Z   ../../dotnet/src/ExPivot/wwwroot/ex-pivot.min.js: 453598 bytes from 83 sources, version 7f0e1fd8bce6
+2026-11-13T23:43:08.1854710Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:43:08.4238988Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:43:08.7668598Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:09.5995675Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:09.6370349Z   ../../dotnet/src/ExBoard/wwwroot/ex-board.min.js: 696896 bytes from 146 sources, version 7f17823f7171
+2026-11-13T23:43:11.2113576Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:43:11.6689051Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:43:11.6770994Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:12.5188553Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 672ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:12.5673086Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:12.6531954Z ##[endgroup]
+2026-11-13T23:43:12.6532605Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.6.0
+2026-11-13T23:43:13.0189945Z   Determining projects to restore...
+2026-11-13T23:43:14.0814581Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 198 ms).
+2026-11-13T23:43:14.0831972Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:43:14.9306154Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:15.2135298Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:15.4116562Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:15.9209624Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:15.9292870Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:16.1304830Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:16.7835210Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:43:16.8005691Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:17.9644485Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 826ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:18.0144657Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:18.1024644Z ##[endgroup]
+2026-11-13T23:43:18.1025525Z ##[group]ExChart.Components, MudBlazor 9.6.0
+2026-11-13T23:43:18.4799548Z   Determining projects to restore...
+2026-11-13T23:43:19.5073645Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 175 ms).
+2026-11-13T23:43:19.5091846Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:43:20.4159250Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:20.6145179Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:43:20.8415424Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:21.4769185Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:43:21.5044694Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:21.9017146Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:43:23.0425132Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:43:23.0646930Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:24.6693141Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 350ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:43:24.7125696Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:24.7984298Z ##[endgroup]
+2026-11-13T23:43:24.7985325Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.7.0
+2026-11-13T23:43:25.1616244Z   Determining projects to restore...
+2026-11-13T23:43:26.0701218Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 556 ms).
+2026-11-13T23:43:26.0735979Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:43:26.8312062Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:27.1635696Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:27.4555166Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:27.7589945Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:43:27.7782190Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:28.8519433Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 847ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:28.9015496Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:28.9853226Z ##[endgroup]
+2026-11-13T23:43:28.9854266Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.7.0
+2026-11-13T23:43:29.3393109Z   Determining projects to restore...
+2026-11-13T23:43:30.6577678Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 212 ms).
+2026-11-13T23:43:30.6598625Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:43:31.3944854Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:31.5014517Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:43:31.6549315Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:43:31.6784538Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:31.6924325Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:43:31.8843450Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:32.1474970Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:32.5525737Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:32.5934502Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:43:32.7110645Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:32.8025412Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:43:32.9262329Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:43:33.0377529Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:43:33.2615271Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:43:33.6085606Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:43:33.6353699Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:35.0065053Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 976ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:35.0604534Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:35.1464883Z ##[endgroup]
+2026-11-13T23:43:35.1466984Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.7.0
+2026-11-13T23:43:35.5007989Z   Determining projects to restore...
+2026-11-13T23:43:36.5714090Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 219 ms).
+2026-11-13T23:43:36.5731207Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:43:37.3913202Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:37.5514947Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:37.7280359Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:37.8964244Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:38.2976986Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:38.6533152Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:38.9356053Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:43:38.9607277Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:40.4179923Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 1s 013ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:40.4628683Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:40.5394692Z ##[endgroup]
+2026-11-13T23:43:40.5395207Z ##[group]ExChart.Components, MudBlazor 9.7.0
+2026-11-13T23:43:40.9121169Z   Determining projects to restore...
+2026-11-13T23:43:41.8257845Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 192 ms).
+2026-11-13T23:43:41.8275311Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:43:42.6239608Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:42.7833634Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:43:42.9754884Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:43.5650598Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:43:43.5916593Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:43.9364254Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:43:44.5480860Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:43:44.5696825Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:46.1510292Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 303ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:43:46.1924075Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:46.2693054Z ##[endgroup]
+2026-11-13T23:43:46.2693591Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.8.0
+2026-11-13T23:43:46.6139632Z   Determining projects to restore...
+2026-11-13T23:43:47.7048324Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 751 ms).
+2026-11-13T23:43:47.7073138Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:43:48.4675168Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:48.7886678Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:49.0592027Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:49.3167671Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:43:49.3331359Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:50.3262077Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 764ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:50.3728724Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:50.4489917Z ##[endgroup]
+2026-11-13T23:43:50.4490410Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.8.0
+2026-11-13T23:43:50.7996965Z   Determining projects to restore...
+2026-11-13T23:43:51.9436303Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 192 ms).
+2026-11-13T23:43:51.9453205Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:43:52.5839884Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:43:52.6246587Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:52.7617196Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:43:52.8028254Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:43:52.8209436Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:53.1153421Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:53.4715546Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:43:53.5468065Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:53.6183313Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:53.7298398Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:43:53.8854944Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:53.8990837Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:43:53.9149154Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:43:54.0272088Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:43:54.4165992Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:43:54.4623125Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:55.6445100Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 914ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:43:55.6875858Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:43:55.7672603Z ##[endgroup]
+2026-11-13T23:43:55.7673469Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.8.0
+2026-11-13T23:43:56.1162251Z   Determining projects to restore...
+2026-11-13T23:43:57.0815612Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 196 ms).
+2026-11-13T23:43:57.0833188Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:43:57.8531866Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:43:58.1430975Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:43:58.2756946Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:43:58.7205464Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:43:58.7208295Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:43:58.9140272Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:43:59.3133394Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:43:59.3374557Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:00.4759489Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 827ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:00.5255939Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:00.6023053Z ##[endgroup]
+2026-11-13T23:44:00.6023644Z ##[group]ExChart.Components, MudBlazor 9.8.0
+2026-11-13T23:44:00.9718762Z   Determining projects to restore...
+2026-11-13T23:44:01.8944657Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 196 ms).
+2026-11-13T23:44:01.8960694Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:02.6826151Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:02.8195955Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:03.0238430Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:03.5608331Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:03.5915799Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:03.9482180Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:04.6860504Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:44:04.7108080Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:06.1394867Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 177ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:44:06.1834516Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:06.2632563Z ##[endgroup]
+2026-11-13T23:44:06.2633694Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.9.0
+2026-11-13T23:44:06.6129708Z   Determining projects to restore...
+2026-11-13T23:44:07.4892010Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 532 ms).
+2026-11-13T23:44:07.4916948Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:44:08.1572883Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:08.4641611Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:08.7452080Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:09.0333959Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:44:09.0506140Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:10.0062012Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 728ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:10.0529489Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:10.1295556Z ##[endgroup]
+2026-11-13T23:44:10.1296138Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.9.0
+2026-11-13T23:44:10.4845995Z   Determining projects to restore...
+2026-11-13T23:44:11.6309682Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 199 ms).
+2026-11-13T23:44:11.6327019Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:44:12.2885037Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:12.3802610Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:44:12.4924790Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:44:12.5100738Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:12.5141564Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:12.7999474Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:13.1463108Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:13.2360787Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:13.3109606Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:13.3323099Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:44:13.4605638Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:13.5233833Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:44:13.5289528Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:13.6664235Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:44:13.9854871Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:44:14.0194972Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:15.2299365Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 964ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:15.2794622Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:15.3644594Z ##[endgroup]
+2026-11-13T23:44:15.3645309Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.9.0
+2026-11-13T23:44:15.7170087Z   Determining projects to restore...
+2026-11-13T23:44:16.6694852Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 167 ms).
+2026-11-13T23:44:16.6712832Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:17.4190734Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:17.7131043Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:17.8583777Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:18.2584470Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:18.2633598Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:18.4320295Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:18.8155376Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:44:18.8422924Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:19.8915756Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 670ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:19.9408540Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:20.0211539Z ##[endgroup]
+2026-11-13T23:44:20.0212210Z ##[group]ExChart.Components, MudBlazor 9.9.0
+2026-11-13T23:44:20.3914287Z   Determining projects to restore...
+2026-11-13T23:44:21.2997097Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 194 ms).
+2026-11-13T23:44:21.3013062Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:22.0837237Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:22.2191865Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:22.4624106Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:23.0185610Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:23.0356078Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:23.3788654Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:24.0466501Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:44:24.0727230Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:25.5260367Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 216ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:44:25.5684780Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:25.6462218Z ##[endgroup]
+2026-11-13T23:44:25.6462973Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.10.0
+2026-11-13T23:44:25.9912249Z   Determining projects to restore...
+2026-11-13T23:44:26.8494194Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 520 ms).
+2026-11-13T23:44:26.8517859Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:44:27.5086915Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:27.8286940Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:28.1046630Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:28.3954364Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:44:28.4124242Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:29.4962302Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 850ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:29.5426866Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:29.6167449Z ##[endgroup]
+2026-11-13T23:44:29.6167967Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.10.0
+2026-11-13T23:44:29.9649991Z   Determining projects to restore...
+2026-11-13T23:44:31.0832049Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 187 ms).
+2026-11-13T23:44:31.0848231Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:44:31.6884339Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:31.8227188Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:44:31.9099856Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:44:31.9366072Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:31.9870854Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:32.1941853Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:32.6662543Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:32.6664680Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:32.6825719Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:32.7688185Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:44:32.8592332Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:32.9993879Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:44:33.0144712Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:44:33.0284548Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:33.3903149Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:44:33.4195249Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:34.4615524Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 793ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:34.5146394Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:34.5975799Z ##[endgroup]
+2026-11-13T23:44:34.5976511Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.10.0
+2026-11-13T23:44:34.9474104Z   Determining projects to restore...
+2026-11-13T23:44:35.8993559Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 190 ms).
+2026-11-13T23:44:35.9010175Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:36.5909998Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:36.7480500Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:36.9205409Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:37.0845842Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:37.5156368Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:37.8750410Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:38.1400802Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:44:38.1621890Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:39.3118293Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 893ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:39.3640115Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:39.4403212Z ##[endgroup]
+2026-11-13T23:44:39.4403836Z ##[group]ExChart.Components, MudBlazor 9.10.0
+2026-11-13T23:44:39.8278566Z   Determining projects to restore...
+2026-11-13T23:44:40.7469187Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 193 ms).
+2026-11-13T23:44:40.7486060Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:41.5555803Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:41.6891565Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:41.9065107Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:42.4521974Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:42.4746407Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:42.8722403Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:43.6054869Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:44:43.6378968Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:45.0725359Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 177ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:44:45.1168150Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:45.1942813Z ##[endgroup]
+2026-11-13T23:44:45.1943515Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.11.0
+2026-11-13T23:44:45.5394043Z   Determining projects to restore...
+2026-11-13T23:44:46.3833140Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 507 ms).
+2026-11-13T23:44:46.3856503Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:44:47.0746914Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:47.3856906Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:47.6571092Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:47.9184574Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:44:47.9392546Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:48.9097157Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 746ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:48.9554626Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:49.0328009Z ##[endgroup]
+2026-11-13T23:44:49.0328760Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.11.0
+2026-11-13T23:44:49.3785300Z   Determining projects to restore...
+2026-11-13T23:44:50.5106765Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 168 ms).
+2026-11-13T23:44:50.5124244Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:44:51.1814216Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:51.2129300Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:44:51.4254026Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:44:51.4409988Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:44:51.5054648Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:51.5273757Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:51.7800138Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:44:51.9275175Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:52.0726519Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:44:52.0829719Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:52.1745099Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:44:52.2243598Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:44:52.2847556Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:52.6701180Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:44:52.9707075Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:44:53.0011167Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:54.3004937Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 929ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:54.3570678Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:54.4383115Z ##[endgroup]
+2026-11-13T23:44:54.4383740Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.11.0
+2026-11-13T23:44:54.7896152Z   Determining projects to restore...
+2026-11-13T23:44:55.7492472Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 192 ms).
+2026-11-13T23:44:55.7509216Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:44:56.4743148Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:44:56.7555361Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:44:56.8904425Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:44:57.2964723Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:44:57.3177685Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:44:57.4938709Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:44:57.8714343Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:44:57.8936433Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:59.0554655Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 852ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:44:59.1066124Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:44:59.1851569Z ##[endgroup]
+2026-11-13T23:44:59.1852200Z ##[group]ExChart.Components, MudBlazor 9.11.0
+2026-11-13T23:44:59.5568832Z   Determining projects to restore...
+2026-11-13T23:45:00.4676394Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 193 ms).
+2026-11-13T23:45:00.4694439Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:45:01.2512233Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:01.4212620Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:45:01.6201083Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:02.1414649Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:45:02.1629955Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:02.5124285Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:45:03.2188419Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:45:03.2381724Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:04.6756218Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 252ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:45:04.7183041Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:04.7944865Z ##[endgroup]
+2026-11-13T23:45:04.7945299Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.12.0
+2026-11-13T23:45:05.1443323Z   Determining projects to restore...
+2026-11-13T23:45:06.0085395Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 525 ms).
+2026-11-13T23:45:06.0110433Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:45:06.6923317Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:07.0013007Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:07.2752343Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:07.5457976Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:45:07.5634459Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:08.5107195Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 722ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:08.5575951Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:08.6324654Z ##[endgroup]
+2026-11-13T23:45:08.6325193Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.12.0
+2026-11-13T23:45:08.9816580Z   Determining projects to restore...
+2026-11-13T23:45:10.0993276Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 186 ms).
+2026-11-13T23:45:10.1010094Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:45:10.7305166Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:45:10.7596821Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:10.8626279Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:45:10.8688486Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:45:10.9536717Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:45:11.1315181Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:11.4167913Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:45:11.4974804Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:45:11.6324822Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:45:11.6931440Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:11.9908740Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:45:12.0488976Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:45:12.0643713Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:45:12.0844260Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:45:12.4524789Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:45:12.4703414Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:13.6865943Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 966ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:13.7336124Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:13.8167370Z ##[endgroup]
+2026-11-13T23:45:13.8167947Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.12.0
+2026-11-13T23:45:14.1628600Z   Determining projects to restore...
+2026-11-13T23:45:15.0955883Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 193 ms).
+2026-11-13T23:45:15.0974286Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:45:15.8001249Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:15.9580000Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:45:16.1417646Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:16.3556771Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:45:16.7276226Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:17.0990513Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:45:17.4405069Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:45:17.4711516Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:18.4619684Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 709ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:18.5130972Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:18.5981311Z ##[endgroup]
+2026-11-13T23:45:18.5981914Z ##[group]ExChart.Components, MudBlazor 9.12.0
+2026-11-13T23:45:18.9719510Z   Determining projects to restore...
+2026-11-13T23:45:19.8926480Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 196 ms).
+2026-11-13T23:45:19.8944885Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:45:20.6521853Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:20.7872459Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:45:21.0149949Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:21.5302119Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:45:21.5496536Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:21.8339111Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:45:22.5285586Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:45:22.5540517Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:23.8116077Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 022ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:45:23.8581100Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:23.9382819Z ##[endgroup]
+2026-11-13T23:45:23.9383526Z ##[group]ExGrid.MudBlazor.Tests, MudBlazor 9.13.0
+2026-11-13T23:45:24.2846302Z   Determining projects to restore...
+2026-11-13T23:45:25.1376174Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 511 ms).
+2026-11-13T23:45:25.1403291Z   3 of 4 projects are up-to-date for restore.
+2026-11-13T23:45:25.8091414Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:26.1191092Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:26.3968092Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:26.6720166Z   ExGrid.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+2026-11-13T23:45:26.6883213Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:27.5842885Z   Passed! - Failed: 0, Passed: 197, Skipped: 0, Total: 197, Duration: 673ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:27.6282842Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:27.7042311Z ##[endgroup]
+2026-11-13T23:45:27.7042969Z ##[group]ExSheet.MudBlazor.Tests, MudBlazor 9.13.0
+2026-11-13T23:45:28.0476127Z   Determining projects to restore...
+2026-11-13T23:45:29.1575272Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 188 ms).
+2026-11-13T23:45:29.1590901Z   14 of 15 projects are up-to-date for restore.
+2026-11-13T23:45:29.7443152Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:29.7674088Z   ExSheet.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+2026-11-13T23:45:29.8215588Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:45:29.8910560Z   ExGrid.Data.Arrow -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+2026-11-13T23:45:29.8983545Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:45:30.1515007Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:30.5261088Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:45:30.6162114Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:45:30.6334118Z   ExSheet -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+2026-11-13T23:45:30.9007405Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:31.1187080Z   ExBoard -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+2026-11-13T23:45:31.1976135Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:45:31.2124940Z   ExSheet.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+2026-11-13T23:45:31.2637752Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:45:31.6736998Z   ExSheet.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+2026-11-13T23:45:31.6924965Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:32.7486710Z   Passed! - Failed: 0, Passed: 21, Skipped: 0, Total: 21, Duration: 814ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:32.7775229Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:32.8540281Z ##[endgroup]
+2026-11-13T23:45:32.8540934Z ##[group]ExPivot.MudBlazor.Tests, MudBlazor 9.13.0
+2026-11-13T23:45:33.1954017Z   Determining projects to restore...
+2026-11-13T23:45:34.1252298Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 188 ms).
+2026-11-13T23:45:34.1270340Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:45:34.8140713Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:35.0884358Z   ExPivot.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+2026-11-13T23:45:35.2165871Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:35.6424843Z   ExPivot -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+2026-11-13T23:45:35.6595665Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:35.8564475Z   ExPivot.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+2026-11-13T23:45:36.2588048Z   ExPivot.MudBlazor.Tests -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+2026-11-13T23:45:36.2805702Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:37.4387051Z   Passed! - Failed: 0, Passed: 11, Skipped: 0, Total: 11, Duration: 908ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+2026-11-13T23:45:37.4874316Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:37.5645348Z ##[endgroup]
+2026-11-13T23:45:37.5646088Z ##[group]ExChart.Components, MudBlazor 9.13.0
+2026-11-13T23:45:37.9285267Z   Determining projects to restore...
+2026-11-13T23:45:38.8523344Z   Restored /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/ExChart.Components.csproj (in 195 ms).
+2026-11-13T23:45:38.8539900Z   6 of 7 projects are up-to-date for restore.
+2026-11-13T23:45:39.6277678Z   ExGrid.Data -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+2026-11-13T23:45:39.7593298Z   ExChart.Engine -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+2026-11-13T23:45:39.9994448Z   ExGrid -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+2026-11-13T23:45:40.5615427Z   ExChart -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart/bin/Debug/net10.0/ExChart.dll
+2026-11-13T23:45:40.5815387Z   ExGrid.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+2026-11-13T23:45:40.9410405Z   ExChart.MudBlazor -> /home/runner/work/ex-grid/ex-grid/dotnet/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+2026-11-13T23:45:41.5505118Z   ExChart.Components -> /home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll
+2026-11-13T23:45:41.5738219Z   Run tests: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:43.0317775Z   Passed! - Failed: 0, Passed: 53, Skipped: 0, Total: 53, Duration: 1s 216ms - ExChart.Components.Tests.dll (net10.0|x64)
+2026-11-13T23:45:43.0751223Z   Tests succeeded: '/home/runner/work/ex-grid/ex-grid/dotnet/tests/ExChart.Components/bin/Debug/net10.0/ExChart.Components.Tests.dll' [net10.0|x64]
+2026-11-13T23:45:43.1536309Z ##[endgroup]
+2026-11-13T23:45:43.1630768Z Post job cleanup.
+2026-11-13T23:45:43.1634693Z ##[start-action display=Run actions/setup-node@v7;id=__07990c45-4122-4d08-930c-ad435ef5db75.__actions_setup-node]
+2026-11-13T23:45:43.1668790Z Post job cleanup.
+2026-11-13T23:45:43.2478421Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54, not saving cache.
+2026-11-13T23:45:43.2509165Z ##[end-action id=__07990c45-4122-4d08-930c-ad435ef5db75.__actions_setup-node;outcome=success;conclusion=success;duration_ms=87]
+2026-11-13T23:45:43.2563068Z Post job cleanup.
+2026-11-13T23:45:43.3307768Z [command]/usr/bin/git version
+2026-11-13T23:45:43.3308303Z git version 2.56.1
+2026-11-13T23:45:43.3311588Z Temporarily overriding HOME='/home/runner/work/_temp/f50ab36f-fb6a-4dc1-9dcf-3d8ab65ce0d3' before making global git config changes
+2026-11-13T23:45:43.3312369Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:45:43.3313296Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:45:43.3314120Z Removing SSH command configuration
+2026-11-13T23:45:43.3314631Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:45:43.3316001Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:45:43.3453063Z Removing HTTP extra header
+2026-11-13T23:45:43.3456106Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:45:43.3479519Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:45:43.3636576Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:45:43.3640373Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:45:43.3657555Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:45:43.3658139Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:45:43.3658588Z includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:45:43.3659018Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:45:43.3662251Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:45:43.3678849Z /home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:45:43.3685497Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-da494750\-a528\-4123\-89d5\-da0d9e60950d\.config
+2026-11-13T23:45:43.3707605Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:45:43.3725521Z /home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:45:43.3731904Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-da494750\-a528\-4123\-89d5\-da0d9e60950d\.config
+2026-11-13T23:45:43.3753971Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:45:43.3769886Z /github/runner_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:45:43.3775198Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-da494750\-a528\-4123\-89d5\-da0d9e60950d\.config
+2026-11-13T23:45:43.3796857Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:45:43.3812526Z /github/runner_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config
+2026-11-13T23:45:43.3816779Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-da494750\-a528\-4123\-89d5\-da0d9e60950d\.config
+2026-11-13T23:45:43.3838333Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:45:43.3996644Z Removing credentials config '/home/runner/work/_temp/git-credentials-da494750-a528-4123-89d5-da0d9e60950d.config'
+2026-11-13T23:45:43.4095982Z Cleaning up orphan processes
+2026-11-13T23:45:43.4286612Z Terminate orphan process: pid (2709) (VBCSCompiler)

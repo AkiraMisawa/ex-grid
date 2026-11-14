@@ -1,0 +1,1278 @@
+﻿2026-11-13T23:42:02.7261870Z Current runner version: '2.338.2'
+2026-11-13T23:42:02.7282970Z ##[group]Runner Image Provisioner
+2026-11-13T23:42:02.7283710Z Hosted Compute Agent
+2026-11-13T23:42:02.7284180Z Version: 20261028.624
+2026-11-13T23:42:02.7284650Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-13T23:42:02.7285190Z Build Date: 2026-10-28T21:51:42Z
+2026-11-13T23:42:02.7285620Z Worker ID: {14c573d7-4f57-4ee5-8250-21a481a17597}
+2026-11-13T23:42:02.7286190Z Region: westus
+2026-11-13T23:42:02.7286550Z Cloud: MacCloud
+2026-11-13T23:42:02.7287000Z ##[endgroup]
+2026-11-13T23:42:02.7288070Z ##[group]Operating System
+2026-11-13T23:42:02.7288520Z macOS
+2026-11-13T23:42:02.7288860Z 26.7.2
+2026-11-13T23:42:02.7289180Z 25G332
+2026-11-13T23:42:02.7289500Z ##[endgroup]
+2026-11-13T23:42:02.7289990Z ##[group]Runner Image
+2026-11-13T23:42:02.7290380Z Image: macos-26-arm64
+2026-11-13T23:42:02.7290750Z Version: 20261102.0473.1
+2026-11-13T23:42:02.7291680Z Included Software: https://github.com/actions/runner-images/blob/macos-26-arm64/20261102.0473/images/macos/macos-26-arm64-Readme.md
+2026-11-13T23:42:02.7292760Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-26-arm64%2F20261102.0473
+2026-11-13T23:42:02.7294730Z ##[endgroup]
+2026-11-13T23:42:02.7295870Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T23:42:02.7297360Z Contents: read
+2026-11-13T23:42:02.7298380Z Metadata: read
+2026-11-13T23:42:02.7299470Z ##[endgroup]
+2026-11-13T23:42:02.7301380Z Secret source: Actions
+2026-11-13T23:42:02.7301940Z Cache mode: write
+2026-11-13T23:42:02.7302410Z Prepare workflow directory
+2026-11-13T23:42:02.7715080Z Prepare all required actions
+2026-11-13T23:42:02.7751510Z Getting action download info
+2026-11-13T23:42:03.1791410Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-13T23:42:03.5016730Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-11-13T23:42:03.9793070Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-13T23:42:04.1567620Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.3.0-rc.1 (fb7b872a841ff3dcdba72ec54a95091091c53cd3)
+2026-11-13T23:42:04.1571160Z ##[group] Inputs
+2026-11-13T23:42:04.1571520Z   version: 0.3.0-rc.1
+2026-11-13T23:42:04.1572120Z   long: true
+2026-11-13T23:42:04.1572480Z ##[endgroup]
+2026-11-13T23:42:04.1573040Z Complete job name: Every layer, and the packages / The macOS desktop rows (KB-3, FN-12e)
+2026-11-13T23:42:04.2098680Z ##[group]Run actions/checkout@v7
+2026-11-13T23:42:04.2099280Z with:
+2026-11-13T23:42:04.2099620Z   repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:04.2102570Z   token: ***
+2026-11-13T23:42:04.2103190Z   ssh-strict: true
+2026-11-13T23:42:04.2103530Z   ssh-user: git
+2026-11-13T23:42:04.2103980Z   persist-credentials: true
+2026-11-13T23:42:04.2104350Z   clean: true
+2026-11-13T23:42:04.2104710Z   sparse-checkout-cone-mode: true
+2026-11-13T23:42:04.2105100Z   fetch-depth: 1
+2026-11-13T23:42:04.2105580Z   fetch-tags: false
+2026-11-13T23:42:04.2106050Z   show-progress: true
+2026-11-13T23:42:04.2106400Z   lfs: false
+2026-11-13T23:42:04.2106740Z   submodules: false
+2026-11-13T23:42:04.2123950Z   set-safe-directory: true
+2026-11-13T23:42:04.2124490Z   allow-unsafe-pr-checkout: false
+2026-11-13T23:42:04.2125540Z env:
+2026-11-13T23:42:04.2125920Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:04.2126340Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:04.2126760Z   LONG_RUN: true
+2026-11-13T23:42:04.2127230Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:04.2128020Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:04.2128660Z ##[endgroup]
+2026-11-13T23:42:04.6823660Z Syncing repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:04.6825500Z ##[group]Getting Git version info
+2026-11-13T23:42:04.6826130Z Working directory is '/Users/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:04.6837290Z [command]/opt/homebrew/bin/git version
+2026-11-13T23:42:04.7376480Z git version 2.56.0
+2026-11-13T23:42:04.7388020Z ##[endgroup]
+2026-11-13T23:42:04.7394810Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/0489d7e5-1473-4fb0-a85c-e64f7f9de280/.gitconfig'
+2026-11-13T23:42:04.7400110Z Temporarily overriding HOME='/Users/runner/work/_temp/0489d7e5-1473-4fb0-a85c-e64f7f9de280' before making global git config changes
+2026-11-13T23:42:04.7401380Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:42:04.7404590Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:04.7522120Z Deleting the contents of '/Users/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:04.7524590Z ##[group]Determining repository object format
+2026-11-13T23:42:04.7525430Z ##[endgroup]
+2026-11-13T23:42:04.7525980Z ##[group]Initializing the repository
+2026-11-13T23:42:04.7529060Z [command]/opt/homebrew/bin/git init /Users/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:04.7741480Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-13T23:42:04.7742900Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-13T23:42:04.7744070Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-13T23:42:04.7744780Z hint: call:
+2026-11-13T23:42:04.7745110Z hint:
+2026-11-13T23:42:04.7745730Z hint: 	git config --global init.defaultBranch <name>
+2026-11-13T23:42:04.7746480Z hint:
+2026-11-13T23:42:04.7747060Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-13T23:42:04.7747750Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-13T23:42:04.7748370Z hint:
+2026-11-13T23:42:04.7748880Z hint: 	git branch -m <name>
+2026-11-13T23:42:04.7749330Z hint:
+2026-11-13T23:42:04.7749820Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-13T23:42:04.7754870Z Initialized empty Git repository in /Users/runner/work/ex-grid/ex-grid/.git/
+2026-11-13T23:42:04.7764340Z [command]/opt/homebrew/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:04.7879020Z ##[endgroup]
+2026-11-13T23:42:04.7879910Z ##[group]Disabling automatic garbage collection
+2026-11-13T23:42:04.7880700Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-11-13T23:42:04.7942820Z ##[endgroup]
+2026-11-13T23:42:04.7943430Z ##[group]Setting up auth
+2026-11-13T23:42:04.7944530Z Removing SSH command configuration
+2026-11-13T23:42:04.7947660Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:42:04.8015810Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:42:04.9085970Z Removing HTTP extra header
+2026-11-13T23:42:04.9086780Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:42:04.9154030Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:42:05.0013610Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:42:05.0021480Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:42:05.0088150Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:42:05.1358470Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-13T23:42:05.1449980Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/ex-grid/ex-grid/.git.path /Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:42:05.1524020Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:42:05.1603300Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:42:05.1681410Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:42:05.1751980Z ##[endgroup]
+2026-11-13T23:42:05.1753040Z ##[group]Fetching the repository
+2026-11-13T23:42:05.1756580Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.3.0-rc.1:refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:12.7504930Z From https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:12.7508360Z  * [new tag]         v0.3.0-rc.1 -> v0.3.0-rc.1
+2026-11-13T23:42:12.7533020Z [command]/opt/homebrew/bin/git tag --list v0.3.0-rc.1
+2026-11-13T23:42:12.7638780Z v0.3.0-rc.1
+2026-11-13T23:42:12.7650810Z [command]/opt/homebrew/bin/git rev-parse refs/tags/v0.3.0-rc.1^{commit}
+2026-11-13T23:42:12.7768120Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:12.7774380Z ##[endgroup]
+2026-11-13T23:42:12.7775280Z ##[group]Determining the checkout info
+2026-11-13T23:42:12.7775890Z ##[endgroup]
+2026-11-13T23:42:12.7782650Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-11-13T23:42:12.7912400Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-13T23:42:12.8022460Z ##[group]Checking out the ref
+2026-11-13T23:42:12.8024580Z [command]/opt/homebrew/bin/git checkout --progress --force refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:13.9415600Z Updating files:  32% (5206/16225)
+2026-11-13T23:42:14.0247030Z Updating files:  33% (5355/16225)
+2026-11-13T23:42:14.0888040Z Updating files:  34% (5517/16225)
+2026-11-13T23:42:14.1416970Z Updating files:  35% (5679/16225)
+2026-11-13T23:42:14.1904090Z Updating files:  36% (5841/16225)
+2026-11-13T23:42:14.2653280Z Updating files:  37% (6004/16225)
+2026-11-13T23:42:14.3052410Z Updating files:  38% (6166/16225)
+2026-11-13T23:42:14.3321170Z Updating files:  39% (6328/16225)
+2026-11-13T23:42:14.3593770Z Updating files:  40% (6490/16225)
+2026-11-13T23:42:14.3906300Z Updating files:  41% (6653/16225)
+2026-11-13T23:42:14.4213990Z Updating files:  42% (6815/16225)
+2026-11-13T23:42:14.4798640Z Updating files:  43% (6977/16225)
+2026-11-13T23:42:14.5299430Z Updating files:  44% (7139/16225)
+2026-11-13T23:42:14.5898010Z Updating files:  45% (7302/16225)
+2026-11-13T23:42:14.6448980Z Updating files:  46% (7464/16225)
+2026-11-13T23:42:14.7020720Z Updating files:  47% (7626/16225)
+2026-11-13T23:42:14.7502760Z Updating files:  48% (7788/16225)
+2026-11-13T23:42:14.7881120Z Updating files:  49% (7951/16225)
+2026-11-13T23:42:14.8261700Z Updating files:  50% (8113/16225)
+2026-11-13T23:42:14.8300240Z Updating files:  51% (8275/16225)
+2026-11-13T23:42:14.8887310Z Updating files:  51% (8291/16225)
+2026-11-13T23:42:14.9703940Z Updating files:  52% (8437/16225)
+2026-11-13T23:42:15.0409570Z Updating files:  53% (8600/16225)
+2026-11-13T23:42:15.1150810Z Updating files:  54% (8762/16225)
+2026-11-13T23:42:15.3008580Z Updating files:  55% (8924/16225)
+2026-11-13T23:42:15.3388170Z Updating files:  56% (9086/16225)
+2026-11-13T23:42:15.3820770Z Updating files:  57% (9249/16225)
+2026-11-13T23:42:15.4200330Z Updating files:  58% (9411/16225)
+2026-11-13T23:42:15.4500690Z Updating files:  59% (9573/16225)
+2026-11-13T23:42:15.4762860Z Updating files:  60% (9735/16225)
+2026-11-13T23:42:15.4971250Z Updating files:  61% (9898/16225)
+2026-11-13T23:42:15.5219620Z Updating files:  62% (10060/16225)
+2026-11-13T23:42:15.5468020Z Updating files:  63% (10222/16225)
+2026-11-13T23:42:15.5762230Z Updating files:  64% (10384/16225)
+2026-11-13T23:42:15.7135660Z Updating files:  65% (10547/16225)
+2026-11-13T23:42:15.7721090Z Updating files:  66% (10709/16225)
+2026-11-13T23:42:15.8288800Z Updating files:  67% (10871/16225)
+2026-11-13T23:42:15.8295240Z Updating files:  68% (11033/16225)
+2026-11-13T23:42:15.8685220Z Updating files:  68% (11035/16225)
+2026-11-13T23:42:15.9515470Z Updating files:  69% (11196/16225)
+2026-11-13T23:42:15.9848780Z Updating files:  70% (11358/16225)
+2026-11-13T23:42:16.0109550Z Updating files:  71% (11520/16225)
+2026-11-13T23:42:16.0512560Z Updating files:  72% (11682/16225)
+2026-11-13T23:42:16.0800880Z Updating files:  73% (11845/16225)
+2026-11-13T23:42:16.1294650Z Updating files:  74% (12007/16225)
+2026-11-13T23:42:16.2552650Z Updating files:  75% (12169/16225)
+2026-11-13T23:42:16.3517910Z Updating files:  76% (12331/16225)
+2026-11-13T23:42:16.4123350Z Updating files:  77% (12494/16225)
+2026-11-13T23:42:16.4744200Z Updating files:  78% (12656/16225)
+2026-11-13T23:42:16.5127970Z Updating files:  79% (12818/16225)
+2026-11-13T23:42:16.5630610Z Updating files:  80% (12980/16225)
+2026-11-13T23:42:16.6278100Z Updating files:  81% (13143/16225)
+2026-11-13T23:42:16.6763210Z Updating files:  82% (13305/16225)
+2026-11-13T23:42:16.7364350Z Updating files:  83% (13467/16225)
+2026-11-13T23:42:16.7729860Z Updating files:  84% (13629/16225)
+2026-11-13T23:42:16.8178770Z Updating files:  85% (13792/16225)
+2026-11-13T23:42:16.8297130Z Updating files:  86% (13954/16225)
+2026-11-13T23:42:16.9540650Z Updating files:  86% (13990/16225)
+2026-11-13T23:42:17.1951270Z Updating files:  87% (14116/16225)
+2026-11-13T23:42:17.3111200Z Updating files:  88% (14278/16225)
+2026-11-13T23:42:17.3944520Z Updating files:  89% (14441/16225)
+2026-11-13T23:42:17.4635880Z Updating files:  90% (14603/16225)
+2026-11-13T23:42:17.5752600Z Updating files:  91% (14765/16225)
+2026-11-13T23:42:17.6508480Z Updating files:  92% (14927/16225)
+2026-11-13T23:42:17.7199300Z Updating files:  93% (15090/16225)
+2026-11-13T23:42:17.8075700Z Updating files:  94% (15252/16225)
+2026-11-13T23:42:17.8297790Z Updating files:  95% (15414/16225)
+2026-11-13T23:42:17.8644390Z Updating files:  95% (15480/16225)
+2026-11-13T23:42:17.9340940Z Updating files:  96% (15576/16225)
+2026-11-13T23:42:17.9709150Z Updating files:  97% (15739/16225)
+2026-11-13T23:42:18.0972020Z Updating files:  98% (15901/16225)
+2026-11-13T23:42:18.2054480Z Updating files:  99% (16063/16225)
+2026-11-13T23:42:18.2063800Z Updating files: 100% (16225/16225)
+2026-11-13T23:42:18.2064790Z Updating files: 100% (16225/16225), done.
+2026-11-13T23:42:18.2423000Z HEAD is now at fb7b872 Release notes for 0.3.0-rc.1 (#569)
+2026-11-13T23:42:18.2561410Z ##[endgroup]
+2026-11-13T23:42:18.2868260Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-11-13T23:42:18.3001100Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:18.3591950Z Prepare all required actions
+2026-11-13T23:42:18.3592530Z Getting action download info
+2026-11-13T23:42:18.4819790Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-13T23:42:18.6647330Z ##[group]Run ./.github/actions/dotnet
+2026-11-13T23:42:18.6648080Z with:
+2026-11-13T23:42:18.6648260Z   fallback: true
+2026-11-13T23:42:18.6648530Z env:
+2026-11-13T23:42:18.6648700Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:18.6648950Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:18.6663500Z   LONG_RUN: true
+2026-11-13T23:42:18.6663860Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:18.6664500Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:18.6664980Z ##[endgroup]
+2026-11-13T23:42:18.6755930Z ##[start-action display=global.json rolls forward across feature bands;id=__self.__run]
+2026-11-13T23:42:18.6844340Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:18.6844670Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:18.6844920Z [36;1mroll=$(jq -r '.sdk.rollForward' global.json)[0m
+2026-11-13T23:42:18.6845680Z [36;1m[[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }[0m
+2026-11-13T23:42:18.6947040Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:18.6947350Z env:
+2026-11-13T23:42:18.6947520Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:18.6947750Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:18.6947920Z   LONG_RUN: true
+2026-11-13T23:42:18.6948150Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:18.6948700Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:18.6949150Z ##[endgroup]
+2026-11-13T23:42:18.7934450Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=117]
+2026-11-13T23:42:18.7937420Z ##[start-action display=Run set -euo pipefail;id=__self.install]
+2026-11-13T23:42:18.7958390Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:18.7958680Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:18.7958980Z [36;1mfeed=https://builds.dotnet.microsoft.com/dotnet[0m
+2026-11-13T23:42:18.7959360Z [36;1mchannel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)[0m
+2026-11-13T23:42:18.7959840Z [36;1mversion=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')[0m
+2026-11-13T23:42:18.7960450Z [36;1m[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }[0m
+2026-11-13T23:42:18.7960930Z [36;1mscript="$RUNNER_TEMP/dotnet-install.sh"[0m
+2026-11-13T23:42:18.7961280Z [36;1mcurl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"[0m
+2026-11-13T23:42:18.7961720Z [36;1mbash "$script" --version "$version" --install-dir "$HOME/.dotnet"[0m
+2026-11-13T23:42:18.7962130Z [36;1mecho "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"[0m
+2026-11-13T23:42:18.7962420Z [36;1mecho "$HOME/.dotnet" >> "$GITHUB_PATH"[0m
+2026-11-13T23:42:18.7962700Z [36;1mecho "version=$version" >> "$GITHUB_OUTPUT"[0m
+2026-11-13T23:42:18.7997650Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:18.7997920Z env:
+2026-11-13T23:42:18.7998130Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:18.7998390Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:18.7998570Z   LONG_RUN: true
+2026-11-13T23:42:18.7998800Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:18.7999280Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:18.7999730Z ##[endgroup]
+2026-11-13T23:42:20.5457690Z dotnet-install: Attempting to download using primary link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-osx-arm64.tar.gz
+2026-11-13T23:42:22.4028910Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-osx-arm64.tar.gz size is 233588093 bytes.
+2026-11-13T23:42:22.4030100Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-osx-arm64.tar.gz
+2026-11-13T23:42:30.7041990Z dotnet-install: Downloaded file size is 233588093 bytes.
+2026-11-13T23:42:30.7043180Z dotnet-install: The remote and local file sizes are equal.
+2026-11-13T23:42:31.1677610Z dotnet-install: Installed version is 10.0.404
+2026-11-13T23:42:31.1790200Z dotnet-install: Adding to current process PATH: `/Users/runner/.dotnet`. Note: This change will be visible only when sourcing script.
+2026-11-13T23:42:31.1794230Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-11-13T23:42:31.1795560Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-11-13T23:42:31.1796950Z dotnet-install: Installation finished successfully.
+2026-11-13T23:42:31.1900410Z ##[end-action id=__self.install;outcome=success;conclusion=success;duration_ms=12396]
+2026-11-13T23:42:31.1921010Z ##[start-action display=The SDK global.json resolves;id=__self.__run_2]
+2026-11-13T23:42:31.1951800Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:31.1952240Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:31.1952730Z [36;1mif [[ -z "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:31.1953130Z [36;1m  if [[ "$FALLBACK" != true ]]; then[0m
+2026-11-13T23:42:31.1953680Z [36;1m    echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."[0m
+2026-11-13T23:42:31.1954280Z [36;1m    exit 1[0m
+2026-11-13T23:42:31.1954700Z [36;1m  fi[0m
+2026-11-13T23:42:31.1955900Z [36;1m  resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }[0m
+2026-11-13T23:42:31.1958190Z [36;1m  echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."[0m
+2026-11-13T23:42:31.1959100Z [36;1melse[0m
+2026-11-13T23:42:31.1959410Z [36;1m  resolved=$(dotnet --version)[0m
+2026-11-13T23:42:31.2119990Z [36;1m  if [[ "$resolved" != "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:31.2120590Z [36;1m    echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."[0m
+2026-11-13T23:42:31.2120940Z [36;1m    exit 1[0m
+2026-11-13T23:42:31.2121090Z [36;1m  fi[0m
+2026-11-13T23:42:31.2121220Z [36;1mfi[0m
+2026-11-13T23:42:31.2121400Z [36;1mecho ".NET SDK $resolved"[0m
+2026-11-13T23:42:31.2121810Z [36;1m# The compiler's errors and warnings as annotations on the lines they name, as[0m
+2026-11-13T23:42:31.2122240Z [36;1m# actions/setup-dotnet registered them (its csc.json).[0m
+2026-11-13T23:42:31.2122590Z [36;1mecho "::add-matcher::$GITHUB_ACTION_PATH/csc.json"[0m
+2026-11-13T23:42:31.2185300Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:31.2185580Z env:
+2026-11-13T23:42:31.2185900Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:31.2186140Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:31.2186300Z   LONG_RUN: true
+2026-11-13T23:42:31.2186490Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:31.2186990Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:31.2187450Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:42:31.2187780Z   INSTALLED: 10.0.404
+2026-11-13T23:42:31.2188130Z   FALLBACK: true
+2026-11-13T23:42:31.2188310Z ##[endgroup]
+2026-11-13T23:42:31.7900450Z .NET SDK 10.0.404
+2026-11-13T23:42:31.7940430Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=601]
+2026-11-13T23:42:31.7949440Z ##[start-action display=Run actions/setup-node@v7;id=__self.__actions_setup-node]
+2026-11-13T23:42:31.8037980Z ##[group]Run actions/setup-node@v7
+2026-11-13T23:42:31.8038230Z with:
+2026-11-13T23:42:31.8038550Z   node-version-file: .node-version
+2026-11-13T23:42:31.8038990Z   cache: npm
+2026-11-13T23:42:31.8039270Z   cache-dependency-path: package-lock.json
+2026-11-13T23:42:31.8039650Z   check-latest: false
+2026-11-13T23:42:31.8042050Z   token: ***
+2026-11-13T23:42:31.8042330Z   package-manager-cache: true
+2026-11-13T23:42:31.8042580Z env:
+2026-11-13T23:42:31.8042790Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:31.8043040Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:31.8043380Z   LONG_RUN: true
+2026-11-13T23:42:31.8044250Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:31.8044850Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:31.8045420Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:42:31.8045790Z ##[endgroup]
+2026-11-13T23:42:32.0827940Z Node version file is not JSON file
+2026-11-13T23:42:32.0849590Z Node version file is not TOML file
+2026-11-13T23:42:32.0850050Z Resolved .node-version as 26.12.1
+2026-11-13T23:42:32.0882430Z Attempting to download 26.12.1...
+2026-11-13T23:42:32.7884090Z Acquiring 26.12.1 - arm64 from https://github.com/actions/node-versions/releases/download/26.12.1-39618969937/node-26.12.1-darwin-arm64.tar.gz
+2026-11-13T23:42:33.4445210Z Extracting ...
+2026-11-13T23:42:33.4570120Z [command]/usr/bin/tar xz --strip 1 -C /Users/runner/work/_temp/aaaedc07-c00f-476c-b4ad-6305d9c6fb24 -f /Users/runner/work/_temp/0e26e3e3-9a1e-42b3-800f-f89c95b0fd32
+2026-11-13T23:42:34.8282820Z Adding to the cache ...
+2026-11-13T23:42:38.9094370Z ##[group]Environment details
+2026-11-13T23:42:39.6491930Z node: v26.12.1
+2026-11-13T23:42:39.6540240Z npm: 11.20.0
+2026-11-13T23:42:39.6607820Z yarn: 1.22.22
+2026-11-13T23:42:39.6615350Z ##[endgroup]
+2026-11-13T23:42:39.6635500Z [command]/Users/runner/hostedtoolcache/node/26.12.1/arm64/bin/npm config get cache
+2026-11-13T23:42:40.0476710Z /Users/runner/.npm
+2026-11-13T23:42:40.3991960Z Cache hit for: node-cache-macOS-arm64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:41.7427620Z Received 0 of 68471239 (0.0%), 0.0 MBs/sec
+2026-11-13T23:42:42.7438770Z Received 37748736 of 68471239 (55.1%), 17.9 MBs/sec
+2026-11-13T23:42:43.2075940Z Received 68471239 of 68471239 (100.0%), 26.4 MBs/sec
+2026-11-13T23:42:43.2094010Z Cache Size: ~65 MB (68471239 B)
+2026-11-13T23:42:43.2169010Z [command]/opt/homebrew/bin/gtar -xf /Users/runner/work/_temp/956a75b1-84ff-436f-85f1-247aca8a7d88/cache.tzst -P -C /Users/runner/work/ex-grid/ex-grid --delay-directory-restore --use-compress-program unzstd
+2026-11-13T23:42:43.6695470Z Cache restored successfully
+2026-11-13T23:42:43.6807580Z Cache restored from key: node-cache-macOS-arm64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:43.7269600Z ##[end-action id=__self.__actions_setup-node;outcome=success;conclusion=success;duration_ms=11931]
+2026-11-13T23:42:43.7280620Z ##[start-action display=The npm workspace's dependencies;id=__self.__run_3]
+2026-11-13T23:42:43.7332520Z ##[group]Run npm ci --no-audit --no-fund
+2026-11-13T23:42:43.7332910Z [36;1mnpm ci --no-audit --no-fund[0m
+2026-11-13T23:42:43.7404310Z shell: /bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:43.7404770Z env:
+2026-11-13T23:42:43.7405130Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:43.7405340Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:43.7405610Z   LONG_RUN: true
+2026-11-13T23:42:43.7405830Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:43.7406280Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:43.7406810Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:42:43.7407140Z ##[endgroup]
+2026-11-13T23:42:52.3148680Z 
+2026-11-13T23:42:52.3174690Z added 269 packages in 8s
+2026-11-13T23:42:52.3186420Z npm warn install-scripts 2 packages have install scripts not yet covered by allowScripts:
+2026-11-13T23:42:52.3187600Z npm warn install-scripts   fsevents@2.3.3 (install: (install scripts present))
+2026-11-13T23:42:52.3188930Z npm warn install-scripts   fsevents@2.3.2 (install: (install scripts present))
+2026-11-13T23:42:52.3189750Z npm warn install-scripts
+2026-11-13T23:42:52.3190700Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+2026-11-13T23:42:52.4479250Z ##[end-action id=__self.__run_3;outcome=success;conclusion=success;duration_ms=8719]
+2026-11-13T23:42:52.4665020Z ##[group]Run "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version
+2026-11-13T23:42:52.4665860Z [36;1m"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version[0m
+2026-11-13T23:42:52.4666380Z [36;1m"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" --version[0m
+2026-11-13T23:42:52.4773090Z shell: /bin/bash -e {0}
+2026-11-13T23:42:52.4773490Z env:
+2026-11-13T23:42:52.4773720Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:52.4774130Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:52.4774490Z   LONG_RUN: true
+2026-11-13T23:42:52.4774760Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:52.4784270Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:52.4785610Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:42:52.4786280Z ##[endgroup]
+2026-11-13T23:42:53.1922740Z Google Chrome 156.0.8078.80 
+2026-11-13T23:42:53.4800370Z Microsoft Edge 156.0.4314.58 
+2026-11-13T23:42:53.4957220Z ##[group]Run actions/download-artifact@v8
+2026-11-13T23:42:53.4957620Z with:
+2026-11-13T23:42:53.4957920Z   name: layer3-hosts
+2026-11-13T23:42:53.4958200Z   path: hosts
+2026-11-13T23:42:53.4958530Z   merge-multiple: false
+2026-11-13T23:42:53.4958910Z   repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:53.4959310Z   run-id: 43528656529
+2026-11-13T23:42:53.4959620Z   skip-decompress: false
+2026-11-13T23:42:53.4960020Z   digest-mismatch: error
+2026-11-13T23:42:53.4960320Z env:
+2026-11-13T23:42:53.4960540Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:53.4960870Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:53.4961200Z   LONG_RUN: true
+2026-11-13T23:42:53.4961560Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:53.4962120Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:42:53.4962670Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:42:53.4963030Z ##[endgroup]
+2026-11-13T23:42:53.7709870Z Downloading single artifact
+2026-11-13T23:42:54.0562990Z Preparing to download the following artifacts:
+2026-11-13T23:42:54.0569330Z - layer3-hosts (ID: 14086592329, Size: 80033189, Expected Digest: sha256:d018f7b6461689be390e67f266751468ee00ddd1a491880a203846ab25128ee2)
+2026-11-13T23:42:54.5675070Z Redirecting to blob download url: https://productionresultssa12.blob.core.windows.net/actions-results/d93c4eb9-7181-83b2-b439-b5b68a989ab8/workflow-job-run-09c9690e-6047-5c4f-98ff-8937e43f3bb5/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-11-13T23:42:54.5683020Z Starting download of artifact to: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:54.9270800Z (node:1961) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-11-13T23:42:54.9273240Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-13T23:43:01.5240020Z SHA256 digest of downloaded artifact is d018f7b6461689be390e67f266751468ee00ddd1a491880a203846ab25128ee2
+2026-11-13T23:43:01.5241430Z Artifact download completed successfully.
+2026-11-13T23:43:01.5242800Z Total of 1 artifact(s) downloaded
+2026-11-13T23:43:01.5244050Z Download artifact has finished successfully
+2026-11-13T23:43:01.5486300Z ##[group]Run npx playwright test features.spec.mjs sheet-vs-excel.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "$KB3|FN-12e" --project=chrome --project=msedge
+2026-11-13T23:43:01.5488190Z [36;1mnpx playwright test features.spec.mjs sheet-vs-excel.spec.mjs sizing.spec.mjs part-c.spec.mjs --grep "$KB3|FN-12e" --project=chrome --project=msedge[0m
+2026-11-13T23:43:01.5565540Z shell: /bin/bash -e {0}
+2026-11-13T23:43:01.5565830Z env:
+2026-11-13T23:43:01.5566200Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:43:01.5566670Z   DOTNET_NOLOGO: 1
+2026-11-13T23:43:01.5566930Z   LONG_RUN: true
+2026-11-13T23:43:01.5567400Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:43:01.5568110Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:43:01.5568800Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:43:01.5569150Z   EXGRID_HOSTING: react
+2026-11-13T23:43:01.5569430Z ##[endgroup]
+2026-11-13T23:43:03.4721840Z [WebServer] Serving /Users/runner/work/ex-grid/ex-grid/hosts/react at http://localhost:5297
+2026-11-13T23:43:04.7770700Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:04.7772830Z [DemoApi]       Generating 20000 trades into /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/T/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-11-13T23:43:04.9156950Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:04.9223900Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-11-13T23:43:04.9228630Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-13T23:43:04.9243300Z [DemoApi]       Now listening on: http://localhost:8297
+2026-11-13T23:43:04.9249060Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:43:04.9256970Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-13T23:43:04.9263440Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:43:04.9264840Z [DemoApi]       Hosting environment: Development
+2026-11-13T23:43:04.9267540Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:43:04.9268330Z [DemoApi]       Content root path: /Users/runner/work/ex-grid/ex-grid/hosts/api
+2026-11-13T23:43:05.0028950Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:05.0030220Z [DemoApi]       Generated 20000 trades in 0.2 s: 1.6 MB.
+2026-11-13T23:43:05.0084960Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:05.0086620Z [DemoApi]       Serving 20000 trades at version b9e0704c-0 from /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/T/exgrid-demo-api/runs/trades-v1-20000.2094.b9e0704c.sqlite.
+2026-11-13T23:43:05.5473300Z 
+2026-11-13T23:43:05.5476410Z Running 12 tests using 1 worker
+2026-11-13T23:43:05.5476820Z 
+2026-11-13T23:43:22.0261880Z   ✓   1 [chrome] › features.spec.mjs:385:1 › ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035) @behaviour (5.9s)
+2026-11-13T23:43:22.5214170Z   ✓   2 [chrome] › features.spec.mjs:913:1 › on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text's start and end, in the field itself (ED-2, KB-3, ticket 280) @behaviour (488ms)
+2026-11-13T23:43:24.6282210Z   ✓   3 [chrome] › part-c.spec.mjs:487:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) @behaviour (2.1s)
+2026-11-13T23:43:27.0440590Z   ✓   4 [chrome] › sheet-vs-excel.spec.mjs:342:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) @behaviour (2.4s)
+2026-11-13T23:43:28.7453900Z   ✓   5 [chrome] › sheet-vs-excel.spec.mjs:361:1 › third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27) @behaviour (1.7s)
+2026-11-13T23:43:30.6138130Z   ✓   6 [chrome] › sizing.spec.mjs:65:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) @behaviour (1.8s)
+2026-11-13T23:43:43.8009210Z   ✓   7 [msedge] › features.spec.mjs:385:1 › ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035) @behaviour (3.6s)
+2026-11-13T23:43:45.3395350Z   ✓   8 [msedge] › features.spec.mjs:913:1 › on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text's start and end, in the field itself (ED-2, KB-3, ticket 280) @behaviour (1.5s)
+2026-11-13T23:43:48.9938380Z   ✓   9 [msedge] › part-c.spec.mjs:487:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) @behaviour (3.6s)
+2026-11-13T23:43:53.0935120Z   ✓  10 [msedge] › sheet-vs-excel.spec.mjs:342:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) @behaviour (4.0s)
+2026-11-13T23:43:55.4195350Z   ✓  11 [msedge] › sheet-vs-excel.spec.mjs:361:1 › third run, main keys case 5: Ctrl+Enter with =A1 over B2:C3 writes it in the Focus and shifts its relative References into the other cells, as one undo step (ADR-0050, 2026-09-28; SH-27) @behaviour (2.3s)
+2026-11-13T23:43:58.3249390Z   ✓  12 [msedge] › sizing.spec.mjs:65:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) @behaviour (2.9s)
+2026-11-13T23:43:59.4750010Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:43:59.4860890Z [DemoApi]       Application is shutting down...
+2026-11-13T23:43:59.6346010Z 
+2026-11-13T23:43:59.6366120Z   12 passed (56.6s)
+2026-11-13T23:43:59.8768810Z ##[group]Run npx playwright test features.spec.mjs write-lands.spec.mjs --grep "$KB3" --project=chrome --project=msedge
+2026-11-13T23:43:59.8770450Z [36;1mnpx playwright test features.spec.mjs write-lands.spec.mjs --grep "$KB3" --project=chrome --project=msedge[0m
+2026-11-13T23:43:59.9479820Z shell: /bin/bash -e {0}
+2026-11-13T23:43:59.9480290Z env:
+2026-11-13T23:43:59.9480700Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:43:59.9481140Z   DOTNET_NOLOGO: 1
+2026-11-13T23:43:59.9481440Z   LONG_RUN: true
+2026-11-13T23:43:59.9481900Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:43:59.9482650Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:43:59.9483270Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:43:59.9483620Z   EXGRID_HOSTING: server
+2026-11-13T23:43:59.9484100Z ##[endgroup]
+2026-11-13T23:44:04.7582400Z [WebServer] info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[62]
+2026-11-13T23:44:04.7592040Z [WebServer]       User profile is available. Using '/Users/runner/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+2026-11-13T23:44:04.8299920Z [WebServer] info: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[58]
+2026-11-13T23:44:04.8301780Z [WebServer]       Creating key {502dcebf-a5f7-4b97-af76-47c423f20cc9} with creation date 2026-11-13 23:44:04Z, activation date 2026-11-13 23:44:04Z, and expiration date 2027-02-11 23:44:04Z.
+2026-11-13T23:44:04.8460200Z [WebServer] warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+2026-11-13T23:44:04.8469280Z [WebServer]       No XML encryptor configured. Key {502dcebf-a5f7-4b97-af76-47c423f20cc9} may be persisted to storage in unencrypted form.
+2026-11-13T23:44:04.8556720Z [WebServer] info: Microsoft.AspNetCore.DataProtection.Repositories.FileSystemXmlRepository[39]
+2026-11-13T23:44:04.8562660Z [WebServer]       Writing data to file '/Users/runner/.aspnet/DataProtection-Keys/key-502dcebf-a5f7-4b97-af76-47c423f20cc9.xml'.
+2026-11-13T23:44:05.1494180Z [WebServer] info: Microsoft.Hosting.Lifetime[14]
+2026-11-13T23:44:05.1529950Z [WebServer]       Now listening on: http://localhost:6298
+2026-11-13T23:44:05.1533300Z [WebServer] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:05.1539020Z [WebServer]       Application started. Press Ctrl+C to shut down.
+2026-11-13T23:44:05.1541060Z [WebServer] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:05.1546940Z [WebServer]       Hosting environment: Development
+2026-11-13T23:44:05.1582190Z [WebServer] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:05.1598800Z [WebServer]       Content root path: /Users/runner/work/ex-grid/ex-grid/hosts/server
+2026-11-13T23:44:05.2322490Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:05.2424460Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:6298/wide - - -
+2026-11-13T23:44:05.2761670Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:05.2864410Z [WebServer]       Executing endpoint '/wide (/wide)'
+2026-11-13T23:44:05.4869890Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:05.4898870Z [WebServer]       Executed endpoint '/wide (/wide)'
+2026-11-13T23:44:05.4900010Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:05.4901010Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:6298/wide - 200 - text/html;+charset=utf-8 269.1771ms
+2026-11-13T23:44:06.1085380Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:06.1089150Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/wide - - -
+2026-11-13T23:44:06.1171750Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:06.1172550Z [WebServer]       Executing endpoint '/wide (/wide)'
+2026-11-13T23:44:06.1335360Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:06.1342790Z [WebServer]       Executed endpoint '/wide (/wide)'
+2026-11-13T23:44:06.1343870Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:06.1345040Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/wide - 200 - text/html;+charset=utf-8 23.2428ms
+2026-11-13T23:44:06.8027670Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:44:06.8042360Z [DemoApi]       Using the 20000 trades generated earlier at /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/T/exgrid-demo-api/trades-v1-20000.sqlite.
+2026-11-13T23:44:06.8454300Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:44:06.8458330Z [DemoApi]       Serving 20000 trades at version fc121542-0 from /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/T/exgrid-demo-api/runs/trades-v1-20000.3156.fc121542.sqlite.
+2026-11-13T23:44:06.9620930Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-13T23:44:06.9626430Z [DemoApi]       Now listening on: http://localhost:8298
+2026-11-13T23:44:06.9628150Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:06.9629960Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-13T23:44:06.9631660Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:06.9633490Z [DemoApi]       Hosting environment: Development
+2026-11-13T23:44:06.9634710Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:06.9636380Z [DemoApi]       Content root path: /Users/runner/work/ex-grid/ex-grid/hosts/api
+2026-11-13T23:44:07.5770360Z 
+2026-11-13T23:44:07.5773250Z Running 4 tests using 1 worker
+2026-11-13T23:44:07.5774420Z 
+2026-11-13T23:44:11.8831810Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:11.8836520Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/features - - -
+2026-11-13T23:44:11.8950350Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:11.9019770Z [WebServer]       Executing endpoint '/features (/features)'
+2026-11-13T23:44:12.0888150Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.0959380Z [WebServer]       Executed endpoint '/features (/features)'
+2026-11-13T23:44:12.0960170Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.0962430Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/features - 200 - text/html;+charset=utf-8 223.0166ms
+2026-11-13T23:44:12.1620040Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.1734600Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:12.1840830Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.1945080Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.2047830Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.2152930Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:12.2268050Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.2370920Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:12.2390940Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.2392050Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.2393500Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.2396650Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.2865370Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.2867670Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:12.3012780Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.3015810Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3017930Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.3021380Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:12.3025210Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.3027240Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3029300Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.3069390Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:12.3072810Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.3075410Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3077750Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.3079080Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 40.6907ms
+2026-11-13T23:44:12.3080130Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.3086180Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 34.9678ms
+2026-11-13T23:44:12.3090490Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.3095830Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:12.3098590Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.3100610Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3409500Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.3412980Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:12.3415530Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.3417250Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3418900Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.3423550Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 13.1313ms
+2026-11-13T23:44:12.3469610Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.3471250Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:12.3472700Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.3473340Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3474030Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.3475070Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 42.0757ms
+2026-11-13T23:44:12.3476590Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.3478140Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:12.3479140Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.3479940Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.3480620Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.3481550Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 57.7624ms
+2026-11-13T23:44:12.3895230Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.4015950Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:12.4027920Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.4029080Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.4030540Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.4031880Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.4034640Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.4036170Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 16.2803ms
+2026-11-13T23:44:12.4561040Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.4703020Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:12.4709870Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.4738720Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.4740330Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.4742240Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.4743850Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.4746640Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 14.3627ms
+2026-11-13T23:44:12.5348620Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.5450690Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=V4BuT1xVl0mDdyZYIlFoPA - - -
+2026-11-13T23:44:12.5585830Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.5687590Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.7903690Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.7916350Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:12.8030170Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.8031180Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.8062030Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.8069660Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:12.8071410Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.8156990Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.8180150Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.8210690Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 14.2721ms
+2026-11-13T23:44:12.8213140Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:12.8318710Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:12.8370700Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:12.8371980Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.8382430Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:12.8390410Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:12.8393620Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:12.8395970Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:12.8398050Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:12.8401330Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 15.7289ms
+2026-11-13T23:44:13.5935710Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:13.5937960Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:13.5940320Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:13.5943020Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=V4BuT1xVl0mDdyZYIlFoPA - 101 - - 1066.5014ms
+2026-11-13T23:44:13.6599290Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:13.6602880Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-027022753537 347
+2026-11-13T23:44:13.6605810Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:13.6608050Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:13.6783970Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:13.6791840Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:13.6792950Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:13.6794290Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 18.9001ms
+2026-11-13T23:44:14.7173400Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.7205080Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/ - - -
+2026-11-13T23:44:14.7308600Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.7412120Z [WebServer]       Executing endpoint '/ (/)'
+2026-11-13T23:44:14.7515900Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.7632930Z [WebServer]       Executed endpoint '/ (/)'
+2026-11-13T23:44:14.7736800Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.7839310Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/ - 200 - text/html;+charset=utf-8 14.2896ms
+2026-11-13T23:44:14.7941270Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.8044860Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:14.8160250Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.8263710Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8367850Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:14.8401020Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:14.8415860Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.8416970Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8417950Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.8419220Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 1.7053ms
+2026-11-13T23:44:14.8420360Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.8421690Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:14.8426000Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.8435100Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:14.8439750Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.8451180Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:14.8453120Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.8454070Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8454970Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:14.8456870Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:14.8458310Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.8477360Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8479750Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.8481210Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 2.8063ms
+2026-11-13T23:44:14.8496820Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.8498120Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8601780Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:14.8710350Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:14.8773670Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.8889220Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.8994450Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.9098430Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 5.6952ms
+2026-11-13T23:44:14.9201420Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.9305030Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:14.9377230Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.9390690Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9392780Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:14.9395270Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:14.9396600Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.9397320Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9398420Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.9399750Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 10.0859ms
+2026-11-13T23:44:14.9400640Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.9402180Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9403230Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:14.9404800Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:14.9407430Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.9409560Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9411290Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.9669040Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 14.4869ms
+2026-11-13T23:44:14.9774770Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:14.9877250Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:14.9888190Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:14.9889410Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9890810Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:14.9893600Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:14.9902360Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:14.9905990Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 1.0217ms
+2026-11-13T23:44:15.0030280Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:15.0137600Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:15.0239670Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:15.0353930Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.0385580Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:15.0396590Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.0413010Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:15.0503800Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.4655ms
+2026-11-13T23:44:15.0640850Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:15.0804850Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=cZdFZijV-LbpPb4ZkTVwkg - - -
+2026-11-13T23:44:15.0834690Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:15.0836190Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.7321350Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:15.7429880Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:15.7523920Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:15.7645990Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.7780900Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:15.7888960Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:15.7970130Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:15.8061170Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.8062440Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:15.8063610Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 1.4084ms
+2026-11-13T23:44:15.8064660Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:15.8065780Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:15.8066700Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:15.8067490Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.8068310Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:15.8069680Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:15.8070940Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:15.8071700Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:15.8073970Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:15.8076350Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 2.5740ms
+2026-11-13T23:44:18.2254440Z   ✓  1 [chrome] › features.spec.mjs:932:1 › on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text's start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280) @blazor (4.1s)
+2026-11-13T23:44:18.3207320Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:18.3310210Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:18.3414130Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:18.3525740Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=cZdFZijV-LbpPb4ZkTVwkg - 101 - - 3305.1201ms
+2026-11-13T23:44:18.3642070Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:18.3757380Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-023297456322 347
+2026-11-13T23:44:18.3863120Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:18.3973640Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:18.4110120Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:18.4215970Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:18.4335090Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:18.4442530Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 3.1086ms
+2026-11-13T23:44:19.0470950Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.0572270Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/ - - -
+2026-11-13T23:44:19.0675180Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.0780610Z [WebServer]       Executing endpoint '/ (/)'
+2026-11-13T23:44:19.0878030Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.0985100Z [WebServer]       Executed endpoint '/ (/)'
+2026-11-13T23:44:19.1087840Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.1189190Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/ - 200 - text/html;+charset=utf-8 2.8703ms
+2026-11-13T23:44:19.1304830Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.1407080Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:19.1508890Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.1509820Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.1612660Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.1713440Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:19.1816130Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.1917130Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.2018240Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.2120740Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:19.2221410Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.2323170Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.2424830Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.2527120Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 0.7360ms
+2026-11-13T23:44:19.2627620Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.2731360Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:19.2833710Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.2935750Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3044110Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.3289430Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:19.3290640Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3393800Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3499960Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3610260Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 0.4797ms
+2026-11-13T23:44:19.3713200Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.3717860Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:19.3719280Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3719970Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3720720Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3722210Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 0.2224ms
+2026-11-13T23:44:19.3723130Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.3723980Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:19.3724740Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.3725590Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:19.3726330Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.3727010Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3727680Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.3728390Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3729090Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.3730470Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:19.3733040Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3734870Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3736630Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3739240Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 0.2989ms
+2026-11-13T23:44:19.3740260Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.3741860Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:19.3743030Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3743770Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3744570Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3745600Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 0.6691ms
+2026-11-13T23:44:19.3746420Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.3747170Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:19.3747890Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.3748660Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3749410Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3750100Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3750800Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3751770Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 0.2401ms
+2026-11-13T23:44:19.3752630Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.3754090Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:19.3755160Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.3756560Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3757240Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.3758380Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.3759230Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.3760290Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.6353ms
+2026-11-13T23:44:19.3761080Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.3762020Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=zoGE2IOCiYFb2q1PBLoing - - -
+2026-11-13T23:44:19.3764980Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.3767270Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.8409320Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.8522400Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:19.8625040Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.8710700Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.8774460Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.8778080Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:19.8781590Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.8783790Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.8786560Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.8789540Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 0.7082ms
+2026-11-13T23:44:19.8795840Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:19.8798710Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:19.8801030Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:19.8803180Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.8805450Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:19.8808970Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:19.8812050Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:19.8814050Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:19.8816190Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:19.8819420Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 0.8057ms
+2026-11-13T23:44:22.2634040Z   ✓  2 [chrome] › write-lands.spec.mjs:215:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035) @blazor (4.0s)
+2026-11-13T23:44:22.2985300Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:22.3042720Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:22.3045610Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:22.3049610Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=zoGE2IOCiYFb2q1PBLoing - 101 - - 3103.7577ms
+2026-11-13T23:44:22.3067870Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:22.3070290Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-051783474143 347
+2026-11-13T23:44:22.3090630Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:22.3094390Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:22.3098200Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:22.3100370Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:22.3101430Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:22.3102210Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 1.0910ms
+2026-11-13T23:44:27.3876890Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.3993350Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/features - - -
+2026-11-13T23:44:27.4099420Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.4330120Z [WebServer]       Executing endpoint '/features (/features)'
+2026-11-13T23:44:27.4456930Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.4460320Z [WebServer]       Executed endpoint '/features (/features)'
+2026-11-13T23:44:27.4604820Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.4708720Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/features - 200 - text/html;+charset=utf-8 20.1947ms
+2026-11-13T23:44:27.5321000Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.5440460Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:27.5548860Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.5654830Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:27.5790610Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.5894380Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5895120Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.5896230Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:27.5897180Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.5901330Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5903270Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.5905780Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5907780Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.5911170Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:27.5912280Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.5915110Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5916790Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.5919400Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 1.1879ms
+2026-11-13T23:44:27.5944560Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.5946120Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:27.5953750Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.5954520Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5965900Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.5967620Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:27.5971020Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.5974370Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:27.5977470Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.5979340Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5981040Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.5982880Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.5984630Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.5987150Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 0.6712ms
+2026-11-13T23:44:27.5989160Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.5991980Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 2.5522ms
+2026-11-13T23:44:27.5994360Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.5996460Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:27.6011270Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.6013260Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.6015210Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.6019030Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:27.6020340Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.6021200Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.6021990Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.6023950Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 0.2356ms
+2026-11-13T23:44:27.6026390Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.6027750Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:27.6029280Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.6030030Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.6030630Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.6031600Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 3.3711ms
+2026-11-13T23:44:27.7130840Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.7135620Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:27.7136640Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.7142990Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.7147470Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.7202080Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.7203170Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.7208610Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 0.6396ms
+2026-11-13T23:44:27.7667670Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.7683360Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:27.7684130Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.7685360Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.7686220Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.7686990Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.7687770Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.7688810Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.5815ms
+2026-11-13T23:44:27.7778140Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.7781830Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=HcQUMdq5P1pGNw203TFNDg - - -
+2026-11-13T23:44:27.7799810Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.7801220Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.8316530Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.8318090Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:27.8333990Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.8336650Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.8338730Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.8342330Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:27.8344820Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.8347170Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.8348020Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.8349380Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 0.6042ms
+2026-11-13T23:44:27.8362690Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:27.8363760Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:27.8364690Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:27.8365610Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.8385560Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:27.8387790Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:27.8390770Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:27.8391950Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:27.8392950Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:27.8394590Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 1.3735ms
+2026-11-13T23:44:28.0079750Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.0094280Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.0096090Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.0097300Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=HcQUMdq5P1pGNw203TFNDg - 101 - - 230.5108ms
+2026-11-13T23:44:28.0413310Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.0422870Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-033661808671 347
+2026-11-13T23:44:28.0424140Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.0430890Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.0446340Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.0450260Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.0451270Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.0481090Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 2.9449ms
+2026-11-13T23:44:28.5258150Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.5360100Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/ - - -
+2026-11-13T23:44:28.5462120Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.5563870Z [WebServer]       Executing endpoint '/ (/)'
+2026-11-13T23:44:28.5666200Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.5821870Z [WebServer]       Executed endpoint '/ (/)'
+2026-11-13T23:44:28.5824010Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.5929730Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/ - 200 - text/html;+charset=utf-8 1.4707ms
+2026-11-13T23:44:28.6032180Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6141250Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:28.6332180Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6334980Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6335730Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:28.6337050Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:28.6338030Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6338740Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6339980Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6342800Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 0.7002ms
+2026-11-13T23:44:28.6346070Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6348360Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:28.6350110Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6366760Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:28.6367730Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6368690Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6369450Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6370180Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6371010Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:28.6373380Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:28.6377600Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6378500Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6380080Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:28.6385080Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:28.6389410Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6390260Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6390940Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6392010Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 0.6435ms
+2026-11-13T23:44:28.6402910Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6406130Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 0.6188ms
+2026-11-13T23:44:28.6408200Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6410460Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:28.6412890Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6415010Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6416220Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:28.6418090Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:28.6419550Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6421130Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6421780Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6427370Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 0.1725ms
+2026-11-13T23:44:28.6428240Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6429300Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:28.6430070Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6431150Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6431870Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:28.6433490Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:28.6434510Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6435210Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6435850Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6436950Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 0.3639ms
+2026-11-13T23:44:28.6437830Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.6438630Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:28.6439350Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.6440080Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6440840Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.6441710Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.6442610Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.6446800Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 0.7172ms
+2026-11-13T23:44:28.7221960Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.7325560Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:28.7452210Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.7555580Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.7662280Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:28.7784050Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:28.7910100Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:28.8012070Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.1973ms
+2026-11-13T23:44:28.8116280Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:28.8227050Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=QDBgIheUTo03oNqWJ4J8Lw - - -
+2026-11-13T23:44:28.8275730Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:28.8349380Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:29.3933520Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:29.3957330Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:29.3959820Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:29.3961920Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:29.3964050Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:29.3968630Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:29.3971490Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:29.3972760Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:29.3980750Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:29.3983500Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 0.5687ms
+2026-11-13T23:44:29.4046140Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:29.4149490Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:29.4256890Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:29.4350970Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:29.4353460Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:29.4355390Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:29.4366350Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:29.4375270Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:29.4376740Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:29.4379450Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 0.5837ms
+2026-11-13T23:44:31.8681700Z   ✓  3 [msedge] › features.spec.mjs:932:1 › on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text's start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280) @blazor (3.7s)
+2026-11-13T23:44:31.9159250Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:31.9263640Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:31.9373360Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:31.9486810Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=QDBgIheUTo03oNqWJ4J8Lw - 101 - - 3166.8750ms
+2026-11-13T23:44:31.9608190Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:31.9727030Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-091335434690 347
+2026-11-13T23:44:31.9759360Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:31.9865100Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:31.9967540Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.0069400Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.0171610Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.0203640Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 1.7170ms
+2026-11-13T23:44:32.4670690Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.4774300Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/ - - -
+2026-11-13T23:44:32.4876060Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.4981310Z [WebServer]       Executing endpoint '/ (/)'
+2026-11-13T23:44:32.5083840Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5184230Z [WebServer]       Executed endpoint '/ (/)'
+2026-11-13T23:44:32.5286200Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5387980Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/ - 200 - text/html;+charset=utf-8 10.6480ms
+2026-11-13T23:44:32.5435780Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5438420Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - - -
+2026-11-13T23:44:32.5439540Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5441350Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - - -
+2026-11-13T23:44:32.5443150Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5444250Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5445240Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5445950Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5448250Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:32.5450090Z [WebServer]       Sending file. Request path: '_content/ExSheet/ex-sheet.min.l196kyv5a5.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExSheet/ex-sheet.min.css.br'
+2026-11-13T23:44:32.5451540Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5452560Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5453540Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5455150Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExSheet/ex-sheet.min.l196kyv5a5.css - 200 2624 text/css 0.6275ms
+2026-11-13T23:44:32.5456490Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5457770Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - - -
+2026-11-13T23:44:32.5458950Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:32.5460920Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid.min.kfkzowdfct.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid.min.css.br'
+2026-11-13T23:44:32.5465850Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5467060Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5468020Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5469310Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid.min.kfkzowdfct.css - 200 5815 text/css 0.9672ms
+2026-11-13T23:44:32.5470470Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5471520Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5472510Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:32.5474230Z [WebServer]       Sending file. Request path: '_content/ExGrid.DemoPages/app.7nh67ozofi.css'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid.DemoPages/app.css.br'
+2026-11-13T23:44:32.5476270Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5477470Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5478240Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5479510Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid.DemoPages/app.7nh67ozofi.css - 200 2323 text/css 0.1827ms
+2026-11-13T23:44:32.5480660Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5482170Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - - -
+2026-11-13T23:44:32.5483390Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5484390Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5485920Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5487070Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - - -
+2026-11-13T23:44:32.5488820Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:32.5490410Z [WebServer]       Sending file. Request path: '_content/MudBlazor/MudBlazor.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/MudBlazor/MudBlazor.min.js.br'
+2026-11-13T23:44:32.5491740Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5492700Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5493830Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5495070Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5496130Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5497880Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/MudBlazor/MudBlazor.min.js - 200 15087 text/javascript 0.2060ms
+2026-11-13T23:44:32.5512860Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:32.5514480Z [WebServer]       Sending file. Request path: '_framework/blazor.web.whefm3rrpu.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_framework/blazor.web.js.br'
+2026-11-13T23:44:32.5519950Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5521110Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5523050Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5524410Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_framework/blazor.web.whefm3rrpu.js - 200 47542 text/javascript 0.1804ms
+2026-11-13T23:44:32.5862670Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.5865150Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor/initializers - - -
+2026-11-13T23:44:32.5866770Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.5867880Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5869290Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.5870860Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.5872050Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.5873650Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor/initializers - 200 - application/json;+charset=utf-8 0.3052ms
+2026-11-13T23:44:32.6005220Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.6060090Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - - 0
+2026-11-13T23:44:32.6162540Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.6268170Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.6369820Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:32.6471670Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:32.6517440Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:32.6523200Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:5298/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.2950ms
+2026-11-13T23:44:32.6533930Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:32.6666510Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_blazor?id=1RbR1jkEDbIy47FVwhYoqg - - -
+2026-11-13T23:44:32.6768860Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:32.6772640Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:33.1374010Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:33.1477920Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - - -
+2026-11-13T23:44:33.1592880Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:33.1694760Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:33.1766680Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:33.1768380Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-core.min.4jyaflapus.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-core.min.js.br'
+2026-11-13T23:44:33.1769660Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:33.1782010Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:33.1884110Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:33.1885320Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-core.min.4jyaflapus.js - 200 14892 text/javascript 0.4417ms
+2026-11-13T23:44:33.1986980Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:33.2006370Z [WebServer]       Request starting HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - - -
+2026-11-13T23:44:33.2007770Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:33.2012440Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:33.2014830Z [WebServer] info: Microsoft.AspNetCore.StaticAssets.StaticAssetsInvoker[2]
+2026-11-13T23:44:33.2018550Z [WebServer]       Sending file. Request path: '_content/ExGrid/ex-grid-script.min.js'. Physical path: '/Users/runner/work/ex-grid/ex-grid/hosts/server/wwwroot/_content/ExGrid/ex-grid-script.min.js.br'
+2026-11-13T23:44:33.2021720Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:33.2023860Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:33.2025800Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:33.2029020Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_content/ExGrid/ex-grid-script.min.js?v=acc5fd2ce079 - 200 181773 text/javascript 1.6677ms
+2026-11-13T23:44:35.4139040Z   ✓  4 [msedge] › write-lands.spec.mjs:215:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035) @blazor (3.5s)
+2026-11-13T23:44:35.4325140Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:35.4377010Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:35.4438670Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:35.4440850Z [WebServer]       Request finished HTTP/1.1 GET http://localhost:5298/_blazor?id=1RbR1jkEDbIy47FVwhYoqg - 101 - - 2822.5472ms
+2026-11-13T23:44:35.4442360Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+2026-11-13T23:44:35.4443790Z [WebServer]       Request starting HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - multipart/form-data;+boundary=----formdata-undici-054616819369 347
+2026-11-13T23:44:35.4445030Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+2026-11-13T23:44:35.4452770Z [WebServer]       Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:35.4455570Z [WebServer] info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+2026-11-13T23:44:35.4457540Z [WebServer]       Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-11-13T23:44:35.4466900Z [WebServer] info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+2026-11-13T23:44:35.4469440Z [WebServer]       Request finished HTTP/1.1 POST http://localhost:6298/_blazor/disconnect - 200 0 - 1.1630ms
+2026-11-13T23:44:36.1716080Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:44:36.1726400Z [DemoApi]       Application is shutting down...
+2026-11-13T23:44:36.2451050Z 
+2026-11-13T23:44:36.2455460Z   4 passed (32.8s)
+2026-11-13T23:44:36.3553650Z ##[group]Run actions/upload-artifact@v7
+2026-11-13T23:44:36.3554100Z with:
+2026-11-13T23:44:36.3554370Z   name: layer3-records-macos-desktop
+2026-11-13T23:44:36.3555030Z   path: verification/
+tests/browser/test-results/
+
+2026-11-13T23:44:36.3555470Z   if-no-files-found: ignore
+2026-11-13T23:44:36.3555760Z   retention-days: 30
+2026-11-13T23:44:36.3556050Z   compression-level: 6
+2026-11-13T23:44:36.3556340Z   overwrite: false
+2026-11-13T23:44:36.3556600Z   include-hidden-files: false
+2026-11-13T23:44:36.3557040Z   archive: true
+2026-11-13T23:44:36.3557340Z env:
+2026-11-13T23:44:36.3557570Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:44:36.3557860Z   DOTNET_NOLOGO: 1
+2026-11-13T23:44:36.3558140Z   LONG_RUN: true
+2026-11-13T23:44:36.3558460Z   EXGRID_HOSTS: /Users/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:44:36.3559060Z   KB3: ED-19: after a refused fill|cases 12 and 13|main keys case 5|LV-13: a Ctrl\+Enter fill|on an Apple platform
+2026-11-13T23:44:36.3559980Z   DOTNET_ROOT: /Users/runner/.dotnet
+2026-11-13T23:44:36.3565350Z ##[endgroup]
+2026-11-13T23:44:38.3438340Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-11-13T23:44:38.3439770Z The least common ancestor is /Users/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-11-13T23:44:38.3440370Z With the provided path, there will be 11413 files uploaded
+2026-11-13T23:44:38.3442830Z Artifact name is valid!
+2026-11-13T23:44:38.3443240Z Root directory input is valid!
+2026-11-13T23:44:39.0122180Z Uploading artifact: layer3-records-macos-desktop.zip
+2026-11-13T23:44:39.0123190Z Beginning upload of artifact content to blob storage
+2026-11-13T23:44:40.9182050Z Uploaded bytes 8388608
+2026-11-13T23:44:41.2834980Z Uploaded bytes 16777216
+2026-11-13T23:44:41.7869810Z Uploaded bytes 25165824
+2026-11-13T23:44:41.8560940Z Uploaded bytes 33554432
+2026-11-13T23:44:42.8067010Z Uploaded bytes 41943040
+2026-11-13T23:44:44.0679750Z Uploaded bytes 50331648
+2026-11-13T23:44:44.7791240Z Uploaded bytes 58720256
+2026-11-13T23:44:45.6217590Z Uploaded bytes 67108864
+2026-11-13T23:44:47.0058930Z Uploaded bytes 75497472
+2026-11-13T23:44:47.5538130Z Uploaded bytes 83886080
+2026-11-13T23:44:48.3687790Z Uploaded bytes 92274688
+2026-11-13T23:44:48.9544740Z Uploaded bytes 100663296
+2026-11-13T23:44:51.0406100Z Uploaded bytes 109051904
+2026-11-13T23:44:52.0907040Z Uploaded bytes 117440512
+2026-11-13T23:44:52.8946710Z Uploaded bytes 125829120
+2026-11-13T23:44:54.7609010Z Uploaded bytes 134217728
+2026-11-13T23:44:55.3050630Z Uploaded bytes 142606336
+2026-11-13T23:44:56.1422350Z Uploaded bytes 150994944
+2026-11-13T23:44:57.2550980Z Uploaded bytes 159383552
+2026-11-13T23:44:59.0617070Z Uploaded bytes 167772160
+2026-11-13T23:44:59.4976940Z Uploaded bytes 176160768
+2026-11-13T23:44:59.9573690Z Uploaded bytes 184549376
+2026-11-13T23:45:00.8211710Z Uploaded bytes 192937984
+2026-11-13T23:45:01.3236960Z Uploaded bytes 201326592
+2026-11-13T23:45:01.8528640Z Uploaded bytes 209715200
+2026-11-13T23:45:02.7908050Z Uploaded bytes 218103808
+2026-11-13T23:45:03.2359000Z Uploaded bytes 226492416
+2026-11-13T23:45:04.2189230Z Uploaded bytes 234881024
+2026-11-13T23:45:05.2751140Z Uploaded bytes 243269632
+2026-11-13T23:45:06.1548350Z Uploaded bytes 247727762
+2026-11-13T23:45:06.2512320Z Finished uploading artifact content to blob storage!
+2026-11-13T23:45:06.2515990Z SHA256 digest of uploaded artifact is 1ad639a8ab8d722d7e78cd9d46dfcd3d18896e969aaaf2bbb2ed4376e7a17bd7
+2026-11-13T23:45:06.2516830Z Finalizing artifact upload
+2026-11-13T23:45:06.8221890Z Artifact layer3-records-macos-desktop successfully finalized. Artifact ID 14087070673
+2026-11-13T23:45:06.8225300Z Artifact layer3-records-macos-desktop has been successfully uploaded! Final size is 247727762 bytes. Artifact ID is 14087070673
+2026-11-13T23:45:06.8252830Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/43528656529/artifacts/14087070673
+2026-11-13T23:45:07.0259350Z Post job cleanup.
+2026-11-13T23:45:07.0266550Z ##[start-action display=Run actions/setup-node@v7;id=__c703e0ec-c8ad-4a3a-81ec-a26b179d70a4.__actions_setup-node]
+2026-11-13T23:45:07.0418260Z Post job cleanup.
+2026-11-13T23:45:07.3482820Z Cache hit occurred on the primary key node-cache-macOS-arm64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54, not saving cache.
+2026-11-13T23:45:07.3607010Z ##[end-action id=__c703e0ec-c8ad-4a3a-81ec-a26b179d70a4.__actions_setup-node;outcome=success;conclusion=success;duration_ms=333]
+2026-11-13T23:45:07.3807100Z Post job cleanup.
+2026-11-13T23:45:07.6160240Z [command]/opt/homebrew/bin/git version
+2026-11-13T23:45:07.6564890Z git version 2.56.0
+2026-11-13T23:45:07.6577380Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/5263f895-6fa6-47aa-8c16-2ddd8d855ac5/.gitconfig'
+2026-11-13T23:45:07.6585030Z Temporarily overriding HOME='/Users/runner/work/_temp/5263f895-6fa6-47aa-8c16-2ddd8d855ac5' before making global git config changes
+2026-11-13T23:45:07.6587700Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:45:07.6594720Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/ex-grid/ex-grid
+2026-11-13T23:45:07.6816540Z Removing SSH command configuration
+2026-11-13T23:45:07.6829900Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:45:07.6950230Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:45:07.9225070Z Removing HTTP extra header
+2026-11-13T23:45:07.9230920Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:45:07.9486270Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:45:08.1092370Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:45:08.1097740Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:45:08.1172690Z includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:45:08.1173530Z includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:45:08.1174180Z includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:45:08.1176510Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:45:08.1192900Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:45:08.1314990Z /Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:45:08.1334440Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git.path \/Users\/runner\/work\/_temp\/git\-credentials\-b8208084\-e7de\-4d57\-b0db\-fc4f8222cfb9\.config
+2026-11-13T23:45:08.1449060Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:45:08.1533770Z /Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:45:08.1557740Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/Users\/runner\/work\/_temp\/git\-credentials\-b8208084\-e7de\-4d57\-b0db\-fc4f8222cfb9\.config
+2026-11-13T23:45:08.1653090Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:45:08.1781990Z /github/runner_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:45:08.1957790Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-b8208084\-e7de\-4d57\-b0db\-fc4f8222cfb9\.config
+2026-11-13T23:45:08.2087560Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:45:08.2109010Z /github/runner_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config
+2026-11-13T23:45:08.2115770Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-b8208084\-e7de\-4d57\-b0db\-fc4f8222cfb9\.config
+2026-11-13T23:45:08.2216830Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:45:08.3244220Z Removing credentials config '/Users/runner/work/_temp/git-credentials-b8208084-e7de-4d57-b0db-fc4f8222cfb9.config'
+2026-11-13T23:45:08.3638850Z Cleaning up orphan processes

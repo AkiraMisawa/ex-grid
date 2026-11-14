@@ -1,0 +1,968 @@
+﻿2026-11-13T23:42:02.1549863Z Current runner version: '2.338.2'
+2026-11-13T23:42:02.1567515Z ##[group]Runner Image Provisioner
+2026-11-13T23:42:02.1568068Z Hosted Compute Agent
+2026-11-13T23:42:02.1568625Z Version: 20261103.629
+2026-11-13T23:42:02.1569046Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-13T23:42:02.1569563Z Build Date: 2026-11-03T17:26:59Z
+2026-11-13T23:42:02.1570003Z Worker ID: {6795995f-8283-4e84-90c2-6d0bb4b7d069}
+2026-11-13T23:42:02.1570456Z Region: westus3
+2026-11-13T23:42:02.1570900Z Cloud: Azure
+2026-11-13T23:42:02.1571262Z ##[endgroup]
+2026-11-13T23:42:02.1572065Z ##[group]Operating System
+2026-11-13T23:42:02.1572482Z Ubuntu
+2026-11-13T23:42:02.1572830Z 24.04.5
+2026-11-13T23:42:02.1573275Z LTS
+2026-11-13T23:42:02.1573618Z ##[endgroup]
+2026-11-13T23:42:02.1574002Z ##[group]Runner Image
+2026-11-13T23:42:02.1574416Z Image: ubuntu-24.04
+2026-11-13T23:42:02.1574790Z Version: 20261111.370.1
+2026-11-13T23:42:02.1576154Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-13T23:42:02.1577159Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+2026-11-13T23:42:02.1577827Z ##[endgroup]
+2026-11-13T23:42:02.1578624Z ##[group]GITHUB_TOKEN Permissions
+2026-11-13T23:42:02.1579872Z Contents: read
+2026-11-13T23:42:02.1580253Z Metadata: read
+2026-11-13T23:42:02.1580667Z ##[endgroup]
+2026-11-13T23:42:02.1582245Z Secret source: Actions
+2026-11-13T23:42:02.1582940Z Cache mode: write
+2026-11-13T23:42:02.1583498Z Prepare workflow directory
+2026-11-13T23:42:02.1934203Z Prepare all required actions
+2026-11-13T23:42:02.1979521Z Getting action download info
+2026-11-13T23:42:02.4667814Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-13T23:42:02.6157709Z Download action repository 'actions/download-artifact@v8' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-11-13T23:42:03.2099466Z Download action repository 'actions/upload-artifact@v7' (SHA:cf430e030ddbb5b0abf93d22962f4752f3646cd9)
+2026-11-13T23:42:03.3921929Z Uses: AkiraMisawa/ex-grid/.github/workflows/ci.yml@refs/tags/v0.3.0-rc.1 (fb7b872a841ff3dcdba72ec54a95091091c53cd3)
+2026-11-13T23:42:03.3924732Z ##[group] Inputs
+2026-11-13T23:42:03.3925227Z   version: 0.3.0-rc.1
+2026-11-13T23:42:03.3925717Z   long: true
+2026-11-13T23:42:03.3925997Z ##[endgroup]
+2026-11-13T23:42:03.3926485Z Complete job name: Every layer, and the packages / Layer 3 on msedge, shard 2/2 (Linux, headed)
+2026-11-13T23:42:03.4443840Z ##[group]Run actions/checkout@v7
+2026-11-13T23:42:03.4444317Z with:
+2026-11-13T23:42:03.4444599Z   repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:03.4447505Z   token: ***
+2026-11-13T23:42:03.4447772Z   ssh-strict: true
+2026-11-13T23:42:03.4448051Z   ssh-user: git
+2026-11-13T23:42:03.4448331Z   persist-credentials: true
+2026-11-13T23:42:03.4448648Z   clean: true
+2026-11-13T23:42:03.4448935Z   sparse-checkout-cone-mode: true
+2026-11-13T23:42:03.4449269Z   fetch-depth: 1
+2026-11-13T23:42:03.4449542Z   fetch-tags: false
+2026-11-13T23:42:03.4449848Z   show-progress: true
+2026-11-13T23:42:03.4450131Z   lfs: false
+2026-11-13T23:42:03.4450392Z   submodules: false
+2026-11-13T23:42:03.4450675Z   set-safe-directory: true
+2026-11-13T23:42:03.4450997Z   allow-unsafe-pr-checkout: false
+2026-11-13T23:42:03.4451403Z env:
+2026-11-13T23:42:03.4451665Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:03.4451986Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:03.4452255Z   LONG_RUN: true
+2026-11-13T23:42:03.4452556Z ##[endgroup]
+2026-11-13T23:42:03.6846734Z Syncing repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:03.6847897Z ##[group]Getting Git version info
+2026-11-13T23:42:03.6848368Z Working directory is '/home/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:03.6848998Z [command]/usr/bin/git version
+2026-11-13T23:42:03.6916899Z git version 2.56.1
+2026-11-13T23:42:03.6929074Z ##[endgroup]
+2026-11-13T23:42:03.6935824Z Temporarily overriding HOME='/home/runner/work/_temp/a402c734-b0b2-4e8b-8ba2-cbd4cdd291eb' before making global git config changes
+2026-11-13T23:42:03.6937023Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:42:03.6939462Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:03.6982591Z Deleting the contents of '/home/runner/work/ex-grid/ex-grid'
+2026-11-13T23:42:03.6985603Z ##[group]Determining repository object format
+2026-11-13T23:42:03.6986412Z ##[endgroup]
+2026-11-13T23:42:03.6987051Z ##[group]Initializing the repository
+2026-11-13T23:42:03.6989040Z [command]/usr/bin/git init /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:42:03.7090392Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-13T23:42:03.7091079Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-13T23:42:03.7091699Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-13T23:42:03.7092264Z hint: call:
+2026-11-13T23:42:03.7092589Z hint:
+2026-11-13T23:42:03.7092941Z hint: 	git config --global init.defaultBranch <name>
+2026-11-13T23:42:03.7093344Z hint:
+2026-11-13T23:42:03.7093811Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-13T23:42:03.7094502Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-13T23:42:03.7095123Z hint:
+2026-11-13T23:42:03.7095537Z hint: 	git branch -m <name>
+2026-11-13T23:42:03.7096024Z hint:
+2026-11-13T23:42:03.7096696Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-13T23:42:03.7097916Z Initialized empty Git repository in /home/runner/work/ex-grid/ex-grid/.git/
+2026-11-13T23:42:03.7103633Z [command]/usr/bin/git remote add origin https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:03.7314817Z ##[endgroup]
+2026-11-13T23:42:03.7318050Z ##[group]Disabling automatic garbage collection
+2026-11-13T23:42:03.7318796Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-13T23:42:03.7345855Z ##[endgroup]
+2026-11-13T23:42:03.7346808Z ##[group]Setting up auth
+2026-11-13T23:42:03.7350031Z Removing SSH command configuration
+2026-11-13T23:42:03.7356619Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:42:03.7380284Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:42:03.7696197Z Removing HTTP extra header
+2026-11-13T23:42:03.7700583Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:42:03.7727378Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:42:03.7906523Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:42:03.7909824Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:42:03.7936735Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:42:03.8122163Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-13T23:42:03.8152933Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path /home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:42:03.8180885Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:42:03.8208947Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:42:03.8235903Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:42:03.8261283Z ##[endgroup]
+2026-11-13T23:42:03.8261781Z ##[group]Fetching the repository
+2026-11-13T23:42:03.8265516Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +refs/tags/v0.3.0-rc.1:refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:08.9726090Z From https://github.com/AkiraMisawa/ex-grid
+2026-11-13T23:42:08.9726949Z  * [new tag]         v0.3.0-rc.1 -> v0.3.0-rc.1
+2026-11-13T23:42:08.9733111Z [command]/usr/bin/git tag --list v0.3.0-rc.1
+2026-11-13T23:42:08.9764330Z v0.3.0-rc.1
+2026-11-13T23:42:08.9770279Z [command]/usr/bin/git rev-parse refs/tags/v0.3.0-rc.1^{commit}
+2026-11-13T23:42:08.9792325Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:08.9795814Z ##[endgroup]
+2026-11-13T23:42:08.9796134Z ##[group]Determining the checkout info
+2026-11-13T23:42:08.9797003Z ##[endgroup]
+2026-11-13T23:42:08.9799647Z [command]/usr/bin/git sparse-checkout disable
+2026-11-13T23:42:08.9847997Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-13T23:42:08.9874723Z ##[group]Checking out the ref
+2026-11-13T23:42:08.9877921Z [command]/usr/bin/git checkout --progress --force refs/tags/v0.3.0-rc.1
+2026-11-13T23:42:10.0016111Z Updating files:  66% (10838/16225)
+2026-11-13T23:42:10.0157548Z Updating files:  67% (10871/16225)
+2026-11-13T23:42:10.0286485Z Updating files:  68% (11033/16225)
+2026-11-13T23:42:10.0576499Z Updating files:  69% (11196/16225)
+2026-11-13T23:42:10.0677622Z Updating files:  70% (11358/16225)
+2026-11-13T23:42:10.0790197Z Updating files:  71% (11520/16225)
+2026-11-13T23:42:10.0884498Z Updating files:  72% (11682/16225)
+2026-11-13T23:42:10.0974336Z Updating files:  73% (11845/16225)
+2026-11-13T23:42:10.1083991Z Updating files:  74% (12007/16225)
+2026-11-13T23:42:10.1278799Z Updating files:  75% (12169/16225)
+2026-11-13T23:42:10.1585140Z Updating files:  76% (12331/16225)
+2026-11-13T23:42:10.1789242Z Updating files:  77% (12494/16225)
+2026-11-13T23:42:10.2001075Z Updating files:  78% (12656/16225)
+2026-11-13T23:42:10.2085371Z Updating files:  79% (12818/16225)
+2026-11-13T23:42:10.2227179Z Updating files:  80% (12980/16225)
+2026-11-13T23:42:10.2400284Z Updating files:  81% (13143/16225)
+2026-11-13T23:42:10.2477611Z Updating files:  82% (13305/16225)
+2026-11-13T23:42:10.2583656Z Updating files:  83% (13467/16225)
+2026-11-13T23:42:10.2647869Z Updating files:  84% (13629/16225)
+2026-11-13T23:42:10.2787429Z Updating files:  85% (13792/16225)
+2026-11-13T23:42:10.3284279Z Updating files:  86% (13954/16225)
+2026-11-13T23:42:10.4012000Z Updating files:  87% (14116/16225)
+2026-11-13T23:42:10.4209020Z Updating files:  88% (14278/16225)
+2026-11-13T23:42:10.4484021Z Updating files:  89% (14441/16225)
+2026-11-13T23:42:10.4632551Z Updating files:  90% (14603/16225)
+2026-11-13T23:42:10.5062680Z Updating files:  91% (14765/16225)
+2026-11-13T23:42:10.5281653Z Updating files:  92% (14927/16225)
+2026-11-13T23:42:10.5426643Z Updating files:  93% (15090/16225)
+2026-11-13T23:42:10.5867394Z Updating files:  94% (15252/16225)
+2026-11-13T23:42:10.6014671Z Updating files:  95% (15414/16225)
+2026-11-13T23:42:10.6263338Z Updating files:  96% (15576/16225)
+2026-11-13T23:42:10.6377036Z Updating files:  97% (15739/16225)
+2026-11-13T23:42:10.6978852Z Updating files:  98% (15901/16225)
+2026-11-13T23:42:10.7602885Z Updating files:  99% (16063/16225)
+2026-11-13T23:42:10.7603221Z Updating files: 100% (16225/16225)
+2026-11-13T23:42:10.7603600Z Updating files: 100% (16225/16225), done.
+2026-11-13T23:42:10.7711054Z Note: switching to 'refs/tags/v0.3.0-rc.1'.
+2026-11-13T23:42:10.7711278Z 
+2026-11-13T23:42:10.7711498Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-13T23:42:10.7711945Z changes and commit them, and you can discard any commits you make in this
+2026-11-13T23:42:10.7712378Z state without impacting any branches by switching back to a branch.
+2026-11-13T23:42:10.7712939Z 
+2026-11-13T23:42:10.7713105Z If you want to create a new branch to retain commits you create, you may
+2026-11-13T23:42:10.7713514Z do so (now or later) by using -c with the switch command. Example:
+2026-11-13T23:42:10.7713746Z 
+2026-11-13T23:42:10.7713849Z   git switch -c <new-branch-name>
+2026-11-13T23:42:10.7714007Z 
+2026-11-13T23:42:10.7714105Z Or undo this operation with:
+2026-11-13T23:42:10.7714267Z 
+2026-11-13T23:42:10.7714327Z   git switch -
+2026-11-13T23:42:10.7714476Z 
+2026-11-13T23:42:10.7714603Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-13T23:42:10.7714783Z 
+2026-11-13T23:42:10.7715048Z HEAD is now at fb7b872 Release notes for 0.3.0-rc.1 (#569)
+2026-11-13T23:42:10.7860854Z ##[endgroup]
+2026-11-13T23:42:10.7905833Z [command]/usr/bin/git log -1 --format=%H
+2026-11-13T23:42:10.7930720Z fb7b872a841ff3dcdba72ec54a95091091c53cd3
+2026-11-13T23:42:10.8281665Z Prepare all required actions
+2026-11-13T23:42:10.8282049Z Getting action download info
+2026-11-13T23:42:10.9337049Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-13T23:42:11.0368456Z ##[group]Run ./.github/actions/dotnet
+2026-11-13T23:42:11.0368625Z with:
+2026-11-13T23:42:11.0368743Z   fallback: true
+2026-11-13T23:42:11.0368858Z env:
+2026-11-13T23:42:11.0368979Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:11.0369122Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:11.0369240Z   LONG_RUN: true
+2026-11-13T23:42:11.0369377Z ##[endgroup]
+2026-11-13T23:42:11.0410732Z ##[start-action display=global.json rolls forward across feature bands;id=__self.__run]
+2026-11-13T23:42:11.0438021Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:11.0438240Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:11.0438427Z [36;1mroll=$(jq -r '.sdk.rollForward' global.json)[0m
+2026-11-13T23:42:11.0438966Z [36;1m[[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }[0m
+2026-11-13T23:42:11.0460049Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:11.0460247Z env:
+2026-11-13T23:42:11.0460374Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:11.0460520Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:11.0460637Z   LONG_RUN: true
+2026-11-13T23:42:11.0460754Z ##[endgroup]
+2026-11-13T23:42:11.0544460Z ##[end-action id=__self.__run;outcome=success;conclusion=success;duration_ms=13]
+2026-11-13T23:42:11.0546432Z ##[start-action display=Run set -euo pipefail;id=__self.install]
+2026-11-13T23:42:11.0560150Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:11.0560335Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:11.0560545Z [36;1mfeed=https://builds.dotnet.microsoft.com/dotnet[0m
+2026-11-13T23:42:11.0560817Z [36;1mchannel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)[0m
+2026-11-13T23:42:11.0561165Z [36;1mversion=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')[0m
+2026-11-13T23:42:11.0561602Z [36;1m[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }[0m
+2026-11-13T23:42:11.0561946Z [36;1mscript="$RUNNER_TEMP/dotnet-install.sh"[0m
+2026-11-13T23:42:11.0562193Z [36;1mcurl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"[0m
+2026-11-13T23:42:11.0562478Z [36;1mbash "$script" --version "$version" --install-dir "$HOME/.dotnet"[0m
+2026-11-13T23:42:11.0562724Z [36;1mecho "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"[0m
+2026-11-13T23:42:11.0562929Z [36;1mecho "$HOME/.dotnet" >> "$GITHUB_PATH"[0m
+2026-11-13T23:42:11.0563121Z [36;1mecho "version=$version" >> "$GITHUB_OUTPUT"[0m
+2026-11-13T23:42:11.0579013Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:11.0579204Z env:
+2026-11-13T23:42:11.0579332Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:11.0579482Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:11.0579600Z   LONG_RUN: true
+2026-11-13T23:42:11.0579845Z ##[endgroup]
+2026-11-13T23:42:12.6257777Z dotnet-install: Attempting to download using primary link https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-13T23:42:14.9707284Z dotnet-install: Remote file https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz size is 243138887 bytes.
+2026-11-13T23:42:14.9709688Z dotnet-install: Extracting archive from https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.404/dotnet-sdk-10.0.404-linux-x64.tar.gz
+2026-11-13T23:42:18.7108650Z dotnet-install: Downloaded file size is 243138887 bytes.
+2026-11-13T23:42:18.7109155Z dotnet-install: The remote and local file sizes are equal.
+2026-11-13T23:42:18.9545298Z dotnet-install: Installed version is 10.0.404
+2026-11-13T23:42:18.9597756Z dotnet-install: Adding to current process PATH: `/home/runner/.dotnet`. Note: This change will be visible only when sourcing script.
+2026-11-13T23:42:18.9598429Z dotnet-install: Note that the script does not resolve dependencies during installation.
+2026-11-13T23:42:18.9599252Z dotnet-install: To check the list of dependencies, go to https://learn.microsoft.com/dotnet/core/install, select your operating system and check the "Dependencies" section.
+2026-11-13T23:42:18.9599922Z dotnet-install: Installation finished successfully.
+2026-11-13T23:42:18.9624528Z ##[end-action id=__self.install;outcome=success;conclusion=success;duration_ms=7907]
+2026-11-13T23:42:18.9630312Z ##[start-action display=The SDK global.json resolves;id=__self.__run_2]
+2026-11-13T23:42:18.9684797Z ##[group]Run set -euo pipefail
+2026-11-13T23:42:18.9685150Z [36;1mset -euo pipefail[0m
+2026-11-13T23:42:18.9685298Z [36;1mif [[ -z "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:18.9685466Z [36;1m  if [[ "$FALLBACK" != true ]]; then[0m
+2026-11-13T23:42:18.9685829Z [36;1m    echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."[0m
+2026-11-13T23:42:18.9686178Z [36;1m    exit 1[0m
+2026-11-13T23:42:18.9686296Z [36;1m  fi[0m
+2026-11-13T23:42:18.9686681Z [36;1m  resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }[0m
+2026-11-13T23:42:18.9687300Z [36;1m  echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."[0m
+2026-11-13T23:42:18.9687641Z [36;1melse[0m
+2026-11-13T23:42:18.9687980Z [36;1m  resolved=$(dotnet --version)[0m
+2026-11-13T23:42:18.9688247Z [36;1m  if [[ "$resolved" != "$INSTALLED" ]]; then[0m
+2026-11-13T23:42:18.9688652Z [36;1m    echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."[0m
+2026-11-13T23:42:18.9688988Z [36;1m    exit 1[0m
+2026-11-13T23:42:18.9689108Z [36;1m  fi[0m
+2026-11-13T23:42:18.9689222Z [36;1mfi[0m
+2026-11-13T23:42:18.9689341Z [36;1mecho ".NET SDK $resolved"[0m
+2026-11-13T23:42:18.9689581Z [36;1m# The compiler's errors and warnings as annotations on the lines they name, as[0m
+2026-11-13T23:42:18.9689868Z [36;1m# actions/setup-dotnet registered them (its csc.json).[0m
+2026-11-13T23:42:18.9690096Z [36;1mecho "::add-matcher::$GITHUB_ACTION_PATH/csc.json"[0m
+2026-11-13T23:42:18.9708130Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:18.9708328Z env:
+2026-11-13T23:42:18.9708457Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:18.9708610Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:18.9708729Z   LONG_RUN: true
+2026-11-13T23:42:18.9708855Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:18.9709002Z   INSTALLED: 10.0.404
+2026-11-13T23:42:18.9709126Z   FALLBACK: true
+2026-11-13T23:42:18.9709244Z ##[endgroup]
+2026-11-13T23:42:19.0654244Z .NET SDK 10.0.404
+2026-11-13T23:42:19.0679799Z ##[end-action id=__self.__run_2;outcome=success;conclusion=success;duration_ms=104]
+2026-11-13T23:42:19.0682199Z ##[start-action display=Run actions/setup-node@v7;id=__self.__actions_setup-node]
+2026-11-13T23:42:19.0786675Z ##[group]Run actions/setup-node@v7
+2026-11-13T23:42:19.0786829Z with:
+2026-11-13T23:42:19.0786956Z   node-version-file: .node-version
+2026-11-13T23:42:19.0787105Z   cache: npm
+2026-11-13T23:42:19.0787241Z   cache-dependency-path: package-lock.json
+2026-11-13T23:42:19.0787408Z   check-latest: false
+2026-11-13T23:42:19.0788890Z   token: ***
+2026-11-13T23:42:19.0789016Z   package-manager-cache: true
+2026-11-13T23:42:19.0789157Z env:
+2026-11-13T23:42:19.0789274Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:19.0789415Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:19.0789530Z   LONG_RUN: true
+2026-11-13T23:42:19.0789654Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:19.0789800Z ##[endgroup]
+2026-11-13T23:42:19.1644201Z Node version file is not JSON file
+2026-11-13T23:42:19.1647862Z Node version file is not TOML file
+2026-11-13T23:42:19.1648880Z Resolved .node-version as 26.12.1
+2026-11-13T23:42:19.1672495Z Attempting to download 26.12.1...
+2026-11-13T23:42:20.1238854Z Acquiring 26.12.1 - x64 from https://github.com/actions/node-versions/releases/download/26.12.1-39618969937/node-26.12.1-linux-x64.tar.gz
+2026-11-13T23:42:20.6057581Z Extracting ...
+2026-11-13T23:42:20.6165138Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/bfae01d2-13c4-4a71-95de-3711368d1ba4 -f /home/runner/work/_temp/1413749b-4533-4bd5-93da-8e4072621332
+2026-11-13T23:42:21.6993479Z Adding to the cache ...
+2026-11-13T23:42:23.7166548Z ##[group]Environment details
+2026-11-13T23:42:23.8792236Z node: v26.12.1
+2026-11-13T23:42:23.8792494Z npm: 11.20.0
+2026-11-13T23:42:23.8792619Z yarn: 1.22.22
+2026-11-13T23:42:23.8793057Z ##[endgroup]
+2026-11-13T23:42:23.8804128Z [command]/opt/hostedtoolcache/node/26.12.1/x64/bin/npm config get cache
+2026-11-13T23:42:23.9539205Z /home/runner/.npm
+2026-11-13T23:42:24.1638116Z Cache hit for: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:25.4021342Z Received 46137344 of 90168603 (51.2%), 44.0 MBs/sec
+2026-11-13T23:42:25.5813447Z Received 90168603 of 90168603 (100.0%), 72.9 MBs/sec
+2026-11-13T23:42:25.5814031Z Cache Size: ~86 MB (90168603 B)
+2026-11-13T23:42:25.5901458Z [command]/usr/bin/tar -xf /home/runner/work/_temp/0eebb370-babe-4d03-9f67-a365b80b8100/cache.tzst -P -C /home/runner/work/ex-grid/ex-grid --use-compress-program unzstd
+2026-11-13T23:42:25.7283145Z Cache restored successfully
+2026-11-13T23:42:25.7329870Z Cache restored from key: node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54
+2026-11-13T23:42:25.7494802Z ##[end-action id=__self.__actions_setup-node;outcome=success;conclusion=success;duration_ms=6681]
+2026-11-13T23:42:25.7497101Z ##[start-action display=The npm workspace's dependencies;id=__self.__run_3]
+2026-11-13T23:42:25.7533364Z ##[group]Run npm ci --no-audit --no-fund
+2026-11-13T23:42:25.7533584Z [36;1mnpm ci --no-audit --no-fund[0m
+2026-11-13T23:42:25.7551011Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-13T23:42:25.7551222Z env:
+2026-11-13T23:42:25.7551354Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:25.7551508Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:25.7551630Z   LONG_RUN: true
+2026-11-13T23:42:25.7551765Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:25.7551920Z ##[endgroup]
+2026-11-13T23:42:29.4584702Z 
+2026-11-13T23:42:29.4591026Z added 270 packages in 4s
+2026-11-13T23:42:29.5264049Z ##[end-action id=__self.__run_3;outcome=success;conclusion=success;duration_ms=3776]
+2026-11-13T23:42:29.5294348Z ##[group]Run google-chrome --version
+2026-11-13T23:42:29.5294584Z [36;1mgoogle-chrome --version[0m
+2026-11-13T23:42:29.5294749Z [36;1mmicrosoft-edge --version[0m
+2026-11-13T23:42:29.5312333Z shell: /usr/bin/bash -e {0}
+2026-11-13T23:42:29.5312485Z env:
+2026-11-13T23:42:29.5312612Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:29.5312766Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:29.5312890Z   LONG_RUN: true
+2026-11-13T23:42:29.5313022Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:29.5313325Z ##[endgroup]
+2026-11-13T23:42:29.6968215Z Google Chrome 157.0.8103.50 
+2026-11-13T23:42:32.3786460Z Microsoft Edge 157.0.4341.46 
+2026-11-13T23:42:32.6169076Z ##[group]Run actions/download-artifact@v8
+2026-11-13T23:42:32.6169259Z with:
+2026-11-13T23:42:32.6169381Z   name: layer3-hosts
+2026-11-13T23:42:32.6169509Z   path: hosts
+2026-11-13T23:42:32.6169691Z   merge-multiple: false
+2026-11-13T23:42:32.6169874Z   repository: AkiraMisawa/ex-grid
+2026-11-13T23:42:32.6170066Z   run-id: 43528656529
+2026-11-13T23:42:32.6170256Z   skip-decompress: false
+2026-11-13T23:42:32.6170436Z   digest-mismatch: error
+2026-11-13T23:42:32.6170570Z env:
+2026-11-13T23:42:32.6170694Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:32.6170843Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:32.6170963Z   LONG_RUN: true
+2026-11-13T23:42:32.6171094Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:32.6171249Z ##[endgroup]
+2026-11-13T23:42:32.7141824Z Downloading single artifact
+2026-11-13T23:42:32.9300525Z Preparing to download the following artifacts:
+2026-11-13T23:42:32.9301465Z - layer3-hosts (ID: 14086592329, Size: 80033189, Expected Digest: sha256:d018f7b6461689be390e67f266751468ee00ddd1a491880a203846ab25128ee2)
+2026-11-13T23:42:33.4050227Z Redirecting to blob download url: https://productionresultssa12.blob.core.windows.net/actions-results/d93c4eb9-7181-83b2-b439-b5b68a989ab8/workflow-job-run-09c9690e-6047-5c4f-98ff-8937e43f3bb5/artifacts/e5d39098aaa4cdedd7a5cb3ae8e8192302bf1bdbb24aa0ad756940b26e2a3812.zip
+2026-11-13T23:42:33.4051676Z Starting download of artifact to: /home/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:33.7038051Z (node:2595) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-11-13T23:42:33.7038695Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-13T23:42:35.7420657Z SHA256 digest of downloaded artifact is d018f7b6461689be390e67f266751468ee00ddd1a491880a203846ab25128ee2
+2026-11-13T23:42:35.7421377Z Artifact download completed successfully.
+2026-11-13T23:42:35.7421905Z Total of 1 artifact(s) downloaded
+2026-11-13T23:42:35.7425343Z Download artifact has finished successfully
+2026-11-13T23:42:35.7577365Z ##[group]Run xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=msedge --shard=2/2
+2026-11-13T23:42:35.7577891Z [36;1mxvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24" npx playwright test --project=msedge --shard=2/2[0m
+2026-11-13T23:42:35.7595433Z shell: /usr/bin/bash -e {0}
+2026-11-13T23:42:35.7595586Z env:
+2026-11-13T23:42:35.7595718Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:42:35.7595875Z   DOTNET_NOLOGO: 1
+2026-11-13T23:42:35.7596002Z   LONG_RUN: true
+2026-11-13T23:42:35.7596140Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:42:35.7596336Z   EXGRID_HOSTS: /home/runner/work/ex-grid/ex-grid/hosts
+2026-11-13T23:42:35.7596521Z   EXGRID_SOAK: 1
+2026-11-13T23:42:35.7596663Z ##[endgroup]
+2026-11-13T23:42:37.0586113Z [WebServer] Serving /home/runner/work/ex-grid/ex-grid/hosts/wasm/wwwroot at http://localhost:5299
+2026-11-13T23:42:38.4414184Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:42:38.4417777Z [DemoApi]       Generating 20000 trades into /tmp/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+2026-11-13T23:42:38.5210131Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:42:38.5211033Z [DemoApi]       Generated 10000 of 20000 trades (50%).
+2026-11-13T23:42:38.5559369Z [DemoApi] info: Microsoft.Hosting.Lifetime[14]
+2026-11-13T23:42:38.5563520Z [DemoApi]       Now listening on: http://localhost:8299
+2026-11-13T23:42:38.5564352Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:42:38.5565248Z [DemoApi]       Application started. Press Ctrl+C to shut down.
+2026-11-13T23:42:38.5565732Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:42:38.5566153Z [DemoApi]       Hosting environment: Development
+2026-11-13T23:42:38.5566978Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:42:38.5567508Z [DemoApi]       Content root path: /home/runner/work/ex-grid/ex-grid/hosts/api
+2026-11-13T23:42:38.5692268Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:42:38.5693044Z [DemoApi]       Generated 20000 trades in 0.1 s: 1.6 MB.
+2026-11-13T23:42:38.6614536Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:42:38.6615410Z [DemoApi]       Serving 20000 trades at version 19423d23-0 from /tmp/exgrid-demo-api/runs/trades-v1-20000.2662.19423d23.sqlite.
+2026-11-13T23:42:40.4196132Z 
+2026-11-13T23:42:40.4197225Z Running 388 tests using 1 worker, shard 2 of 2
+2026-11-13T23:42:40.4197423Z 
+2026-11-13T23:43:01.7213958Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:01.7214580Z [DemoApi]       Live updates off.
+2026-11-13T23:43:01.7410941Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:01.7411769Z [DemoApi]       Reset to the generated trades at version 19423d23-1: 0 trades put back.
+2026-11-13T23:43:03.0693957Z [DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+2026-11-13T23:43:03.0695491Z [DemoApi]       The trades' Arrow stream at version 19423d23-1: 20000 trades read into a Snapshot in 171 ms and written in 67 ms, 1.6 MB.
+2026-11-13T23:43:04.2302506Z   ✓    1 [msedge] › pivot-db.spec.mjs:109:9 › under the mud Chrome › PV-20/ADR-0069: the database read over Arrow and asked of the server's Pivot Source shows the same numbers (mud) @blazor (2.7s)
+2026-11-13T23:43:04.2476758Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:04.2477207Z [DemoApi]       Live updates off.
+2026-11-13T23:43:04.2625288Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:04.2626022Z [DemoApi]       Reset to the generated trades at version 19423d23-2: 0 trades put back.
+2026-11-13T23:43:04.5246935Z [DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+2026-11-13T23:43:04.5247961Z [DemoApi]       The trades' Arrow stream at version 19423d23-2: 20000 trades read into a Snapshot in 173 ms and written in 16 ms, 1.6 MB.
+2026-11-13T23:43:05.3488009Z   ✓    2 [msedge] › pivot-db.spec.mjs:129:9 › under the mud Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (mud) @blazor (1.1s)
+2026-11-13T23:43:05.3588840Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:05.3589290Z [DemoApi]       Live updates off.
+2026-11-13T23:43:05.3742276Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:05.3743068Z [DemoApi]       Reset to the generated trades at version 19423d23-3: 0 trades put back.
+2026-11-13T23:43:05.5852073Z [DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+2026-11-13T23:43:05.5853320Z [DemoApi]       The trades' Arrow stream at version 19423d23-3: 20000 trades read into a Snapshot in 131 ms and written in 22 ms, 1.6 MB.
+2026-11-13T23:43:06.7057833Z   ✓    3 [msedge] › pivot-db.spec.mjs:144:9 › under the mud Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (mud) @blazor (1.3s)
+2026-11-13T23:43:06.7178718Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:06.7179583Z [DemoApi]       Live updates off.
+2026-11-13T23:43:06.7310088Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:06.7311261Z [DemoApi]       Reset to the generated trades at version 19423d23-4: 0 trades put back.
+2026-11-13T23:43:06.8984299Z [DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+2026-11-13T23:43:06.8995775Z [DemoApi]       The trades' Arrow stream at version 19423d23-4: 20000 trades read into a Snapshot in 122 ms and written in 6 ms, 1.6 MB.
+2026-11-13T23:43:07.1984656Z   ✓    4 [msedge] › pivot-db.spec.mjs:176:1 › ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole @blazor (485ms)
+2026-11-13T23:43:09.7147141Z   ✓    5 [msedge] › pivot-find.spec.mjs:73:9 › under the mud Chrome › ADR-0332 §1: Ctrl+F on the report opens its find panel, the keys typed after it land in its field, and Enter steps through the labels as shown, wrapping (mud) @blazor (2.5s)
+2026-11-13T23:43:10.5782987Z   ✓    6 [msedge] › pivot-find.spec.mjs:94:9 › under the mud Chrome › ADR-0332 §4: the report's painted matches are marked as they are typed, and the current one apart (mud) @blazor (855ms)
+2026-11-13T23:43:11.3443766Z   ✓    7 [msedge] › pivot-find.spec.mjs:131:9 › under the mud Chrome › ADR-0332 §1: a collapsed group is not searched inside, and nothing expands to show a match (mud) @blazor (758ms)
+2026-11-13T23:43:11.9780535Z   ✓    8 [msedge] › pivot-find.spec.mjs:160:9 › under the mud Chrome › PV-13: an outer Item collapses and expands from the Context Menu, and the Focus stays on it (ADR-0059) (mud) @blazor (625ms)
+2026-11-13T23:43:12.5772882Z   ✓    9 [msedge] › pivot-find.spec.mjs:181:9 › under the mud Chrome › ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (mud) @blazor (591ms)
+2026-11-13T23:43:12.9768532Z   ✓   10 [msedge] › pivot-find.spec.mjs:205:9 › under the mud Chrome › ADR-0332 §2: Ctrl+H on the report opens nothing, keeps the key from the browser, and the Pivot Toolbar says why (mud) @blazor (391ms)
+2026-11-13T23:43:13.5138519Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:13.5139147Z [DemoApi]       Live updates off.
+2026-11-13T23:43:13.5284727Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:13.5285344Z [DemoApi]       Reset to the generated trades at version 19423d23-5: 0 trades put back.
+2026-11-13T23:43:15.2594576Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:15.2595907Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:15.4120967Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:15.4123066Z [DemoApi]       Live updates off.
+2026-11-13T23:43:18.8022769Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:18.8028736Z [DemoApi]       Live updates off.
+2026-11-13T23:43:18.8166439Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:18.8167314Z [DemoApi]       Live updates off.
+2026-11-13T23:43:18.9449113Z   ✓   11 [msedge] › pivot-live.spec.mjs:156:9 › under the mud Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (mud) @blazor (6.0s)
+2026-11-13T23:43:18.9548946Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:18.9549373Z [DemoApi]       Live updates off.
+2026-11-13T23:43:18.9701540Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:18.9702030Z [DemoApi]       Reset to the generated trades at version 19423d23-7: 20 trades put back.
+2026-11-13T23:43:19.3365846Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:19.3390683Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:19.7573271Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:19.7578669Z [DemoApi]       Live updates off.
+2026-11-13T23:43:22.8068748Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:22.8069370Z [DemoApi]       Live updates off.
+2026-11-13T23:43:22.8210942Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:22.8211864Z [DemoApi]       Live updates off.
+2026-11-13T23:43:22.9421344Z   ✓   12 [msedge] › pivot-live.spec.mjs:199:13 › under the mud Chrome › PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (mud, light) @blazor (4.0s)
+2026-11-13T23:43:22.9510596Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:22.9511303Z [DemoApi]       Live updates off.
+2026-11-13T23:43:22.9663302Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:22.9663749Z [DemoApi]       Reset to the generated trades at version 19423d23-10: 40 trades put back.
+2026-11-13T23:43:23.2732143Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:23.2735873Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:23.6909990Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:23.6917630Z [DemoApi]       Live updates off.
+2026-11-13T23:43:26.7234243Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:26.7235054Z [DemoApi]       Live updates off.
+2026-11-13T23:43:26.7322830Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:26.7323636Z [DemoApi]       Live updates off.
+2026-11-13T23:43:26.8591471Z   ✓   13 [msedge] › pivot-live.spec.mjs:199:13 › under the mud Chrome › PV-37/ADR-0067/UX-8: a server cut off leaves a Stale Report whose value cells paint muted and readable, its labels as they were, until Retry brings the newest back (mud, dark) @blazor (3.9s)
+2026-11-13T23:43:26.8681287Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:26.8681984Z [DemoApi]       Live updates off.
+2026-11-13T23:43:26.8851738Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:26.8856298Z [DemoApi]       Reset to the generated trades at version 19423d23-13: 39 trades put back.
+2026-11-13T23:43:27.1605482Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:27.1606409Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:27.3551867Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:27.3561598Z [DemoApi]       Live updates off.
+2026-11-13T23:43:28.7063015Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:28.7063654Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:28.7866222Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:28.7885940Z [DemoApi]       Live updates off.
+2026-11-13T23:43:28.8438827Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:28.8439134Z [DemoApi]       Live updates off.
+2026-11-13T23:43:28.9598567Z   ✓   14 [msedge] › pivot-live.spec.mjs:289:9 › under the mud Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (mud) @blazor (2.1s)
+2026-11-13T23:43:28.9756690Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:28.9765958Z [DemoApi]       Live updates off.
+2026-11-13T23:43:28.9910443Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:43:28.9911213Z [DemoApi]       Reset to the generated trades at version 19423d23-16: 39 trades put back.
+2026-11-13T23:43:29.1006334Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:29.1039822Z [DemoApi]       Live updates on: 20 trades every 250 ms.
+2026-11-13T23:43:29.2164312Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:29.2168644Z [DemoApi]       Live updates off.
+2026-11-13T23:43:29.2306628Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:43:29.2308987Z [DemoApi]       Live updates off.
+2026-11-13T23:43:29.3605703Z   ✓   15 [msedge] › pivot-live.spec.mjs:313:1 › ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on @blazor (392ms)
+2026-11-13T23:43:31.3941418Z   ✓   16 [msedge] › pivot-risk.spec.mjs:70:9 › under the mud Chrome › ADR-0060: the tenors stand in the Order Key's order, ON to 30Y, with 18M and 1Y6M two Items side by side (mud) @blazor (2.0s)
+2026-11-13T23:43:32.3421454Z   ✓   17 [msedge] › pivot-risk.spec.mjs:86:9 › under the mud Chrome › ADR-0060: the tenor's Filter… lists its Items in the Order Key's order (mud) @blazor (939ms)
+2026-11-13T23:43:32.8267259Z   ✓   18 [msedge] › pivot-risk.spec.mjs:108:9 › under the mud Chrome › ADR-0060: without the Order Key the tenors fall back to the order of their labels (mud) @blazor (478ms)
+2026-11-13T23:43:33.2102285Z   ✓   19 [msedge] › pivot-risk.spec.mjs:123:9 › under the mud Chrome › ADR-0060: every total painted is the sum of what it totals, and the report's is the page's own sum of the positions (mud) @blazor (376ms)
+2026-11-13T23:43:33.4521219Z   ✓   20 [msedge] › pivot-risk.spec.mjs:161:1 › ADR-0069: the code the page shows is the code it runs, the README's Order Key among it @blazor (231ms)
+2026-11-13T23:43:35.3954495Z   ✓   21 [msedge] › pivot.spec.mjs:316:9 › under the builtin Chrome › ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (builtin) @blazor (1.9s)
+2026-11-13T23:43:35.8442291Z   ✓   22 [msedge] › pivot.spec.mjs:457:9 › under the builtin Chrome › ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (builtin) @blazor (439ms)
+2026-11-13T23:43:36.2124318Z   ✓   23 [msedge] › pivot.spec.mjs:481:9 › under the builtin Chrome › ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, → typed at once, closes it and moves the report's Focus down and right, in that order (builtin) @blazor (360ms)
+2026-11-13T23:43:36.5608799Z   ✓   24 [msedge] › pivot.spec.mjs:685:9 › under the builtin Chrome › ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (builtin) @blazor (340ms)
+2026-11-13T23:43:36.6771514Z   -   25 [msedge] › pivot.spec.mjs:707:9 › under the builtin Chrome › ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (builtin) @blazor
+2026-11-13T23:43:36.7917125Z   -   26 [msedge] › pivot.spec.mjs:735:9 › under the builtin Chrome › ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (builtin) @blazor
+2026-11-13T23:43:37.2442933Z   ✓   27 [msedge] › pivot.spec.mjs:853:9 › under the builtin Chrome › ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (builtin) @blazor (445ms)
+2026-11-13T23:43:37.6272567Z   ✓   28 [msedge] › pivot.spec.mjs:879:9 › under the builtin Chrome › ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (builtin) @blazor (376ms)
+2026-11-13T23:43:37.8922148Z   ✓   29 [msedge] › pivot.spec.mjs:896:9 › under the builtin Chrome › ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (builtin) @blazor (258ms)
+2026-11-13T23:43:38.1924504Z   ✓   30 [msedge] › pivot.spec.mjs:1023:9 › under the builtin Chrome › ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (builtin) @blazor (293ms)
+2026-11-13T23:43:38.7431008Z   ✓   31 [msedge] › pivot.spec.mjs:1045:9 › under the builtin Chrome › ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (builtin) @blazor (544ms)
+2026-11-13T23:43:39.4947840Z   ✓   32 [msedge] › pivot.spec.mjs:138:9 › under the mud Chrome › ADR-0061: a field dragged from the list onto an Area stands there (mud) @blazor (743ms)
+2026-11-13T23:43:41.6528833Z   ✓   33 [msedge] › pivot.spec.mjs:149:9 › under the mud Chrome › ADR-0061: an entry dragged before another reorders, and dragged to the list of fields is removed (mud) @blazor (2.1s)
+2026-11-13T23:43:43.7608900Z   ✓   34 [msedge] › pivot.spec.mjs:162:9 › under the mud Chrome › ADR-0061: entries dropped on the report are removed from Rows and Columns (mud) @blazor (2.1s)
+2026-11-13T23:43:45.6837231Z   ✓   35 [msedge] › pivot.spec.mjs:178:9 › under the mud Chrome › ADR-0061: a report removal waits for Defer Layout Update (mud) @blazor (1.9s)
+2026-11-13T23:43:47.7203547Z   ✓   36 [msedge] › pivot.spec.mjs:192:9 › under the mud Chrome › ADR-0061: an unused field and a details grid do not accept report removal (mud) @blazor (2.0s)
+2026-11-13T23:43:49.4273324Z   ✓   37 [msedge] › pivot.spec.mjs:206:9 › under the mud Chrome › ADR-0061: cancelling over the report clears the removal indication without removing (mud) @blazor (1.7s)
+2026-11-13T23:43:51.3378390Z   ✓   38 [msedge] › pivot.spec.mjs:218:9 › under the mud Chrome › PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (mud) @blazor (1.9s)
+2026-11-13T23:43:53.8068587Z   ✓   39 [msedge] › pivot.spec.mjs:240:13 › under the mud Chrome › with room for the whole page › PV-10 / ADR-0061: a drag from outside the pivot, dropped on the report, an Area or the list of fields, changes nothing — after a cancelled drag too (mud) @blazor (2.5s)
+2026-11-13T23:43:57.1758925Z   ✓   40 [msedge] › pivot.spec.mjs:263:13 › under the mud Chrome › with room for the whole page › PV-10 / ADR-0061: a field or an entry dragged from another pivot changes neither pivot (mud) @blazor (3.4s)
+2026-11-13T23:43:58.8081632Z   ✓   41 [msedge] › pivot.spec.mjs:303:9 › under the mud Chrome › ADR-0059: the − button collapses an Item, and the Focus stays on it (mud) @blazor (1.6s)
+2026-11-13T23:43:59.5075787Z   ✓   42 [msedge] › pivot.spec.mjs:316:9 › under the mud Chrome › ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (mud) @blazor (692ms)
+2026-11-13T23:44:00.4415414Z   ✓   43 [msedge] › pivot.spec.mjs:339:9 › under the mud Chrome › ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (mud) @blazor (925ms)
+2026-11-13T23:44:00.9583375Z   ✓   44 [msedge] › pivot.spec.mjs:398:9 › under the mud Chrome › ADR-0059: Show Details opens ExPivot's dialog when the page asks for one, which takes the keyboard and closes on Escape (mud) @blazor (510ms)
+2026-11-13T23:44:01.5752403Z   ✓   45 [msedge] › pivot.spec.mjs:420:9 › under the mud Chrome › ADR-0070: Escape in the dialog's grid peels the grid's own layers, then closes the dialog, and the arrows move the report's Focus again (mud) @blazor (609ms)
+2026-11-13T23:44:02.1080427Z   ✓   46 [msedge] › pivot.spec.mjs:457:9 › under the mud Chrome › ADR-0070 (decided with the user, 2026-10-13): Escape in the dialog's grid, then ↓ typed at once, closes the dialog and moves the report's Focus, as typed slowly (mud) @blazor (526ms)
+2026-11-13T23:44:02.5912627Z   ✓   47 [msedge] › pivot.spec.mjs:481:9 › under the mud Chrome › ADR-0070 (decided with the user, 2026-10-13): Escape on the dialog's Close, then ↓, → typed at once, closes it and moves the report's Focus down and right, in that order (mud) @blazor (476ms)
+2026-11-13T23:44:03.0901252Z   ✓   48 [msedge] › pivot.spec.mjs:498:9 › under the mud Chrome › ADR-0070/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (mud) @blazor (492ms)
+2026-11-13T23:44:03.9081579Z   ✓   49 [msedge] › pivot.spec.mjs:527:9 › under the mud Chrome › ADR-0070: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (mud) @blazor (811ms)
+2026-11-13T23:44:04.7902484Z   ✓   50 [msedge] › pivot.spec.mjs:552:9 › under the mud Chrome › ADR-0070: Escape in a details tab's grid closes nothing; the selected tab closed hands the keyboard to the tab selected next, and the last one back to the report (mud) @blazor (875ms)
+2026-11-13T23:44:05.2582099Z   ✓   51 [msedge] › pivot.spec.mjs:616:9 › under the mud Chrome › ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (mud) @blazor (460ms)
+2026-11-13T23:44:05.7076714Z   ✓   52 [msedge] › pivot.spec.mjs:637:9 › under the mud Chrome › ADR-0070/0033 (PV-41): the keyboard put in a new tab's records before the tab's request lands stays there, on their root (mud) @blazor (443ms)
+2026-11-13T23:44:06.1575597Z   ✓   53 [msedge] › pivot.spec.mjs:656:9 › under the mud Chrome › ADR-0063: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (mud) @blazor (441ms)
+2026-11-13T23:44:06.6070859Z   ✓   54 [msedge] › pivot.spec.mjs:668:9 › under the mud Chrome › ADR-0039/0061: the keyboard goes into a field's menu and back to its entry (mud) @blazor (442ms)
+2026-11-13T23:44:07.1404731Z   ✓   55 [msedge] › pivot.spec.mjs:685:9 › under the mud Chrome › ADR-0061 (decided with the user, 2026-10-13): Escape in a field's menu, then Enter typed at once, runs no command and opens the menu again from its entry, as typed slowly (mud) @blazor (526ms)
+2026-11-13T23:44:07.2577319Z   -   56 [msedge] › pivot.spec.mjs:707:9 › under the mud Chrome › ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, Enter on a field's entry and Enter typed at once press the menu's first command, as typed slowly (mud) @blazor
+2026-11-13T23:44:07.3727974Z   -   57 [msedge] › pivot.spec.mjs:735:9 › under the mud Chrome › ADR-0061 (decided with the user, 2026-10-13): with a 150 ms round trip, letters typed straight after Enter on a report filter are typed into its Filter…'s search, as typed slowly (mud) @blazor
+2026-11-13T23:44:07.8401141Z   ✓   58 [msedge] › pivot.spec.mjs:761:9 › under the mud Chrome › ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (mud) @blazor (460ms)
+2026-11-13T23:44:08.4910110Z   ✓   59 [msedge] › pivot.spec.mjs:782:13 › under the mud Chrome › ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (mud) @blazor (642ms)
+2026-11-13T23:44:09.1064472Z   ✓   60 [msedge] › pivot.spec.mjs:803:9 › under the mud Chrome › ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (mud) @blazor (609ms)
+2026-11-13T23:44:09.8400277Z   ✓   61 [msedge] › pivot.spec.mjs:821:9 › under the mud Chrome › ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (mud) @blazor (727ms)
+2026-11-13T23:44:10.6095428Z   ✓   62 [msedge] › pivot.spec.mjs:853:9 › under the mud Chrome › ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (mud) @blazor (762ms)
+2026-11-13T23:44:11.2069619Z   ✓   63 [msedge] › pivot.spec.mjs:879:9 › under the mud Chrome › ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (mud) @blazor (591ms)
+2026-11-13T23:44:11.6083080Z   ✓   64 [msedge] › pivot.spec.mjs:896:9 › under the mud Chrome › ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (mud) @blazor (394ms)
+2026-11-13T23:44:12.0735567Z   ✓   65 [msedge] › pivot.spec.mjs:920:9 › under the mud Chrome › ADR-0061: a command from a field's menu moves the field (mud) @blazor (457ms)
+2026-11-13T23:44:12.4063259Z   ✓   66 [msedge] › pivot.spec.mjs:931:9 › under the mud Chrome › ADR-0061: the Pivot Toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (mud) @blazor (326ms)
+2026-11-13T23:44:13.1400911Z   ✓   67 [msedge] › pivot.spec.mjs:947:9 › under the mud Chrome › ADR-0061: the report filter band filters the report (mud) @blazor (726ms)
+2026-11-13T23:44:13.6743291Z   ✓   68 [msedge] › pivot.spec.mjs:967:9 › under the mud Chrome › ADR-0061: the band's Filter… opens under the Pivot Toolbar, over the report, and a press beside it closes it (mud) @blazor (527ms)
+2026-11-13T23:44:14.3074232Z   ✓   69 [msedge] › pivot.spec.mjs:992:9 › under the mud Chrome › ADR-0061: the Layout menu opens under its button, over the report; a choice lays the report out again and the keyboard goes back to Layout (mud) @blazor (626ms)
+2026-11-13T23:44:14.8072899Z   ✓   70 [msedge] › pivot.spec.mjs:1023:9 › under the mud Chrome › ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (mud) @blazor (493ms)
+2026-11-13T23:44:15.6240075Z   ✓   71 [msedge] › pivot.spec.mjs:1045:9 › under the mud Chrome › ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (mud) @blazor (807ms)
+2026-11-13T23:44:16.4241313Z   ✓   72 [msedge] › pivot.spec.mjs:1091:9 › under the mud Chrome › ADR-0060: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (mud) @blazor (793ms)
+2026-11-13T23:44:16.8911927Z   ✓   73 [msedge] › pivot.spec.mjs:1121:1 › ADR-0070 (DC-61): a control focused while the report's keyboard is on its way back keeps it @blazor (460ms)
+2026-11-13T23:44:16.9036441Z [DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+2026-11-13T23:44:16.9036993Z [DemoApi]       Live updates off.
+2026-11-13T23:44:16.9189573Z [DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+2026-11-13T23:44:16.9190314Z [DemoApi]       Reset to the generated trades at version 19423d23-18: 20 trades put back.
+2026-11-13T23:44:17.1099180Z [DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+2026-11-13T23:44:17.1126739Z [DemoApi]       The trades' Arrow stream at version 19423d23-18: 20000 trades read into a Snapshot in 94 ms and written in 18 ms, 1.6 MB.
+2026-11-13T23:44:17.7266121Z   ✓   74 [msedge] › pivot.spec.mjs:1149:1 › ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its way back to the first keeps it @blazor (828ms)
+2026-11-13T23:44:18.3739907Z   ✓   75 [msedge] › pivot.spec.mjs:1182:5 › PV-7 / ADR-0060: a number format the engine cannot write is refused by name, in the sample and on OK, and the report keeps its own (mud) @blazor (638ms)
+2026-11-13T23:44:18.7562621Z   ✓   76 [msedge] › pivot.spec.mjs:1202:5 › ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (builtin) @blazor (374ms)
+2026-11-13T23:44:19.3238075Z   ✓   77 [msedge] › pivot.spec.mjs:1202:5 › ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (mud) @blazor (560ms)
+2026-11-13T23:44:19.7068614Z   ✓   78 [msedge] › pivot.spec.mjs:1233:1 › ADR-0062/0030: the palette reaches the pane, the entries and the − button, light and dark @blazor (376ms)
+2026-11-13T23:44:20.3069655Z   ✓   79 [msedge] › pivot.spec.mjs:1265:1 › PV-18 / ADR-0062/0030: every Visual Token ExPivot reads is the palette entry the Wrapper maps it to, inside the report, light and dark @blazor (593ms)
+2026-11-13T23:44:21.4426463Z   ✓   80 [msedge] › pivot.spec.mjs:1407:9 › ADR-0362 (mud) › ADR-0362: a field ticked straight after Layout ▾ and Enter keeps the keyboard, behind the menu's command (mud) @blazor (1.1s)
+2026-11-13T23:44:22.5406183Z   ✓   81 [msedge] › pivot.spec.mjs:1422:9 › ADR-0362 (mud) › ADR-0362: a field's caption pressed straight after Layout ▾ and Enter waits for the menu's command, as its tick does (mud) @blazor (1.1s)
+2026-11-13T23:44:23.6232462Z   ✓   82 [msedge] › pivot.spec.mjs:1436:9 › ADR-0362 (mud) › ADR-0362: Space typed straight after Layout ▾, pressed from a ticked field, presses the menu's choice and not the tick (mud) @blazor (1.1s)
+2026-11-13T23:44:24.8406826Z   ✓   83 [msedge] › pivot.spec.mjs:1451:5 › ADR-0362: a field ticked straight after a command pressed in a field's menu waits for that command, and its press does not dismiss the menu ahead of it (mud) @blazor (1.2s)
+2026-11-13T23:44:25.4063929Z   ✓   84 [msedge] › pivot.spec.mjs:1489:5 › ADR-0362: Enter on a Layout ▾ choice, which closes the menu it stands in, is answered and the pivot settles (mud) @blazor (556ms)
+2026-11-13T23:44:25.6563994Z   ✓   85 [msedge] › pivot.spec.mjs:1507:1 › ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date @blazor (242ms)
+2026-11-13T23:44:29.4241960Z   ✓   86 [msedge] › pointing-scope.spec.mjs:249:5 › /sheet › ADR-0058/DC-54: with a 150 ms round trip, =, a press on a PV cell and * at once give the lookup and the * @blazor (3.7s)
+2026-11-13T23:44:31.5723146Z   ✓   87 [msedge] › pointing-scope.spec.mjs:351:5 › /sheet › ADR-0058: with a 150 ms round trip, the Cell Editor taking the keyboard from the Sheet's root does not stop the pointing @blazor (2.1s)
+2026-11-13T23:44:33.8885094Z   ✓   88 [msedge] › pointing-scope.spec.mjs:386:5 › /sheet › ADR-0058/DC-54: with a 150 ms round trip, =SUM(1,, a press, then ) and Enter at once commit the lookup inside the SUM @blazor (2.3s)
+2026-11-13T23:44:36.3391333Z   ✓   89 [msedge] › pointing-scope.spec.mjs:420:9 › /sheet › ADR-0058/DC-54: with a 150 ms round trip, =-( typed and a press at once give =-( and the lookup, never the lookup ahead of -( nor =-( alone @blazor (2.4s)
+2026-11-13T23:44:36.5897341Z   -   90 [msedge] › pointing-scope.spec.mjs:735:5 › /pointing › ADR-0058/SH-35/DC-54: with a 150 ms round trip, a press and Shift+↓ at once: the Shift+↓ is refused, and the page says why @blazor
+2026-11-13T23:44:36.9560150Z   ✓   91 [msedge] › pointing-scope.spec.mjs:829:5 › /pointing › ADR-0058/SH-35: with a 150 ms round trip, ↓ and *2 typed at once give R-2's lookup and the *2 @blazor (359ms)
+2026-11-13T23:44:38.6581063Z   ✓   92 [msedge] › popovers.spec.mjs:263:9 › under the builtin Chrome › a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2) @blazor (1.7s)
+2026-11-13T23:44:39.3062491Z   ✓   93 [msedge] › popovers.spec.mjs:332:9 › under the builtin Chrome › keys typed while Escape closes a menu are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor (640ms)
+2026-11-13T23:44:39.6071213Z   ✓   94 [msedge] › popovers.spec.mjs:361:9 › under the builtin Chrome › keys typed while Escape closes a filter panel from its search box are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor (293ms)
+2026-11-13T23:44:40.2226203Z   ✓   95 [msedge] › popovers.spec.mjs:388:9 › under the builtin Chrome › a key typed while a command pressed in a menu closes it is the grid's: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12) @blazor (608ms)
+2026-11-13T23:44:40.6246883Z   ✓   96 [msedge] › popovers.spec.mjs:438:9 › under the builtin Chrome › keys typed while Enter on OK closes a filter panel are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor (394ms)
+2026-11-13T23:44:41.0219111Z   ✓   97 [msedge] › popovers.spec.mjs:467:9 › under the builtin Chrome › keys typed while Space on Cancel closes a filter panel are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor (386ms)
+2026-11-13T23:44:41.3918776Z   ✓   98 [msedge] › popovers.spec.mjs:494:9 › under the builtin Chrome › a key typed while a press on OK closes a filter panel is the grid's: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12) @blazor (362ms)
+2026-11-13T23:44:41.7566662Z   ✓   99 [msedge] › popovers.spec.mjs:152:9 › under the mud Chrome › a secondary click opens the grid's menu, not the browser's (CTX-1/CTX-5, ADR-0036) @blazor (357ms)
+2026-11-13T23:44:42.0724012Z   ✓  100 [msedge] › popovers.spec.mjs:178:9 › under the mud Chrome › a secondary click outside the selection moves it first (CTX-1, ADR-0036) @blazor (307ms)
+2026-11-13T23:44:42.3722421Z   ✓  101 [msedge] › popovers.spec.mjs:190:9 › under the mud Chrome › the ContextMenu key opens it on the Focus (CTX-4, ADR-0036) @blazor (292ms)
+2026-11-13T23:44:42.9050598Z   ✓  102 [msedge] › popovers.spec.mjs:201:9 › under the mud Chrome › popovers are not clipped by the scroll container and stay per instance (UX-11) @blazor (525ms)
+2026-11-13T23:44:43.2728136Z   ✓  103 [msedge] › popovers.spec.mjs:223:9 › under the mud Chrome › a popover taller than its grid stays inside the grid's box and scrolls (UX-11, ADR-0040) @blazor (360ms)
+2026-11-13T23:44:43.7056450Z   ✓  104 [msedge] › popovers.spec.mjs:241:9 › under the mud Chrome › every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039) @blazor (425ms)
+2026-11-13T23:44:44.0566726Z   ✓  105 [msedge] › popovers.spec.mjs:263:9 › under the mud Chrome › a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2) @blazor (343ms)
+2026-11-13T23:44:44.7718836Z   ✓  106 [msedge] › popovers.spec.mjs:283:9 › under the mud Chrome › however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039) @blazor (705ms)
+2026-11-13T23:44:45.4055539Z   ✓  107 [msedge] › popovers.spec.mjs:332:9 › under the mud Chrome › keys typed while Escape closes a menu are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor (626ms)
+2026-11-13T23:44:45.7552912Z   ✓  108 [msedge] › popovers.spec.mjs:361:9 › under the mud Chrome › keys typed while Escape closes a filter panel from its search box are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0044, 2026-10-12) @blazor (343ms)
+2026-11-13T23:44:46.3547155Z   ✓  109 [msedge] › popovers.spec.mjs:388:9 › under the mud Chrome › a key typed while a command pressed in a menu closes it is the grid's: ↓ typed at once moves the Focus (ADR-0044, 2026-10-12) @blazor (590ms)
+2026-11-13T23:44:47.2226349Z   ✓  110 [msedge] › popovers.spec.mjs:438:9 › under the mud Chrome › keys typed while Enter on OK closes a filter panel are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor (858ms)
+2026-11-13T23:44:48.0385866Z   ✓  111 [msedge] › popovers.spec.mjs:467:9 › under the mud Chrome › keys typed while Space on Cancel closes a filter panel are the grid's, in order: ↓, ↓ typed at once move the Focus (ADR-0010, ADR-0044, 2026-10-12) @blazor (808ms)
+2026-11-13T23:44:48.8389700Z   ✓  112 [msedge] › popovers.spec.mjs:494:9 › under the mud Chrome › a key typed while a press on OK closes a filter panel is the grid's: ↓ typed at once moves the Focus (ADR-0039, ADR-0044, 2026-10-12) @blazor (792ms)
+2026-11-13T23:44:49.2054692Z   ✓  113 [msedge] › popovers.spec.mjs:514:9 › under the mud Chrome › in a menu the arrows, Home and End move among the enabled items and wrap (KB-30, ADR-0039) @blazor (359ms)
+2026-11-13T23:44:49.5564701Z   ✓  114 [msedge] › popovers.spec.mjs:542:13 › under the mud Chrome › in a menu Enter runs the item and closes it (KB-30, ADR-0039) @blazor (343ms)
+2026-11-13T23:44:49.8561931Z   ✓  115 [msedge] › popovers.spec.mjs:542:13 › under the mud Chrome › in a menu Space runs the item and closes it (KB-30, ADR-0039) @blazor (293ms)
+2026-11-13T23:44:50.1715528Z   ✓  116 [msedge] › popovers.spec.mjs:558:13 › under the mud Chrome › over a filter, Tab on a command moves to the search box — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) @blazor (308ms)
+2026-11-13T23:44:50.4882049Z   ✓  117 [msedge] › popovers.spec.mjs:558:13 › under the mud Chrome › over a filter, Shift+Tab on a command moves to Cancel — nothing runs, nothing closes (FL-12, KB-30, ADR-0044) @blazor (310ms)
+2026-11-13T23:44:50.7886855Z   ✓  118 [msedge] › popovers.spec.mjs:576:9 › under the mud Chrome › the Context Menu answers the same keys, and Tab closes it (KB-30, ADR-0039) @blazor (293ms)
+2026-11-13T23:44:51.2234506Z   ✓  119 [msedge] › popovers.spec.mjs:591:9 › under the mud Chrome › Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044) @blazor (426ms)
+2026-11-13T23:44:51.8724596Z   ✓  120 [msedge] › popovers.spec.mjs:621:9 › under the mud Chrome › the letters: S sorts, E goes to the search box where "e" is text, C clears (FL-15, FL-16, ADR-0044) @blazor (641ms)
+2026-11-13T23:44:52.2901109Z   ✓  121 [msedge] › popovers.spec.mjs:668:9 › under the mud Chrome › on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044) @blazor (409ms)
+2026-11-13T23:44:52.5891393Z   ✓  122 [msedge] › popovers.spec.mjs:703:9 › under the mud Chrome › where no value list stands, E goes to the condition's value, where a search is typed (FL-15, ADR-0044) @blazor (291ms)
+2026-11-13T23:44:53.4555751Z   ✓  123 [msedge] › popovers.spec.mjs:720:9 › under the mud Chrome › E on a checkbox outside the value list holds nothing: a Space after it ticks at once (ADR-0010/0044) @blazor (859ms)
+2026-11-13T23:44:55.4020121Z   ✓  124 [msedge] › popovers.spec.mjs:754:9 › under the mud Chrome › Enter in the value field applies exactly what OK applies (KB-31, ADR-0039) @blazor (1.9s)
+2026-11-13T23:44:58.4054110Z   ✓  125 [msedge] › popovers.spec.mjs:768:13 › under the mud Chrome › with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76) @blazor (3.0s)
+2026-11-13T23:44:58.8054684Z   ✓  126 [msedge] › popovers.spec.mjs:806:9 › under the mud Chrome › a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039) @blazor (391ms)
+2026-11-13T23:45:01.6227505Z   ✓  127 [msedge] › presentation.spec.mjs:576:1 › a drag that leaves the grid before its press is answered stops the auto-scroll at its turn (SL-14, ADR-0240) @blazor (2.8s)
+2026-11-13T23:45:01.8725959Z   ✓  128 [msedge] › presentation.spec.mjs:604:1 › the Blazor error UI never appears (CON-5) @blazor (243ms)
+2026-11-13T23:45:06.1065895Z   ✓  129 [msedge] › reference-text.spec.mjs:136:5 › DC-47: a burst of typing on a 150 ms circuit never shows transparent field text over a layer that differs, and the colours come back when it pauses (builtin Chrome) @blazor (4.2s)
+2026-11-13T23:45:08.7321699Z   ✓  130 [msedge] › reference-text.spec.mjs:260:5 › DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (builtin Chrome) @blazor (2.6s)
+2026-11-13T23:45:15.0382665Z   ✓  131 [msedge] › reference-text.spec.mjs:136:5 › DC-47: a burst of typing on a 150 ms circuit never shows transparent field text over a layer that differs, and the colours come back when it pauses (mud Chrome) @blazor (6.3s)
+2026-11-13T23:45:19.8380316Z   ✓  132 [msedge] › reference-text.spec.mjs:163:5 › DC-47: the colours follow each keystroke, each Reference in a colour of its own (mud Chrome) @blazor (4.8s)
+2026-11-13T23:45:24.3280448Z   ✓  133 [msedge] › reference-text.spec.mjs:194:5 › DC-47: an edit opened on a Formula, by F2 or by a press into the Formula Bar, is coloured in that surface before anything is typed, and the other stays plain (mud Chrome) @blazor (4.5s)
+2026-11-13T23:45:28.8539500Z   ✓  134 [msedge] › reference-text.spec.mjs:228:5 › DC-47: the colours follow the edit from the Cell Editor into the Formula Bar and back, the other surface plain (mud Chrome) @blazor (4.5s)
+2026-11-13T23:45:33.5451807Z   ✓  135 [msedge] › reference-text.spec.mjs:260:5 › DC-47: an IME composition shows the field's own text while it lasts, never the layer over it, and the colours come back when it ends (mud Chrome) @blazor (4.7s)
+2026-11-13T23:45:39.3056453Z   ✓  136 [msedge] › reference-text.spec.mjs:333:5 › ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (mud Chrome) @blazor (5.8s)
+2026-11-13T23:45:43.8372040Z   ✓  137 [msedge] › reference-text.spec.mjs:351:5 › ADR-0051/0057: pointed from the Formula Bar after =SUM(, the Reference is shown selected there, and the Cell Editor stays plain (mud Chrome) @blazor (4.5s)
+2026-11-13T23:45:48.2543035Z   ✓  138 [msedge] › reference-text.spec.mjs:374:5 › ADR-0057/0051: = ↓ writes =D11 on the grey in the Cell Editor, and = ↓ ↓ =D12, the Formula Bar plain (run 18a, answer 6; mud Chrome) @blazor (4.4s)
+2026-11-13T23:45:52.6366217Z   ✓  139 [msedge] › reference-text.spec.mjs:399:5 › ADR-0051/0057: 5 typed after =D11+ ↓ ↓ follows the Reference, and the grey goes with Point (mud Chrome) @blazor (4.4s)
+2026-11-13T23:45:57.2866917Z   ✓  140 [msedge] › reference-text.spec.mjs:421:5 › DC-56: the pointed Reference's text is Excel's shade of its colour — #0401a2 for the first, #630101 for the second — on #c6c6c6 (mud Chrome) @blazor (4.6s)
+2026-11-13T23:46:02.2049092Z   ✓  141 [msedge] › reference-text.spec.mjs:540:9 › DC-48: a Formula longer than the Cell Editor keeps its colours over the right characters at either end (mud Chrome) @blazor (4.9s)
+2026-11-13T23:46:07.1023263Z   ✓  142 [msedge] › reference-text.spec.mjs:540:9 › DC-48: a Formula longer than the Formula Bar keeps its colours over the right characters at either end (mud Chrome) @blazor (4.9s)
+2026-11-13T23:46:12.5377809Z   ✓  143 [msedge] › reference-text.spec.mjs:584:9 › DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the Cell Editor (mud Chrome) @blazor (5.4s)
+2026-11-13T23:46:17.9185159Z   ✓  144 [msedge] › reference-text.spec.mjs:584:9 › DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the Formula Bar (mud Chrome) @blazor (5.4s)
+2026-11-13T23:46:27.4366558Z   ✓  145 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family grid builtin: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (9.5s)
+2026-11-13T23:46:35.8559666Z   ✓  146 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family grid mud: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (8.4s)
+2026-11-13T23:46:46.1183375Z   ✓  147 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family sheet builtin: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (10.3s)
+2026-11-13T23:46:55.3174404Z   ✓  148 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family sheet mud: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (9.2s)
+2026-11-13T23:46:59.6167070Z   ✓  149 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family pivot builtin: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (4.3s)
+2026-11-13T23:47:04.0833748Z   ✓  150 [msedge] › responsive-family.spec.mjs:48:9 › RT-1 family pivot mud: parent sizing preserves precision, geometry and View State (ADR-0045) @blazor (4.5s)
+2026-11-13T23:47:06.0204047Z   ✓  151 [msedge] › responsive.spec.mjs:3:1 › RT-1 (ADR-0045): a container narrows and widens without changing columns or saved pinning @blazor (1.9s)
+2026-11-13T23:47:07.9025894Z   ✓  152 [msedge] › row-command-order.spec.mjs:4:5 › ADR-0240/0160: builtin row commands wait, refuse departed rows and continue after refusal @blazor (1.9s)
+2026-11-13T23:47:08.2332190Z   ✓  153 [msedge] › row-command-order.spec.mjs:26:5 › ADR-0240: builtin row commands follow keys held behind a Consumer @blazor (323ms)
+2026-11-13T23:47:08.8003404Z   ✓  154 [msedge] › row-command-order.spec.mjs:4:5 › ADR-0240/0160: mud row commands wait, refuse departed rows and continue after refusal @blazor (558ms)
+2026-11-13T23:47:09.1670359Z   ✓  155 [msedge] › row-command-order.spec.mjs:26:5 › ADR-0240: mud row commands follow keys held behind a Consumer @blazor (360ms)
+2026-11-13T23:47:11.0361659Z   ✓  156 [msedge] › script-chart.spec.mjs:28:1 › ADR-0370 section 1: the chart the Script Core draws from .NET's definition reads as the Razor component's, and a legend click crosses to .NET and back @blazor (1.9s)
+2026-11-13T23:47:11.3009127Z   ✓  157 [msedge] › script-chart.spec.mjs:45:1 › ADR-0274, ADR-0370 section 1: a click on the surface reaches .NET as the axis' own value, and the slice it hands back is drawn in its written digits @blazor (256ms)
+2026-11-13T23:47:11.5664057Z   ✓  158 [msedge] › script-chart.spec.mjs:62:1 › ADR-0420 section 3: a chart is written and sampled by the page's own module, imported from where the application serves it @blazor (257ms)
+2026-11-13T23:47:12.1669317Z   ✓  159 [msedge] › script-chart.spec.mjs:71:1 › ADR-0410, ADR-0281: MudBlazor's toolbar and menu stand in the chart's slots, and a range typed and applied at once over a slow circuit is the one read @blazor (594ms)
+2026-11-13T23:47:12.8002229Z   ✓  160 [msedge] › script-chart.spec.mjs:108:1 › ADR-0421, ADR-0258: the Chart Dock over the Script grid opens a chart from the grid's menu, and the menu opened at once after it offers that chart @blazor (624ms)
+2026-11-13T23:47:14.6188913Z   ✓  161 [msedge] › script-formula-entry.spec.mjs:13:1 › ADR-0431: a grid given the page's script points, cycles with F4 and outlines each Reference, with the keys typed at once @blazor (1.8s)
+2026-11-13T23:47:15.0330168Z   ✓  162 [msedge] › script-formula-entry.spec.mjs:38:1 › ADR-0431: a Sheet in no Pointing Scope tells its linked columns' colours, and the grid the page hands them outlines the column @blazor (407ms)
+2026-11-13T23:47:16.8017321Z   ✓  163 [msedge] › script-grid-chrome.spec.mjs:24:1 › ADR-0030: in MudExGridPaper the Script grid takes the paper's cascaded defaults, its Density and Row Stripes, under its Roboto @blazor (1.8s)
+2026-11-13T23:47:17.9845377Z   ✓  164 [msedge] › script-grid-chrome.spec.mjs:36:1 › ADR-0410: the column menu is MudBlazor's, and keys typed as it opens are the menu's before its Razor arrives @blazor (1.2s)
+2026-11-13T23:47:18.9326221Z   ✓  165 [msedge] › script-grid-chrome.spec.mjs:63:1 › ADR-0410: the filter panel is MudBlazor's, and what is typed and chosen in it at machine speed over a slow circuit is what applies @blazor (940ms)
+2026-11-13T23:47:19.3330860Z   ✓  166 [msedge] › script-grid-chrome.spec.mjs:102:1 › ADR-0410 / ADR-0055: Ctrl+F opens MudBlazor's find panel, and a text typed and entered at machine speed over a slow circuit is what the source finds @blazor (393ms)
+2026-11-13T23:47:19.6858822Z   ✓  167 [msedge] › script-grid-chrome.spec.mjs:126:1 › ADR-0410 / SRV-7: the Cell Editor is MudBlazor's field, and a text typed and entered at machine speed over a slow circuit is what commits @blazor (344ms)
+2026-11-13T23:47:20.1329686Z   ✓  168 [msedge] › script-grid-chrome.spec.mjs:146:1 › ADR-0410 / ADR-0051: the completion list is MudBlazor's, the arrows move its choice without waiting on a slow circuit, and a click accepts a candidate @blazor (436ms)
+2026-11-13T23:47:20.5331880Z   ✓  169 [msedge] › script-grid-chrome.spec.mjs:175:1 › ADR-0410 / ADR-0051: the Formula Bar's fields are MudBlazor's, and what is typed in either and entered at machine speed over a slow circuit is what the grid hears @blazor (391ms)
+2026-11-13T23:47:20.8330712Z   ✓  170 [msedge] › script-grid-chrome.spec.mjs:204:1 › ADR-0410 section 6 / ADR-0037: a Template cell is drawn in Razor from its row, and Space pressed at once over a slow circuit hands its field the keyboard through the grid @blazor (292ms)
+2026-11-13T23:47:22.8016216Z   ✓  171 [msedge] › script-grid.spec.mjs:20:1 › ADR-0350 section 7: an edit reaches the Consumer in .NET, and the cell paints the row its source then holds @blazor (2.0s)
+2026-11-13T23:47:23.0842738Z   ✓  172 [msedge] › script-grid.spec.mjs:33:1 › ADR-0350 section 7, ADR-0001: a header click sorts through the source in .NET, and the rows come back in its order @blazor (275ms)
+2026-11-13T23:47:23.3654704Z   ✓  173 [msedge] › script-grid.spec.mjs:44:1 › DC-61, ADR-0070: the grid hands the keyboard on to a control of the page's, and takes it back from there, across the bridge @blazor (274ms)
+2026-11-13T23:47:25.6028510Z   ✓  174 [msedge] › script-grid.spec.mjs:86:9 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-33: 150 Enter 200 Enter typed at once ends as the same keys typed after each answer @blazor (2.2s)
+2026-11-13T23:47:27.8661297Z   ✓  175 [msedge] › script-grid.spec.mjs:86:9 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-33: 1500 Enter 2000 Enter typed at once ends as the same keys typed after each answer @blazor (2.3s)
+2026-11-13T23:47:28.4658385Z   ✓  176 [msedge] › script-grid.spec.mjs:112:5 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-35 / ED-15: a Reject .NET answers holds the editor under Enter, Tab and a press, and Escape alone leaves @blazor (590ms)
+2026-11-13T23:47:30.3326002Z   ✓  177 [msedge] › script-grid.spec.mjs:133:5 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-35: a Flag .NET answers is booked painted as an error, and its reason opens when the Focus stands on it @blazor (1.9s)
+2026-11-13T23:47:34.6345828Z   ✓  178 [msedge] › script-grid.spec.mjs:145:5 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-38 / ADR-0381: F8 asked of .NET brings the Focus to a flagged trade outside the Window, and Shift+F8 goes back @blazor (4.3s)
+2026-11-13T23:47:35.2664508Z   ✓  179 [msedge] › script-grid.spec.mjs:172:5 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › ED-35 / ED-20: a Ctrl+Enter fill is judged once, and a Reject holds the editor and pastes nothing @blazor (624ms)
+2026-11-13T23:47:35.8657130Z   ✓  180 [msedge] › script-grid.spec.mjs:191:5 › ADR-0380: a commit .NET answers, with 150 ms injected on the Server host › CP-21, ADR-0005: a commit and a fill past a Server hub's message limit reach the Consumer in .NET @blazor (591ms)
+2026-11-13T23:47:37.5569071Z   ✓  181 [msedge] › script-pivot.spec.mjs:35:1 › ADR-0370 section 1: a new source of the Consumer's in .NET is asked again, and the report built in the browser follows it @blazor (1.7s)
+2026-11-13T23:47:37.9653293Z   ✓  182 [msedge] › script-pivot.spec.mjs:46:1 › ADR-0059, ADR-0370 section 1: a field ticked reaches the Consumer's layout in .NET, and the Consumer's own layout replaces it @blazor (401ms)
+2026-11-13T23:47:38.3651920Z   ✓  183 [msedge] › script-pivot.spec.mjs:59:1 › ADR-0060, ADR-0063, ADR-0130, ADR-0201, ADR-0370 section 10: the Consumer's words, its Show Details handler, its Selection handler and its Selection Summary handler, all in .NET, reach the pivot in the browser @blazor (393ms)
+2026-11-13T23:47:39.2318120Z   ✓  184 [msedge] › script-pivot.spec.mjs:78:1 › ADR-0410: MudPivotChrome draws the Script pivot's report filter and its Filter…, where an Item unticked with Space on MudBlazor's checkbox and OK reach the pivot @blazor (859ms)
+2026-11-13T23:47:39.8318290Z   ✓  185 [msedge] › script-pivot.spec.mjs:97:1 › ADR-0410: MudPivotChrome draws the Script pivot's Value Field Settings…, whose caption follows the Aggregation chosen in its native select, and OK reaches the pivot @blazor (593ms)
+2026-11-13T23:47:40.2824095Z   ✓  186 [msedge] › script-pivot.spec.mjs:110:1 › ADR-0410: MudPivotChrome draws the Script pivot's sheet tabs, and Show Details opens one that takes a key typed as it opens over a slow circuit @blazor (442ms)
+2026-11-13T23:47:40.7296004Z   ✓  187 [msedge] › script-pivot.spec.mjs:130:1 › ADR-0410: MudPivotChrome draws the Script pivot's Show Details dialog, and Enter typed as it opens over a slow circuit presses its Close @blazor (438ms)
+2026-11-13T23:47:42.5512162Z   ✓  188 [msedge] › script-pointing.spec.mjs:11:1 › ADR-0430: a press on a Script grid of the Scope writes the key .NET read from its row, and a refusal reaches .NET @blazor (1.8s)
+2026-11-13T23:47:44.8341557Z   ✓  189 [msedge] › script-sheet.spec.mjs:10:1 › ADR-0370 section 1, ADR-0048, ADR-0005: the Sheet Document crosses both ways between .NET and the Sheet in the browser, and .NET's Undo, its own document, its own edit, a save and an opening reach the Sheet, a document too large for a circuit's message included @blazor (2.3s)
+2026-11-13T23:47:48.7674765Z   ✓  190 [msedge] › selection-look.spec.mjs:76:5 › UX-17 (MudBlazor Chrome): the header's rule runs under the Headings' corner and a pinned header as under any other (ADR-0029/0050) @blazor (3.9s)
+2026-11-13T23:47:51.1993938Z   ✓  191 [msedge] › selection-look.spec.mjs:181:5 › UX-19 (MudBlazor Chrome): one cell selected is the Focus outline alone, with no selection tint (ADR-0008) @blazor (2.4s)
+2026-11-13T23:47:53.8158534Z   ✓  192 [msedge] › selection-look.spec.mjs:194:5 › UX-19 (MudBlazor Chrome): a single range carries one outline round it, and its tint leaves out the Focus inside it, which has no outline (ADR-0008/0029) @blazor (2.6s)
+2026-11-13T23:47:56.6488262Z   ✓  193 [msedge] › selection-look.spec.mjs:226:5 › UX-19 (MudBlazor Chrome): several ranges are each tinted with no outline and no fill handle, and the Focus among them is untinted, with a thin border of one Device Pixel inside its cell in the Focus outline's colour (ADR-0008, 2026-10-12) @blazor (2.8s)
+2026-11-13T23:47:59.3647035Z   ✓  194 [msedge] › selection-look.spec.mjs:275:5 › UX-19 (MudBlazor Chrome): a single range across the pinned boundary shows no seam there, and slides beneath the pinned block (ADR-0008/0004) @blazor (2.7s)
+2026-11-13T23:48:01.6821462Z   ✓  195 [msedge] › selection-look.spec.mjs:476:5 › DC-12 (MudBlazor Chrome): a whole column's handle stands at its first row's top-right, beside its Heading and wholly below it, where Excel's straddles the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2)) @blazor (2.3s)
+2026-11-13T23:48:03.9644427Z   ✓  196 [msedge] › selection-look.spec.mjs:497:5 › DC-12 (MudBlazor Chrome): a whole row's handle stands at its first column's bottom-left, beside its Heading and wholly right of it, where Excel's stands on the Heading's edge (ADR-0050; the seventeenth Windows run, h3; the readings of 2026-10-12, R5 (2)) @blazor (2.3s)
+2026-11-13T23:48:06.2816129Z   ✓  197 [msedge] › selection-look.spec.mjs:518:5 › DC-12 (MudBlazor Chrome): with row 1 scrolled away, a whole column's handle stays at the top-right of the part in view, beside the header and uncovered (ADR-0050; the readings of 2026-10-12, R5 (5)) @blazor (2.3s)
+2026-11-13T23:48:08.1991229Z   ✓  198 [msedge] › selection-summary.spec.mjs:44:9 › under the mud Chrome › a selection of numbers shows Average, Count and Sum from every selected cell (SM-9/SM-11, ADR-0130) @blazor (1.9s)
+2026-11-13T23:48:08.5474676Z   ✓  199 [msedge] › selection-summary.spec.mjs:64:9 › under the mud Chrome › selecting does not move the Viewport: the strip stands before the first selection (SM-9, ADR-0130) @blazor (341ms)
+2026-11-13T23:48:12.2805490Z   ✓  200 [msedge] › selection-summary.spec.mjs:100:9 › a Sheet under the mud Chrome › an error among the cells leaves Count and Numerical Count, as Excel's status bar (SM-7, ADR-0130, run 17 b5 and b6) @blazor (3.7s)
+2026-11-13T23:48:12.7141805Z   ✓  201 [msedge] › selection-summary.spec.mjs:165:9 › a summary the page answers, under the mud Chrome › SM-11 / ADR-0130 (SM-2): a change of selection clears the figures at once for the pending mark, and the question it replaced is cancelled (mud) @blazor (426ms)
+2026-11-13T23:48:13.1985039Z   ✓  202 [msedge] › selection-summary.spec.mjs:224:9 › a summary the page answers, under the mud Chrome › SM-11 / ADR-0130 (SM-2): the answer to a question a new selection replaced, given after the grid cancelled it, is shown nowhere (mud) @blazor (477ms)
+2026-11-13T23:48:13.5812970Z   ✓  203 [msedge] › selection-summary.spec.mjs:258:9 › a summary the page answers, under the mud Chrome › SM-11 / ADR-0130 (SM-4): a declined question shows its reason in place of the figures, and no figure with it (mud) @blazor (375ms)
+2026-11-13T23:48:17.3325274Z   ✓  204 [msedge] › settled-mark.spec.mjs:76:1 › ADR-0220: an edit opened by a key and committed by Enter is read once after the mark @blazor (3.7s)
+2026-11-13T23:48:19.4816759Z   ✓  205 [msedge] › settled-mark.spec.mjs:95:1 › ASY-7 / ADR-0220: a press on the rows is read once after the mark @blazor (2.1s)
+2026-11-13T23:48:21.8642289Z   ✓  206 [msedge] › settled-mark.spec.mjs:107:1 › ASY-7 / ADR-0220: a paste, and the copy of what it wrote, are each read once after the mark @blazor (2.4s)
+2026-11-13T23:48:23.9516035Z   ✓  207 [msedge] › settled-mark.spec.mjs:133:1 › ASY-7 / ADR-0220/0080: a composition on a selected cell is read once after the mark, and so is its commit @blazor (2.1s)
+2026-11-13T23:48:25.8310610Z   ✓  208 [msedge] › sheet-borders.spec.mjs:260:5 › SH-46: Fills and lines beside Excel's › SH-46/DC-59: the Selection's outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11) @blazor (1.9s)
+2026-11-13T23:48:27.8822194Z   ✓  209 [msedge] › sheet-find.spec.mjs:64:9 › ADR-0332 Find and Replace on a Sheet (mud) › SF-1: within the Sheet, the default, a step searches the Sheet shown alone and says no match (ADR-0332 §5) @blazor (2.0s)
+2026-11-13T23:48:28.5470748Z   ✓  210 [msedge] › sheet-find.spec.mjs:77:9 › ADR-0332 Find and Replace on a Sheet (mud) › SF-2: within the Workbook, a step goes on to the next Sheet, shows it and selects the match there, marked as current (ADR-0332 §4, §5) @blazor (657ms)
+2026-11-13T23:48:29.2977098Z   ✓  211 [msedge] › sheet-find.spec.mjs:100:9 › ADR-0332 Find and Replace on a Sheet (mud) › SF-3: Replace All within the Workbook writes every Sheet, says the count, and is one undo step (ADR-0332 §2, §5) @blazor (741ms)
+2026-11-13T23:48:35.0481196Z   ✓  212 [msedge] › sheet-observed-functions.spec.mjs:10:9 › observed functions under mud › ADR-0047/0051: observed function completion commits and recalculates the extended SUMIF range @blazor (5.7s)
+2026-11-13T23:48:38.2463692Z   ✓  213 [msedge] › sheet-observed-functions.spec.mjs:39:9 › observed functions under mud › ADR-0058: the lookup mode list writes the chosen value with Tab @blazor (3.2s)
+2026-11-13T23:48:40.4311121Z   ✓  214 [msedge] › sheet-paper.spec.mjs:57:9 › SH-39/SH-40/DC-58 (MudBlazor Chrome, light scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48) @blazor (2.2s)
+2026-11-13T23:48:41.0300980Z   ✓  215 [msedge] › sheet-paper.spec.mjs:57:9 › SH-39/SH-40/DC-58 (MudBlazor Chrome, dark scheme): the Paper is white, the Ink black, and recorded colours read as recorded (ADR-0071, ticket 48) @blazor (590ms)
+2026-11-13T23:48:42.6136190Z   ✓  216 [msedge] › sheet-paper.spec.mjs:121:5 › SH-39 (MudBlazor Chrome): on the Paper the Selection and the Cell Editor keep their light-scheme look in the dark scheme (ADR-0071, ticket 48) @blazor (1.6s)
+2026-11-13T23:48:43.4794743Z   ✓  217 [msedge] › sheet-paper.spec.mjs:158:5 › SH-39 (MudBlazor Chrome): Reference Outlines and the pointed shade keep their light-scheme colours on the Paper, and the Formula Bar's References follow the scheme (ADR-0071, ADR-0057) @blazor (858ms)
+2026-11-13T23:48:45.8963813Z   ✓  218 [msedge] › sheet-paper.spec.mjs:209:5 › UX-19/SH-39 (MudBlazor Chrome): on the Paper the Focus among several ranges is one Device Pixel inside its cell in the Focus outline's colour, beside the Headings, a Pinned Column and the header and in the open, in either scheme (ADR-0008, 2026-10-12; ADR-0071) @blazor (2.4s)
+2026-11-13T23:48:46.2467059Z   ✓  219 [msedge] › sheet-paper.spec.mjs:476:5 › SH-39 (MudBlazor Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90) @blazor (343ms)
+2026-11-13T23:48:47.6461399Z   ✓  220 [msedge] › sheet-paper.spec.mjs:524:9 › DC-58/SH-39 (MudBlazor Chrome, light scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88) @blazor (1.4s)
+2026-11-13T23:48:49.0136350Z   ✓  221 [msedge] › sheet-paper.spec.mjs:524:9 › DC-58/SH-39 (MudBlazor Chrome, dark scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88) @blazor (1.4s)
+2026-11-13T23:48:49.6460739Z   ✓  222 [msedge] › sheet-paper.spec.mjs:563:5 › DC-58/SH-39 (MudBlazor Chrome): the Cell Editor keeps a Fill as its ground, and ADR-0057's coloured References read over it (ADR-0050 item 15, ADR-0071, ticket 88) @blazor (626ms)
+2026-11-13T23:48:50.3292727Z   ✓  223 [msedge] › sheet-paper.spec.mjs:697:5 › SH-41 (MudBlazor Chrome): a bold number is #### exactly when it does not fit at the bold widths (ADR-0071, ADR-0016) @blazor (677ms)
+2026-11-13T23:48:52.1791351Z   ✓  224 [msedge] › sheet-paper.spec.mjs:714:5 › SH-41/VZ-19 (MudBlazor Chrome): a bold number shown a hundredth over the bold edge is painted whole, wherever its column's edges fall on Device Pixels (ADR-0071, ADR-0016, ADR-0090) @blazor (1.8s)
+2026-11-13T23:48:52.8960208Z   ✓  225 [msedge] › sheet-paper.spec.mjs:736:5 › SH-41 (MudBlazor Chrome): General fits a bold number to the bold widths, and both are painted whole (ADR-0071, ADR-0047) @blazor (710ms)
+2026-11-13T23:48:53.6458961Z   ✓  226 [msedge] › sheet-paper.spec.mjs:750:5 › SH-41 (MudBlazor Chrome): an italic number that fits is not cut at either edge (ADR-0071, ADR-0016) @blazor (742ms)
+2026-11-13T23:48:55.6809027Z   ✓  227 [msedge] › sheet-spill.spec.mjs:12:9 › mud Chrome › ADR-0125: a spill paints, and a spilled cell's bar shows the Anchor's Formula dimmed (mud) @blazor (2.0s)
+2026-11-13T23:48:56.2132371Z   ✓  228 [msedge] › sheet-spill.spec.mjs:30:9 › mud Chrome › ADR-0125: typing into a spilled cell makes the Anchor #SPILL!, and Delete lets it spill again (mud) @blazor (524ms)
+2026-11-13T23:49:00.8296832Z   ✓  229 [msedge] › sheet-toolbar.spec.mjs:265:9 › under the builtin Chrome › ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (builtin) @blazor (4.6s)
+2026-11-13T23:49:03.2124815Z   ✓  230 [msedge] › sheet-toolbar.spec.mjs:109:9 › under the mud Chrome › SH-48/ADR-0100: the toolbar stands above the Formula Bar, outside the grid's root, and the grid below it (mud) @blazor (2.4s)
+2026-11-13T23:49:05.7285727Z   ✓  231 [msedge] › sheet-toolbar.spec.mjs:132:9 › under the mud Chrome › SH-50/ADR-0100: Bold sets bold, is shown pressed over a bold Focus, and the keyboard stays on the Sheet (mud) @blazor (2.5s)
+2026-11-13T23:49:08.0950816Z   ✓  232 [msedge] › sheet-toolbar.spec.mjs:153:9 › under the mud Chrome › SH-50/ADR-0100: while a cell is edited every item is greyed out, the page's own included (mud) @blazor (2.4s)
+2026-11-13T23:49:10.6452534Z   ✓  233 [msedge] › sheet-toolbar.spec.mjs:170:9 › under the mud Chrome › ADR-0100: a Fill chosen from the palette is painted, and the face then sets it again (mud) @blazor (2.5s)
+2026-11-13T23:49:14.4957846Z   ✓  234 [msedge] › sheet-toolbar.spec.mjs:189:9 › under the mud Chrome › ADR-0100/ADR-0071 (decided 2026-10-12): over #### Italic and Bold widen no column; Underline and Strikethrough widen one at the standard width, never one sized by its grip, each taken back by one Ctrl+Z (mud) @blazor (3.8s)
+2026-11-13T23:49:18.2114375Z   ✓  235 [msedge] › sheet-toolbar.spec.mjs:227:9 › under the mud Chrome › ADR-0100/ADR-0071 (decided with the user, 2026-10-14): over #### the Font Colour, by its face and from its list, widens the column at the standard width and leaves a sized one, each taken back by one Ctrl+Z; the Fill Colour face widens no column (mud) @blazor (3.7s)
+2026-11-13T23:49:21.6277951Z   ✓  236 [msedge] › sheet-toolbar.spec.mjs:265:9 › under the mud Chrome › ADR-0100/ADR-0044: Ctrl+Z typed straight after a Font Colour choice undoes its colour and width while the list closes (mud) @blazor (3.4s)
+2026-11-13T23:49:23.8951039Z   ✓  237 [msedge] › sheet-toolbar.spec.mjs:288:9 › under the mud Chrome › ADR-0100: the page's own action runs over the Selection (mud) @blazor (2.3s)
+2026-11-13T23:49:26.2113661Z   ✓  238 [msedge] › sheet-toolbar.spec.mjs:329:5 › SH-52/ADR-0100: Alt released alone shows the rows' KeyTips, H shows Excel's letters, and 1 sets bold with the keyboard back on the Sheet (mud) @blazor (2.3s)
+2026-11-13T23:49:28.4619342Z   ✓  239 [msedge] › sheet-toolbar.spec.mjs:426:5 › ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (builtin) @blazor (2.2s)
+2026-11-13T23:49:30.5717601Z   ✓  240 [msedge] › sheet-toolbar.spec.mjs:469:5 › ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (builtin) @blazor (2.1s)
+2026-11-13T23:49:34.4947699Z   ✓  241 [msedge] › sheet-toolbar.spec.mjs:361:5 › SH-52/ADR-0100/ADR-0039 (R2 (b), 2026-10-12): Alt, H, F, C puts the keyboard in the Font Colour list; Escape goes back to the Home row's KeyTips, Escape to the rows', Escape to the Sheet, and the next list is the only one (mud) @blazor (3.9s)
+2026-11-13T23:49:36.9440940Z   ✓  242 [msedge] › sheet-toolbar.spec.mjs:407:5 › SH-52/ADR-0100 (2026-10-12; R2 (a), observed): Format Cells is Alt, H, O, E, as Excel's Format menu reaches it — O narrows the KeyTips, E opens it (mud) @blazor (2.4s)
+2026-11-13T23:49:39.4449171Z   ✓  243 [msedge] › sheet-toolbar.spec.mjs:426:5 › ADR-0039 (2026-10-13)/ADR-0100: More Number Formats… opens Format Cells with the keyboard in it, and Escape typed straight after the choice closes it, as typed slowly (mud) @blazor (2.5s)
+2026-11-13T23:49:41.7564550Z   ✓  244 [msedge] › sheet-toolbar.spec.mjs:469:5 › ADR-0100 (the seventeenth Windows run, Part D): the keyboard handed back from the toolbar leaves no console warning while the accessibility tree is on (mud) @blazor (2.3s)
+2026-11-13T23:49:45.4771195Z   ✓  245 [msedge] › sheet-toolbar.spec.mjs:501:5 › ADR-0100: Tab goes through every control of the toolbar and out of it; the keys typed on each are that control's, nothing is held, and the band's own keys work after (mud) @blazor (3.7s)
+2026-11-13T23:49:47.7449351Z   ✓  246 [msedge] › sheet-toolbar.spec.mjs:616:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: Alt, H, 1 typed at once sets bold, with no edit opened and the KeyTips gone (builtin) @blazor (2.3s)
+2026-11-13T23:49:49.9437260Z   ✓  247 [msedge] › sheet-toolbar.spec.mjs:640:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (builtin) @blazor (2.2s)
+2026-11-13T23:49:52.1613224Z   ✓  248 [msedge] › sheet-toolbar.spec.mjs:664:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (builtin) @blazor (2.2s)
+2026-11-13T23:49:54.3937476Z   ✓  249 [msedge] › sheet-toolbar.spec.mjs:681:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (builtin) @blazor (2.2s)
+2026-11-13T23:49:56.5930670Z   ✓  250 [msedge] › sheet-toolbar.spec.mjs:714:13 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (builtin, 0 ms) @blazor (2.2s)
+2026-11-13T23:49:58.8430123Z   ✓  251 [msedge] › sheet-toolbar.spec.mjs:714:13 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (builtin, 80 ms) @blazor (2.2s)
+2026-11-13T23:50:01.0096180Z   ✓  252 [msedge] › sheet-toolbar.spec.mjs:739:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (builtin) @blazor (2.2s)
+2026-11-13T23:50:03.2103645Z   ✓  253 [msedge] › sheet-toolbar.spec.mjs:755:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, 1 typed at once sets bold from the Home row's KeyTips, as typed slowly (builtin) @blazor (2.2s)
+2026-11-13T23:50:05.4268268Z   ✓  254 [msedge] › sheet-toolbar.spec.mjs:773:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (builtin) @blazor (2.2s)
+2026-11-13T23:50:07.6265676Z   ✓  255 [msedge] › sheet-toolbar.spec.mjs:799:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once, opens the next list, the only one (builtin) @blazor (2.2s)
+2026-11-13T23:50:09.6975794Z   ✓  256 [msedge] › sheet-toolbar.spec.mjs:829:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050 (ticket 07): Escape three times in a list a KeyTip opened, then Alt held down until the keyboard is back on the Sheet, then H, H, opens the next list, as typed slowly (builtin) @blazor (2.1s)
+2026-11-13T23:50:13.0456634Z   ✓  257 [msedge] › sheet-toolbar.spec.mjs:865:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (builtin) @blazor (3.3s)
+2026-11-13T23:50:15.3103666Z   ✓  258 [msedge] › sheet-toolbar.spec.mjs:888:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › SH-52/ADR-0100 (decided with the user, 2026-10-13): Alt, Alt, H, 1 typed at once turns the KeyTips on and off and types h1 into the cell, as typed slowly (builtin) @blazor (2.3s)
+2026-11-13T23:50:17.5586085Z   ✓  259 [msedge] › sheet-toolbar.spec.mjs:919:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (builtin) @blazor (2.2s)
+2026-11-13T23:50:19.7276452Z   ✓  260 [msedge] › sheet-toolbar.spec.mjs:938:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (builtin) @blazor (2.2s)
+2026-11-13T23:50:21.9425997Z   ✓  261 [msedge] › sheet-toolbar.spec.mjs:962:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (builtin) @blazor (2.2s)
+2026-11-13T23:50:24.1587185Z   ✓  262 [msedge] › sheet-toolbar.spec.mjs:979:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0100/ADR-0050: Enter typed at once after Enter on a toolbar item reaches the Sheet, not the item (builtin) @blazor (2.2s)
+2026-11-13T23:50:26.3756421Z   ✓  263 [msedge] › sheet-toolbar.spec.mjs:1000:9 › keys typed at machine speed under the builtin Chrome (2026-10-12) › ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (builtin) @blazor (2.2s)
+2026-11-13T23:50:28.9582442Z   ✓  264 [msedge] › sheet-toolbar.spec.mjs:616:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: Alt, H, 1 typed at once sets bold, with no edit opened and the KeyTips gone (mud) @blazor (2.6s)
+2026-11-13T23:50:31.3423135Z   ✓  265 [msedge] › sheet-toolbar.spec.mjs:640:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0240/ADR-0100: Alt, H, 1, ↓ typed at once sets bold on the Focus cell, then moves the Focus (mud) @blazor (2.4s)
+2026-11-13T23:50:33.7805778Z   ✓  266 [msedge] › sheet-toolbar.spec.mjs:664:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0240/ADR-0100: Bold pressed, then ↓ at once, sets bold where the Focus was and then moves it (mud) @blazor (2.4s)
+2026-11-13T23:50:36.1749393Z   ✓  267 [msedge] › sheet-toolbar.spec.mjs:681:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, 2 typed at once sets italic, with no edit opened and the KeyTips gone (mud) @blazor (2.4s)
+2026-11-13T23:50:38.5420390Z   ✓  268 [msedge] › sheet-toolbar.spec.mjs:714:13 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (mud, 0 ms) @blazor (2.4s)
+2026-11-13T23:50:40.9580923Z   ✓  269 [msedge] › sheet-toolbar.spec.mjs:714:13 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: F10, H, Escape, H, A, C typed at once centres the Focus cell, with no edit opened and the KeyTips gone (mud, 80 ms) @blazor (2.4s)
+2026-11-13T23:50:43.2742802Z   ✓  270 [msedge] › sheet-toolbar.spec.mjs:739:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, Escape, Escape typed at once leaves no list and no KeyTips, with the keyboard on the Sheet (mud) @blazor (2.3s)
+2026-11-13T23:50:45.6242442Z   ✓  271 [msedge] › sheet-toolbar.spec.mjs:755:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b)): Alt, H, F, C, Escape, 1 typed at once sets bold from the Home row's KeyTips, as typed slowly (mud) @blazor (2.3s)
+2026-11-13T23:50:47.9740726Z   ✓  272 [msedge] › sheet-toolbar.spec.mjs:773:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100 (R2 (b), decided with the user 2026-10-12): Escape typed in a list a KeyTip opened, then 1 at once, sets bold: the 1 typed while the list closes is the KeyTips' (mud) @blazor (2.3s)
+2026-11-13T23:50:50.3408453Z   ✓  273 [msedge] › sheet-toolbar.spec.mjs:799:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050: Escape three times in a list a KeyTip opened, then Alt, H, H, all typed at once, opens the next list, the only one (mud) @blazor (2.4s)
+2026-11-13T23:50:52.5807945Z   ✓  274 [msedge] › sheet-toolbar.spec.mjs:829:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100/ADR-0050 (ticket 07): Escape three times in a list a KeyTip opened, then Alt held down until the keyboard is back on the Sheet, then H, H, opens the next list, as typed slowly (mud) @blazor (2.2s)
+2026-11-13T23:50:56.4256270Z   ✓  275 [msedge] › sheet-toolbar.spec.mjs:865:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100 (decided with the user, 2026-10-13): Enter on an edit, then Alt, H, 1, all typed at once, commits the edit and sets bold below it, as typed slowly (mud) @blazor (3.8s)
+2026-11-13T23:50:58.9901194Z   ✓  276 [msedge] › sheet-toolbar.spec.mjs:888:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › SH-52/ADR-0100 (decided with the user, 2026-10-13): Alt, Alt, H, 1 typed at once turns the KeyTips on and off and types h1 into the cell, as typed slowly (mud) @blazor (2.6s)
+2026-11-13T23:51:01.3575405Z   ✓  277 [msedge] › sheet-toolbar.spec.mjs:919:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0100 (decided with the user, 2026-10-13): Alt, H, H, then ↓, →, Enter typed at once fills the cell from the list, the keys typed before it had the keyboard being its own (mud) @blazor (2.4s)
+2026-11-13T23:51:03.7564217Z   ✓  278 [msedge] › sheet-toolbar.spec.mjs:938:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0100 (decided with the user, 2026-10-13): Alt, H, N, then End, Enter typed at once open Format Cells from More Number Formats…, as typed slowly (mud) @blazor (2.4s)
+2026-11-13T23:51:06.0903411Z   ✓  279 [msedge] › sheet-toolbar.spec.mjs:962:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0100/ADR-0050: Enter typed at once after a KeyTip's command reaches the Sheet, not the toolbar (mud) @blazor (2.3s)
+2026-11-13T23:51:08.4564560Z   ✓  280 [msedge] › sheet-toolbar.spec.mjs:979:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0100/ADR-0050: Enter typed at once after Enter on a toolbar item reaches the Sheet, not the item (mud) @blazor (2.4s)
+2026-11-13T23:51:10.8420341Z   ✓  281 [msedge] › sheet-toolbar.spec.mjs:1000:9 › keys typed at machine speed under the mud Chrome (2026-10-12) › ADR-0100/ADR-0050 (decided with the user, 2026-10-12): a colour chosen in a list, then Enter and ↓ typed in the list as it closes, fills the cell once and moves the Focus twice (mud) @blazor (2.4s)
+2026-11-13T23:51:13.0915756Z   ✓  282 [msedge] › sheet-toolbar.spec.mjs:1039:5 › the Sheet's own markup that claims nothing (input-order ticket 04) › ADR-0240: a press on unclaimed markup in the Sheet while a toolbar press is held reaches its handler, release and click too @blazor (2.2s)
+2026-11-13T23:51:16.6927927Z   -  283 [msedge] › sheet.spec.mjs:281:9 › ticket 78 under the builtin Chrome › ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name @blazor
+2026-11-13T23:51:21.3245072Z   ✓  284 [msedge] › sheet.spec.mjs:214:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret @blazor (4.6s)
+2026-11-13T23:51:26.1903142Z   ✓  285 [msedge] › sheet.spec.mjs:243:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back @blazor (4.9s)
+2026-11-13T23:51:30.2732174Z   -  286 [msedge] › sheet.spec.mjs:281:9 › ticket 78 under the mud Chrome › ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name @blazor
+2026-11-13T23:51:32.2885792Z   -  287 [msedge] › sheet.spec.mjs:615:1 › SH-29 (ADR-0048): the insert pressed on a 150 ms circuit before the button greys out is refused, and 99 lands in Plums' row @blazor
+2026-11-13T23:51:34.3236547Z   -  288 [msedge] › sheet.spec.mjs:698:9 › ST-2 (ADR-0007): an edit opened with F2 and not typed into closes when its row leaves the Window, and the next key is the grid's (150 ms) @blazor
+2026-11-13T23:51:36.3558387Z   -  289 [msedge] › sheet.spec.mjs:698:9 › ST-2 (ADR-0007): an edit opened by a press into the Formula Bar and not typed into closes when its row leaves the Window, and the next key is the grid's (150 ms) @blazor
+2026-11-13T23:51:38.3726701Z   -  290 [msedge] › sheet.spec.mjs:743:1 › ST-2 (ADR-0007, refined): a character typed as the Window moves off an F2 edit, on a 150 ms circuit, keeps the edit with it, and Enter writes it @blazor
+2026-11-13T23:51:42.7889348Z   ✓  291 [msedge] › sheet.spec.mjs:820:5 › KB-8 under the mud Chrome: a character, Escape, Escape, a character opens an edit in the selected cell @blazor (4.4s)
+2026-11-13T23:51:47.7215212Z   ✓  292 [msedge] › sheet.spec.mjs:848:5 › KB-8 under the mud Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet @blazor (4.9s)
+2026-11-13T23:51:49.6248535Z   ✓  293 [msedge] › sheets.spec.mjs:135:1 › ADR-0018: a Sheet the user has pressed keeps the keyboard when the other one finishes a cancel late @blazor (1.9s)
+2026-11-13T23:51:50.6878261Z   ✓  294 [msedge] › shipped-files.spec.mjs:112:5 › ERR-9: the address of each file › ERR-9 / ADR-0123: the script and the stylesheets are asked for at the plain path with the file's version @blazor (1.0s)
+2026-11-13T23:51:52.0208141Z   ✓  295 [msedge] › shipped-files.spec.mjs:147:5 › ERR-9: the address of each file › ERR-9 / ADR-0123: a page with a HeadContent of its own keeps the packages' stylesheets, and adds its own @blazor (1.3s)
+2026-11-13T23:51:53.4202401Z   ✓  296 [msedge] › shipped-files.spec.mjs:186:9 › ERR-10: a script that is not the one the grid was built with › ERR-10 / ADR-0123: another version's script is refused before anything attaches, said in place of the rows and once in the live region @blazor (1.4s)
+2026-11-13T23:51:54.8233362Z   ✓  297 [msedge] › shipped-files.spec.mjs:186:9 › ERR-10: a script that is not the one the grid was built with › ERR-10 / ADR-0123: a script older than the stamp is refused before anything attaches, said in place of the rows and once in the live region @blazor (1.4s)
+2026-11-13T23:51:55.9447446Z   ✓  298 [msedge] › shipped-files.spec.mjs:197:5 › ERR-10: a script that is not the one the grid was built with › ERR-10 / ADR-0123: the script the grid was built with attaches, and nothing is refused @blazor (1.1s)
+2026-11-13T23:51:56.0567581Z   -  299 [msedge] › shipped-files.spec.mjs:213:9 › ERR-10: a script that is not the one the grid was built with › where the host pins the script by integrity › ERR-10 / ADR-0123: another version's script is blocked by the browser, and the grid says so as for a script that did not load, attaching nothing @blazor
+2026-11-13T23:51:57.0350194Z   ✓  300 [msedge] › shipped-files.spec.mjs:226:1 › ADR-0411 / ADR-0123: a Shared Script of another build is refused by ExPivot over the Script Core, said in place of the pivot @blazor (955ms)
+2026-11-13T23:51:58.1147023Z   ✓  301 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExGrid's own stylesheet hides its notice @blazor (1.1s)
+2026-11-13T23:51:59.2146922Z   ✓  302 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExGrid's notice, with no script @blazor (1.1s)
+2026-11-13T23:52:00.3797152Z   ✓  303 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExSheet's own stylesheet hides its notice @blazor (1.1s)
+2026-11-13T23:52:01.5727321Z   ✓  304 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExSheet's notice, with no script @blazor (1.2s)
+2026-11-13T23:52:02.6202808Z   ✓  305 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExPivot's own stylesheet hides its notice @blazor (1.0s)
+2026-11-13T23:52:03.6996732Z   ✓  306 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExPivot's notice, with no script @blazor (1.1s)
+2026-11-13T23:52:04.8127665Z   ✓  307 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExGrid.MudBlazor's own stylesheet hides its notice @blazor (1.1s)
+2026-11-13T23:52:05.9349121Z   ✓  308 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExGrid.MudBlazor's notice, with no script @blazor (1.1s)
+2026-11-13T23:52:07.3985628Z   ✓  309 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExSheet.MudBlazor's own stylesheet hides its notice @blazor (1.4s)
+2026-11-13T23:52:08.9153933Z   ✓  310 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExSheet.MudBlazor's notice, with no script @blazor (1.5s)
+2026-11-13T23:52:10.3319714Z   ✓  311 [msedge] › shipped-files.spec.mjs:262:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: ExPivot.MudBlazor's own stylesheet hides its notice @blazor (1.4s)
+2026-11-13T23:52:11.6987801Z   ✓  312 [msedge] › shipped-files.spec.mjs:276:9 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: another version's stylesheet shows ExPivot.MudBlazor's notice, with no script @blazor (1.3s)
+2026-11-13T23:52:12.7870554Z   ✓  313 [msedge] › shipped-files.spec.mjs:289:5 › ERR-11: each product's stylesheet notice › ERR-11 / ADR-0123: while the stylesheet has not arrived, the notice shows nothing @blazor (1.1s)
+2026-11-13T23:52:14.6068930Z   ✓  314 [msedge] › stretch.spec.mjs:56:5 › in parents with a definite height › inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030) @blazor (1.8s)
+2026-11-13T23:52:15.3712605Z   ✓  315 [msedge] › stretch.spec.mjs:74:5 › in a parent with no height › nothing is painted and the grid names the parent (VZ-12b, ADR-0028) @blazor (754ms)
+2026-11-13T23:52:21.2362479Z   ✓  316 [msedge] › virtualisation.spec.mjs:504:1 › a scroll frame makes at most one interop call, whatever is painted (PF-1) @blazor (5.8s)
+2026-11-13T23:52:21.2547981Z   -  317 [msedge] › windows-desktop.spec.mjs:122:5 › SH-52/ADR-0100/ADR-0450: Alt released alone, and F10, through the OS show the KeyTips and leave the browser's menu shut (mud) @blazor
+2026-11-13T23:52:21.2587075Z   -  318 [msedge] › windows-desktop.spec.mjs:141:5 › SH-52/ADR-0100/ADR-0450: while an edit is open, Alt and F10 through the OS start no KeyTips, and the edit keeps the keyboard (mud) @blazor
+2026-11-13T23:52:21.2747740Z   -  319 [msedge] › windows-ime.spec.mjs:85:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k1, k2): the IME switched on over a selected cell composes from the first key in the Keyboard Field drawn over it; nothing moves while it lasts; its end opens the Cell Editor holding it; Enter commits (mud) @blazor
+2026-11-13T23:52:21.2783038Z   -  320 [msedge] › windows-ime.spec.mjs:116:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k3): Escape during a composition ends it empty and leaves the edit open and empty; Escape again cancels it (mud) @blazor
+2026-11-13T23:52:21.2822346Z   -  321 [msedge] › windows-ime.spec.mjs:134:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k4): Down while a composition is converted is the IME's: the Focus stays and nothing is written (mud) @blazor
+2026-11-13T23:52:21.2871281Z   -  322 [msedge] › windows-ime.spec.mjs:152:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k5): with the IME left on by an earlier edit, a press on the cell, then keys at machine speed, compose from the first key (mud) @blazor
+2026-11-13T23:52:21.2933979Z   -  323 [msedge] › windows-ime.spec.mjs:170:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k6, k6y): a second clause typed after the first was converted is one entry with it, read key by key and typed at machine speed alike (mud) @blazor
+2026-11-13T23:52:21.2976854Z   -  324 [msedge] › windows-ime.spec.mjs:195:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k7): two compositions and the keys after them at machine speed are typed in order, nothing lost, doubled or reordered (mud) @blazor
+2026-11-13T23:52:21.3007856Z   -  325 [msedge] › windows-ime.spec.mjs:208:13 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k8): a press on D12 during a composition puts it in D10, commits it there and selects D12 (mud) @blazor
+2026-11-13T23:52:21.3045677Z   -  326 [msedge] › windows-ime.spec.mjs:208:13 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k8x): a press on D8 during a composition puts it in D10, commits it there and selects D8 (mud) @blazor
+2026-11-13T23:52:21.3118145Z   -  327 [msedge] › windows-ime.spec.mjs:223:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k9): a press on the Formula Bar during a composition puts it in the edit, and the bar takes the keyboard holding it (mud) @blazor
+2026-11-13T23:52:21.3180835Z   -  328 [msedge] › windows-ime.spec.mjs:248:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k10): a press on a column's header during a composition ends it in D10 first, then selects the column (mud) @blazor
+2026-11-13T23:52:21.3236108Z   -  329 [msedge] › windows-ime.spec.mjs:265:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k12): Space with the IME on and nothing composed is the IME's ideographic space, and opens an edit holding it (mud) @blazor
+2026-11-13T23:52:21.3295456Z   -  330 [msedge] › windows-ime.spec.mjs:275:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k13, k13x): with the IME on and nothing composed, the arrows, Tab, Enter, Delete, and the copy and the paste are the grid's (mud) @blazor
+2026-11-13T23:52:21.3356027Z   -  331 [msedge] › windows-ime.spec.mjs:301:9 › /sheet under the mud Chrome › ED-30/ADR-0080/ADR-0450 (k16): a press on the composition's own text loses nothing: what it composed reaches D10 (mud) @blazor
+2026-11-13T23:52:21.3402701Z   -  332 [msedge] › windows-ime.spec.mjs:319:9 › /sheet under the mud Chrome › DC-47/ED-30/ADR-0057/ADR-0450: a composition after =A1+ shows the field's own text while it lasts, and A1's colour comes back when it ends (mud) @blazor
+2026-11-13T23:52:21.3462063Z   -  333 [msedge] › windows-ime.spec.mjs:85:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k1, k2): the IME switched on over a selected cell composes from the first key in the Keyboard Field drawn over it; nothing moves while it lasts; its end opens the Cell Editor holding it; Enter commits (mud, 150 ms) @blazor
+2026-11-13T23:52:21.3518283Z   -  334 [msedge] › windows-ime.spec.mjs:116:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k3): Escape during a composition ends it empty and leaves the edit open and empty; Escape again cancels it (mud, 150 ms) @blazor
+2026-11-13T23:52:21.3583763Z   -  335 [msedge] › windows-ime.spec.mjs:134:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k4): Down while a composition is converted is the IME's: the Focus stays and nothing is written (mud, 150 ms) @blazor
+2026-11-13T23:52:21.3639656Z   -  336 [msedge] › windows-ime.spec.mjs:152:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k5): with the IME left on by an earlier edit, a press on the cell, then keys at machine speed, compose from the first key (mud, 150 ms) @blazor
+2026-11-13T23:52:21.3699867Z   -  337 [msedge] › windows-ime.spec.mjs:170:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k6, k6y): a second clause typed after the first was converted is one entry with it, read key by key and typed at machine speed alike (mud, 150 ms) @blazor
+2026-11-13T23:52:21.3838455Z   -  338 [msedge] › windows-ime.spec.mjs:195:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k7): two compositions and the keys after them at machine speed are typed in order, nothing lost, doubled or reordered (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4036660Z   -  339 [msedge] › windows-ime.spec.mjs:208:13 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k8): a press on D12 during a composition puts it in D10, commits it there and selects D12 (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4170817Z   -  340 [msedge] › windows-ime.spec.mjs:208:13 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k8x): a press on D8 during a composition puts it in D10, commits it there and selects D8 (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4224708Z   -  341 [msedge] › windows-ime.spec.mjs:223:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k9): a press on the Formula Bar during a composition puts it in the edit, and the bar takes the keyboard holding it (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4366661Z   -  342 [msedge] › windows-ime.spec.mjs:248:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k10): a press on a column's header during a composition ends it in D10 first, then selects the column (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4466728Z   -  343 [msedge] › windows-ime.spec.mjs:265:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k12): Space with the IME on and nothing composed is the IME's ideographic space, and opens an edit holding it (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4551009Z   -  344 [msedge] › windows-ime.spec.mjs:275:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k13, k13x): with the IME on and nothing composed, the arrows, Tab, Enter, Delete, and the copy and the paste are the grid's (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4606282Z   -  345 [msedge] › windows-ime.spec.mjs:301:9 › /sheet under the mud Chrome, 150 ms behind › ED-30/ADR-0080/ADR-0450 (k16): a press on the composition's own text loses nothing: what it composed reaches D10 (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4733641Z   -  346 [msedge] › windows-ime.spec.mjs:319:9 › /sheet under the mud Chrome, 150 ms behind › DC-47/ED-30/ADR-0057/ADR-0450: a composition after =A1+ shows the field's own text while it lasts, and A1's colour comes back when it ends (mud, 150 ms) @blazor
+2026-11-13T23:52:21.4856421Z   -  347 [msedge] › windows-ime.spec.mjs:344:5 › ED-30/ADR-0080/ADR-0450 (k11): over a cell that does not edit nothing composes and nothing opens; over one that does, the IME composes (mud) @blazor
+2026-11-13T23:52:21.4904598Z   -  348 [msedge] › windows-ime.spec.mjs:374:5 › ED-30/ADR-0080/ADR-0450 (k14): a composition in the second Sheet is its own: the first Sheet's open edit stands, and nothing reaches it (mud) @blazor
+2026-11-13T23:52:23.0889193Z   ✓  349 [msedge] › workbook.spec.mjs:24:9 › ADR-0331 Sheet Tabs (mud) › WB-1: Ctrl+PageDown and Ctrl+PageUp show the Sheet after and before, and stop at the last and the first @blazor (1.6s)
+2026-11-13T23:52:23.8214679Z   ✓  350 [msedge] › workbook.spec.mjs:42:9 › ADR-0331 Sheet Tabs (mud) › WB-2: keys typed at once after Ctrl+PageDown land on the Sheet shown, at its own Focus, and nothing on the Sheet left @blazor (725ms)
+2026-11-13T23:52:24.5221466Z   ✓  351 [msedge] › workbook.spec.mjs:66:9 › ADR-0331 Sheet Tabs (mud) › WB-3: each Sheet keeps where it was scrolled @blazor (693ms)
+2026-11-13T23:52:24.9218459Z   ✓  352 [msedge] › workbook.spec.mjs:82:9 › ADR-0331 Sheet Tabs (mud) › WB-4: a press on a tab shows its Sheet and leaves the keyboard in the grid @blazor (392ms)
+2026-11-13T23:52:25.6047707Z   ✓  353 [msedge] › workbook.spec.mjs:97:9 › ADR-0331 Sheet Tabs (mud) › WB-5/ADR-0240: keys typed at once after a press on a tab land on the Sheet shown, at its own Focus @blazor (676ms)
+2026-11-13T23:52:26.0085778Z   ✓  354 [msedge] › workbook.spec.mjs:124:9 › ADR-0331 Sheet Tabs (mud) › WB-6/ADR-0240: Escape on the tab list, then ↓ at once, moves the Focus in the grid @blazor (396ms)
+2026-11-13T23:52:26.4212940Z   ✓  355 [msedge] › workbook.spec.mjs:144:9 › ADR-0331 Sheet Tabs (mud) › WB-6/ADR-0240: → on the tab list selects the next tab without scrolling the page @blazor (406ms)
+2026-11-13T23:52:27.0378597Z   ✓  356 [msedge] › workbook.spec.mjs:175:9 › ADR-0331 Sheet Tabs (mud) › WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view @blazor (609ms)
+2026-11-13T23:52:27.6095725Z   ✓  357 [msedge] › workbook.spec.mjs:191:9 › ADR-0331 Sheet Tabs (mud) › WB-6: a Formula typed at once across Ctrl+PageUp points at the Sheet before, and Enter commits it on its own Sheet @blazor (564ms)
+2026-11-13T23:52:28.1376654Z   ✓  358 [msedge] › workbook.spec.mjs:215:9 › ADR-0331 Sheet Tabs (mud) › WB-7: a press on a tab while a Formula is typed keeps the edit, and a press on a cell there writes its Reference @blazor (521ms)
+2026-11-13T23:52:28.5389108Z   ✓  359 [msedge] › workbook.spec.mjs:242:9 › ADR-0331 Sheet Tabs (mud) › WB-8/ADR-0331: + adds a Sheet after the one shown and shows it, and Ctrl+PageDown typed at once steps from it @blazor (392ms)
+2026-11-13T23:52:28.9058611Z   ✓  360 [msedge] › workbook.spec.mjs:258:9 › ADR-0331 Sheet Tabs (mud) › WB-8/ADR-0331: Shift+F11 adds a Sheet before the one shown, and Ctrl+PageDown typed at once steps from it @blazor (359ms)
+2026-11-13T23:52:29.3203981Z   ✓  361 [msedge] › workbook.spec.mjs:273:9 › ADR-0331 Sheet Tabs (mud) › WB-9/ADR-0331: a double click renames on the tab, typed and committed at machine speed, and the Formulas follow @blazor (408ms)
+2026-11-13T23:52:29.7723800Z   ✓  362 [msedge] › workbook.spec.mjs:293:9 › ADR-0331 Sheet Tabs (mud) › WB-9/ADR-0331: a name Excel refuses is refused by name and stays open; Escape keeps the old name and ↓ typed at once moves in the grid @blazor (445ms)
+2026-11-13T23:52:30.2219356Z   ✓  363 [msedge] › workbook.spec.mjs:317:9 › ADR-0331 Sheet Tabs (mud) › WB-10/ADR-0331: Delete on the tab's menu, from the keys, and Ctrl+Z typed at once gives the Sheet back @blazor (442ms)
+2026-11-13T23:52:30.6567752Z   ✓  364 [msedge] › workbook.spec.mjs:343:9 › ADR-0331 Sheet Tabs (mud) › WB-11/ADR-0331: Shift+F10 on a tab opens its menu, Move Right moves it, and Ctrl+PageUp typed at once steps from it @blazor (427ms)
+2026-11-13T23:52:31.1546790Z   ✓  365 [msedge] › workbook.spec.mjs:364:9 › ADR-0331 Sheet Tabs (mud) › WB-12/ADR-0331: Copy on the tab's menu places the copy after the Sheet and shows it, and Ctrl+PageUp typed at once steps from it @blazor (491ms)
+2026-11-13T23:52:31.6047824Z   ✓  366 [msedge] › workbook.spec.mjs:382:9 › ADR-0331 Sheet Tabs (mud) › WB-13/ADR-0331: a tab dragged onto another takes its place, and Ctrl+PageUp typed at once steps from it @blazor (443ms)
+2026-11-13T23:52:32.2388898Z   ✓  367 [msedge] › workbook.spec.mjs:402:9 › ADR-0331 Sheet Tabs (mud) › WB-13/ADR-0331: a press on a tab that leaves the strip at once ends the drag, and a release on a tab from a press elsewhere moves nothing @blazor (627ms)
+2026-11-13T23:52:32.6373714Z   ✓  368 [msedge] › workbook.spec.mjs:430:9 › ADR-0331 Sheet Tabs (mud) › WB-14/ADR-0331: a rename begun from the keys on a tab gives the keyboard back to the tab, so → typed at once selects the next @blazor (391ms)
+2026-11-13T23:52:33.1218397Z   ✓  369 [msedge] › workbook.spec.mjs:450:9 › ADR-0331 Sheet Tabs (mud) › WB-15/ADR-0331: a press on another tab while a name is edited commits it, and ↓ typed at once moves in the grid @blazor (476ms)
+2026-11-13T23:52:33.6363744Z   ✓  370 [msedge] › workbook.spec.mjs:469:9 › ADR-0331 Sheet Tabs (mud) › WB-16/ADR-0331: + pressed while a name is edited commits it and gives the keyboard to the grid, so Ctrl+PageDown typed at once steps from the Sheet added @blazor (508ms)
+2026-11-13T23:52:34.2036316Z   ✓  371 [msedge] › workbook.spec.mjs:488:9 › ADR-0331 Sheet Tabs (mud) › WB-17/ADR-0331: Ctrl+Z typed at once after a press on another tab shows the Sheet of the step and selects its cell; Ctrl+Y does again @blazor (561ms)
+2026-11-13T23:52:34.7376544Z   ✓  372 [msedge] › workbook.spec.mjs:519:9 › ADR-0331 Sheet Tabs (mud) › WB-18/ADR-0331: Ctrl+Z typed at once after a press on another tab takes a Sheet added away and shows the Sheet it was added beside @blazor (526ms)
+2026-11-13T23:52:36.6547845Z   ✓  373 [msedge] › write-lands.spec.mjs:92:1 › LV-11/LV-21: a commit over a cell that changed under the editor lands, and the Overwrite Notice in the live region names what was seen and what was replaced (ADR-0142) @blazor (1.9s)
+2026-11-13T23:52:36.9878763Z   ✓  374 [msedge] › write-lands.spec.mjs:119:1 › LV-11: Escape over a cell that changed under the editor writes nothing, and tells nothing (ADR-0142) @blazor (323ms)
+2026-11-13T23:52:37.3028953Z   ✓  375 [msedge] › write-lands.spec.mjs:141:1 › LV-11: a change to another cell of the row refuses nothing, and tells nothing (ADR-0142) @blazor (306ms)
+2026-11-13T23:52:37.5369614Z   -  376 [msedge] › write-lands.spec.mjs:157:1 › LV-12: an Action press taken on a render whose row has changed since acts on that row as it is now, once (ADR-0142, ADR-0020) @blazor
+2026-11-13T23:52:37.9039325Z   ✓  377 [msedge] › write-lands.spec.mjs:183:1 › LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it landed, under the same order, pastes where it was aimed (ADR-0142) @blazor (358ms)
+2026-11-13T23:52:38.1197704Z   -  378 [msedge] › write-lands.spec.mjs:215:1 › LV-13: a Ctrl+Enter fill whose target changed since the key was pressed lands as entered (ADR-0142, ADR-0035) @blazor
+2026-11-13T23:52:38.3371093Z   -  379 [msedge] › write-lands.spec.mjs:240:1 › LV-13: a fill-handle drag released on a render whose target has changed since lands (ADR-0142, ADR-0050 item 5) @blazor
+2026-11-13T23:52:38.5529781Z   -  380 [msedge] › write-lands.spec.mjs:281:5 › LV-17: 5 Enter ↑ Ctrl+V typed at once pastes over the cell the commit just wrote (ADR-0142, 150 ms) @blazor
+2026-11-13T23:52:38.7701962Z   -  381 [msedge] › write-lands.spec.mjs:311:5 › LV-11/LV-17: 1 Enter ↑ 2 Enter typed at once commits both, the second over the cell the first wrote, with no notice (ADR-0142 D1, 150 ms) @blazor
+2026-11-13T23:52:38.9703033Z   -  382 [msedge] › write-lands.spec.mjs:340:1 › LV-11: a change in the round trip between the key that opens the editor and the open is not told, and the commit lands (ADR-0142) @blazor
+2026-11-13T23:52:39.1859161Z   -  383 [msedge] › write-lands.spec.mjs:366:1 › LV-13: a Delete whose target changed since the key was pressed clears it (ADR-0142, ADR-0054) @blazor
+2026-11-13T23:52:39.4035834Z   -  384 [msedge] › write-lands.spec.mjs:385:1 › LV-13: a Ctrl+R whose target changed since the key was pressed fills it (ADR-0142, ADR-0035) @blazor
+2026-11-13T23:52:39.6047151Z   -  385 [msedge] › write-lands.spec.mjs:405:1 › LV-13: a Ctrl+D whose source changed since the key was pressed fills with the source as it is now (ADR-0142, ADR-0035) @blazor
+2026-11-13T23:52:41.6902553Z   ✓  386 [msedge] › xlsx.spec.mjs:36:9 › ADR-0330 .xlsx in the Input Order (mud) › XL-1: a key typed while a file opens waits for it, and lands on the Workbook it opened @blazor (2.1s)
+2026-11-13T23:52:42.0542350Z   ✓  387 [msedge] › xlsx.spec.mjs:61:9 › ADR-0330 .xlsx in the Input Order (mud) › XL-2: Escape typed as a file is chosen cancels the opening, says so, and leaves the Workbook as it was @blazor (356ms)
+2026-11-13T23:52:42.5382075Z   ✓  388 [msedge] › xlsx.spec.mjs:86:9 › ADR-0330 .xlsx in the Input Order (mud) › XL-3: a Workbook saved, then opened again, comes back as it was saved @blazor (477ms)
+2026-11-13T23:52:43.0957948Z [DemoApi] info: Microsoft.Hosting.Lifetime[0]
+2026-11-13T23:52:43.0958771Z [DemoApi]       Application is shutting down...
+2026-11-13T23:52:43.1327630Z 
+2026-11-13T23:52:43.1331868Z   53 skipped
+2026-11-13T23:52:43.1332204Z   335 passed (10.1m)
+2026-11-13T23:52:43.1708845Z ##[group]Run actions/upload-artifact@v7
+2026-11-13T23:52:43.1709018Z with:
+2026-11-13T23:52:43.1709151Z   name: layer3-records-msedge-2
+2026-11-13T23:52:43.1709328Z   path: verification/
+tests/browser/test-results/
+
+2026-11-13T23:52:43.1709511Z   if-no-files-found: ignore
+2026-11-13T23:52:43.1709651Z   retention-days: 30
+2026-11-13T23:52:43.1709780Z   compression-level: 6
+2026-11-13T23:52:43.1709907Z   overwrite: false
+2026-11-13T23:52:43.1710038Z   include-hidden-files: false
+2026-11-13T23:52:43.1710180Z   archive: true
+2026-11-13T23:52:43.1710293Z env:
+2026-11-13T23:52:43.1710431Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-13T23:52:43.1710572Z   DOTNET_NOLOGO: 1
+2026-11-13T23:52:43.1710688Z   LONG_RUN: true
+2026-11-13T23:52:43.1710819Z   DOTNET_ROOT: /home/runner/.dotnet
+2026-11-13T23:52:43.1710968Z ##[endgroup]
+2026-11-13T23:52:43.9282305Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-11-13T23:52:43.9284098Z The least common ancestor is /home/runner/work/ex-grid/ex-grid. This will be the root directory of the artifact
+2026-11-13T23:52:43.9284481Z With the provided path, there will be 11413 files uploaded
+2026-11-13T23:52:43.9287946Z Artifact name is valid!
+2026-11-13T23:52:43.9288503Z Root directory input is valid!
+2026-11-13T23:52:44.3159280Z Uploading artifact: layer3-records-msedge-2.zip
+2026-11-13T23:52:44.3180729Z Beginning upload of artifact content to blob storage
+2026-11-13T23:52:45.5980591Z Uploaded bytes 8388608
+2026-11-13T23:52:45.9250866Z Uploaded bytes 16777216
+2026-11-13T23:52:46.1563012Z Uploaded bytes 25165824
+2026-11-13T23:52:46.1657372Z Uploaded bytes 33554432
+2026-11-13T23:52:46.3808832Z Uploaded bytes 41943040
+2026-11-13T23:52:46.5525201Z Uploaded bytes 50331648
+2026-11-13T23:52:46.8985520Z Uploaded bytes 58720256
+2026-11-13T23:52:47.2575808Z Uploaded bytes 67108864
+2026-11-13T23:52:47.6468773Z Uploaded bytes 75497472
+2026-11-13T23:52:47.9980057Z Uploaded bytes 83886080
+2026-11-13T23:52:48.1394510Z Uploaded bytes 92274688
+2026-11-13T23:52:48.4105436Z Uploaded bytes 100663296
+2026-11-13T23:52:48.8786583Z Uploaded bytes 109051904
+2026-11-13T23:52:49.2391716Z Uploaded bytes 117440512
+2026-11-13T23:52:49.6261294Z Uploaded bytes 125829120
+2026-11-13T23:52:50.1446295Z Uploaded bytes 134217728
+2026-11-13T23:52:50.6910893Z Uploaded bytes 142606336
+2026-11-13T23:52:50.8584745Z Uploaded bytes 150994944
+2026-11-13T23:52:51.2486203Z Uploaded bytes 159383552
+2026-11-13T23:52:51.8272301Z Uploaded bytes 167772160
+2026-11-13T23:52:52.1339630Z Uploaded bytes 176160768
+2026-11-13T23:52:52.2787276Z Uploaded bytes 184549376
+2026-11-13T23:52:52.6202204Z Uploaded bytes 192937984
+2026-11-13T23:52:52.8639004Z Uploaded bytes 201326592
+2026-11-13T23:52:53.2237756Z Uploaded bytes 209715200
+2026-11-13T23:52:53.5366079Z Uploaded bytes 218103808
+2026-11-13T23:52:53.8104163Z Uploaded bytes 226492416
+2026-11-13T23:52:54.1139298Z Uploaded bytes 234881024
+2026-11-13T23:52:54.6355526Z Uploaded bytes 243269632
+2026-11-13T23:52:54.8995673Z Uploaded bytes 247728168
+2026-11-13T23:52:54.9619289Z Finished uploading artifact content to blob storage!
+2026-11-13T23:52:54.9621872Z SHA256 digest of uploaded artifact is ed2cf25b75731a955c9436392ad0d77fd7eb9126bbd0430ddb50297de3ade6ea
+2026-11-13T23:52:54.9622813Z Finalizing artifact upload
+2026-11-13T23:52:55.5303593Z Artifact layer3-records-msedge-2 successfully finalized. Artifact ID 14087057094
+2026-11-13T23:52:55.5304097Z Artifact layer3-records-msedge-2 has been successfully uploaded! Final size is 247728168 bytes. Artifact ID is 14087057094
+2026-11-13T23:52:55.5307220Z Artifact download URL: https://github.com/AkiraMisawa/ex-grid/actions/runs/43528656529/artifacts/14087057094
+2026-11-13T23:52:55.5720070Z Post job cleanup.
+2026-11-13T23:52:55.5722287Z ##[start-action display=Run actions/setup-node@v7;id=__0c15d45b-b122-4c0b-bdd5-67e683d6fc00.__actions_setup-node]
+2026-11-13T23:52:55.5746012Z Post job cleanup.
+2026-11-13T23:52:55.6503035Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-9d381736ba0c72b87fcd4185e6afeda3105717cdd8021c7d5d726e2a6dce7b54, not saving cache.
+2026-11-13T23:52:55.6562180Z ##[end-action id=__0c15d45b-b122-4c0b-bdd5-67e683d6fc00.__actions_setup-node;outcome=success;conclusion=success;duration_ms=83]
+2026-11-13T23:52:55.6610607Z Post job cleanup.
+2026-11-13T23:52:55.7188960Z [command]/usr/bin/git version
+2026-11-13T23:52:55.7219875Z git version 2.56.1
+2026-11-13T23:52:55.7240609Z Temporarily overriding HOME='/home/runner/work/_temp/6abc2499-6deb-45e4-967e-1a022f66f827' before making global git config changes
+2026-11-13T23:52:55.7241600Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-13T23:52:55.7243918Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/ex-grid/ex-grid
+2026-11-13T23:52:55.7270067Z Removing SSH command configuration
+2026-11-13T23:52:55.7273881Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-13T23:52:55.7301410Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-13T23:52:55.7497507Z Removing HTTP extra header
+2026-11-13T23:52:55.7499984Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-13T23:52:55.7526133Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-13T23:52:55.7717901Z Removing includeIf entries pointing to credentials config files
+2026-11-13T23:52:55.7722422Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-13T23:52:55.7747135Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:52:55.7747916Z includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:52:55.7748596Z includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:52:55.7749368Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:52:55.7754268Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path
+2026-11-13T23:52:55.7775082Z /home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:52:55.7783976Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-ddb3121f\-dc44\-437e\-9ee9\-8eb83f8b43ed\.config
+2026-11-13T23:52:55.7815204Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path
+2026-11-13T23:52:55.7839288Z /home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:52:55.7846118Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/ex-grid/ex-grid/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-ddb3121f\-dc44\-437e\-9ee9\-8eb83f8b43ed\.config
+2026-11-13T23:52:55.7875378Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-13T23:52:55.7896987Z /github/runner_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:52:55.7903904Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-ddb3121f\-dc44\-437e\-9ee9\-8eb83f8b43ed\.config
+2026-11-13T23:52:55.7932488Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-13T23:52:55.7952003Z /github/runner_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config
+2026-11-13T23:52:55.7957565Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-ddb3121f\-dc44\-437e\-9ee9\-8eb83f8b43ed\.config
+2026-11-13T23:52:55.7984801Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-13T23:52:55.8173354Z Removing credentials config '/home/runner/work/_temp/git-credentials-ddb3121f-dc44-437e-9ee9-8eb83f8b43ed.config'
+2026-11-13T23:52:55.8301485Z Cleaning up orphan processes
