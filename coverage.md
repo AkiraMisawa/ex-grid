@@ -53,7 +53,7 @@ the sixteen NuGet packages' assemblies (.NET). Each is counted against every tes
 
 |||
 |:---|:---|
-| Generated on: | 11/14/2026 - 00:59:20 |
+| Generated on: | 11/14/2026 - 16:58:12 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1120 |
